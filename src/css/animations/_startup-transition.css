@@ -7,6 +7,13 @@
  * switching from DIM mode to a Full Theme (Dark/Light) during startup phase P6.
  * The class is removed by JS after the transition.
  */
+
+/*
+  Targets:
+  1. The body element itself if it has .is-transitioning-from-dim and .animate-on-dim-exit.
+  2. Any descendant element with .animate-on-dim-exit if its ancestor body has .is-transitioning-from-dim.
+*/
+body.is-transitioning-from-dim.animate-on-dim-exit,
 body.is-transitioning-from-dim .animate-on-dim-exit {
     transition-property:
         opacity,
@@ -20,8 +27,8 @@ body.is-transitioning-from-dim .animate-on-dim-exit {
         background-image, /* For panel gradients, body background, LCD gradients */
         text-shadow
         !important;
-    transition-duration: 1s !important;
-    transition-timing-function: ease-out !important;
+    transition-duration: 1s !important; /* As per PRD, matches config.P6_CSS_TRANSITION_DURATION */
+    transition-timing-function: ease-out !important; /* As per PRD */
     transition-delay: 0s !important;
 }
 

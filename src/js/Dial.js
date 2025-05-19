@@ -296,16 +296,18 @@ class Dial {
                 shadingStart: rootStyle.getPropertyValue('--dial-dim-active-shading-start-color').trim() || 'oklch(0% 0 0 / 0.1)',
                 shadingEnd: rootStyle.getPropertyValue('--dial-dim-active-shading-end-color').trim() || 'oklch(0% 0 0 / 0.15)'
             };
-        } else if (isDimTheme && !this.isActiveDim) {
+        } else if (isDimTheme && !this.isActiveDim) { // UNLIT DIM STATE
             this.computedStyleVars = {
-                faceBgL: rootStyle.getPropertyValue('--dial-face-bg-l').trim() || '0.05',
+                faceBgL: rootStyle.getPropertyValue('--dial-face-bg-l').trim() || '0.01', 
                 faceBgC: rootStyle.getPropertyValue('--dial-face-bg-c').trim() || '0',
                 faceBgH: rootStyle.getPropertyValue('--dial-face-bg-h').trim() || '0',
-                ridgeL: "0", ridgeC: "0", ridgeH: "0",
-                ridgeHighlightL: "0", ridgeHighlightA: "0",
-                shadingStart: "oklch(0 0 0 / 0)", shadingEnd: "oklch(0 0 0 / 0)"
+                ridgeL: rootStyle.getPropertyValue('--dial-ridge-l').trim() || '0.01', 
+                ridgeC: rootStyle.getPropertyValue('--dial-ridge-c').trim() || '0',
+                ridgeH: rootStyle.getPropertyValue('--dial-ridge-h').trim() || '0',
+                ridgeHighlightL: "0", ridgeHighlightA: "0", 
+                shadingStart: "oklch(0 0 0 / 0)", shadingEnd: "oklch(0 0 0 / 0)" 
             };
-        } else { 
+        } else { // Active Dark or Light themes
             this.computedStyleVars = {
                 faceBgL: rootStyle.getPropertyValue('--dial-face-bg-l').trim() || '0.20',
                 faceBgC: rootStyle.getPropertyValue('--dial-face-bg-c').trim() || '0.005',
@@ -322,7 +324,15 @@ class Dial {
     }
 
     _draw() {
-        if (!this.ctx || !this.canvas || !this.computedStyleVars.faceBgL) return;
+        if (!this.ctx || !this.canvas) return;
+        
+        if (!this.computedStyleVars.faceBgL) {
+            this._updateAndCacheComputedStyles();
+            if (!this.computedStyleVars.faceBgL) { 
+                console.error(`[Dial ${this.dialId} _draw] computedStyleVars.faceBgL still undefined after update. Bailing draw.`);
+                return;
+            }
+        }
 
         const dialState = this.appState.getDialState(this.dialId);
         if (!dialState) return; 
@@ -345,6 +355,7 @@ class Dial {
         } else { 
             drawDetailedContent = this.isActiveDim || appStatus === 'interactive';
         }
+        
         this.ctx.fillStyle = `oklch(${this.computedStyleVars.faceBgL} ${this.computedStyleVars.faceBgC} ${this.computedStyleVars.faceBgH})`;
         this.ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 

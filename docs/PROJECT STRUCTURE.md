@@ -1,3 +1,5 @@
+--- START OF FILE PROJECT_STRUCTURE.md ---
+
 # HUE 9000 Project Structure (REFACTOR-V2.3)
 
 This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns.
@@ -6,7 +8,8 @@ HUE9000_Project/
 ├── public/
 │   ├── metal-grill.png
 │   ├── specular-highlights.svg
-│   └── noise.svg
+│   ├── noise.svg
+│   └── logo.svg                     # Main application logo
 ├── src/
 │   ├── js/
 │   │   ├── appState.js
@@ -55,9 +58,4 @@ HUE9000_Project/
 │       │   └── _utilities.css
 │       │
 │       └── main.css                       # Main CSS file to import all others
-├── assets/
-│   └── logo.svg
 ├── index.html
-├── PROJECT_OVERVIEW.md (REFACTOR-V2.3)      
-├── THEMING_GUIDELINES.md (REFACTOR-V2.3)    
-└── STARTUP_SEQUENCE.md (REFACTOR-V2 - Revised)

@@ -4,7 +4,9 @@ This document outlines the principles and conventions for theming the HUE 9000 i
 
 ## Core Theming Principles
 
-1.  **"Low" (Dark) vs. "High" (Light) Intensity:** (As before)
+1.  **"Low" (Dark) vs. "High" (Light) Intensity:** (As before) The primary themes are `theme-dark` and `theme-light`.
+    *   **CRITICAL WARNING NOTE:** The `theme-light.css` (referred to as "High Intensity" or "Light Theme") is **NOT** a traditional light mode (e.g., white backgrounds, dark text). It is designed as a *brighter, higher contrast variant of the dark theme aesthetic*. All design and variable choices for `theme-light.css` should reflect this intent, maintaining the overall retro-futuristic, control panel feel, rather than attempting to invert it into a standard "day mode."
+
 2.  **Dynamic Theming via CSS Variables and JavaScript:** (As before)
     *   **Critical for Theme Overrides:** Selectors like `body.theme-dark` or `body.theme-light` (potentially qualified by `:not(.theme-dim)`) are essential.
 3.  **DIM Mode Theming (`theme-dim.css`):**
@@ -16,7 +18,12 @@ This document outlines the principles and conventions for theming the HUE 9000 i
     *   Buttons smoothly transition (CSS transitions driven by class changes from `Button.setState()`) to `is-dimly-lit` in Phase P4. MAIN PWR and AUX buttons flicker to `.is-energized` in their respective phases.
 
 4.  **Transition from DIM Mode & Energizing (Startup Phase P6_ThemeTransitionAndFinalEnergize):**
-    *   Unified 1-second CSS animation for global elements (panels, text) via `.is-transitioning-from-dim` class as `body.theme-dim` is removed and `body.theme-dark` (or light) is added.
+    *   A 1-second visual transition for key global elements (panels, text, etc.) is orchestrated by `startupSequenceManager.js`.
+        *   JavaScript first identifies the specific DOM elements that need to animate and adds a temporary class (e.g., `.animate-on-dim-exit`) to them.
+        *   The `body.is-transitioning-from-dim` class is then added to the `<body>`.
+        *   `body.theme-dim` is removed, and `body.theme-dark` (or `theme-light`) is added.
+        *   A CSS rule in `_startup-transition.css` (targeting `body.is-transitioning-from-dim .animate-on-dim-exit`) applies the 1-second transition to the designated elements.
+        *   After the transition completes, JavaScript removes both `.animate-on-dim-exit` from the elements and `body.is-transitioning-from-dim` from the `<body>`.
     *   **Button Energizing Flicker (SCAN, HUE ASSN, FIT EVAL):**
         *   Concurrently with the global CSS transition, `buttonManager.js` orchestrates flicker animations for buttons that were in the `is-dimly-lit` state. **This orchestration is triggered by a deferred call within the P6 GSAP timeline, ensuring button states are inspected after the theme change has been initiated.**
         *   Individual `Button.js` instances for SCAN, HUE ASSN, and FIT EVAL buttons execute a flicker animation from their `is-dimly-lit` appearance directly *to* their final `is-energized is-selected` or `is-energized` (unselected) state, as defined by the new theme (e.g., `theme-dark.css`).

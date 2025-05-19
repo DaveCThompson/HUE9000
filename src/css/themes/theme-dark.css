@@ -52,31 +52,30 @@ body.theme-dark {
     --btn-pressed-innershadow-color: oklch(0% 0 0 / 0.2);
 
     /* --- Component: LCD Screens --- */
-    /* Base Active LCD state (P6) - "just slightly darker background than the light version" */
-    --lcd-active-grad-start-l: 0.70; /* Was 0.10. Light theme is 0.81 */
-    --lcd-active-grad-end-l: 0.65;   /* Was 0.06. Light theme is 0.75 */
-    --lcd-active-text-l: 0.90;       /* Darker text for lighter background. Was 0.90, but for better contrast with lighter bg, this is fine. */
-    --lcd-active-text-a: 0.95;       
-    --lcd-active-border-l: 0.55;     /* Was 0.12 */
-    --lcd-active-border-a: 0.5;      /* Was 0.5 */
-    --lcd-active-inner-glow-bottom-l: 0.20; /* Darker glow for lighter bg. Was 0.95 */
-    --lcd-active-inner-glow-bottom-a: 0.06; 
-    --lcd-active-inner-glow-diffuse-l: 0.20; /* Darker glow. Was 0.95 */
+    /* Base Active LCD state (P6) */
+    --lcd-active-grad-start-l: 0.70; 
+    --lcd-active-grad-end-l: 0.65;   
+    --lcd-active-text-l: 0.92;       /* Bright text */
+    --lcd-active-text-a: 0.95;
+    --lcd-active-border-l: 0.55;     
+    --lcd-active-border-a: 0.5;      
+    --lcd-active-inner-glow-bottom-l: 0.20; 
+    --lcd-active-inner-glow-bottom-a: 0.06;
+    --lcd-active-inner-glow-diffuse-l: 0.20; 
     --lcd-active-inner-glow-diffuse-a: 0.04;
     --lcd-base-chroma-factor: 0.6; 
+    --lcd-text-shadow: 0 0 8px oklch(1 0 0 / 0.5); /* White glow */
 
-    /* .lcd--dimly-lit state for dark theme (P4 if theme was dark) - Not directly used in current startup */
-    /* "slightly darker again [than P6 dark mode active], but quite grey and comparable to the buttons." */
-    /* P6 active dark is now ~0.70 L. Dimly lit buttons are ~0.45 L. */
+    /* .lcd--dimly-lit state for dark theme (P4 if theme was dark) */
     --lcd-dimly-lit-grad-start-l: 0.40; 
     --lcd-dimly-lit-grad-end-l: 0.35;   
-    --lcd-dimly-lit-text-l: 0.85;       
+    --lcd-dimly-lit-text-l: 0.85;       /* Bright text */
     --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.2); 
     --lcd-dimly-lit-chroma-factor: 0.15; 
 
     /* .js-active-dim-lcd state for dark theme (less common, but for completeness) */
     --lcd-active-dim-bg-l: 0.07; 
-    --lcd-active-dim-text-l: 0.80; 
+    --lcd-active-dim-text-l: 0.70; /* Bright text */
     --lcd-active-dim-chroma-factor: 0.45;
 
     /* --- Component: Dials --- */

@@ -1,3 +1,5 @@
+--- START OF FILE STARTUP_SEQUENCE.md ---
+
 # HUE 9000 Startup Sequence Detailed Breakdown (REFACTOR-V2 - Revised)
 
 This document details the phased startup sequence for the HUE 9000 interface, reflecting the REFACTOR-V2 architecture and subsequent V2.3 component refactor. `startupSequenceManager.js` orchestrates these phases, logging key events. UI updates are handled by relevant managers (e.g., `buttonManager.js` delegating to `Button.js` instances, `dialManager.js` to `Dial.js` instances, `uiUpdater.js`, `lensManager.js`).
@@ -53,8 +55,13 @@ This document details the phased startup sequence for the HUE 9000 interface, re
 ### Phase P6_ThemeTransitionAndFinalEnergize
 *   **Environment:** Transitions from `theme-dim` to `theme-dark`.
 *   **Action:**
-    1.  Global CSS transition (1s) is triggered as `body.theme-dim` is replaced with `body.theme-dark`.
-    2.  MAIN PWR and AUX buttons (already `.is-energized`) visually adapt to the true `theme-dark` energized appearance.
+    1.  **Global Theme Transition (1s):** Orchestrated by `startupSequenceManager.js`:
+        *   First, JavaScript identifies specific UI elements that need to animate their appearance due to theme variable changes and adds a temporary class (e.g., `.animate-on-dim-exit`) to them.
+        *   Then, the `body.is-transitioning-from-dim` class is added to the `<body>` element.
+        *   Immediately after, `body.theme-dim` is replaced with `body.theme-dark`.
+        *   A CSS rule in `_startup-transition.css` (targeting `body.is-transitioning-from-dim .animate-on-dim-exit`) ensures these selected elements smoothly transition their visual properties over 1 second.
+        *   Upon completion of this 1-second transition (managed by GSAP), JavaScript removes the `.animate-on-dim-exit` class from the elements and the `body.is-transitioning-from-dim` class from the `<body>`.
+    2.  MAIN PWR and AUX buttons (already `.is-energized`) visually adapt to the true `theme-dark` energized appearance due to the theme's CSS variable changes.
     3.  **Button Flicker:** **At the appropriate point during P6 playback (after the theme change is initiated and processed),** `Button.js` instances for SCAN, HUE ASSN, and FIT EVAL buttons (which were set to `is-dimly-lit` in P4) execute a flicker animation to their final `.is-energized` states (selected/unselected as appropriate for HUE ASSN defaults), now styled by `theme-dark.css`. This is orchestrated by `buttonManager.flickerDimlyLitToEnergizedStartup` being called from within a deferred GSAP call in the P6 timeline.
     4.  GSAP waits for CSS transition and button flickers to complete.
 *   **Terminal:** "AMBIENT THEME ENGAGED. ALL SYSTEMS NOMINAL."

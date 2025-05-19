@@ -34,6 +34,7 @@
    width: 100%;
    height: 100%;
    border-radius: inherit;
+   background-color: transparent !important; /* Diagnostic: Force canvas element background */
    /* Canvas content (ridges) is drawn by JS. Opacity of canvas itself can be themed if needed. */
 }
 

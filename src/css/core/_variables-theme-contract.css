@@ -95,9 +95,9 @@
 
     /* --- Component: LCD Screens --- */
     /* Base Active LCD state (used by theme-dark, theme-light) */
-    --lcd-active-grad-start-l: 0.10; /* Slightly darker base */
-    --lcd-active-grad-end-l: 0.06;   /* Slightly darker base */
-    --lcd-active-text-l: 0.90;       /* Default active text lightness (e.g., for theme-dark) */
+    --lcd-active-grad-start-l: 0.10; 
+    --lcd-active-grad-end-l: 0.06;   
+    --lcd-active-text-l: 0.90;       /* Default bright text */
     --lcd-active-text-c: 0;       --lcd-active-text-h: 0; --lcd-active-text-a: 1;
     --lcd-active-border-l: 0.12;     --lcd-active-border-c: 0;     --lcd-active-border-h: 0; --lcd-active-border-a: 0.6;
     --lcd-active-inner-glow-bottom-l: 0.95; --lcd-active-inner-glow-bottom-c: 0; --lcd-active-inner-glow-bottom-h: 0; --lcd-active-inner-glow-bottom-a: 0.1;
@@ -115,7 +115,7 @@
 
     /* .js-active-dim-lcd state (Terminal LCD P0-P3 in theme-dim; all LCDs if P4 reverts) */
     --lcd-active-dim-bg-l: 0.05; --lcd-active-dim-bg-c: var(--dynamic-lcd-chroma); --lcd-active-dim-bg-h: var(--dynamic-lcd-hue); --lcd-active-dim-bg-a: 0.7;
-    --lcd-active-dim-text-l: 0.80; /* Default for js-active-dim-lcd */
+    --lcd-active-dim-text-l: 0.80; /* Default bright text for this state */
     --lcd-active-dim-text-c: var(--dynamic-lcd-chroma); --lcd-active-dim-text-h: var(--dynamic-lcd-hue); --lcd-active-dim-text-a: 1;
     --lcd-active-dim-border-l: 0.10; --lcd-active-dim-border-c: var(--dynamic-lcd-chroma); --lcd-active-dim-border-h: var(--dynamic-lcd-hue); --lcd-active-dim-border-a: 0.3;
     --lcd-active-dim-shadow: none;
@@ -124,12 +124,13 @@
 
 
     /* .lcd--dimly-lit state (All LCDs P4 in theme-dim) */
-    --lcd-dimly-lit-grad-start-l: 0.32; /* Adjusted from contract for theme-dim specifically */
-    --lcd-dimly-lit-grad-end-l: 0.26;   /* Adjusted from contract for theme-dim specifically */
-    --lcd-dimly-lit-text-l: 0.80; /* Default for dimly-lit text (theme-dim will override this) */
+    --lcd-dimly-lit-grad-start-l: 0.32; 
+    --lcd-dimly-lit-grad-end-l: 0.26;   
+    --lcd-dimly-lit-text-l: 0.80; /* Default bright text for this state */
     --lcd-dimly-lit-text-c: var(--dynamic-lcd-chroma); --lcd-dimly-lit-text-h: var(--dynamic-lcd-hue); --lcd-dimly-lit-text-a: 1;
     --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.15);
-    --lcd-dimly-lit-chroma-factor: 0.3; /* Adjusted from contract for theme-dim specifically */
+    --lcd-dimly-lit-chroma-factor: 0.3; 
+    --lcd-text-shadow: 0 0 5px oklch(1 0 0 / 0.3); /* Default white glow */
 
 
     /* --- Component: Dials --- */

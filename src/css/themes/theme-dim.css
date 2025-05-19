@@ -3,21 +3,21 @@
 
 body.theme-dim {
     /* --- Global Theme Adjustments --- */
-    --theme-component-opacity: 0.75; 
+    --theme-component-opacity: 0.85; 
     
-    --theme-text-primary-l: 0.20;   --theme-text-primary-c: 0.001; --theme-text-primary-h: 240; --theme-text-primary-a: 1;
-    --theme-text-secondary-l: 0.15; --theme-text-secondary-c: 0.001; --theme-text-secondary-h: 240; --theme-text-secondary-a: 0.25;
-    --theme-text-tertiary-l: 0.12;  --theme-text-tertiary-c: 0.001;  --theme-text-tertiary-h: 240; --theme-text-tertiary-a: 0.2;
+    --theme-text-primary-l: 0.20;   --theme-text-primary-c: 0.001; --theme-text-primary-h: 240; --theme-text-primary-a: 0.8; 
+    --theme-text-secondary-l: 0.15; --theme-text-secondary-c: 0.001; --theme-text-secondary-h: 240; --theme-text-secondary-a: 0.20; 
+    --theme-text-tertiary-l: 0.5;  --theme-text-tertiary-c: 0.001;  --theme-text-tertiary-h: 240; --theme-text-tertiary-a: 0.1; 
 
     /* --- Body Background --- */
-    --body-bg-top-l: 0;     /* Was 0.01, then 0 */
+    --body-bg-top-l: 0;     
     --body-bg-top-c: 0;    --body-bg-top-h: 0; --body-bg-top-a: 1;
-    --body-bg-bottom-l: 0;  /* Was 0.005, then 0 */
+    --body-bg-bottom-l: 0;  
     --body-bg-bottom-c: 0; --body-bg-bottom-h: 0; --body-bg-bottom-a: 1;
 
     /* --- Panel Bezel & Sections --- */
-    --panel-section-bg-l: 0.03; --panel-section-bg-c: 0.001; --panel-section-bg-h: 240;
-    --panel-section-border-l: 0.07; --panel-section-border-c: 0.001; --panel-section-border-h: 240; --panel-section-border-a: 0.1;
+    --panel-section-bg-l: 0.01; --panel-section-bg-c: 0.0005; --panel-section-bg-h: 240; 
+    --panel-section-border-l: 0.5; --panel-section-border-c: 0.0005; --panel-section-border-h: 240; --panel-section-border-a: 0.05; 
     
     --panel-bezel-grad-1-l: 0.13; --panel-bezel-grad-2-l: 0.12; --panel-bezel-grad-3-l: 0.09;
     --panel-bezel-grad-4-l: 0.11; --panel-bezel-grad-5-l: 0.14; --panel-bezel-grad-6-l: 0.07;
@@ -76,18 +76,19 @@ body.theme-dim {
     /* .js-active-dim-lcd state (Terminal LCD P0-P3; "dark in DIM") */
     --lcd-active-dim-bg-l: 0.06; 
     --lcd-active-dim-bg-a: 0.65; 
-    --lcd-active-dim-text-l: 0.80; 
+    --lcd-active-dim-text-l: 0.70; /* Bright text */
     --lcd-active-dim-border-l: 0.09; 
     --lcd-active-dim-border-a: 0.25;
     --lcd-active-dim-shadow: none;
     --lcd-active-dim-chroma-factor: 0.4; 
+    --lcd-text-shadow: 0 0 4px oklch(1 0 0 / 0.25); /* Fainter white glow for dim states */
     
     /* .lcd--dimly-lit state (All LCDs P4 - "quite grey and comparable to the buttons") */
-    --lcd-dimly-lit-grad-start-l: 0.32; /* Comparable to --btn-dimly-lit-bg-l (0.28) + gradient effect */
+    --lcd-dimly-lit-grad-start-l: 0.32; 
     --lcd-dimly-lit-grad-end-l: 0.26;   
-    --lcd-dimly-lit-text-l: 0.92;       /* Bright text for contrast */
+    --lcd-dimly-lit-text-l: 0.85;       /* Bright text */
     --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.1); 
-    --lcd-dimly-lit-chroma-factor: 0.1; /* Very low chroma for "quite grey" */
+    --lcd-dimly-lit-chroma-factor: 0.1; 
 
 
     /* --- Component: Logo --- */
@@ -130,31 +131,44 @@ body.theme-dim {
     --grill-bg-a: 0.8; 
     --grill-placeholder-text-l:0.10;
 
-    /* --- Component: Dials (Unchanged from previous dim, but listed for completeness) --- */
+    /* --- Component: Dials --- */
+    /* Unlit state (before P4) */
     --dial-housing-bg-l: 0.01; 
     --dial-housing-bg-c: 0; 
     --dial-housing-bg-h: 0; 
-    --dial-housing-bg-a: 0.1;
-    --dial-housing-border-l: 0.08; 
+    --dial-housing-bg-a: 0.05; 
+    --dial-housing-border-l: 0.02; 
     --dial-housing-border-c: 0; 
     --dial-housing-border-h: 0; 
-    --dial-housing-border-a: 0.05;
+    --dial-housing-border-a: 0.03;
     
-    --dial-face-bg-l: 0.02; 
-    --dial-face-bg-c: 0;
-    --dial-face-bg-h: 0;
-    --dial-ridge-l: 0.02;   
+    --dial-face-bg-l: 0.01; 
+    --dial-face-bg-c: 0;    
+    --dial-face-bg-h: 0;    
+    
+    --dial-ridge-l: 0.01;   
     --dial-ridge-c: 0;      
-    --dial-ridge-h: 0;
+    --dial-ridge-h: 0;      
     --dial-ridge-highlight-a: 0; 
+    
     --dial-shading-start-color: oklch(0% 0 0 / 0.0); 
     --dial-shading-end-color: oklch(0% 0 0 / 0.0);   
+
 }
 
 body.theme-dim #logo-container {
-    opacity: 0.05 !important; 
+    opacity: 0.35 !important; 
 }
 
 body.theme-dim .hue-lcd-display:not(.js-active-dim-lcd):not(.lcd--unlit):not(.lcd--dimly-lit) {
     visibility: hidden; 
+}
+
+/* Darken body further by removing noise or adding overlay */
+body.theme-dim {
+    background-image:
+        linear-gradient(180deg,
+            oklch(var(--body-bg-top-l) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
+            oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%
+        );
 }

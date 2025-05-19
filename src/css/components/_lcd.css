@@ -19,14 +19,16 @@
     font-family: 'IBM Plex Mono', monospace;
     box-sizing: border-box;
     opacity: var(--theme-component-opacity);
-
+    text-shadow: var(--lcd-text-shadow); /* Apply text shadow */
+ 
     transition: 
         background-color var(--transition-duration-medium) ease, /* Fallback if image fails */
         background-image var(--transition-duration-medium) ease, 
         border-color var(--transition-duration-medium) ease,
         color var(--transition-duration-medium) ease,
         box-shadow var(--transition-duration-medium) ease,
-        opacity var(--transition-duration-medium) ease;
+        opacity var(--transition-duration-medium) ease,
+        text-shadow var(--transition-duration-medium) ease; /* Transition for shadow */
 }
 
 /* CRT Overlay using ::after pseudo-element */
@@ -51,8 +53,8 @@
 .actual-lcd-screen-element {
     flex-grow: 1; 
     min-height: 50px;
-    font-size: 0.85em;
-    font-weight: 500; /* Increased font weight */
+    font-size: 0.95em; /* Increased font size */
+    font-weight: 500; 
     line-height: 1.4;
     overflow-y: auto;
     white-space: pre-wrap;
@@ -85,10 +87,11 @@
 }
 
 .hue-lcd-display .lcd-value { 
-   font-size: 0.9em;
-   font-weight: 600; /* Increased font weight from 500 */
+   font-size: 1em; /* Increased font size */
+   font-weight: 600; 
    line-height: 1;
    transition: color var(--transition-duration-medium) ease;
+   text-shadow: var(--lcd-text-shadow); /* Apply text shadow */
    position: relative; /* Ensure text content is above the overlay */
    z-index: 2;
 }
