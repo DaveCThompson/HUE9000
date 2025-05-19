@@ -1,0 +1,57 @@
+/* src/css/components/_logo.css (REFACTOR-V2.1 - CORRECTED for positioning, color targets, and sizing) */
+/* Styles for the HUE 9000 Logo. Uses theme variables. */
+
+#logo-container {
+   width: auto;
+   height: auto;
+   margin: var(--space-xl) var(--space-xl) var(--space-3xl) var(--space-xl);
+   align-self: flex-start;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   position: relative;
+   flex-shrink: 0;
+   flex-grow: 0;
+   opacity: var(--theme-component-opacity);
+   transition: opacity var(--transition-duration-medium) ease;
+}
+
+#logo-container svg {
+   width: 100%;
+   height: auto;
+   display: block;
+}
+
+/* Overall SVG background - gets the DYNAMIC color */
+#logo-container svg.logo-svg .logo-dynamic-bg {
+    fill: oklch(var(--logo-dynamic-fill-l) var(--dynamic-logo-chroma) var(--dynamic-logo-hue));
+    /* stroke: oklch(var(--logo-dynamic-fill-l) var(--dynamic-logo-chroma) var(--dynamic-logo-hue) / var(--logo-dynamic-stroke-a)); */
+    /* stroke-width: 0.5px; */
+    transition: fill var(--transition-duration-medium) ease, stroke var(--transition-duration-medium) ease;
+}
+
+/* Rectangle behind "HUE" - matches panel background */
+#logo-container svg.logo-svg .logo-panel-bg-rect {
+    fill: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
+    transition: fill var(--transition-duration-medium) ease;
+}
+
+/* "HUE" letters and "9000" (if paths) - fixed white */
+#logo-container svg.logo-svg .logo-fixed-white-text {
+    fill: oklch(1 0 0); /* OKLCH for white: L=1 (or 100%), C=0, H=any */
+    /* No transition needed for fixed color */
+}
+
+/* If "9000" were actual <text> elements within a group, this would apply */
+/* For now, assuming "9000" is part of the logo-dynamic-bg path or logo-fixed-white-text paths */
+#logo-container svg.logo-svg .logo-dynamic-bg text,
+#logo-container svg.logo-svg .logo-dynamic-bg tspan {
+    /* This would only apply if you had <text> inside the .logo-dynamic-bg group */
+    /* and wanted that text to be different from the group's fill. */
+    /* For fixed white text, ensure the <text> elements themselves get .logo-fixed-white-text */
+}
+
+/* Dim mode specific opacity for logo */
+body.theme-dim #logo-container {
+    /* Opacity is handled by --theme-component-opacity in theme-dim.css */
+}

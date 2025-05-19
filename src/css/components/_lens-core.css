@@ -1,0 +1,47 @@
+/* src/css/components/_lens-core.css (REFACTOR-V2.1) */
+/* Styles for #color-lens and #color-lens-gradient. Exempt from global theme opacity. */
+
+#color-lens {
+   width: var(--lens-core-scale); 
+   height: var(--lens-core-scale);
+   border-radius: 50%;
+   position: relative; 
+   z-index: 2; 
+   overflow: hidden; 
+   filter: blur(0.25px); 
+   box-shadow: none; 
+   background: oklch(var(--lens-core-bg-l) var(--lens-core-bg-c) var(--lens-core-bg-h)); 
+   transition: background var(--transition-duration-medium) ease, filter var(--transition-duration-fast) ease;
+   opacity: 1 !important; /* Ensure lens core is always fully opaque if visible */
+   display: block; 
+}
+
+#color-lens-gradient {
+  position: absolute;
+  inset: 0; 
+  border-radius: inherit;
+  z-index: 0; 
+  pointer-events: none;
+  opacity: 0; /* Initially hidden, JS (lensManager) controls this opacity based on --lens-power */
+  display: block;
+  /* Background is set by lensManager via JS */
+  transition: opacity var(--transition-duration-medium) ease; 
+}
+
+/* Specular Highlights Overlay */
+#color-lens::after {
+  content: '';
+  position: absolute;
+  inset: 0; 
+  border-radius: 50%;
+  background-color: transparent;
+  pointer-events: none;
+  background-image: url("/public/specular-highlights.svg"); 
+  background-size: 100% 100%; 
+  background-position: center;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen; 
+  opacity: var(--lens-specular-opacity); 
+  z-index: 1; 
+  transition: opacity var(--transition-duration-medium) ease;
+}

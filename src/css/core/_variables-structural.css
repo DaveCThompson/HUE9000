@@ -1,0 +1,98 @@
+/* src/css/core/_variables-structural.css (REFACTOR-V2.1) */
+/* Defines non-themeable structural, sizing, timing, and layout variables. */
+
+:root {
+    /* --- Sizing & Layout Tokens --- */
+    --bezel-inner-ring-scale: 96%;        /* For lens bezel */
+    --lens-core-scale: 86%;               /* For lens core relative to its container */
+    --dial-container-fixed-height: 3rem;
+    --height-lower-section: 224px;        /* Fixed height for lower panel sections */
+    --bezel-thickness: var(--space-xl);   /* Thickness of panel bezels (padding/gap) */
+    
+    --control-section-border-width: 4px;
+    --control-section-radius: 0.5rem;
+    --radius-panel-tight: 0.1rem;         /* For panel bezels and sections */
+    
+    --control-label-padding: 1rem;
+    --control-label-height: 1.25rem;
+    
+    --connector-line-thickness: 4px;
+    
+    --size-lens-container-diameter: 150px; /* Base size, can be overridden by layout */
+    --size-logo-container-width: 80px;
+    --size-logo-container-height: 80px;
+    
+    --grid-color-chip-width: 0.375rem;
+    --hue-assignment-column-gap: var(--space-md);
+    --hue-assignment-row-gap: var(--space-sm);
+    --hue-lcd-display-height: 3rem;
+    --button-l-fixed-height: 3rem;
+
+    /* --- Spacing Tokens --- */
+    --space-none: 0;
+    --space-xxs: 0.0625rem; /* 1px */
+    --space-xs:  0.125rem;  /* 2px */
+    --space-sm:  0.25rem;   /* 4px */
+    --space-md:  0.375rem;  /* 6px */
+    --space-lg:  0.5rem;    /* 8px */
+    --space-xl:  0.75rem;   /* 12px */
+    --space-2xl: 1rem;      /* 16px */
+    --space-3xl: 1.5rem;    /* 24px */
+    --space-4xl: 2rem;      /* 32px */
+
+    /* --- Timing Tokens --- */
+    --transition-duration-fast: 0.15s;
+    --transition-duration-medium: 0.3s;
+    --transition-duration-hue: 0.2s; 
+    --transition-duration-slow: 0.5s;
+    --button-light-transition-duration: 0.15s; 
+    --button-p4-prime-transition-duration: 0.6s; /* Slower individual button fade for P4 */
+
+
+    /* --- Button Unit System - Structural & Animation Defaults --- */
+    --button-unit-radius: var(--space-xs);
+    --button-unit-transition-duration: var(--transition-duration-fast); 
+    --button-unit-pressed-transform: translateY(0.5px); 
+    --button-unit-light-object-base-size: 64px; 
+    --button-unit-light-object-base-blur: 20px; 
+    --button-unit-pressed-effect-duration-css: 0.12s; 
+    --button-unit-pressed-pulse-scale-factor-css: 1.15;
+
+    /* Core Opacity Values for Button Lights (used in theme contract) */
+    --button-unit-light-opacity-initial-dim-unlit: 0; 
+    --button-unit-light-opacity-dim-standby: 0.5;     
+    --button-unit-light-opacity-dimly-lit: 0.8;       
+    
+    --button-unit-light-opacity-unselected-idle-min: 0.45; 
+    --button-unit-light-opacity-selected: 1.0;             
+    --button-unit-light-opacity-mid-pressed: calc((var(--button-unit-light-opacity-unselected-idle-min) + var(--button-unit-light-opacity-selected)) / 2);
+
+
+    /* --- Lens Calculation Factors (Non-Themeable) --- */
+    --lens-power: 0.0; 
+    --base-oklch-l: 0.65; 
+    --tune-outer-glow-start-power-threshold: 0.35; 
+    --tune-outer-glow-fade-in-duration: 0.8; 
+    --tune-outer-glow-blur-low-power-multiplier: 3.0; 
+    --base-outer-glow-opacity: 0.45; 
+    --tune-outer-glow-l-factor-min: 0.1; 
+    --tune-outer-glow-c-factor-min: 0.02; 
+    --base-outer-glow-blur: 50px; 
+    
+    --calc-outer-glow-active-factor: clamp(0, (var(--lens-power) - var(--tune-outer-glow-start-power-threshold)) / var(--tune-outer-glow-fade-in-duration), 1);
+    --calc-outer-glow-opacity: calc(var(--calc-outer-glow-active-factor) * pow(var(--lens-power), 4.5) * var(--base-outer-glow-opacity));
+    --calc-outer-glow-blur: calc(var(--base-outer-glow-blur) * (var(--tune-outer-glow-blur-low-power-multiplier) - var(--calc-outer-glow-active-factor) * (var(--tune-outer-glow-blur-low-power-multiplier) - 1)));
+    --calc-outer-glow-current-l-factor: calc(var(--tune-outer-glow-l-factor-min) + var(--calc-outer-glow-active-factor) * (1 - var(--tune-outer-glow-l-factor-min)));
+    --calc-outer-glow-current-c-factor: calc(var(--tune-outer-glow-c-factor-min) + var(--calc-outer-glow-active-factor) * (1 - var(--tune-outer-glow-c-factor-min)));
+
+    /* --- Bezel Angles (for conic gradients, non-themeable structure) --- */
+    --angle-0: 0deg; --angle-1: 15.5769deg; --angle-2: 20.5437deg; --angle-3: 41.9287deg;
+    --angle-4: 46.7308deg; --angle-5: 55.3846deg; --angle-6: 61.0701deg; --angle-7: 104.9008deg;
+    --angle-8: 120.1328deg; --angle-9: 133.4879deg; --angle-10: 145.7711deg; --angle-11: 150.3297deg;
+    --angle-12: 160.1748deg; --angle-13: 201.0979deg; --angle-14: 208.4842deg; --angle-15: 221.5007deg;
+    --angle-16: 227.3586deg; --angle-17: 242.9140deg; --angle-18: 257.6978deg; --angle-19: 292.5959deg;
+    --angle-20: 300.4694deg; --angle-21: 309.6037deg; --angle-22: 317.5547deg; --angle-23: 332.7886deg;
+    --angle-24: 343.6520deg; --angle-25: 360deg;
+
+    --global-dim-attenuation: 0.0; 
+}

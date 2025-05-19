@@ -1,0 +1,58 @@
+/* src/css/components/_dial.css (REFACTOR-V2.1) */
+/* Styles for Dial housing and canvas container. Uses theme variables. */
+
+.dial-canvas-container {
+   width: 100%;
+   height: 100%; /* Fills allocated space from layout */
+   background-color: oklch(var(--dial-housing-bg-l) var(--dial-housing-bg-c) var(--dial-housing-bg-h) / var(--dial-housing-bg-a));
+   border-radius: var(--space-sm);
+   position: relative;
+   z-index: 1;
+   cursor: grab; 
+   user-select: none; 
+   -webkit-user-select: none;
+   touch-action: pan-x;
+   /* Example: Subtle inset shadow and border for housing */
+   box-shadow: inset 0 1px 4px oklch(0% 0 0 / 0.2), inset 0 -1px 2px oklch(100% 0 0 / 0.05); 
+   border: 1px solid oklch(var(--dial-housing-border-l) var(--dial-housing-border-c) var(--dial-housing-border-h) / var(--dial-housing-border-a));
+   opacity: var(--theme-component-opacity);
+   
+   transition:
+       background-color var(--transition-duration-medium) ease,
+       box-shadow var(--transition-duration-medium) ease,
+       border-color var(--transition-duration-medium) ease,
+       opacity var(--transition-duration-medium) ease;
+}
+.dial-canvas-container:active {
+   cursor: grabbing; 
+}
+
+/* Canvas elements for the dials */
+#dial-canvas-A,
+#dial-canvas-B { 
+   display: block; 
+   width: 100%;
+   height: 100%;
+   border-radius: inherit;
+   /* Canvas content (ridges) is drawn by JS. Opacity of canvas itself can be themed if needed. */
+}
+
+/* Light mode specific overrides for dial housing if needed beyond variable changes */
+body.theme-light .dial-canvas-container {
+    /* Example: flatter look for light theme */
+    box-shadow: none; 
+    /* border-color will use --dial-housing-border-l etc. from theme-light.css */
+}
+
+/* Dim mode specific overrides for dial housing when NOT active dim */
+body.theme-dim .dial-canvas-container:not(.js-active-dim-dial) {
+    /* Uses default --dial-housing-bg-l etc. from theme-dim.css */
+    /* If it needs to be even more subdued when not active: */
+    /* background-color: oklch(calc(var(--dial-housing-bg-l) * 0.8) ... ); */
+}
+/* When dial is set to "active dim" by JS */
+body.theme-dim .dial-canvas-container.js-active-dim-dial {
+    /* JS will trigger redraw using specific dim-active variables for canvas content. */
+    /* Housing itself might use slightly different vars if needed. */
+    /* background-color: oklch(var(--dial-dim-active-housing-bg-l) ...); */
+}

@@ -1,0 +1,255 @@
+/* src/css/components/_button-unit.css (REFACTOR-V2.1) */
+/* Styles for .button-unit, using variables from _variables-theme-contract.css */
+
+.button-unit {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--button-unit-radius);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    z-index: 6; 
+    overflow: hidden; 
+    padding: var(--space-sm); 
+    box-sizing: border-box;
+
+    background-color: oklch(var(--btn-unlit-bg-l) var(--btn-unlit-bg-c) var(--btn-unlit-bg-h) / var(--btn-unlit-bg-a));
+    border: 1px solid oklch(var(--btn-unlit-border-l) var(--btn-unlit-border-c) var(--btn-unlit-border-h) / var(--btn-unlit-border-a));
+    color: oklch(var(--btn-unlit-text-l) var(--btn-unlit-text-c) var(--btn-unlit-text-h) / var(--btn-unlit-text-a));
+    box-shadow: none; 
+    opacity: var(--theme-component-opacity); 
+
+    transition: 
+        transform var(--button-unit-transition-duration) ease,
+        background-color var(--button-p4-prime-transition-duration, var(--transition-duration-medium)) ease, 
+        border-color var(--button-p4-prime-transition-duration, var(--transition-duration-medium)) ease,
+        color var(--button-p4-prime-transition-duration, var(--transition-duration-medium)) ease,
+        text-shadow var(--button-p4-prime-transition-duration, var(--transition-duration-medium)) ease,
+        box-shadow var(--button-p4-prime-transition-duration, var(--transition-duration-medium)) ease,
+        opacity var(--button-p4-prime-transition-duration, var(--transition-duration-medium)) ease;
+}
+
+/* Light Container & Individual Lights */
+.button-unit .light-container {
+    position: absolute;
+    inset: 0;
+    z-index: 1; 
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 var(--space-xs); 
+}
+
+.button-unit .light {
+    position: relative;
+    width: var(--button-unit-light-object-base-size);
+    height: var(--button-unit-light-object-base-size);
+    border-radius: 50%;
+    filter: blur(var(--button-unit-light-object-base-blur));
+    
+    background-color: oklch(var(--btn-unlit-light-l) var(--btn-unlit-light-c) var(--btn-unlit-light-h));
+    opacity: var(--_current-light-opacity, var(--btn-unlit-light-a)); /* Use --_current-light-opacity for hover */
+    
+    transition:
+        opacity var(--button-light-transition-duration) ease-out,
+        background-color var(--transition-duration-medium) ease,
+        transform var(--button-light-transition-duration) ease-out;
+    will-change: opacity, transform, filter, background-color; 
+}
+
+/* Button Background Frame (if needed for complex bg effects) */
+.button-unit .button-bg-frame {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    z-index: -1; 
+}
+
+/* Button Text */
+.button-unit .button-text {
+    position: relative;
+    z-index: 2; 
+    font-family: 'Inter', sans-serif;
+    font-size: 16px; 
+    font-weight: 600;
+    line-height: normal;
+    text-align: center;
+    padding: 0 var(--space-sm); 
+    pointer-events: none; 
+}
+
+/* --- Button Sizes --- */
+.button-unit--s { 
+    min-width: var(--space-3xl); 
+    min-height: var(--space-lg);  
+    padding: var(--space-xs);
+}
+.button-unit--s .button-text { display: none; } 
+.button-unit--s .light { 
+    width: calc(var(--button-unit-light-object-base-size) * 0.5);
+    height: calc(var(--button-unit-light-object-base-size) * 0.5);
+    filter: blur(calc(var(--button-unit-light-object-base-blur) * 0.6));
+}
+
+.button-unit--m { 
+    min-width: 70px;
+    height: var(--button-l-fixed-height); 
+    min-height: var(--button-l-fixed-height);
+    padding: var(--space-sm);
+}
+.button-unit--m .button-text { font-size: 14px; }
+.button-unit--m .light-container { gap: var(--space-xs); }
+.button-unit--m .light {
+    width: calc(var(--button-unit-light-object-base-size) * 0.7);
+    height: calc(var(--button-unit-light-object-base-size) * 0.7);
+    filter: blur(calc(var(--button-unit-light-object-base-blur) * 0.7));
+}
+
+.button-unit--l { 
+    height: var(--button-l-fixed-height) !important; 
+    min-height: var(--button-l-fixed-height) !important;
+    padding: var(--space-md);
+    align-items: center; 
+}
+.button-unit--l .button-text { font-size: 16px; }
+.button-unit--l .light-container { gap: var(--space-sm); } 
+
+
+/* --- State: Unlit (Used in theme-dim primarily) --- */
+.button-unit.is-unlit .light { /* Define --_current-light-opacity for hover */
+    --_current-light-opacity: var(--btn-unlit-light-a);
+    background-color: oklch(var(--btn-unlit-light-l) var(--btn-unlit-light-c) var(--btn-unlit-light-h));
+    opacity: var(--_current-light-opacity);
+}
+
+/* --- State: Energized (Unselected) --- */
+.button-unit.is-energized:not(.is-selected) {
+    background-color: oklch(var(--btn-energized-unselected-bg-l) var(--btn-energized-unselected-bg-c) var(--btn-energized-unselected-bg-h) / var(--btn-energized-unselected-bg-a));
+    border-color: oklch(var(--btn-energized-unselected-border-l) var(--btn-energized-unselected-border-c) var(--btn-energized-unselected-border-h) / var(--btn-energized-unselected-border-a));
+    color: oklch(var(--btn-energized-unselected-text-l) var(--btn-energized-unselected-text-c) var(--btn-energized-unselected-text-h) / var(--btn-energized-unselected-text-a));
+    text-shadow: var(--btn-energized-unselected-shadow);
+}
+.button-unit.is-energized:not(.is-selected) .light { /* Define --_current-light-opacity for hover */
+    --_current-light-opacity: var(--btn-energized-unselected-light-a);
+    background-color: oklch(var(--btn-energized-unselected-light-l) var(--btn-energized-unselected-light-c) var(--btn-energized-unselected-light-h));
+    opacity: var(--_current-light-opacity); 
+}
+.button-unit.is-energized:not(.is-selected):hover { 
+    box-shadow: 0 0 6px 1px oklch(var(--btn-energized-unselected-glow-hover-l) var(--btn-energized-unselected-glow-hover-c) var(--btn-energized-unselected-glow-hover-h) / var(--btn-energized-unselected-glow-hover-a));
+}
+
+/* --- State: Energized (Selected) --- */
+.button-unit.is-energized.is-selected { 
+    background-color: oklch(var(--btn-energized-selected-bg-l) var(--btn-energized-selected-bg-c) var(--btn-energized-selected-bg-h) / var(--btn-energized-selected-bg-a));
+    border-color: oklch(var(--btn-energized-selected-border-l) var(--btn-energized-selected-border-c) var(--btn-energized-selected-border-h) / var(--btn-energized-selected-border-a));
+    color: oklch(var(--btn-energized-selected-text-l) var(--btn-energized-selected-text-c) var(--btn-energized-selected-text-h) / var(--btn-energized-selected-text-a));
+    text-shadow: var(--btn-energized-selected-shadow);
+    box-shadow: 0 0 8px 2px oklch(var(--btn-energized-selected-glow-l) var(--btn-energized-selected-glow-c) var(--btn-energized-selected-glow-h) / var(--btn-energized-selected-glow-a));
+}
+.button-unit.is-energized.is-selected .light {
+    background-color: oklch(var(--btn-energized-selected-light-l) var(--btn-energized-selected-light-c) var(--btn-energized-selected-light-h));
+    opacity: var(--btn-energized-selected-light-a); 
+}
+.button-unit.is-energized.is-selected:hover { 
+    box-shadow: 0 0 10px 3px oklch(var(--btn-energized-selected-glow-l) var(--btn-energized-selected-glow-c) var(--btn-energized-selected-glow-h) / calc(var(--btn-energized-selected-glow-a) * 1.1)); 
+}
+
+/* --- State: Dimly Lit (Used in theme-dim) --- */
+.button-unit.is-dimly-lit {
+    background-color: oklch(var(--btn-dimly-lit-bg-l) var(--btn-dimly-lit-bg-c) var(--btn-dimly-lit-bg-h) / var(--btn-dimly-lit-bg-a));
+    border-color: oklch(var(--btn-dimly-lit-border-l) var(--btn-dimly-lit-border-c) var(--btn-dimly-lit-border-h) / var(--btn-dimly-lit-border-a));
+    color: oklch(var(--btn-dimly-lit-text-l) var(--btn-dimly-lit-text-c) var(--btn-dimly-lit-text-h) / var(--btn-dimly-lit-text-a));
+}
+.button-unit.is-dimly-lit .light { /* Define --_current-light-opacity for hover */
+    --_current-light-opacity: var(--btn-dimly-lit-light-a);
+    background-color: oklch(var(--btn-dimly-lit-light-l) var(--btn-dimly-lit-light-c) var(--btn-dimly-lit-light-h));
+    opacity: var(--_current-light-opacity);
+}
+
+
+/* --- State: Pressing --- */
+.button-unit.is-pressing {
+    transform: var(--button-unit-pressed-transform); 
+}
+.button-unit.is-energized.is-pressing {
+    box-shadow: 
+        inset 0 0 3px 1px var(--btn-pressed-innershadow-color), 
+        var(--_current-box-shadow, none); 
+}
+.button-unit.is-energized.is-selected.is-pressing {
+     box-shadow: 
+        inset 0 0 3px 1px var(--btn-pressed-innershadow-color),
+        0 0 8px 2px oklch(var(--btn-energized-selected-glow-l) var(--btn-energized-selected-glow-c) var(--btn-energized-selected-glow-h) / var(--btn-energized-selected-glow-a)); 
+}
+
+/* --- BTN1-4 (Action Button) Pressed State Specifics --- */
+/* Pressed when is-dimly-lit (P4, theme-dim) */
+.button-unit--action.is-dimly-lit.is-pressing {
+    background-color: oklch(
+        calc(var(--btn-dimly-lit-bg-l) + var(--btn-action-dimly-lit-pressed-bg-l-adjust)) 
+        var(--btn-dimly-lit-bg-c) 
+        var(--btn-dimly-lit-bg-h) / 
+        var(--btn-dimly-lit-bg-a)
+    );
+    border-color: oklch(
+        calc(var(--btn-dimly-lit-border-l) + var(--btn-action-dimly-lit-pressed-border-l-adjust)) 
+        var(--btn-dimly-lit-border-c) 
+        var(--btn-dimly-lit-border-h) / 
+        var(--btn-dimly-lit-border-a)
+    );
+}
+.button-unit--action.is-dimly-lit.is-pressing .light {
+    opacity: var(--btn-action-dimly-lit-pressed-light-a);
+}
+
+/* Pressed when is-energized (unselected) (P6+, theme-dark/light) */
+.button-unit--action.is-energized:not(.is-selected).is-pressing {
+    background-color: oklch(
+        calc(var(--btn-energized-unselected-bg-l) + var(--btn-action-energized-pressed-bg-l-adjust)) 
+        var(--btn-energized-unselected-bg-c) 
+        var(--btn-energized-unselected-bg-h) / 
+        var(--btn-energized-unselected-bg-a)
+    );
+    /* Consider adjusting border color similarly if needed */
+}
+.button-unit--action.is-energized:not(.is-selected).is-pressing .light {
+    opacity: calc(var(--btn-energized-unselected-light-a) + var(--btn-action-energized-pressed-light-a-boost));
+    transform: scale(var(--btn-action-energized-pressed-light-scale));
+    /* If a pulse animation is desired here, it would be added via an animation property */
+}
+
+
+/* --- Flicker Animation Control --- */
+.button-unit.is-flickering,
+.button-unit.is-flickering * { 
+    transition-property: none !important;
+    transition-duration: 0s !important;
+}
+.button-unit.is-flickering.is-energized .light {
+    opacity: 0.05 !important; 
+}
+
+
+/* --- Hover Effect for non-selected, non-pressing buttons --- */
+.button-unit:not(.is-selected):not(.is-pressing):hover .light {
+    transition: opacity var(--btn-hover-transition-duration) ease, transform var(--btn-hover-transition-duration) ease;
+    opacity: calc(var(--_current-light-opacity, var(--btn-unlit-light-a)) + var(--btn-hover-light-opacity-boost));
+    transform: scale(var(--btn-hover-light-scale));
+}
+
+
+/* Toggle Button Group (shared layout) */
+.toggle-button-group {
+  display: flex;
+  gap: var(--space-md); 
+  align-items: stretch; 
+  justify-content: center;
+  width: 100%; 
+  position: relative;
+  z-index: 2; 
+}

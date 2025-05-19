@@ -1,0 +1,94 @@
+/* src/css/main.css - Main CSS Import Hub (REFACTOR-V2.1) */
+
+/* --- Core Foundational Styles --- */
+@import url('./core/_variables-structural.css');   /* Non-themeable structural variables */
+@import url('./core/_variables-theme-contract.css');/* Central API for all themeable variables */
+@import url('./core/_layout.css');                 /* Main page structure, panel layout */
+@import url('./core/_typography.css');             /* Base font settings, global text styles */
+
+/* --- Theme Overrides --- */
+/* These override variables from _variables-theme-contract.css */
+@import url('./themes/theme-dim.css');
+@import url('./themes/theme-dark.css');
+@import url('./themes/theme-light.css');
+
+/* --- Component Styles --- */
+/* Components use variables defined in the theme contract and overridden by themes */
+@import url('./components/_panel-bezel.css');
+@import url('./components/_button-unit.css');
+@import url('./components/_dial.css');
+@import url('./components/_lcd.css');
+@import url('./components/_logo.css');
+@import url('./components/_lens-container.css');
+@import url('./components/_lens-core.css');
+@import url('./components/_lens-outer-glow.css');
+@import url('./components/_color-chips.css');
+@import url('./components/_grill.css');
+/* ... import other component stylesheets as they are created ... */
+
+/* --- Animations & Effects --- */
+@import url('./animations/_effects.css');            /* Reusable keyframes, etc. */
+@import url('./animations/_startup-transition.css'); /* Styles for .is-transitioning-from-dim */
+
+/* --- Utility Classes --- */
+@import url('./utilities/_utilities.css');           /* General helper classes */
+
+/* --- Base HTML/Body Styles (formerly in base-styles.css) --- */
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+
+    /* Background is now fully controlled by theme variables */
+    background-color: oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
+    background-image:
+        url('/public/noise.svg'), /* Noise texture overlay */
+        linear-gradient(180deg,
+            oklch(var(--body-bg-top-l) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
+            oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%
+        );
+    background-repeat: repeat, no-repeat;
+    background-size: 150px 150px, cover;
+    background-position: 0 0, 0 0;
+
+    color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
+    font-family: 'IBM Plex Mono', 'Inter', sans-serif;
+    padding: var(--space-3xl); /* Uses structural variable */
+    touch-action: none;
+    overflow: hidden;
+
+    transition:
+        color var(--transition-duration-medium) ease, /* Uses structural variable */
+        background-color var(--transition-duration-medium) ease,
+        background-image var(--transition-duration-medium) ease;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+/*
+    IMPORTANT: Check for overly broad SVG styling.
+    If you have a rule like `svg { max-width: ...; }` or `svg { width: ...; }`
+    in _layout.css, _typography.css, or any other imported core file,
+    that could be the culprit.
+    It should be removed or made more specific if it's unintentionally shrinking the logo.
+    For example, instead of `svg { ... }`, it might need to be `.some-specific-icon-svg { ... }`.
+    Without seeing the content of _layout.css and _typography.css, I can't pinpoint it,
+    but this is the most likely place for such a rule if it's not in main.css directly.
+*/

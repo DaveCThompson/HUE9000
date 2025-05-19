@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUE 9000 Interface (REFACTOR-V2.1)</title>
+    <!-- Import Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Main Stylesheet (Imports all other CSS partials) -->
+    <link rel="stylesheet" href="./src/css/main.css">
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        /* Initial body opacity for fade-in, managed by JS/CSS */
+        body {
+            opacity: 0;
+        }
+        /* Debug Controls Styling (can be moved to a separate debug.css if preferred) */
+        #debug-controls {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 10000;
+            color: white;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            border: 1px solid #444;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        #debug-controls button {
+            margin: 5px 2px;
+            padding: 6px 10px;
+            font-size: 12px;
+            background-color: #333;
+            color: #eee;
+            border: 1px solid #555;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #debug-controls button:hover {
+            background-color: #444;
+        }
+        #debug-phase-status { margin-top: 8px; font-weight: bold; }
+        #debug-phase-info { font-size: 11px; margin-top: 4px; color: #ccc; max-width: 300px;}
+        /* #debug-attenuation-value { font-size: 11px; margin-top: 4px; color: #ccc;} */ /* REMOVED */
+    </style>
+</head>
+<body class="theme-dim"> {/* Start with theme-dim, JS will manage this */}
+    <div id="debug-controls">
+        <div>HUE 9000 - Startup Debug (REFACTOR-V2.1)</div>
+        <button id="btn-next-phase">Next Phase</button>
+        <button id="btn-play-all" title="Play entire sequence from current point">Play All Remaining</button>
+        <button id="btn-reset-startup-debug" title="Reset sequence to beginning">Reset Sequence</button>
+        <div id="debug-phase-status">Phase: Idle</div>
+        <div id="debug-phase-info">Expected changes for next phase will appear here.</div>
+    </div>
+
+    <div class="app-wrapper">
+        <div class="main-content-area">
+            <div class="panel-bezel left-panel">
+                 <div class="panel-section top-section">
+                    <div class="top-toggle-bar">
+                        <div class="control-block on-off-group-container" data-group-id="system-power">
+                             <div class="control-group toggle-button-group">
+                                <div class="button-unit button-unit--toggle button-unit--l" data-toggle-value="off" aria-pressed="false" role="button" tabindex="-1" aria-label="Main Power Off">
+                                    <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div>
+                                    <div class="button-bg-frame"></div>
+                                    <div class="button-text">OFF</div>
+                                </div>
+                                <div class="button-unit button-unit--toggle button-unit--l is-selected" data-toggle-value="on" aria-pressed="true" role="button" tabindex="0" aria-label="Main Power On">
+                                     <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div>
+                                    <div class="button-bg-frame"></div>
+                                    <div class="button-text">ON</div>
+                                </div>
+                            </div>
+                            <div class="block-label-bottom block-label-bottom--descriptor">MAIN PWR</div>
+                        </div>
+                       </div>
+                     <div class="control-block terminal-block">
+                         <div class="actual-lcd-screen-element" id="terminal-lcd-content" aria-live="polite">INITIALIZING...</div>
+                         <div class="block-label-bottom block-label-bottom--descriptor">TERMINAL</div>
+                      </div>
+                  </div>
+                 <div class="panel-section lower-section">
+                     <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--left">
+                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 1"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 1</div></div>
+                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 2"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 2</div></div>
+                         <div class="block-label-bottom block-label-bottom--descriptor">SKILL SCAN</div>
+                     </div>
+                    <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--right">
+                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 3"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 3</div></div>
+                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 4"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 4</div></div>
+                   <div class="block-label-bottom block-label-bottom--descriptor">FIT EVAL</div>
+                   </div>
+                 </div>
+            </div>
+
+            <div class="panel-bezel center-panel">
+                <div class="panel-section top-section">
+                    <div id="logo-container" aria-label="HUE 9000 Brand Logo">
+                    </div>
+                    <div id="lens-container" aria-label="Color lens visualization">
+                        <div id="color-lens"> <div id="color-lens-gradient"></div></div>
+                        <div id="outer-glow" aria-hidden="true"></div>
+                    </div>
+                </div>
+                <div class="panel-section lower-section">
+                    <div class="placeholder grill-placeholder" aria-label="Device output grill"><span>Grill / Output Area</span></div>
+                </div>
+            </div>
+
+            <div class="panel-bezel right-panel">
+                <div class="panel-section top-section">
+                    <div class="top-toggle-bar">
+                        <div class="control-block light-mode-group-container" data-group-id="light">
+                             <div class="control-group toggle-button-group">
+                                <div class="button-unit button-unit--toggle button-unit--l" data-toggle-value="off" role="button" tabindex="-1" aria-label="Auxiliary Light Low" aria-checked="false"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">LOW</div></div>
+                                <div class="button-unit button-unit--toggle button-unit--l" data-toggle-value="on" role="button" tabindex="-1" aria-label="Auxiliary Light High" aria-checked="false"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">HIGH</div></div>
+                            </div>
+                           <div class="block-label-bottom block-label-bottom--descriptor">AUX LIGHT</div>
+                       </div>
+                    </div>
+                    <div class="control-block hue-assignment-block">
+                        <div class="hue-assignment-column color-chips-column">
+                            <div class="control-group-label label-top is-invisible" aria-hidden="true">*</div>
+                            <div class="color-chip color-chip-0" data-chip-index="0" aria-label="Colorless (Grey)"></div>
+                            <div class="color-chip color-chip-1" data-chip-index="1" ></div>
+                            <div class="color-chip color-chip-2" data-chip-index="2" ></div>
+                            <div class="color-chip color-chip-3" data-chip-index="3" ></div>
+                            <div class="color-chip color-chip-4" data-chip-index="4" ></div>
+                            <div class="color-chip color-chip-5" data-chip-index="5" ></div>
+                            <div class="color-chip color-chip-6" data-chip-index="6" ></div>
+                            <div class="color-chip color-chip-7" data-chip-index="7" ></div>
+                            <div class="color-chip color-chip-8" data-chip-index="8" ></div>
+                            <div class="color-chip color-chip-9" data-chip-index="9" ></div>
+                            <div class="color-chip color-chip-10" data-chip-index="10"></div>
+                            <div class="color-chip color-chip-11" data-chip-index="11"></div>
+                        </div>
+                        <div class="hue-assignment-column env-assignment-column" data-assignment-target="env" role="radiogroup" aria-labelledby="env-label"><div class="control-group-label label-top" id="env-label">ENV</div></div>
+                        <div class="hue-assignment-column lcd-assignment-column" data-assignment-target="lcd" role="radiogroup" aria-labelledby="lcd-label"><div class="control-group-label label-top" id="lcd-label">LCD</div></div>
+                        <div class="hue-assignment-column logo-assignment-column" data-assignment-target="logo" role="radiogroup" aria-labelledby="logo-label"><div class="control-group-label label-top" id="logo-label">LOGO</div></div>
+                        <div class="hue-assignment-column btn-assignment-column" data-assignment-target="btn" role="radiogroup" aria-labelledby="btn-label"><div class="control-group-label label-top" id="btn-label">BTN</div></div>
+                        <div class="block-label-bottom block-label-bottom--descriptor">HUE ASSN</div>
+                    </div>
+                </div>
+                <div class="panel-section lower-section">
+                    <div class="control-block hue-control-block joined-block-pair__item joined-block-pair__item--left">
+                        <div id="dial-canvas-container-A" class="dial-canvas-container" data-dial-id="A" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="41" aria-labelledby="dial-A-label">
+                            <canvas id="dial-canvas-A"></canvas>
+                        </div>
+                        <div class="hue-lcd-display" id="hue-lcd-A" aria-live="polite"><span class="lcd-value">41</span></div>
+                        <div class="block-label-bottom block-label-bottom--descriptor">MOOD</div>
+                    </div>
+                    <div class="control-block hue-control-block joined-block-pair__item joined-block-pair__item--right">
+                        <div id="dial-canvas-container-B" class="dial-canvas-container" data-dial-id="B" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="0" aria-labelledby="dial-B-label">
+                            <canvas id="dial-canvas-B"></canvas>
+                        </div>
+                        <div class="hue-lcd-display" id="hue-lcd-B" aria-live="polite"><span class="lcd-value">0</span></div>
+                        <div class="block-label-bottom block-label-bottom--descriptor">INTENSITY</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./src/js/main.js" defer></script>
+</body>
+</html>

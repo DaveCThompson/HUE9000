@@ -1,0 +1,75 @@
+/* src/css/core/_typography.css (REFACTOR-V2.1) */
+/* Base font settings and global text styles. Uses theme variables. */
+
+body {
+    font-family: 'IBM Plex Mono', 'Inter', sans-serif; /* Prioritize monospace for UI feel */
+    color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Shared Label Styles --- */
+.control-group-label {
+   color: oklch(var(--theme-text-secondary-l) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a));
+   font-size: 0.9em;
+   font-weight: 600;
+   text-transform: uppercase;
+   white-space: nowrap;
+   text-align: center;
+   transition: color var(--transition-duration-medium) ease;
+   pointer-events: none;
+   box-sizing: border-box;
+}
+.control-group-label.label-top {
+   position: relative; 
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   width: 100%;
+   min-height: var(--control-label-height);
+   padding: 0 var(--space-sm);
+   line-height: 1.1;
+   background-color: transparent; 
+   z-index: 1; 
+}
+.control-group-label.label-top.is-invisible { /* For Hue Assn grid placeholder */
+   opacity: 0;
+   pointer-events: none;
+}
+
+/* Consolidated Bottom Label Styling */
+.block-label-bottom {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, calc(50% + 0.1875rem)); 
+  line-height: 1;
+  white-space: nowrap;
+  /* Background should match the panel section it's on, or be transparent to it */
+  background-color: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a)); 
+  border-radius: var(--space-xs);
+  pointer-events: none;
+  transition: color var(--transition-duration-medium) ease, background-color var(--transition-duration-medium) ease;
+}
+
+.block-label-bottom--control-group { /* Not currently used, but for smaller group labels */
+  padding: 0 var(--control-label-padding);
+  color: oklch(var(--theme-text-secondary-l) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a));
+  font-size: 0.9em;
+  font-weight: 600;
+  text-transform: uppercase;
+  z-index: 3; 
+}
+
+.block-label-bottom--descriptor { /* For MAIN PWR, TERMINAL, etc. */
+  padding: var(--space-lg); 
+  color: oklch(var(--theme-text-tertiary-l) var(--theme-text-tertiary-c) var(--theme-text-tertiary-h) / var(--theme-text-tertiary-a)); 
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8em;
+  font-weight: 500;
+  text-transform: uppercase;
+  z-index: 1; 
+}
+
+/* Specific text styles for components like LCDs will be in their respective component CSS files */

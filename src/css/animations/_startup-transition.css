@@ -1,0 +1,55 @@
+/* src/css/animations/_startup-transition.css (REFACTOR-V2.1) */
+/* Defines temporary global transition overrides for the DIM to Full Mode switch (Phase 6.A). */
+
+/*
+ * This class is added to the <body> by main.js just before removing .theme-dim
+ * and adding .theme-dark (or .theme-light).
+ * It forces a transition duration for properties that change due to
+ * CSS variable overrides in the new theme, ensuring a synchronized visual shift.
+ * The class is removed by main.js after the transition period.
+ */
+
+body.is-transitioning-from-dim,
+body.is-transitioning-from-dim .panel-bezel,
+body.is-transitioning-from-dim .panel-section,
+body.is-transitioning-from-dim .control-block,
+body.is-transitioning-from-dim .button-unit, 
+body.is-transitioning-from-dim .button-unit .light,
+body.is-transitioning-from-dim .button-unit .button-text,
+body.is-transitioning-from-dim #logo-container svg, 
+body.is-transitioning-from-dim #logo-container svg *,
+body.is-transitioning-from-dim .dial-canvas-container,
+body.is-transitioning-from-dim .hue-lcd-display, /* Covers base LCD styles */
+body.is-transitioning-from-dim .actual-lcd-screen-element, /* Covers base Terminal styles */
+body.is-transitioning-from-dim .lcd--unlit, /* Covers specific LCD states */
+body.is-transitioning-from-dim .js-active-dim-lcd,
+body.is-transitioning-from-dim .lcd--dimly-lit,
+body.is-transitioning-from-dim #lens-container,
+body.is-transitioning-from-dim #lens-container::before,
+body.is-transitioning-from-dim #lens-container::after,
+body.is-transitioning-from-dim #color-lens,
+body.is-transitioning-from-dim .grill-placeholder,
+body.is-transitioning-from-dim .color-chip,
+body.is-transitioning-from-dim .control-group-label,
+body.is-transitioning-from-dim .block-label-bottom {
+    transition-property: 
+        opacity, 
+        background-color, 
+        color, 
+        border-color, 
+        box-shadow, 
+        fill, 
+        stroke, 
+        filter, 
+        background-image, /* Added for LCD gradients and panel/body backgrounds */
+        text-shadow
+        !important;
+    transition-duration: 1.5s !important; /* Increased duration */
+    transition-timing-function: ease-in-out !important; /* Changed timing function */
+    transition-delay: 0s !important;
+}
+
+/* Ensure that elements actively being animated by GSAP (e.g., flickering lights)
+   do not have their GSAP-controlled transitions overridden by this global rule.
+   The .is-flickering class already sets transition-property: none.
+*/

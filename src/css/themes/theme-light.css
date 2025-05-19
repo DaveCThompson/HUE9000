@@ -1,0 +1,151 @@
+/* src/css/themes/theme-light.css (REFACTOR-V2.1) */
+/* Overrides variables from _variables-theme-contract.css for the LIGHT theme. */
+
+body.theme-light {
+    /* --- Global Theme Adjustments --- */
+    --theme-component-opacity: 1.0; 
+    
+    /* General text colors remain as originally defined for light theme (light text on dark panels was the original intent) */
+    --theme-text-primary-l: 0.95;   --theme-text-primary-c: 0.005; --theme-text-primary-h: 240;
+    --theme-text-secondary-l: 0.9; --theme-text-secondary-c: 0.008; --theme-text-secondary-h: 240; 
+    --theme-text-tertiary-l: 0.8;  --theme-text-tertiary-c: 0.01; --theme-text-tertiary-h: 240; 
+
+    /* --- Body Background --- */
+    --body-bg-top-l: 0.7;     --body-bg-top-c: calc(var(--dynamic-env-chroma) * 0.7); 
+    --body-bg-bottom-l: 0.55;  --body-bg-bottom-c: calc(var(--dynamic-env-chroma) * 0.7);
+
+    /* --- Panel Bezel & Sections --- */
+    --panel-section-bg-l: 0.35; --panel-section-bg-c: calc(var(--dynamic-env-chroma) * 0.15); 
+    --panel-section-border-l: 0.85; --panel-section-border-c: 0.0; --panel-section-border-a: 0.35;
+    
+    --panel-bezel-grad-1-l: 0.99875; --panel-bezel-grad-2-l: 0.99725; --panel-bezel-grad-3-l: 0.9035;
+    --panel-bezel-grad-4-l: 0.98375; --panel-bezel-grad-5-l: 0.99725; --panel-bezel-grad-6-l: 0.754;
+    --panel-bezel-grad-7-l: 0.76025; --panel-bezel-grad-8-l: 0.80025; --panel-bezel-grad-9-l: 0.80475;
+    --panel-bezel-grad-c: 0; 
+    --panel-bezel-texture-opacity: 0.06; 
+
+    --panel-shadow-outer-lowlight-color: oklch(0% 0 0 / 0.09);
+    --panel-shadow-outer-highlight-color: oklch(100% 0 0 / 0.1);
+    --panel-shadow-inner-chamfer-top-color: oklch(100% 0 0 / 0.7);
+    --panel-shadow-inner-chamfer-bottom-color: oklch(0% 0 0 / 0.1);
+    --panel-shadow-inner-depth-color: oklch(0% 0 0 / 0.06);
+    --panel-section-inner-lowlight-color: oklch(0% 0 0 / 0.1);
+    --panel-section-inner-highlight-color: oklch(100% 0 0 / 0.1);
+    --panel-section-grill-shadow-inset-top: inset 0px 4px 6px -3px oklch(0% 0 0 / 0.12);
+
+
+    /* --- Component: Button Unit (Text colors remain as original for light theme) --- */
+    --btn-unlit-bg-l: 0.85;  --btn-unlit-bg-c: 0.005; --btn-unlit-bg-a: 0.8;
+    --btn-unlit-border-l: 0.75; --btn-unlit-border-a: 0.85;
+    --btn-unlit-text-l: 0.3; --btn-unlit-text-a: 0.9; 
+
+    --btn-energized-unselected-bg-l: 0.80;
+    --btn-energized-unselected-bg-a: 0.7;
+    --btn-energized-unselected-border-l: 0.70;
+    --btn-energized-unselected-border-a: 0.8;
+    --btn-energized-unselected-text-l: 0.20;   
+    --btn-energized-unselected-light-l: 0.88;
+    --btn-energized-unselected-glow-hover-l: 0.85;
+    --btn-energized-unselected-glow-hover-a: 0.25;
+    --btn-energized-unselected-shadow: 0px 1px 2px oklch(0% 0 0 / 0.2);
+
+    --btn-energized-selected-bg-l: 0.92;
+    --btn-energized-selected-bg-a: 0.85;
+    --btn-energized-selected-border-l: 0.85;
+    --btn-energized-selected-border-a: 0.9;
+    --btn-energized-selected-text-l: 0.20; /* Original value, not 0.15 */
+    --btn-energized-selected-light-l: 0.98;
+    --btn-energized-selected-glow-l: 0.95;
+    --btn-energized-selected-glow-a: 0.4;
+    --btn-energized-selected-shadow: var(--btn-energized-unselected-shadow);
+
+    --btn-dimly-lit-bg-l: 0.82;   --btn-dimly-lit-bg-c: 0.015; --btn-dimly-lit-bg-a: 0.9;
+    --btn-dimly-lit-text-l: 0.25; 
+
+    --btn-pressed-bg-l-offset: -0.03; 
+    --btn-pressed-bg-a-offset: 0.05;
+    --btn-pressed-innershadow-color: oklch(0% 0 0 / 0.1);
+
+    /* --- Component: LCD Screens --- */
+    /* Base Active LCD state */
+    --lcd-active-grad-start-l: 0.81; 
+    --lcd-active-grad-end-l: 0.75;   
+    --lcd-active-text-l: 1;       /* Lightness for active text in LIGHT theme */
+    --lcd-active-text-a: 1;
+    --lcd-active-border-l: 0.70;     
+    --lcd-active-border-a: 0.45; 
+    --lcd-active-inner-glow-bottom-l: 0.98; 
+    --lcd-active-inner-glow-bottom-a: 0.07; 
+    --lcd-active-inner-glow-diffuse-l: 0.98;
+    --lcd-active-inner-glow-diffuse-a: 0.05;
+    --lcd-base-chroma-factor: 0.65; 
+
+    /* .lcd--dimly-lit state for light theme (P4 if theme was light) */
+    --lcd-dimly-lit-grad-start-l: 0.43; 
+    --lcd-dimly-lit-grad-end-l: 0.37;   
+    --lcd-dimly-lit-text-l: 0.95; /* Lightness for dimly-lit text in LIGHT theme */       
+    --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.15); 
+    --lcd-dimly-lit-chroma-factor: 0.8; 
+
+    /* .js-active-dim-lcd state for light theme (less common, but for completeness) */
+    --lcd-active-dim-bg-l: 0.08; 
+    --lcd-active-dim-text-l: 0.95; /* Lightness for js-active-dim-lcd text in LIGHT theme */
+    --lcd-active-dim-chroma-factor: 0.5;
+
+
+    /* --- Component: Dials (Original values) --- */
+    --dial-housing-bg-l: 0.08; --dial-housing-bg-c: 0.005; --dial-housing-bg-h: 240; 
+    --dial-housing-border-l: 0.75; --dial-housing-border-a: 0.2;
+    --dial-face-bg-l: 0.80; 
+    --dial-ridge-l: 0.55;
+    --dial-ridge-highlight-l: 0.99; --dial-ridge-highlight-a: 0.9; 
+    --dial-shading-start-color: oklch(0% 0 0 / 0.04);
+    --dial-shading-end-color: oklch(0% 0 0 / 0.05);
+    --dial-dim-active-face-bg-l: 0.85;
+    --dial-dim-active-ridge-l: 0.65;
+    --dial-dim-active-ridge-highlight-l: 0.92; --dial-dim-active-ridge-highlight-a: 0.7;
+
+    /* --- Component: Logo (Original values) --- */
+    --logo-bg-l: 0.705; 
+    --logo-text-l: 1; 
+    --logo-dynamic-stroke-a: 0.3;
+    --logo-dynamic-fill: oklch(var(--logo-dynamic-fill-l) var(--dynamic-logo-chroma) var(--dynamic-logo-hue));
+    --logo-dark-fill: oklch(0.85 0.01 var(--dynamic-logo-hue)); 
+
+
+    /* --- Component: Lens Container & Core (Original values) --- */
+    --lens-bezel-opacity: 0.9;
+    --lens-bezel-shadow-alpha: 0.07; 
+    --lens-bezel-o-1-l: 0.575; --lens-bezel-o-1-c: 0.015; --lens-bezel-o-1-h: 260;
+    --lens-bezel-o-2-l: 0.54;  --lens-bezel-o-2-c: 0.015; --lens-bezel-o-2-h: 270;
+    --lens-bezel-o-3-l: 0.385; --lens-bezel-o-3-c: 0.015; --lens-bezel-o-3-h: 250;
+    --lens-bezel-o-4-l: 0.36;  --lens-bezel-o-4-c: 0.01;  --lens-bezel-o-4-h: 245;
+    --lens-bezel-o-5-l: 0.995; --lens-bezel-o-5-c: 0.0005;--lens-bezel-o-5-h: 0;    
+    --lens-bezel-o-6-l: 0.75;  --lens-bezel-o-6-c: 0.01;  --lens-bezel-o-6-h: 255;
+    --lens-bezel-o-7-l: 0.38;  --lens-bezel-o-7-c: 0.01;  --lens-bezel-o-7-h: 255;
+    --lens-bezel-o-8-l: 0.385; --lens-bezel-o-8-c: 0.01;  --lens-bezel-o-8-h: 260;
+    --lens-bezel-o-9-l: 0.40;  --lens-bezel-o-9-c: 0.01;  --lens-bezel-o-9-h: 250;
+    
+    --lens-bezel-i-1-l: 0.905; --lens-bezel-i-1-c: 0.0125;--lens-bezel-i-1-h: 60;
+    --lens-bezel-i-2-l: 0.64;  --lens-bezel-i-2-c: 0.025; --lens-bezel-i-2-h: 40;
+    --lens-bezel-i-3-l: 0.59;  --lens-bezel-i-3-c: 0.02;  --lens-bezel-i-3-h: 45;
+    --lens-bezel-i-4-l: 0.81;  --lens-bezel-i-4-c: 0.01;  --lens-bezel-i-4-h: 60;
+    --lens-bezel-i-5-l: 0.83;  --lens-bezel-i-5-c: 0.01;  --lens-bezel-i-5-h: 65;
+    --lens-bezel-i-6-l: 0.585; --lens-bezel-i-6-c: 0.0005;--lens-bezel-i-6-h: 0;    
+    --lens-bezel-i-7-l: 0.64;  --lens-bezel-i-7-c: 0.0175;--lens-bezel-i-7-h: 50;
+    --lens-bezel-i-8-l: 0.72;  --lens-bezel-i-8-c: 0.015; --lens-bezel-i-8-h: 55;
+    --lens-bezel-i-9-l: 0.48;  --lens-bezel-i-9-c: 0.005; --lens-bezel-i-9-h: 280;
+    --lens-bezel-i-10-l: var(--lens-bezel-i-1-l); --lens-bezel-i-10-c: var(--lens-bezel-i-1-c); --lens-bezel-i-10-h: var(--lens-bezel-i-1-h);
+
+    --lens-core-bg-l: 0.85; 
+    --lens-specular-opacity: 0.9;
+
+    /* --- Component: Color Chips (Original values) --- */
+    --color-chip-border-a: 0.4; 
+
+    /* --- Component: Grill (Original values) --- */
+    --grill-bg-l: 0.98; --grill-bg-c:0; --grill-bg-h:0; 
+    --grill-bg-a: 0.9; 
+    --grill-placeholder-text-l:0.60;
+    --grill-opacity: 1;
+}

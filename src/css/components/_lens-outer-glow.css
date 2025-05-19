@@ -1,0 +1,43 @@
+/* src/css/components/_lens-outer-glow.css (REFACTOR-V2.1) */
+/* Styles for #outer-glow. Exempt from global theme opacity. */
+
+#outer-glow {
+  position: absolute;
+  width: 200%; 
+  height: 200%; 
+  top: -50%; 
+  left: -50%; 
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0; 
+  mix-blend-mode: screen; 
+  
+  /* Opacity and Blur are calculated based on --lens-power via structural variables */
+  opacity: var(--calc-outer-glow-opacity); 
+  filter: blur(var(--calc-outer-glow-blur)); 
+  
+  /* Background gradient uses dynamic UI accent hue/chroma and calculated L/Alpha factors */
+  background: radial-gradient(
+      circle at 50% 50%,
+      oklch(var(--base-oklch-l) var(--dynamic-ui-accent-chroma) var(--dynamic-ui-accent-hue) / 0.0) 39.9%, 
+      oklch(
+          calc(var(--base-oklch-l) * var(--calc-outer-glow-current-l-factor))
+          calc(var(--dynamic-ui-accent-chroma) * var(--calc-outer-glow-current-c-factor))
+          var(--dynamic-ui-accent-hue)
+          / calc(0.25 * var(--calc-outer-glow-active-factor)) 
+      ) 51.44%,
+      oklch(
+          calc(var(--base-oklch-l) * var(--calc-outer-glow-current-l-factor) * 0.9)
+          calc(var(--dynamic-ui-accent-chroma) * var(--calc-outer-glow-current-c-factor) * 0.9)
+          var(--dynamic-ui-accent-hue)
+          / calc(0.10 * var(--calc-outer-glow-active-factor))
+      ) 65.87%,
+      oklch(var(--base-oklch-l) var(--dynamic-ui-accent-chroma) var(--dynamic-ui-accent-hue) / 0.0) 100% 
+  );
+  
+  transition:
+      opacity var(--transition-duration-medium) ease,
+      filter var(--transition-duration-medium) ease,
+      background var(--transition-duration-medium) linear; /* Hue/Chroma changes will transition */
+  display: block; 
+}

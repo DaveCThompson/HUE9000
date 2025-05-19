@@ -1,0 +1,193 @@
+/* src/css/core/_variables-theme-contract.css (REFACTOR-V2.1) */
+/* Defines ALL themeable variable NAMES with default/fallback values. This is the API for themes. */
+
+:root {
+    /* --- Dynamic Color Inputs (Controlled by JS/HUE ASSN via uiUpdater.js) --- */
+    --dynamic-env-hue: 246;         
+    --dynamic-env-chroma: 0.039;    
+    --dynamic-lcd-hue: 0;           
+    --dynamic-lcd-chroma: 0;        
+    --dynamic-logo-hue: 246;        
+    --dynamic-logo-chroma: 0.099;   
+    --dynamic-btn-hue: 0;           
+    --dynamic-btn-chroma: 0;        
+    --dynamic-ui-accent-hue: 246;   
+    --dynamic-ui-accent-chroma: 0.20;
+
+    /* --- Global Theme Adjustments --- */
+    --theme-component-opacity: 1;       
+    --theme-text-primary-l: 0.95;   --theme-text-primary-c: 0.01;  --theme-text-primary-h: 240; --theme-text-primary-a: 1;
+    --theme-text-secondary-l: 0.85; --theme-text-secondary-c: 0.008; --theme-text-secondary-h: 240; --theme-text-secondary-a: 1;
+    --theme-text-tertiary-l: 0.70;  --theme-text-tertiary-c: 0.015; --theme-text-tertiary-h: 240; --theme-text-tertiary-a: 1;
+
+    /* --- Body Background --- */
+    --body-bg-top-l: 0.33;     --body-bg-top-c: var(--dynamic-env-chroma);    --body-bg-top-h: var(--dynamic-env-hue);    --body-bg-top-a: 1;
+    --body-bg-bottom-l: 0.18;  --body-bg-bottom-c: var(--dynamic-env-chroma); --body-bg-bottom-h: var(--dynamic-env-hue); --body-bg-bottom-a: 1;
+
+    /* --- Panel Bezel & Sections --- */
+    --panel-section-bg-l: 0.23; --panel-section-bg-c: calc(var(--dynamic-env-chroma) * 0.25); --panel-section-bg-h: var(--dynamic-env-hue); --panel-section-bg-a: 1;
+    --panel-section-border-l: 0.5; --panel-section-border-c: 0; --panel-section-border-h: 0; --panel-section-border-a: 0.5;
+    --panel-bezel-grad-1-l: 0.75; --panel-bezel-grad-2-l: 0.70; --panel-bezel-grad-3-l: 0.55;
+    --panel-bezel-grad-4-l: 0.72; --panel-bezel-grad-5-l: 0.78; --panel-bezel-grad-6-l: 0.45;
+    --panel-bezel-grad-7-l: 0.48; --panel-bezel-grad-8-l: 0.52; --panel-bezel-grad-9-l: 0.50;
+    --panel-bezel-grad-c: 0; --panel-bezel-grad-h: 0;
+    --panel-bezel-texture-opacity: 0.15;
+    
+    --panel-shadow-outer-lowlight-color: oklch(0% 0 0 / 0.25);
+    --panel-shadow-outer-highlight-color: oklch(100% 0 0 / 0.03);
+    --panel-shadow-inner-chamfer-top-color: oklch(100% 0 0 / 0.35);
+    --panel-shadow-inner-chamfer-bottom-color: oklch(0% 0 0 / 0.35);
+    --panel-shadow-inner-depth-color: oklch(0% 0 0 / 0.2);
+    --panel-shadow-outer: 
+        0 3px 5px var(--panel-shadow-outer-lowlight-color),
+        0 -1px 1px var(--panel-shadow-outer-highlight-color);
+    --panel-shadow-inner:
+        inset 0px 1.5px 1px 0px var(--panel-shadow-inner-chamfer-top-color),
+        inset 0px -1.5px 1px 0px var(--panel-shadow-inner-chamfer-bottom-color),
+        inset 0px 0px 15px 0px var(--panel-shadow-inner-depth-color);
+    --panel-section-inner-lowlight-color: oklch(0% 0 0 / 0.3);
+    --panel-section-inner-highlight-color: oklch(100% 0 0 / 0.03);
+    --panel-section-shadow-inner: 
+        inset 0px 3px 5px -1px var(--panel-section-inner-lowlight-color),
+        inset 0 -1px 1px var(--panel-section-inner-highlight-color);
+
+    /* --- Component: Button Unit --- */
+    --btn-unlit-bg-l: 0.12;  --btn-unlit-bg-c: 0; --btn-unlit-bg-h: 0;     --btn-unlit-bg-a: 0.6;
+    --btn-unlit-border-l: 0.15;--btn-unlit-border-c: 0; --btn-unlit-border-h: 0; --btn-unlit-border-a: 0.7;
+    --btn-unlit-text-l: 0.1;   --btn-unlit-text-c: 0; --btn-unlit-text-h: 0;   --btn-unlit-text-a: 0.9;
+    --btn-unlit-light-l: 0;    --btn-unlit-light-c: 0;    --btn-unlit-light-h: 0;    --btn-unlit-light-a: var(--button-unit-light-opacity-initial-dim-unlit);
+    
+    --btn-energized-unselected-bg-l: 0.72;     --btn-energized-unselected-bg-c: var(--dynamic-btn-chroma); --btn-energized-unselected-bg-h: var(--dynamic-btn-hue); --btn-energized-unselected-bg-a: 0.7;
+    --btn-energized-unselected-border-l: 0.62; --btn-energized-unselected-border-c: var(--dynamic-btn-chroma); --btn-energized-unselected-border-h: var(--dynamic-btn-hue); --btn-energized-unselected-border-a: 0.8;
+    --btn-energized-unselected-text-l: 0.15;   --btn-energized-unselected-text-c: 0; --btn-energized-unselected-text-h: 0; --btn-energized-unselected-text-a: 1;
+    --btn-energized-unselected-light-l: 0.86;  --btn-energized-unselected-light-c: var(--dynamic-btn-chroma); --btn-energized-unselected-light-h: var(--dynamic-btn-hue); --btn-energized-unselected-light-a: var(--button-unit-light-opacity-unselected-idle-min);
+    --btn-energized-unselected-glow-hover-l: 0.80; --btn-energized-unselected-glow-hover-c: var(--dynamic-btn-chroma); --btn-energized-unselected-glow-hover-h: var(--dynamic-btn-hue); --btn-energized-unselected-glow-hover-a: 0.35;
+    --btn-energized-unselected-shadow: 0px 1px 2px oklch(0% 0 0 / 0.5);
+    
+    --btn-energized-selected-bg-l: 0.88;       --btn-energized-selected-bg-c: var(--dynamic-btn-chroma); --btn-energized-selected-bg-h: var(--dynamic-btn-hue); --btn-energized-selected-bg-a: 0.85;
+    --btn-energized-selected-border-l: 0.78;   --btn-energized-selected-border-c: var(--dynamic-btn-chroma); --btn-energized-selected-border-h: var(--dynamic-btn-hue); --btn-energized-selected-border-a: 0.9;
+    --btn-energized-selected-text-l: 0.15;     --btn-energized-selected-text-c: 0; --btn-energized-selected-text-h: 0; --btn-energized-selected-text-a: 1;
+    --btn-energized-selected-light-l: 0.96;    --btn-energized-selected-light-c: var(--dynamic-btn-chroma); --btn-energized-selected-light-h: var(--dynamic-btn-hue); --btn-energized-selected-light-a: var(--button-unit-light-opacity-selected);
+    --btn-energized-selected-glow-l: 0.92;     --btn-energized-selected-glow-c: var(--dynamic-btn-chroma); --btn-energized-selected-glow-h: var(--dynamic-btn-hue); --btn-energized-selected-glow-a: 0.55;
+    --btn-energized-selected-shadow: var(--btn-energized-unselected-shadow);
+    
+    --btn-dimly-lit-bg-l: 0.38;   --btn-dimly-lit-bg-c: var(--dynamic-btn-chroma);  --btn-dimly-lit-bg-h: var(--dynamic-btn-hue); --btn-dimly-lit-bg-a: 0.95;
+    --btn-dimly-lit-border-l:0.42;--btn-dimly-lit-border-c: var(--dynamic-btn-chroma);--btn-dimly-lit-border-h: var(--dynamic-btn-hue); --btn-dimly-lit-border-a:0.95;
+    --btn-dimly-lit-text-l: 0.1;  --btn-dimly-lit-text-c: 0;   --btn-dimly-lit-text-h: 0;    --btn-dimly-lit-text-a: 0.9;
+    --btn-dimly-lit-light-l: 0.90;--btn-dimly-lit-light-c: var(--dynamic-btn-chroma); --btn-dimly-lit-light-h:var(--dynamic-btn-hue); --btn-dimly-lit-light-a: var(--button-unit-light-opacity-dimly-lit);
+    
+    --btn-pressed-bg-l-offset: 0.04; 
+    --btn-pressed-bg-a-offset: 0.05; 
+    --btn-pressed-innershadow-color: oklch(0% 0 0 / 0.2);
+
+    --btn-hover-transition-duration: 0.08s;
+    --btn-hover-light-opacity-boost: 0.25; 
+    --btn-hover-light-scale: 1.15;
+
+    --btn-action-dimly-lit-pressed-bg-l-adjust: 0.05;  
+    --btn-action-dimly-lit-pressed-border-l-adjust: 0.03; 
+    --btn-action-dimly-lit-pressed-light-a: 0.7; 
+
+    --btn-action-energized-pressed-bg-l-adjust: -0.03; 
+    --btn-action-energized-pressed-light-a-boost: 0.3; 
+    --btn-action-energized-pressed-light-scale: 1.1;
+
+
+    /* --- Component: LCD Screens --- */
+    /* Base Active LCD state (used by theme-dark, theme-light) */
+    --lcd-active-grad-start-l: 0.10; /* Slightly darker base */
+    --lcd-active-grad-end-l: 0.06;   /* Slightly darker base */
+    --lcd-active-text-l: 0.90;       /* Default active text lightness (e.g., for theme-dark) */
+    --lcd-active-text-c: 0;       --lcd-active-text-h: 0; --lcd-active-text-a: 1;
+    --lcd-active-border-l: 0.12;     --lcd-active-border-c: 0;     --lcd-active-border-h: 0; --lcd-active-border-a: 0.6;
+    --lcd-active-inner-glow-bottom-l: 0.95; --lcd-active-inner-glow-bottom-c: 0; --lcd-active-inner-glow-bottom-h: 0; --lcd-active-inner-glow-bottom-a: 0.1;
+    --lcd-active-inner-glow-diffuse-l: 0.95; --lcd-active-inner-glow-diffuse-c: 0; --lcd-active-inner-glow-diffuse-h: 0; --lcd-active-inner-glow-diffuse-a: 0.08;
+    --lcd-active-shadow-inner-glow:
+        inset 0px -3px 10px 0px oklch(var(--lcd-active-inner-glow-bottom-l) var(--lcd-active-inner-glow-bottom-c) var(--lcd-active-inner-glow-bottom-h) / var(--lcd-active-inner-glow-bottom-a)),
+        inset 0px 0px 18px -8px oklch(var(--lcd-active-inner-glow-diffuse-l) var(--lcd-active-inner-glow-diffuse-c) var(--lcd-active-inner-glow-diffuse-h) / var(--lcd-active-inner-glow-diffuse-a));
+    --lcd-base-chroma-factor: 1.0; 
+
+    /* .lcd--unlit state (Dial LCDs P0-P3 in theme-dim) */
+    --lcd-unlit-bg-l: 0.02; --lcd-unlit-bg-c: 0; --lcd-unlit-bg-h: 0; --lcd-unlit-bg-a: 0.4;
+    --lcd-unlit-text-l: 0; --lcd-unlit-text-c: 0; --lcd-unlit-text-h: 0; --lcd-unlit-text-a: 0; 
+    --lcd-unlit-border-l: 0.05; --lcd-unlit-border-c: 0; --lcd-unlit-border-h: 0; --lcd-unlit-border-a: 0.1;
+    --lcd-unlit-shadow: none;
+
+    /* .js-active-dim-lcd state (Terminal LCD P0-P3 in theme-dim; all LCDs if P4 reverts) */
+    --lcd-active-dim-bg-l: 0.05; --lcd-active-dim-bg-c: var(--dynamic-lcd-chroma); --lcd-active-dim-bg-h: var(--dynamic-lcd-hue); --lcd-active-dim-bg-a: 0.7;
+    --lcd-active-dim-text-l: 0.80; /* Default for js-active-dim-lcd */
+    --lcd-active-dim-text-c: var(--dynamic-lcd-chroma); --lcd-active-dim-text-h: var(--dynamic-lcd-hue); --lcd-active-dim-text-a: 1;
+    --lcd-active-dim-border-l: 0.10; --lcd-active-dim-border-c: var(--dynamic-lcd-chroma); --lcd-active-dim-border-h: var(--dynamic-lcd-hue); --lcd-active-dim-border-a: 0.3;
+    --lcd-active-dim-shadow: none;
+    --lcd-active-dim-chroma-factor: 0.5; 
+    --lcd-dim-active-text-l: var(--lcd-active-dim-text-l); --lcd-dim-active-text-c: var(--lcd-active-dim-text-c); --lcd-dim-active-text-h: var(--lcd-active-dim-text-h);
+
+
+    /* .lcd--dimly-lit state (All LCDs P4 in theme-dim) */
+    --lcd-dimly-lit-grad-start-l: 0.32; /* Adjusted from contract for theme-dim specifically */
+    --lcd-dimly-lit-grad-end-l: 0.26;   /* Adjusted from contract for theme-dim specifically */
+    --lcd-dimly-lit-text-l: 0.80; /* Default for dimly-lit text (theme-dim will override this) */
+    --lcd-dimly-lit-text-c: var(--dynamic-lcd-chroma); --lcd-dimly-lit-text-h: var(--dynamic-lcd-hue); --lcd-dimly-lit-text-a: 1;
+    --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.15);
+    --lcd-dimly-lit-chroma-factor: 0.3; /* Adjusted from contract for theme-dim specifically */
+
+
+    /* --- Component: Dials --- */
+    --dial-housing-bg-l: 0.12; --dial-housing-bg-c: 0.005; --dial-housing-bg-h: 240; --dial-housing-bg-a: 1;
+    --dial-housing-border-l: 0.08; --dial-housing-border-c: 0.005; --dial-housing-border-h: 240; --dial-housing-border-a: 0.1;
+    --dial-face-bg-l: 0.20; --dial-face-bg-c: 0.005; --dial-face-bg-h: 240;
+    --dial-ridge-l: 0.45; --dial-ridge-c: 0.005; --dial-ridge-h: 240;
+    --dial-ridge-highlight-l: 0.95; --dial-ridge-highlight-c: 0.005; --dial-ridge-highlight-h: 240; --dial-ridge-highlight-a: 0.85;
+    --dial-shading-start-color: oklch(0% 0 0 / 0.35);
+    --dial-shading-end-color: oklch(0% 0 0 / 0.4);
+    --dial-dim-active-face-bg-l: 0.12; --dial-dim-active-face-bg-c: 0.003; --dial-dim-active-face-bg-h: 240;
+    --dial-dim-active-ridge-l: 0.25;
+    --dial-dim-active-ridge-highlight-l: 0.60; --dial-dim-active-ridge-highlight-a: 0.4;
+    --dial-dim-active-shading-start-color: oklch(0% 0 0 / 0.1);
+    --dial-dim-active-shading-end-color: oklch(0% 0 0 / 0.15);
+
+    /* --- Component: Logo --- */
+    --logo-bg-l: 0.65; --logo-bg-c: var(--dynamic-ui-accent-chroma); --logo-bg-h: var(--dynamic-ui-accent-hue);
+    --logo-text-l: 0.15; --logo-text-c: 0; --logo-text-h: 0;
+    --logo-dynamic-fill-l: 0.705; 
+    --logo-dynamic-stroke-a: 0.5;
+    --logo-dynamic-fill: oklch(var(--logo-dynamic-fill-l) var(--dynamic-logo-chroma) var(--dynamic-logo-hue));
+    --logo-dark-fill: oklch(0.1 0.01 var(--dynamic-logo-hue)); 
+
+
+    /* --- Component: Lens Container & Core --- */
+    --lens-bezel-opacity: 1; 
+    --lens-bezel-shadow-alpha: 0.15; 
+    --lens-bezel-dim-overlay-alpha: 0; 
+    --lens-bezel-o-1-l: 0.30;  --lens-bezel-o-1-c: 0.02;   --lens-bezel-o-1-h: 280;
+    --lens-bezel-o-2-l: 0.28;  --lens-bezel-o-2-c: 0.02;   --lens-bezel-o-2-h: 290;
+    --lens-bezel-o-3-l: 0.10;  --lens-bezel-o-3-c: 0.02;   --lens-bezel-o-3-h: 210;
+    --lens-bezel-o-4-l: 0.08;  --lens-bezel-o-4-c: 0.01;   --lens-bezel-o-4-h: 200;
+    --lens-bezel-o-5-l: 0.99;  --lens-bezel-o-5-c: 0.001;  --lens-bezel-o-5-h: 240;
+    --lens-bezel-o-6-l: 0.65;  --lens-bezel-o-6-c: 0.01;   --lens-bezel-o-6-h: 260;
+    --lens-bezel-o-7-l: 0.09;  --lens-bezel-o-7-c: 0.01;   --lens-bezel-o-7-h: 215;
+    --lens-bezel-o-8-l: 0.09;  --lens-bezel-o-8-c: 0.01;   --lens-bezel-o-8-h: 180;
+    --lens-bezel-o-9-l: 0.12;  --lens-bezel-o-9-c: 0.01;   --lens-bezel-o-9-h: 180;
+    --lens-bezel-i-1-l: 0.85;  --lens-bezel-i-1-c: 0.02;   --lens-bezel-i-1-h: 40;
+    --lens-bezel-i-2-l: 0.50;  --lens-bezel-i-2-c: 0.03;   --lens-bezel-i-2-h: 10;
+    --lens-bezel-i-3-l: 0.45;  --lens-bezel-i-3-c: 0.02;   --lens-bezel-i-3-h: 20;
+    --lens-bezel-i-4-l: 0.75;  --lens-bezel-i-4-c: 0.01;   --lens-bezel-i-4-h: 40;
+    --lens-bezel-i-5-l: 0.78;  --lens-bezel-i-5-c: 0.01;   --lens-bezel-i-5-h: 45;
+    --lens-bezel-i-6-l: 0.40;  --lens-bezel-i-6-c: 0.001;  --lens-bezel-i-6-h: 240;
+    --lens-bezel-i-7-l: 0.50;  --lens-bezel-i-7-c: 0.02;   --lens-bezel-i-7-h: 25;
+    --lens-bezel-i-8-l: 0.60;  --lens-bezel-i-8-c: 0.02;   --lens-bezel-i-8-h: 35;
+    --lens-bezel-i-9-l: 0.30;  --lens-bezel-i-9-c: 0.005;  --lens-bezel-i-9-h: 280;
+    --lens-bezel-i-10-l: var(--lens-bezel-i-1-l); --lens-bezel-i-10-c: var(--lens-bezel-i-1-c); --lens-bezel-i-10-h: var(--lens-bezel-i-1-h);
+    --lens-core-bg-l: 0.05; --lens-core-bg-c: 0; --lens-core-bg-h: 0; 
+    --lens-specular-opacity: 0.02;
+
+    /* --- Component: Color Chips --- */
+    --color-chip-border-l: 0.1; --color-chip-border-c:0; --color-chip-border-h:0; --color-chip-border-a: 0.2;
+    --color-chip-shadow-inset: inset 0 0 1px oklch(0% 0 0 / 0.2);
+
+    /* --- Component: Grill --- */
+    --grill-bg-l: 0.1; --grill-bg-c:0; --grill-bg-h:0; --grill-bg-a: 1; 
+    --grill-placeholder-text-l:0.45; --grill-placeholder-text-c:0.01; --grill-placeholder-text-h:240;
+    --grill-opacity: 1; 
+    --panel-section-grill-shadow-inset-top: inset 0px 6px 8px -4px oklch(0% 0 0 / 0.35);
+}

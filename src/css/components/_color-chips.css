@@ -1,0 +1,40 @@
+/* src/css/components/_color-chips.css (REFACTOR-V2.1) */
+/* Styles for Hue Assignment Color Chips. Uses theme variables. */
+
+.color-chip {
+   width: 100%; /* Fill column width, height from layout flex */
+   border-radius: 1px;
+   box-sizing: border-box;
+   border: 1px solid oklch(var(--color-chip-border-l) var(--color-chip-border-c) var(--color-chip-border-h) / var(--color-chip-border-a));
+   box-shadow: var(--color-chip-shadow-inset);
+   opacity: var(--theme-component-opacity); /* Apply global theme opacity */
+   transition: 
+        background-color var(--transition-duration-medium) ease, /* Though bg is static */
+        box-shadow var(--transition-duration-medium) ease,
+        border-color var(--transition-duration-medium) ease,
+        opacity var(--transition-duration-medium) ease;
+}
+
+/* Static background colors for the 12 color chips */
+/* These are fixed hues at a consistent LCH 'L' and 'C' for visibility */
+/* Themes can adjust the perceived brightness via --theme-component-opacity or if these used CSS vars for L/C */
+.color-chip-0 { background-color: oklch(0.705 0 0); } /* Colorless/Grey */
+.color-chip-1 { background-color: oklch(0.705 0.15 246); }
+.color-chip-2 { background-color: oklch(0.705 0.15 278.727); }
+.color-chip-3 { background-color: oklch(0.705 0.15 311.455); }
+.color-chip-4 { background-color: oklch(0.705 0.15 344.182); }
+.color-chip-5 { background-color: oklch(0.705 0.15 16.909); }
+.color-chip-6 { background-color: oklch(0.705 0.15 49.636); }
+.color-chip-7 { background-color: oklch(0.705 0.15 82.364); }
+.color-chip-8 { background-color: oklch(0.705 0.15 115.091); }
+.color-chip-9 { background-color: oklch(0.705 0.15 147.818); }
+.color-chip-10 { background-color: oklch(0.705 0.15 180.545); }
+.color-chip-11 { background-color: oklch(0.705 0.15 213.273); }
+
+/* Dim mode specific appearance for color chips */
+body.theme-dim .color-chip {
+    /* Example: use the theme contract's unlit button background as a base for dim chips */
+    background-color: oklch(var(--btn-unlit-bg-l) var(--btn-unlit-bg-c) var(--btn-unlit-bg-h) / calc(var(--btn-unlit-bg-a) * 0.5) ); /* Even fainter */
+    border-color: oklch(var(--btn-unlit-border-l) var(--btn-unlit-border-c) var(--btn-unlit-border-h) / calc(var(--btn-unlit-border-a) * 0.5) );
+    box-shadow: none;
+}

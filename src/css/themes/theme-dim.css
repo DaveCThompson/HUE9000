@@ -1,0 +1,160 @@
+/* src/css/themes/theme-dim.css (REFACTOR-V2.1) */
+/* Overrides variables from _variables-theme-contract.css for the DIM theme. */
+
+body.theme-dim {
+    /* --- Global Theme Adjustments --- */
+    --theme-component-opacity: 0.75; 
+    
+    --theme-text-primary-l: 0.20;   --theme-text-primary-c: 0.001; --theme-text-primary-h: 240; --theme-text-primary-a: 1;
+    --theme-text-secondary-l: 0.15; --theme-text-secondary-c: 0.001; --theme-text-secondary-h: 240; --theme-text-secondary-a: 0.25;
+    --theme-text-tertiary-l: 0.12;  --theme-text-tertiary-c: 0.001;  --theme-text-tertiary-h: 240; --theme-text-tertiary-a: 0.2;
+
+    /* --- Body Background --- */
+    --body-bg-top-l: 0;     /* Was 0.01, then 0 */
+    --body-bg-top-c: 0;    --body-bg-top-h: 0; --body-bg-top-a: 1;
+    --body-bg-bottom-l: 0;  /* Was 0.005, then 0 */
+    --body-bg-bottom-c: 0; --body-bg-bottom-h: 0; --body-bg-bottom-a: 1;
+
+    /* --- Panel Bezel & Sections --- */
+    --panel-section-bg-l: 0.03; --panel-section-bg-c: 0.001; --panel-section-bg-h: 240;
+    --panel-section-border-l: 0.07; --panel-section-border-c: 0.001; --panel-section-border-h: 240; --panel-section-border-a: 0.1;
+    
+    --panel-bezel-grad-1-l: 0.13; --panel-bezel-grad-2-l: 0.12; --panel-bezel-grad-3-l: 0.09;
+    --panel-bezel-grad-4-l: 0.11; --panel-bezel-grad-5-l: 0.14; --panel-bezel-grad-6-l: 0.07;
+    --panel-bezel-grad-7-l: 0.08; --panel-bezel-grad-8-l: 0.10; --panel-bezel-grad-9-l: 0.09;
+    --panel-bezel-texture-opacity: 0.05;
+    --panel-shadow-outer: none;
+    --panel-shadow-inner: inset 0 0 0 1px oklch(var(--panel-section-border-l) var(--panel-section-border-c) var(--panel-section-border-h) / 0.5);
+
+    /* --- Component: Button Unit --- */
+    --btn-unlit-bg-l: 0.06;
+    --btn-unlit-bg-a: 0.3; 
+    --btn-unlit-border-l: 0.1;
+    --btn-unlit-border-a: 0.4;
+    --btn-unlit-text-l: 0.1; 
+    --btn-unlit-text-a: 0.5; 
+    
+    /* Energized States in DIM (for P2 MAIN PWR & P5 AUX) - Mimic Dark Theme Energized */
+    --btn-energized-unselected-bg-l: 0.75;     
+    --btn-energized-unselected-bg-a: 0.75;      
+    --btn-energized-unselected-border-l: 0.65; 
+    --btn-energized-unselected-border-a: 0.85;
+    --btn-energized-unselected-text-l: 0.15;   
+    --btn-energized-unselected-light-l: 0.88;
+    --btn-energized-unselected-glow-hover-l: 0.83; 
+    --btn-energized-unselected-glow-hover-a: 0.30; 
+
+    --btn-energized-selected-bg-l: 0.90;       
+    --btn-energized-selected-bg-a: 0.90;       
+    --btn-energized-selected-border-l: 0.80; 
+    --btn-energized-selected-border-a: 0.95;
+    --btn-energized-selected-text-l: 0.15;     
+    --btn-energized-selected-light-l: 0.98;
+    --btn-energized-selected-glow-l: 0.95;     
+    --btn-energized-selected-glow-a: 0.40;     
+    
+    /* Dimly Lit State (P4 buttons) */
+    --btn-dimly-lit-bg-l: 0.28;   
+    --btn-dimly-lit-bg-a: 0.80;   
+    --btn-dimly-lit-border-l:0.33;
+    --btn-dimly-lit-border-a:0.85;
+    --btn-dimly-lit-text-l: 0.1;  
+    --btn-dimly-lit-light-l: 0.75; 
+    --btn-dimly-lit-light-a: 0.58; 
+
+    --btn-pressed-innershadow-color: oklch(0% 0 0 / 0.1); 
+
+    /* --- Component: LCD Screens --- */
+    /* .lcd--unlit state (Dial LCDs P0-P3) */
+    --lcd-unlit-bg-l: 0.015; 
+    --lcd-unlit-bg-a: 0.3; 
+    --lcd-unlit-text-a: 0; 
+    --lcd-unlit-border-l: 0.04; 
+    --lcd-unlit-border-a: 0.08;
+    --lcd-unlit-shadow: none;
+
+    /* .js-active-dim-lcd state (Terminal LCD P0-P3; "dark in DIM") */
+    --lcd-active-dim-bg-l: 0.06; 
+    --lcd-active-dim-bg-a: 0.65; 
+    --lcd-active-dim-text-l: 0.80; 
+    --lcd-active-dim-border-l: 0.09; 
+    --lcd-active-dim-border-a: 0.25;
+    --lcd-active-dim-shadow: none;
+    --lcd-active-dim-chroma-factor: 0.4; 
+    
+    /* .lcd--dimly-lit state (All LCDs P4 - "quite grey and comparable to the buttons") */
+    --lcd-dimly-lit-grad-start-l: 0.32; /* Comparable to --btn-dimly-lit-bg-l (0.28) + gradient effect */
+    --lcd-dimly-lit-grad-end-l: 0.26;   
+    --lcd-dimly-lit-text-l: 0.92;       /* Bright text for contrast */
+    --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.1); 
+    --lcd-dimly-lit-chroma-factor: 0.1; /* Very low chroma for "quite grey" */
+
+
+    /* --- Component: Logo --- */
+    /* --logo-dynamic-fill: oklch(0.05 0.001 var(--dynamic-logo-hue));  */
+    /* --logo-dark-fill: oklch(0.03 0.001 var(--dynamic-logo-hue));     */
+
+    /* --- Component: Lens Container & Core (Muted Conic Gradient - Interpolated) --- */
+    --lens-bezel-opacity: 0.75; 
+    --lens-bezel-dim-overlay-alpha: 0.4; 
+
+    --lens-bezel-o-1-l: 0.1875;  --lens-bezel-o-1-c: 0.00875; --lens-bezel-o-1-h: 70.0;
+    --lens-bezel-o-2-l: 0.1825;  --lens-bezel-o-2-c: 0.00875; --lens-bezel-o-2-h: 72.5;
+    --lens-bezel-o-3-l: 0.1375;  --lens-bezel-o-3-c: 0.00875; --lens-bezel-o-3-h: 52.5;
+    --lens-bezel-o-4-l: 0.1325;  --lens-bezel-o-4-c: 0.00625; --lens-bezel-o-4-h: 50.0;
+    --lens-bezel-o-5-l: 0.3600;  --lens-bezel-o-5-c: 0.00400; --lens-bezel-o-5-h: 60.0;
+    --lens-bezel-o-6-l: 0.2750;  --lens-bezel-o-6-c: 0.00625; --lens-bezel-o-6-h: 65.0;
+    --lens-bezel-o-7-l: 0.1350;  --lens-bezel-o-7-c: 0.00625; --lens-bezel-o-7-h: 53.75;
+    --lens-bezel-o-8-l: 0.1350;  --lens-bezel-o-8-c: 0.00625; --lens-bezel-o-8-h: 45.0;
+    --lens-bezel-o-9-l: 0.1425;  --lens-bezel-o-9-c: 0.00625; --lens-bezel-o-9-h: 45.0;
+    
+    --lens-bezel-i-1-l: 0.3250;  --lens-bezel-i-1-c: 0.00875; --lens-bezel-i-1-h: 10.0;
+    --lens-bezel-i-2-l: 0.2375;  --lens-bezel-i-2-c: 0.01125; --lens-bezel-i-2-h: 2.5;
+    --lens-bezel-i-3-l: 0.2250;  --lens-bezel-i-3-c: 0.00875; --lens-bezel-i-3-h: 5.0;
+    --lens-bezel-i-4-l: 0.3000;  --lens-bezel-i-4-c: 0.00625; --lens-bezel-i-4-h: 10.0;
+    --lens-bezel-i-5-l: 0.3075;  --lens-bezel-i-5-c: 0.00625; --lens-bezel-i-5-h: 11.25;
+    --lens-bezel-i-6-l: 0.2125;  --lens-bezel-i-6-c: 0.00400; --lens-bezel-i-6-h: 60.0;
+    --lens-bezel-i-7-l: 0.2375;  --lens-bezel-i-7-c: 0.00875; --lens-bezel-i-7-h: 6.25;
+    --lens-bezel-i-8-l: 0.2625;  --lens-bezel-i-8-c: 0.00875; --lens-bezel-i-8-h: 8.75;
+    --lens-bezel-i-9-l: 0.1875;  --lens-bezel-i-9-c: 0.00500; --lens-bezel-i-9-h: 70.0;
+    --lens-bezel-i-10-l: var(--lens-bezel-i-1-l); --lens-bezel-i-10-c: var(--lens-bezel-i-1-c); --lens-bezel-i-10-h: var(--lens-bezel-i-1-h);
+
+    --lens-core-bg-l: 0.03; 
+
+    /* --- Component: Color Chips --- */
+    --color-chip-border-a: 0.1;
+    --color-chip-shadow-inset: none;
+
+    /* --- Component: Grill --- */
+    --grill-bg-l: 0.01;
+    --grill-bg-a: 0.8; 
+    --grill-placeholder-text-l:0.10;
+
+    /* --- Component: Dials (Unchanged from previous dim, but listed for completeness) --- */
+    --dial-housing-bg-l: 0.01; 
+    --dial-housing-bg-c: 0; 
+    --dial-housing-bg-h: 0; 
+    --dial-housing-bg-a: 0.1;
+    --dial-housing-border-l: 0.08; 
+    --dial-housing-border-c: 0; 
+    --dial-housing-border-h: 0; 
+    --dial-housing-border-a: 0.05;
+    
+    --dial-face-bg-l: 0.02; 
+    --dial-face-bg-c: 0;
+    --dial-face-bg-h: 0;
+    --dial-ridge-l: 0.02;   
+    --dial-ridge-c: 0;      
+    --dial-ridge-h: 0;
+    --dial-ridge-highlight-a: 0; 
+    --dial-shading-start-color: oklch(0% 0 0 / 0.0); 
+    --dial-shading-end-color: oklch(0% 0 0 / 0.0);   
+}
+
+body.theme-dim #logo-container {
+    opacity: 0.05 !important; 
+}
+
+body.theme-dim .hue-lcd-display:not(.js-active-dim-lcd):not(.lcd--unlit):not(.lcd--dimly-lit) {
+    visibility: hidden; 
+}

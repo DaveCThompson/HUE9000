@@ -1,0 +1,119 @@
+/* src/css/components/_lens-container.css (REFACTOR-V2.1 - CORRECTED) */
+/* Styles for the #lens-container (bezel/housing). Uses theme variables. */
+
+#lens-container {
+   width: 100%; 
+   align-self: stretch; 
+   aspect-ratio: 1 / 1; 
+   display: flex; 
+   margin: auto auto var(--space-4xl) auto; 
+   position: relative;
+   border-radius: 50%;
+   justify-content: center;
+   align-items: center;
+   z-index: 1; 
+   background: none; 
+   box-shadow: none; 
+   overflow: visible; 
+   filter: drop-shadow(0 3px 3px oklch(0% 0 0 / var(--lens-bezel-shadow-alpha, 0.15))); 
+   opacity: 1; /* Lens container opacity is not tied to --theme-component-opacity */
+   
+   transition: 
+    filter var(--transition-duration-medium) ease, 
+    width var(--transition-duration-medium) ease, 
+    margin var(--transition-duration-medium) ease;
+}
+
+/* Lens Bezel Styling (Conic Gradients) */
+#lens-container::before { /* Outer ring of the bezel */
+  content: '';
+  position: absolute;
+  inset: 0; 
+  border-radius: inherit; 
+  z-index: 0; 
+  pointer-events: none;
+  /* Add overlay for dim mode - MUST be first layer */
+  background-image: 
+    linear-gradient(oklch(0 0 0 / var(--lens-bezel-dim-overlay-alpha, 0)), oklch(0 0 0 / var(--lens-bezel-dim-overlay-alpha, 0))),
+    conic-gradient(from 180deg at 50% 50%, 
+      oklch(var(--lens-bezel-o-1-l) var(--lens-bezel-o-1-c) var(--lens-bezel-o-1-h)) var(--angle-0), 
+      oklch(var(--lens-bezel-o-1-l) var(--lens-bezel-o-1-c) var(--lens-bezel-o-1-h)) var(--angle-1), 
+      oklch(var(--lens-bezel-o-2-l) var(--lens-bezel-o-2-c) var(--lens-bezel-o-2-h)) var(--angle-2), 
+      oklch(var(--lens-bezel-o-2-l) var(--lens-bezel-o-2-c) var(--lens-bezel-o-2-h)) var(--angle-3), 
+      oklch(var(--lens-bezel-o-3-l) var(--lens-bezel-o-3-c) var(--lens-bezel-o-3-h)) var(--angle-4), 
+      oklch(var(--lens-bezel-o-3-l) var(--lens-bezel-o-3-c) var(--lens-bezel-o-3-h)) var(--angle-5), 
+      oklch(var(--lens-bezel-o-4-l) var(--lens-bezel-o-4-c) var(--lens-bezel-o-4-h)) var(--angle-6), 
+      oklch(var(--lens-bezel-o-4-l) var(--lens-bezel-o-4-c) var(--lens-bezel-o-4-h)) var(--angle-7), 
+      oklch(var(--lens-bezel-o-5-l) var(--lens-bezel-o-5-c) var(--lens-bezel-o-5-h)) var(--angle-8), 
+      oklch(var(--lens-bezel-o-5-l) var(--lens-bezel-o-5-c) var(--lens-bezel-o-5-h)) var(--angle-9), 
+      oklch(var(--lens-bezel-o-6-l) var(--lens-bezel-o-6-c) var(--lens-bezel-o-6-h)) var(--angle-10),
+      oklch(var(--lens-bezel-o-6-l) var(--lens-bezel-o-6-c) var(--lens-bezel-o-6-h)) var(--angle-11),
+      oklch(var(--lens-bezel-o-5-l) var(--lens-bezel-o-5-c) var(--lens-bezel-o-5-h)) var(--angle-12), 
+      oklch(var(--lens-bezel-o-5-l) var(--lens-bezel-o-5-c) var(--lens-bezel-o-5-h)) var(--angle-13),
+      oklch(var(--lens-bezel-o-6-l) var(--lens-bezel-o-6-c) var(--lens-bezel-o-6-h)) var(--angle-14), 
+      oklch(var(--lens-bezel-o-6-l) var(--lens-bezel-o-6-c) var(--lens-bezel-o-6-h)) var(--angle-15),
+      oklch(var(--lens-bezel-o-5-l) var(--lens-bezel-o-5-c) var(--lens-bezel-o-5-h)) var(--angle-16), 
+      oklch(var(--lens-bezel-o-5-l) var(--lens-bezel-o-5-c) var(--lens-bezel-o-5-h)) var(--angle-17),
+      oklch(var(--lens-bezel-o-7-l) var(--lens-bezel-o-7-c) var(--lens-bezel-o-7-h)) var(--angle-18),
+      oklch(var(--lens-bezel-o-7-l) var(--lens-bezel-o-7-c) var(--lens-bezel-o-7-h)) var(--angle-19),
+      oklch(var(--lens-bezel-o-8-l) var(--lens-bezel-o-8-c) var(--lens-bezel-o-8-h)) var(--angle-20),
+      oklch(var(--lens-bezel-o-7-l) var(--lens-bezel-o-7-c) var(--lens-bezel-o-7-h)) var(--angle-21), 
+      oklch(var(--lens-bezel-o-9-l) var(--lens-bezel-o-9-c) var(--lens-bezel-o-9-h)) var(--angle-22),
+      oklch(var(--lens-bezel-o-9-l) var(--lens-bezel-o-9-c) var(--lens-bezel-o-9-h)) var(--angle-23),
+      oklch(var(--lens-bezel-o-1-l) var(--lens-bezel-o-1-c) var(--lens-bezel-o-1-h)) var(--angle-24), 
+      oklch(var(--lens-bezel-o-1-l) var(--lens-bezel-o-1-c) var(--lens-bezel-o-1-h)) var(--angle-25)
+    );
+  background-repeat: no-repeat, no-repeat; /* Apply to both layers */
+  background-size: cover, cover; /* Apply to both layers */
+  transition: background-image var(--transition-duration-medium) ease, opacity var(--transition-duration-medium) ease;
+  filter: blur(0.25px); 
+  opacity: var(--lens-bezel-opacity, 1); 
+}
+
+#lens-container::after { /* Inner ring of the bezel */
+  content: '';
+  position: absolute;
+  width: var(--bezel-inner-ring-scale); 
+  height: var(--bezel-inner-ring-scale);
+  top: calc((100% - var(--bezel-inner-ring-scale)) / 2); 
+  left: calc((100% - var(--bezel-inner-ring-scale)) / 2);
+  border-radius: 50%;
+  z-index: 1; 
+  pointer-events: none;
+  /* Add overlay for dim mode - MUST be first layer */
+  background-image:
+    linear-gradient(oklch(0 0 0 / var(--lens-bezel-dim-overlay-alpha, 0)), oklch(0 0 0 / var(--lens-bezel-dim-overlay-alpha, 0))),
+    conic-gradient(from 180deg at 50% 50%,
+      oklch(var(--lens-bezel-i-1-l) var(--lens-bezel-i-1-c) var(--lens-bezel-i-1-h)) var(--angle-0),
+      oklch(var(--lens-bezel-i-1-l) var(--lens-bezel-i-1-c) var(--lens-bezel-i-1-h)) var(--angle-1),
+      oklch(var(--lens-bezel-i-2-l) var(--lens-bezel-i-2-c) var(--lens-bezel-i-2-h)) var(--angle-2),
+      oklch(var(--lens-bezel-i-3-l) var(--lens-bezel-i-3-c) var(--lens-bezel-i-3-h)) var(--angle-3),
+      oklch(var(--lens-bezel-i-4-l) var(--lens-bezel-i-4-c) var(--lens-bezel-i-4-h)) var(--angle-4),
+      oklch(var(--lens-bezel-i-5-l) var(--lens-bezel-i-5-c) var(--lens-bezel-i-5-h)) var(--angle-5),
+      oklch(var(--lens-bezel-i-3-l) var(--lens-bezel-i-3-c) var(--lens-bezel-i-3-h)) var(--angle-6), 
+      oklch(var(--lens-bezel-i-3-l) var(--lens-bezel-i-3-c) var(--lens-bezel-i-3-h)) 115.8096deg,    
+      oklch(var(--lens-bezel-i-6-l) var(--lens-bezel-i-6-c) var(--lens-bezel-i-6-h)) var(--angle-8),
+      oklch(var(--lens-bezel-i-6-l) var(--lens-bezel-i-6-c) var(--lens-bezel-i-6-h)) var(--angle-9),
+      oklch(var(--lens-bezel-i-7-l) var(--lens-bezel-i-7-c) var(--lens-bezel-i-7-h)) 141.9199deg,   
+      oklch(var(--lens-bezel-i-3-l) var(--lens-bezel-i-3-c) var(--lens-bezel-i-3-h)) 152.5134deg,   
+      oklch(var(--lens-bezel-i-8-l) var(--lens-bezel-i-8-c) var(--lens-bezel-i-8-h)) var(--angle-12),
+      oklch(var(--lens-bezel-i-8-l) var(--lens-bezel-i-8-c) var(--lens-bezel-i-8-h)) var(--angle-13),
+      oklch(var(--lens-bezel-i-3-l) var(--lens-bezel-i-3-c) var(--lens-bezel-i-3-h)) var(--angle-14), 
+      oklch(var(--lens-bezel-i-3-l) var(--lens-bezel-i-3-c) var(--lens-bezel-i-3-h)) var(--angle-15),
+      oklch(var(--lens-bezel-i-8-l) var(--lens-bezel-i-8-c) var(--lens-bezel-i-8-h)) var(--angle-16), 
+      oklch(var(--lens-bezel-i-8-l) var(--lens-bezel-i-8-c) var(--lens-bezel-i-8-h)) var(--angle-17),
+      oklch(var(--lens-bezel-i-9-l) var(--lens-bezel-i-9-c) var(--lens-bezel-i-9-h)) 250.5746deg,   
+      oklch(var(--lens-bezel-i-9-l) var(--lens-bezel-i-9-c) var(--lens-bezel-i-9-h)) 295.0107deg,
+      oklch(var(--lens-bezel-i-4-l) var(--lens-bezel-i-4-c) var(--lens-bezel-i-4-h)) var(--angle-20), 
+      oklch(var(--lens-bezel-i-4-l) var(--lens-bezel-i-4-c) var(--lens-bezel-i-4-h)) var(--angle-21),
+      oklch(var(--lens-bezel-i-3-l) var(--lens-bezel-i-3-c) var(--lens-bezel-i-3-h)) 316.2002deg,   
+      oklch(var(--lens-bezel-i-3-l) var(--lens-bezel-i-3-c) var(--lens-bezel-i-3-h)) 337.6628deg,
+      oklch(var(--lens-bezel-i-1-l) var(--lens-bezel-i-1-c) var(--lens-bezel-i-1-h)) var(--angle-24), 
+      oklch(var(--lens-bezel-i-10-l) var(--lens-bezel-i-10-c) var(--lens-bezel-i-10-h)) var(--angle-25) 
+    );
+  background-repeat: no-repeat, no-repeat; /* Apply to both layers */
+  background-size: cover, cover; /* Apply to both layers */
+  transition: background-image var(--transition-duration-medium) ease, opacity var(--transition-duration-medium) ease;
+  filter: blur(0.25px);
+  opacity: var(--lens-bezel-opacity, 1);
+}

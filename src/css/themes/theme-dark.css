@@ -1,0 +1,113 @@
+/* src/css/themes/theme-dark.css (REFACTOR-V2.1) */
+/* Overrides variables from _variables-theme-contract.css for the DARK theme. */
+
+body.theme-dark {
+    /* --- Global Theme Adjustments --- */
+    --theme-component-opacity: 0.95; 
+    
+    --theme-text-primary-l: 0.95;   --theme-text-primary-c: 0.005; --theme-text-primary-h: 240;
+    --theme-text-secondary-l: 0.85; --theme-text-secondary-c: 0.008; --theme-text-secondary-h: 240;
+    --theme-text-tertiary-l: 0.70;  --theme-text-tertiary-c: 0.01;  --theme-text-tertiary-h: 240;
+
+    /* --- Body Background --- */
+    --body-bg-top-l: 0.33;     
+    --body-bg-bottom-l: 0.18;
+
+    /* --- Panel Bezel & Sections --- */
+    --panel-section-bg-l: 0.23; 
+    --panel-section-border-l: 0.6; --panel-section-border-c: 0; --panel-section-border-h: 0; --panel-section-border-a: 0.35;
+    
+    --panel-bezel-grad-1-l: 0.75; --panel-bezel-grad-2-l: 0.70; --panel-bezel-grad-3-l: 0.55;
+    --panel-bezel-grad-4-l: 0.72; --panel-bezel-grad-5-l: 0.78; --panel-bezel-grad-6-l: 0.45;
+    --panel-bezel-grad-7-l: 0.48; --panel-bezel-grad-8-l: 0.52; --panel-bezel-grad-9-l: 0.50;
+    --panel-bezel-texture-opacity: 0.15;
+
+    --panel-shadow-outer: 
+        0 3px 5px oklch(0% 0 0 / 0.25),
+        0 -1px 1px oklch(100% 0 0 / 0.03);
+    --panel-shadow-inner:
+        inset 0px 1.5px 1px 0px oklch(100% 0 0 / 0.35),
+        inset 0px -1.5px 1px 0px oklch(0% 0 0 / 0.35),
+        inset 0px 0px 15px 0px oklch(0% 0 0 / 0.2);
+    --panel-section-shadow-inner: 
+        inset 0px 3px 5px -1px oklch(0% 0 0 / 0.3),
+        inset 0 -1px 1px oklch(100% 0 0 / 0.03);
+
+
+    /* --- Component: Button Unit --- */
+    --btn-unlit-bg-l: 0.20;  --btn-unlit-bg-c: 0.005; --btn-unlit-bg-a: 0.8;
+    --btn-unlit-border-l: 0.25; --btn-unlit-border-a: 0.85;
+    --btn-unlit-text-l: 0.7;
+
+    /* --btn-energized-unselected-bg-l: 0.72; (from contract) */
+    --btn-energized-unselected-text-l: 0.15;
+    /* --btn-energized-selected-bg-l: 0.88; (from contract) */
+    --btn-energized-selected-text-l: 0.15;
+    --btn-energized-unselected-shadow: 0px 1px 2px oklch(0% 0 0 / 0.5);
+    --btn-energized-selected-shadow: var(--btn-energized-unselected-shadow);
+
+    --btn-dimly-lit-bg-l: 0.45;   --btn-dimly-lit-bg-c: 0.02; --btn-dimly-lit-bg-a: 0.9;
+    --btn-dimly-lit-text-l: 0.15; 
+
+    --btn-pressed-innershadow-color: oklch(0% 0 0 / 0.2);
+
+    /* --- Component: LCD Screens --- */
+    /* Base Active LCD state (P6) - "just slightly darker background than the light version" */
+    --lcd-active-grad-start-l: 0.70; /* Was 0.10. Light theme is 0.81 */
+    --lcd-active-grad-end-l: 0.65;   /* Was 0.06. Light theme is 0.75 */
+    --lcd-active-text-l: 0.90;       /* Darker text for lighter background. Was 0.90, but for better contrast with lighter bg, this is fine. */
+    --lcd-active-text-a: 0.95;       
+    --lcd-active-border-l: 0.55;     /* Was 0.12 */
+    --lcd-active-border-a: 0.5;      /* Was 0.5 */
+    --lcd-active-inner-glow-bottom-l: 0.20; /* Darker glow for lighter bg. Was 0.95 */
+    --lcd-active-inner-glow-bottom-a: 0.06; 
+    --lcd-active-inner-glow-diffuse-l: 0.20; /* Darker glow. Was 0.95 */
+    --lcd-active-inner-glow-diffuse-a: 0.04;
+    --lcd-base-chroma-factor: 0.6; 
+
+    /* .lcd--dimly-lit state for dark theme (P4 if theme was dark) - Not directly used in current startup */
+    /* "slightly darker again [than P6 dark mode active], but quite grey and comparable to the buttons." */
+    /* P6 active dark is now ~0.70 L. Dimly lit buttons are ~0.45 L. */
+    --lcd-dimly-lit-grad-start-l: 0.40; 
+    --lcd-dimly-lit-grad-end-l: 0.35;   
+    --lcd-dimly-lit-text-l: 0.85;       
+    --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.2); 
+    --lcd-dimly-lit-chroma-factor: 0.15; 
+
+    /* .js-active-dim-lcd state for dark theme (less common, but for completeness) */
+    --lcd-active-dim-bg-l: 0.07; 
+    --lcd-active-dim-text-l: 0.80; 
+    --lcd-active-dim-chroma-factor: 0.45;
+
+    /* --- Component: Dials --- */
+    --dial-housing-bg-l: 0.01; 
+    --dial-housing-bg-c: 0;    
+    --dial-housing-bg-h: 240;
+    --dial-housing-border-l: 0.06; --dial-housing-border-a: 0.2;
+    --dial-face-bg-l: 0.20;
+    --dial-ridge-l: 0.45;
+    --dial-ridge-highlight-l: 0.95; --dial-ridge-highlight-a: 0.85;
+    --dial-shading-start-color: oklch(0% 0 0 / 0.35);
+    --dial-shading-end-color: oklch(0% 0 0 / 0.4);
+    --dial-dim-active-face-bg-l: 0.18;
+    --dial-dim-active-ridge-l: 0.35;
+    --dial-dim-active-ridge-highlight-a: 0.6;
+
+    /* --- Component: Logo --- */
+    --logo-dynamic-fill: oklch(var(--logo-dynamic-fill-l) var(--dynamic-logo-chroma) var(--dynamic-logo-hue));
+    --logo-dark-fill: oklch(0.12 0.01 var(--dynamic-logo-hue)); 
+
+    /* --- Component: Lens Container & Core --- */
+    --lens-bezel-outer-stop-l: 0.30; --lens-bezel-outer-stop-c: 0.02; --lens-bezel-outer-stop-h: 280; 
+    --lens-bezel-inner-stop-l: 0.85; --lens-bezel-inner-stop-c: 0.02; --lens-bezel-inner-stop-h: 40;  
+    --lens-core-bg-l: 0.05; 
+    --lens-specular-opacity: 0.6;
+
+    /* --- Component: Color Chips --- */
+    --color-chip-border-a: 0.2;
+
+    /* --- Component: Grill --- */
+    --grill-bg-l: 0.1; 
+    --grill-bg-a: 0.2;  
+    --grill-placeholder-text-l:0.55;
+}

@@ -1,0 +1,38 @@
+/* src/css/utilities/_utilities.css (REFACTOR-V2.1) */
+/* General helper classes. Largely unchanged unless new utilities are needed. */
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    border: 0;
+    white-space: nowrap;
+}
+
+.cursor-pointer { cursor: pointer; }
+.cursor-grab { cursor: grab; }
+.cursor-grabbing { cursor: grabbing; }
+.cursor-default { cursor: default; }
+
+.text-align-left { text-align: left; }
+.text-align-center { text-align: center; }
+.text-align-right { text-align: right; }
+
+.display-none { display: none !important; }
+.display-block { display: block !important; }
+.display-flex { display: flex !important; }
+.display-inline-block { display: inline-block !important; }
+
+.opacity-0 { opacity: 0; }
+.opacity-25 { opacity: 0.25; }
+.opacity-50 { opacity: 0.5; }
+.opacity-75 { opacity: 0.75; }
+.opacity-100 { opacity: 1; }
+
+.visibility-hidden { visibility: hidden; }
+.visibility-visible { visibility: visible; }

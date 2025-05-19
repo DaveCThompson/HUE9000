@@ -1,0 +1,201 @@
+/* src/css/core/_layout.css (REFACTOR-V2.1) */
+/* Main page structure, panel layout rules. Uses structural variables. */
+
+/* --- Core Application Structure --- */
+.app-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3xl);
+    width: 100%;
+    min-height: 100vh;
+    padding: var(--space-3xl);
+    box-sizing: border-box;
+}
+
+.main-content-area {
+    display: flex;
+    gap: var(--space-4xl);
+    width: 100%;
+    max-width: 1600px; 
+    height: 90vh;      
+    align-items: stretch; 
+}
+
+/* --- Panel Layout Specifics --- */
+
+/* Left Panel */
+.panel-bezel.left-panel {
+    flex: 1 1 0; 
+    min-width: 320px;
+}
+.left-panel .top-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+    justify-content: flex-start;
+    flex-grow: 1;
+    min-height: 0;
+}
+.left-panel .lower-section {
+     display: flex;
+     flex-direction: row;
+     gap: 0; 
+     justify-content: space-between;
+     align-items: stretch;
+     height: var(--height-lower-section);
+     flex-shrink: 0;
+}
+.left-panel .top-toggle-bar {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    flex-shrink: 0;
+}
+.left-panel .top-toggle-bar > .control-block { 
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.left-panel .terminal-block {
+    flex-grow: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-3xl); 
+}
+.left-panel .scan-button-block { 
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: var(--space-md);
+}
+.left-panel .scan-button-block .button-unit--l {
+    width: 100%;
+    height: var(--button-l-fixed-height);
+}
+
+
+/* Center Panel */
+.panel-bezel.center-panel {
+    flex: 0 0 360px; /* Fixed width from original */
+}
+.center-panel .top-section {
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; /* Center children like logo and lens */
+    justify-content: flex-start; 
+    /* padding is from .panel-section base in _panel-bezel.css */
+    flex-grow: 1; 
+    min-height: 0; 
+}
+.center-panel .lower-section {
+     display: flex; 
+     padding: var(--space-none); /* Remove default section padding if grill fills it */
+     flex-shrink: 0; 
+     align-items: stretch; /* Make grill placeholder stretch */
+     justify-content: stretch; /* Make grill placeholder stretch */
+     /* height from var(--height-lower-section) via .panel-section .lower-section base in _panel-bezel.css */
+     /* box-shadow for grill area will be on .grill-placeholder or this section in _grill.css / _panel-bezel.css */
+}
+
+
+/* Right Panel */
+.panel-bezel.right-panel {
+    flex: 1 1 0;
+    min-width: 320px;
+}
+.right-panel .top-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+    justify-content: flex-start;
+    flex-grow: 1;
+    min-height: 0;
+}
+.right-panel .lower-section {
+     display: flex;
+     flex-direction: row;
+     gap: 0; 
+     justify-content: space-between;
+     align-items: stretch;
+     height: var(--height-lower-section);
+     flex-shrink: 0;
+}
+.right-panel .top-toggle-bar {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    flex-shrink: 0;
+}
+.right-panel .top-toggle-bar > .control-block { 
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.right-panel .hue-assignment-block {
+    display: grid;
+    grid-template-columns: var(--grid-color-chip-width) 1fr 1fr 1fr 1fr;
+    column-gap: var(--hue-assignment-column-gap);
+    row-gap: var(--hue-assignment-row-gap);
+    align-items: stretch;
+    justify-items: stretch;
+    width: 100%;
+    flex-grow: 1;
+    min-height: 0;
+}
+.hue-assignment-column {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--hue-assignment-row-gap);
+    min-height: 0;
+}
+.hue-assignment-column .button-unit--s,
+.hue-assignment-column .color-chip {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    height: auto;
+    min-height: var(--space-lg);
+    width: 100%;
+}
+.right-panel .hue-control-block { 
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    min-width: 0;
+}
+.right-panel .hue-control-block .dial-canvas-container {
+    height: var(--dial-container-fixed-height);
+    width: 100%;
+    margin-bottom: var(--space-sm);
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+.right-panel .hue-control-block .hue-lcd-display {
+    height: var(--hue-lcd-display-height);
+    flex-shrink: 0;
+    width: 100%;
+}
+
+/* Shared Layout for Top Bar Toggle Groups */
+.top-toggle-bar .toggle-button-group {
+    display: flex;
+    width: 100%;
+    gap: var(--space-md);
+}
+.top-toggle-bar .button-unit--l {
+    flex: 1 1 0;
+    height: var(--button-l-fixed-height);
+}

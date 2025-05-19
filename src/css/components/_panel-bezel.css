@@ -1,0 +1,131 @@
+/* src/css/components/_panel-bezel.css (REFACTOR-V2.1) */
+/* Styles for .panel-bezel and .panel-section. Uses theme variables. */
+
+.panel-bezel {
+    display: flex;
+    flex-direction: column; /* Stack panel sections vertically */
+    border-radius: var(--radius-panel-tight);
+    gap: var(--bezel-thickness); /* Gap between panel sections, creates bezel effect */
+    padding: var(--bezel-thickness); /* Padding inside bezel before sections start */
+    position: relative;
+    z-index: 0;
+    overflow: hidden;
+    
+    box-shadow: var(--panel-shadow-inner), var(--panel-shadow-outer);
+    
+    /* Gradient background for metallic sheen - L values from theme, C/H from theme or contract */
+    background-image:
+        linear-gradient(oklch(100% 0 0 / 0.08), oklch(100% 0 0 / 0.08)), /* Subtle highlight overlay */
+        linear-gradient(180deg, /* Main metallic gradient */
+            oklch(var(--panel-bezel-grad-1-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 0%,
+            oklch(var(--panel-bezel-grad-2-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 4.68%,
+            oklch(var(--panel-bezel-grad-3-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 9.13%,
+            oklch(var(--panel-bezel-grad-4-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 18.27%,
+            oklch(var(--panel-bezel-grad-5-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 27.69%,
+            oklch(var(--panel-bezel-grad-6-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 39.42%,
+            oklch(var(--panel-bezel-grad-7-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 65%,
+            oklch(var(--panel-bezel-grad-8-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 85.58%,
+            oklch(var(--panel-bezel-grad-9-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 100%
+        ); 
+    background-size: cover, cover;
+    background-repeat: no-repeat, no-repeat;
+    
+    transition:
+        box-shadow var(--transition-duration-medium) ease,
+        background-image var(--transition-duration-medium) ease;
+}
+
+/* Brushed metal texture overlay on panel bezel */
+.panel-bezel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'%3E%3Cfilter id='b' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.002 0.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='1000' height='1000' filter='url(%23b)'/%3E%3C/svg%3E");
+    background-size: 500px 500px;
+    background-repeat: repeat;
+    background-position: center center;
+    mix-blend-mode: multiply;
+    opacity: var(--panel-bezel-texture-opacity); /* Themed opacity */
+    pointer-events: none; 
+    transition: opacity var(--transition-duration-medium) ease;
+}
+
+/* Base Panel Section Structure */
+.panel-section {
+    background-color: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
+    background-image: url('/public/noise.svg'); /* Noise texture for sections */
+    background-size: 150px 150px;
+    background-repeat: repeat;
+    background-position: 0 0;
+    background-blend-mode: multiply;
+    padding: var(--space-2xl);
+    border-radius: var(--radius-panel-tight);
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Important for flex children */
+    position: relative; 
+    z-index: 1;
+    box-shadow: var(--panel-section-shadow-inner);
+    opacity: var(--theme-component-opacity); /* Apply global theme opacity */
+    
+    transition:
+        background-color var(--transition-duration-medium) ease,
+        box-shadow var(--transition-duration-medium) ease,
+        opacity var(--transition-duration-medium) ease;
+}
+
+/* Base Top/Lower Section Flex Behavior (can be overridden in _layout.css for specific panels) */
+.panel-section.top-section {
+    flex-grow: 1; 
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.panel-section.lower-section {
+    height: var(--height-lower-section); 
+    flex-shrink: 0;
+    display: flex; /* Default, can be row or column based on panel layout */
+    justify-content: center;
+    align-items: center;
+}
+
+/* Control Block Styling (generic container within panel sections) */
+.control-block {
+   position: relative;
+   z-index: 2; 
+   border-width: var(--control-section-border-width);
+   border-style: solid;
+   border-color: oklch(var(--panel-section-border-l) var(--panel-section-border-c) var(--panel-section-border-h) / var(--panel-section-border-a));
+   border-radius: var(--control-section-radius);
+   padding: var(--space-3xl);
+   /* box-shadow: var(--shadow-section-inner-lowlight); /* This might be redundant if panel-section has inner shadow */
+   transition:
+       border-color var(--transition-duration-medium) ease,
+       box-shadow var(--transition-duration-medium) ease,
+       background-color var(--transition-duration-medium) ease;
+    /* Background color for control blocks can be transparent or use panel-section-bg or a dedicated var */
+}
+
+/* Joined Block Styling (for two .control-block elements side-by-side) */
+.joined-block-pair__item--left {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right-width: calc(var(--control-section-border-width) / 2);
+    padding-right: calc(var(--space-3xl) - (var(--control-section-border-width) / 2)); 
+}
+.joined-block-pair__item--right {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left-width: calc(var(--control-section-border-width) / 2);
+    padding-left: calc(var(--space-3xl) - (var(--control-section-border-width) / 2));
+}
+
+/* Specific shadow for center panel lower section (grill area) */
+.center-panel .panel-section.lower-section {
+    /* This could use more specific shadow variables from the theme contract if needed */
+    box-shadow:
+       inset 0px 6px 8px -4px oklch(0% 0 0 / 0.35), /* Strong top inset */
+       var(--panel-section-shadow-inner); /* Standard inner shadows */
+}

@@ -1,0 +1,21 @@
+/* src/css/animations/_effects.css (REFACTOR-V2.1) */
+/* Reusable CSS keyframe animations and animation helper classes. */
+
+/* Example: Button Press Pulse (if still using CSS keyframes for this) */
+@keyframes buttonLightPressPulse {
+    0% {
+        transform: scale(1);
+        /* Opacity might use CSS vars that reflect current state's light opacity */
+        opacity: var(--button-unit-light-opacity-mid-pressed); 
+    }
+    50% {
+        opacity: var(--button-unit-light-opacity-selected); /* Pulse to selected brightness */
+        transform: scale(var(--button-unit-pressed-pulse-scale-factor-css, 1.15));
+    }
+    100% {
+        transform: scale(1);
+        opacity: var(--button-unit-light-opacity-mid-pressed);
+    }
+}
+
+/* Add other shared keyframes or animation utility classes here */
