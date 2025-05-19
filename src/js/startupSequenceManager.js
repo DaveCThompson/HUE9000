@@ -38,6 +38,32 @@ const phaseDescriptions = {
     "sequence_complete": "All Startup Phases Done"
 };
 
+// List of selectors for elements that need the .animate-on-dim-exit class
+const selectorsForDimExitAnimation = [
+    'body',
+    '.panel-bezel',
+    '.panel-section',
+    '.control-block',
+    '.button-unit',
+    '.button-unit .light',
+    '.button-unit .button-text',
+    '#logo-container',
+    '#logo-container svg.logo-svg',
+    '#logo-container svg.logo-svg .logo-dynamic-bg',
+    '#logo-container svg.logo-svg .logo-panel-bg-rect',
+    '.dial-canvas-container',
+    '.hue-lcd-display',
+    '.actual-lcd-screen-element',
+    '#lens-container', // For its filter property
+    '#color-lens',
+    '.grill-placeholder',
+    '.color-chip',
+    '.control-group-label',
+    '.block-label-bottom'
+];
+let elementsAnimatedOnDimExit = []; // To store references for cleanup
+
+
 /**
  * Notifies debug manager (and potentially other listeners) about phase changes.
  * @param {string} phaseName - The name of the phase.
@@ -336,7 +362,15 @@ function GsapPhase5_AuxLightsEnergizeOnly_Dim() {
 
 function _performP6Cleanup() {
     if (p6CleanupPerformed) return;
-    console.log("[StartupSequenceManager _performP6Cleanup] Performing P6 cleanup (theme transition class removal).");
+    console.log("[StartupSequenceManager _performP6Cleanup] Performing P6 cleanup.");
+
+    // Remove .animate-on-dim-exit from elements
+    elementsAnimatedOnDimExit.forEach(el => {
+        el.classList.remove('animate-on-dim-exit');
+    });
+    console.log(`[StartupSequenceManager _performP6Cleanup] Removed .animate-on-dim-exit from ${elementsAnimatedOnDimExit.length} elements.`);
+    elementsAnimatedOnDimExit = []; // Clear for next potential run
+
     domElementsRegistry.body.classList.remove('is-transitioning-from-dim');
     if (managerInstances.uiUpdater) managerInstances.uiUpdater.finalizeThemeTransition();
     p6CleanupPerformed = true;
@@ -347,17 +381,26 @@ function GsapPhase6_ThemeTransitionAndFinalEnergize() {
     const tl = gsapInstance.timeline({
         onStart: () => { _notifyPhaseChange(phaseName, 'starting'); },
         onComplete: () => {
-            _performP6Cleanup(); // Ensure cleanup happens when P6 fully completes
+            _performP6Cleanup(); 
             _notifyPhaseChange(phaseName, 'completed');
         }
     });
 
-    // Sub-timeline for theme setup and CSS transition duration
     const themeSetupTl = gsapInstance.timeline();
     themeSetupTl.call(() => {
-        console.log(`[Startup P6 EXEC] P6.A: Setting terminal message, preparing logo, adding 'is-transitioning-from-dim', setting LCDs to 'active'.`);
+        console.log(`[Startup P6 EXEC] P6.A: Preparing for theme transition.`);
         appStateService.setTerminalLcdMessage("AMBIENT THEME ENGAGED. ALL SYSTEMS NOMINAL.");
         if (managerInstances.uiUpdater) managerInstances.uiUpdater.prepareLogoForFullTheme();
+
+        elementsAnimatedOnDimExit = []; 
+        selectorsForDimExitAnimation.forEach(selector => {
+            document.querySelectorAll(selector).forEach(el => {
+                el.classList.add('animate-on-dim-exit');
+                elementsAnimatedOnDimExit.push(el);
+            });
+        });
+        console.log(`[Startup P6 EXEC] Added .animate-on-dim-exit to ${elementsAnimatedOnDimExit.length} elements.`);
+        
         domElementsRegistry.body.classList.add('is-transitioning-from-dim');
 
         if (managerInstances.uiUpdater && typeof managerInstances.uiUpdater.setLcdState === 'function') {
@@ -368,17 +411,14 @@ function GsapPhase6_ThemeTransitionAndFinalEnergize() {
     })
     .call(() => {
         console.log(`[Startup P6 EXEC] P6.B: Calling appStateService.setTheme('dark')`);
-        appStateService.setTheme('dark'); // This will trigger uiUpdater to change body class & toggleManager sync
-    }, null, `>${configService.MIN_PHASE_DURATION_FOR_STEPPING * 0.1}`) // Small delay after P6.A
-    .to({}, { duration: configService.P6_CSS_TRANSITION_DURATION }); // Ensures this timeline respects CSS transition time
+        appStateService.setTheme('dark'); 
+    }, null, `>${configService.MIN_PHASE_DURATION_FOR_STEPPING * 0.1}`) 
+    .to({}, { duration: configService.P6_CSS_TRANSITION_DURATION }); 
 
-    tl.add(themeSetupTl, 0); // Add theme setup at the beginning of P6
+    tl.add(themeSetupTl, 0); 
 
-    // Sub-timeline for energizing buttons, deferred until theme change is processed
     const energizeButtonsSubTimeline = gsapInstance.timeline();
     energizeButtonsSubTimeline.call(() => {
-        // This .call() ensures flickerDimlyLitToEnergizedStartup is invoked
-        // when this part of the P6 timeline actually plays.
         console.log(`[Startup P6 EXEC] P6.C: (Deferred Call) Invoking buttonManager.flickerDimlyLitToEnergizedStartup.`);
         
         const actualFlickerAnimationsTl = managerInstances.buttonManager.flickerDimlyLitToEnergizedStartup({
@@ -386,26 +426,19 @@ function GsapPhase6_ThemeTransitionAndFinalEnergize() {
             stagger: configService.P6_BUTTON_ENERGIZE_FLICKER_STAGGER,
             phaseContext: `${phaseName}_AllDimToEnergized`,
             specificGroups: ['skill-scan-group', 'fit-eval-group', 'env', 'lcd', 'logo', 'btn'],
-            targetThemeContext: 'theme-dark' // Explicitly pass the target theme
+            targetThemeContext: 'theme-dark' 
         });
 
-        // Add the timeline returned by flickerDimlyLitToEnergizedStartup to this sub-timeline
-        // This makes energizeButtonsSubTimeline effectively take on the duration of the flickers.
         if (actualFlickerAnimationsTl && actualFlickerAnimationsTl.duration() > 0.01) {
-            // Add at the current position (0 relative to this sub-timeline's .call())
             energizeButtonsSubTimeline.add(actualFlickerAnimationsTl, 0); 
             console.log(`[Startup P6 EXEC] P6.D: Added actual flicker animations (duration: ${actualFlickerAnimationsTl.duration().toFixed(3)}s) to P6 energize sub-timeline.`);
         } else {
              console.warn(`[Startup P6 EXEC] P6.D: Button energize timeline (actualFlickerAnimationsTl) was instant or empty. Check buttonManager logs.`);
-             // Add a minimal duration to ensure this sub-timeline isn't zero if no buttons found
              energizeButtonsSubTimeline.to({}, {duration: 0.01});
         }
-    }); // End of .call()
-
-    // Schedule the energizeButtonsSubTimeline to start after theme change has had a moment to propagate.
-    const energizeStartTime = (configService.MIN_PHASE_DURATION_FOR_STEPPING * 0.1) + 0.1; // e.g., 0.105s
+    }); 
     
-    // Add the energizeButtonsSubTimeline to the main P6 timeline 'tl'
+    const energizeStartTime = (configService.MIN_PHASE_DURATION_FOR_STEPPING * 0.1) + 0.1; 
     tl.add(energizeButtonsSubTimeline, energizeStartTime);
     
     return tl;
@@ -636,12 +669,18 @@ export function resetSequence(dimAttenuationProxyInstance) {
 export function getCurrentPhaseInfo() {
     const currentName = currentPhaseDebugIndex < 0 ? "Idle" : phaseOrder[currentPhaseDebugIndex];
     const nextName = (currentPhaseDebugIndex + 1 < phaseOrder.length) ? phaseOrder[currentPhaseDebugIndex + 1] : "None";
+
+    let status = 'ready'; // Default status
+    if (currentName === "sequence_complete") {
+        status = 'completed';
+    }
+    // No need to explicitly set status for "Idle", 'ready' is fine for the initial call.
+
     return {
-        currentIndex: currentPhaseDebugIndex,
         currentPhaseName: currentName,
-        currentPhaseDescription: phaseDescriptions[currentName] || currentName,
+        status: status, 
+        description: phaseDescriptions[currentName] || currentName,
         nextPhaseName: nextName,
         nextPhaseDescription: phaseDescriptions[nextName] || nextName,
-        isComplete: currentName === "sequence_complete"
     };
 }

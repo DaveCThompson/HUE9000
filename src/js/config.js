@@ -59,7 +59,7 @@ export const LENS_STARTUP_RAMP_DURATION = 1500; // Duration in ms for lens to ra
 export const P3_LENS_RAMP_DURATION_S = LENS_STARTUP_RAMP_DURATION / 1000; // P3 Lens ramp duration in seconds
 export const P4_BUTTON_FADE_STAGGER = 0.03; // Stagger for P4 button priming
 export const P6_BUTTON_ENERGIZE_FLICKER_STAGGER = 0.02; // Stagger for P6 button energizing
-export const P6_CSS_TRANSITION_DURATION = 0.5; // Duration for P6 theme CSS transition
+export const P6_CSS_TRANSITION_DURATION = 1.0; // Duration for P6 theme CSS transition (1s as per PRD)
 export const P7_EFFECTIVE_DURATION = 0.1; // Effective duration for P7 (System Ready) display
 export const MIN_PHASE_DURATION_FOR_STEPPING = 0.05; // Minimum duration for a phase in step-through mode
 

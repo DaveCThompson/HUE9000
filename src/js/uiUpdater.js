@@ -317,7 +317,7 @@ export function injectLogoSVG() {
     return;
   }
 
-  const logoPath = '/assets/logo.svg'; 
+  const logoPath = 'logo.svg'; 
   
   fetch(logoPath) 
     .then(response => { 

@@ -1,55 +1,47 @@
-/* src/css/animations/_startup-transition.css (REFACTOR-V2.1) */
-/* Defines temporary global transition overrides for the DIM to Full Mode switch (Phase 6.A). */
+/* src/css/animations/_startup-transition.css (Refactored for .animate-on-dim-exit) */
 
 /*
- * This class is added to the <body> by main.js just before removing .theme-dim
- * and adding .theme-dark (or .theme-light).
- * It forces a transition duration for properties that change due to
- * CSS variable overrides in the new theme, ensuring a synchronized visual shift.
- * The class is removed by main.js after the transition period.
+ * This rule is active when body.is-transitioning-from-dim is present.
+ * The .animate-on-dim-exit class is programmatically added by JS (startupSequenceManager.js)
+ * to specific DOM elements that need this synchronized 1-second transition when
+ * switching from DIM mode to a Full Theme (Dark/Light) during startup phase P6.
+ * The class is removed by JS after the transition.
  */
-
-body.is-transitioning-from-dim,
-body.is-transitioning-from-dim .panel-bezel,
-body.is-transitioning-from-dim .panel-section,
-body.is-transitioning-from-dim .control-block,
-body.is-transitioning-from-dim .button-unit, 
-body.is-transitioning-from-dim .button-unit .light,
-body.is-transitioning-from-dim .button-unit .button-text,
-body.is-transitioning-from-dim #logo-container svg, 
-body.is-transitioning-from-dim #logo-container svg *,
-body.is-transitioning-from-dim .dial-canvas-container,
-body.is-transitioning-from-dim .hue-lcd-display, /* Covers base LCD styles */
-body.is-transitioning-from-dim .actual-lcd-screen-element, /* Covers base Terminal styles */
-body.is-transitioning-from-dim .lcd--unlit, /* Covers specific LCD states */
-body.is-transitioning-from-dim .js-active-dim-lcd,
-body.is-transitioning-from-dim .lcd--dimly-lit,
-body.is-transitioning-from-dim #lens-container,
-body.is-transitioning-from-dim #lens-container::before,
-body.is-transitioning-from-dim #lens-container::after,
-body.is-transitioning-from-dim #color-lens,
-body.is-transitioning-from-dim .grill-placeholder,
-body.is-transitioning-from-dim .color-chip,
-body.is-transitioning-from-dim .control-group-label,
-body.is-transitioning-from-dim .block-label-bottom {
-    transition-property: 
-        opacity, 
-        background-color, 
-        color, 
-        border-color, 
-        box-shadow, 
-        fill, 
-        stroke, 
-        filter, 
-        background-image, /* Added for LCD gradients and panel/body backgrounds */
+body.is-transitioning-from-dim .animate-on-dim-exit {
+    transition-property:
+        opacity,
+        background-color,
+        color,
+        border-color,
+        box-shadow,
+        fill, /* For SVG parts */
+        stroke, /* For SVG parts */
+        filter,
+        background-image, /* For panel gradients, body background, LCD gradients */
         text-shadow
         !important;
-    transition-duration: 1.5s !important; /* Increased duration */
-    transition-timing-function: ease-in-out !important; /* Changed timing function */
+    transition-duration: 1s !important;
+    transition-timing-function: ease-out !important;
     transition-delay: 0s !important;
 }
 
-/* Ensure that elements actively being animated by GSAP (e.g., flickering lights)
-   do not have their GSAP-controlled transitions overridden by this global rule.
-   The .is-flickering class already sets transition-property: none.
-*/
+/*
+ * Special handling for #lens-container pseudo-elements to ensure their
+ * background-image (conic gradients) also transition over 1s ease-out
+ * during the DIM to Full Theme switch.
+ * This overrides their default transition timing defined in _lens-container.css
+ * only when body.is-transitioning-from-dim is active.
+ */
+body.is-transitioning-from-dim #lens-container::before,
+body.is-transitioning-from-dim #lens-container::after {
+    --lens-bezel-effective-transition-duration: 1s !important;
+    --lens-bezel-effective-transition-timing: ease-out !important;
+}
+
+/*
+ * Elements that should NOT use this global override (e.g., those actively
+ * animated by GSAP like flickering lights) should have their own mechanisms
+ * to prevent this, such as GSAP setting transition: 'none' or by not receiving
+ * the .animate-on-dim-exit class if their transition is meant to be different.
+ * The .is-flickering class (from Button.js) already sets transition-property: none !important.
+ */

@@ -65,7 +65,9 @@
     );
   background-repeat: no-repeat, no-repeat; /* Apply to both layers */
   background-size: cover, cover; /* Apply to both layers */
-  transition: background-image var(--transition-duration-medium) ease, opacity var(--transition-duration-medium) ease;
+  transition-property: background-image, opacity;
+  transition-duration: var(--lens-bezel-effective-transition-duration, var(--transition-duration-medium));
+  transition-timing-function: var(--lens-bezel-effective-transition-timing, ease);
   filter: blur(0.25px); 
   opacity: var(--lens-bezel-opacity, 1); 
 }
@@ -113,7 +115,9 @@
     );
   background-repeat: no-repeat, no-repeat; /* Apply to both layers */
   background-size: cover, cover; /* Apply to both layers */
-  transition: background-image var(--transition-duration-medium) ease, opacity var(--transition-duration-medium) ease;
+  transition-property: background-image, opacity;
+  transition-duration: var(--lens-bezel-effective-transition-duration, var(--transition-duration-medium));
+  transition-timing-function: var(--lens-bezel-effective-transition-timing, ease);
   filter: blur(0.25px);
   opacity: var(--lens-bezel-opacity, 1);
 }
