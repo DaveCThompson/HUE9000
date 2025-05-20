@@ -22,8 +22,10 @@
 @import url('./components/_lens-container.css');
 @import url('./components/_lens-core.css');
 @import url('./components/_lens-outer-glow.css');
+@import url('./components/_lens-super-glow.css'); /* ADDED: New Super Glow CSS */
 @import url('./components/_color-chips.css');
 @import url('./components/_grill.css');
+@import url('./components/_terminal.css'); 
 /* ... import other component stylesheets as they are created ... */
 
 /* --- Animations & Effects --- */

@@ -36,13 +36,18 @@ const emitter = new EventEmitter();
 // --- Standalone emit function to be exported ---
 export function emit(eventName, payload) {
     // ADDED: Console log for event emission
-    console.log(`[AppState Event] Emitting: '${eventName}'`, payload !== undefined ? { payload } : '');
+    // For complex payloads, only log keys to avoid overly verbose logs by default.
+    let payloadSummary = payload;
+    if (payload && typeof payload === 'object' && Object.keys(payload).length > 3) { // Heuristic for complex object
+        payloadSummary = `{ ${Object.keys(payload).join(', ')}, ... }`;
+    }
+    console.log(`[AppState EMIT] Event: '${eventName}'. Payload:`, payloadSummary !== undefined ? payloadSummary : 'N/A', payload !== undefined && payloadSummary !== payload ? { fullPayload: payload } : '');
     if (!emitter.events[eventName]) return;
     emitter.events[eventName].forEach(listener => {
       try {
         listener(payload);
       } catch (error) {
-        console.error(`[AppState Event] Error in listener for '${eventName}':`, error, { payload });
+        console.error(`[AppState EMIT] Error in listener for '${eventName}':`, error, { payload });
       }
     });
 }
@@ -64,7 +69,7 @@ let currentTheme = 'dim'; // Start in dim theme
 let currentTrueLensPower = 0.0; // Power value from 0.0 to 1.0
 let dialBInteractionState = 'idle'; // 'idle', 'dragging', 'settling'
 let appStatus = 'loading'; // 'loading', 'starting-up', 'interactive', 'error'
-let terminalLcdMessage = "INITIALIZING...";
+// let terminalLcdMessage = "INITIALIZING..."; // DEPRECATED for main terminal functionality
 
 
 // --- State Getter Functions (Exported) ---
@@ -73,30 +78,46 @@ export function getDialState(dialId) {
   const dial = dials[dialId];
   if (!dial) {
     // ADDED: Log if dial state is requested before full initialization
-    console.warn(`[AppState GET] Dial state requested for uninitialized dialId: '${dialId}'`);
+    console.warn(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual: Undefined (not initialized).`);
     return undefined;
   }
+  // console.log(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual:`, JSON.parse(JSON.stringify(dial)));
   return { ...dial }; // Return a clone
 }
 
 export function getTargetColorProperties(targetKey) {
   const props = targetColorProps[targetKey];
-  if (!props) return undefined;
+  if (!props) {
+    console.warn(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual: Undefined (invalid key).`);
+    return undefined;
+  }
+  // console.log(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual:`, JSON.parse(JSON.stringify(props)));
   return { ...props };
 }
 
-export function getCurrentTheme() { return currentTheme; }
-export function getTrueLensPower() { return currentTrueLensPower; }
-export function getDialBInteractionState() { return dialBInteractionState; }
-export function getAppStatus() { return appStatus; }
-export function getTerminalLcdMessage() { return terminalLcdMessage; }
+export function getCurrentTheme() { 
+  // console.log(`[AppState GET] Target: currentTheme. Requested: Value. Actual: '${currentTheme}'`);
+  return currentTheme; 
+}
+export function getTrueLensPower() { 
+  // console.log(`[AppState GET] Target: trueLensPower. Requested: Value. Actual: ${currentTrueLensPower.toFixed(3)}`);
+  return currentTrueLensPower; 
+}
+export function getDialBInteractionState() { 
+  // console.log(`[AppState GET] Target: dialBInteractionState. Requested: Value. Actual: '${dialBInteractionState}'`);
+  return dialBInteractionState; 
+}
+export function getAppStatus() { 
+  // console.log(`[AppState GET] Target: appStatus. Requested: Value. Actual: '${appStatus}'`);
+  return appStatus; 
+}
+// export function getTerminalLcdMessage() { return terminalLcdMessage; } // DEPRECATED
 
 // --- State Setter Functions (Exported) ---
 
 export function updateDialState(dialId, newState) {
-  const isInitialization = !dials[dialId] || Object.keys(dials[dialId]).length === 0; // Check if it's truly uninitialized
+  const isInitialization = !dials[dialId] || Object.keys(dials[dialId]).length === 0; 
   if (isInitialization && (dialId === 'A' || dialId === 'B')) {
-    // Ensure a base structure if initializing, using defaults
     dials[dialId] = { 
         id: dialId, 
         hue: dialId === 'A' ? DEFAULT_DIAL_A_HUE : 0, 
@@ -105,10 +126,10 @@ export function updateDialState(dialId, newState) {
         targetRotation: 0, 
         isDragging: false 
     };
-    console.log(`[AppState SET] Initialized dial '${dialId}' state:`, { ...dials[dialId] });
+    console.log(`[AppState SET] Target: Dial '${dialId}'. Requested: Initialization. Actual (New State):`, JSON.parse(JSON.stringify(dials[dialId])));
   }
   
-  const oldState = { ...dials[dialId] }; // Clone before update
+  const oldState = { ...dials[dialId] }; 
 
   Object.assign(dials[dialId], newState);
 
@@ -120,8 +141,7 @@ export function updateDialState(dialId, newState) {
                             oldState.targetRotation !== dials[dialId].targetRotation;
   
   if (hasRelevantChange) {
-    // ADDED: Log dial state update
-    console.log(`[AppState SET] Dial '${dialId}' state updated. Old:`, oldState, "New:", { ...dials[dialId] });
+    console.log(`[AppState SET] Target: Dial '${dialId}'. Requested (Changes):`, JSON.parse(JSON.stringify(newState)), `Old State:`, JSON.parse(JSON.stringify(oldState)), "Actual (New State):", JSON.parse(JSON.stringify(dials[dialId])));
     emit('dialUpdated', { id: dialId, state: { ...dials[dialId] } });
   }
 }
@@ -136,22 +156,19 @@ export function setTargetColorProperties(targetKey, hueFromGrid) {
       const oldProps = { ...currentProps };
       currentProps.hue = normalizedHue;
       currentProps.isColorless = isColorless;
-      // ADDED: Log target color change
-      console.log(`[AppState SET] TargetColor '${targetKey}' updated. Old:`, oldProps, "New:", { ...currentProps });
+      console.log(`[AppState SET] Target: TargetColor '${targetKey}'. Requested Hue: ${hueFromGrid}, Normalized: ${normalizedHue}. Old Props:`, oldProps, "Actual (New Props):", { ...currentProps });
       emit('targetColorChanged', { targetKey, hue: normalizedHue, isColorless });
     }
   } else {
-    console.warn(`[AppState SET] Invalid targetKey '${targetKey}' for setTargetColorProperties.`);
+    console.warn(`[AppState SET] Target: TargetColor '${targetKey}'. Requested Hue: ${hueFromGrid}. Error: Invalid targetKey.`);
   }
 }
 
 export function setTheme(theme) {
-  // REVISED: Valid themes are now 'dim', 'dark', 'light'
   if (['dim', 'dark', 'light'].includes(theme) && currentTheme !== theme) {
     const oldTheme = currentTheme;
     currentTheme = theme;
-    // ADDED: Log theme change
-    console.log(`[AppState SET] Theme changed. Old: ${oldTheme}, New: ${currentTheme}`);
+    console.log(`[AppState SET] Target: Theme. Requested: '${theme}'. Old: '${oldTheme}', Actual (New): '${currentTheme}'`);
     emit('themeChanged', currentTheme);
   }
 }
@@ -161,8 +178,7 @@ export function setTrueLensPower(powerPercentage) {
     if (Math.abs(currentTrueLensPower - newPower01) > 0.0001) {
         const oldPower = currentTrueLensPower;
         currentTrueLensPower = newPower01;
-        // ADDED: Log lens power change
-        console.log(`[AppState SET] TrueLensPower changed. Old: ${oldPower.toFixed(3)}, New: ${currentTrueLensPower.toFixed(3)}`);
+        console.log(`[AppState SET] Target: TrueLensPower. Requested: ${powerPercentage}%. Old: ${oldPower.toFixed(3)}, Actual (New): ${currentTrueLensPower.toFixed(3)} (0-1 scale)`);
         emit('trueLensPowerChanged', currentTrueLensPower);
     }
 }
@@ -171,8 +187,7 @@ export function setDialBInteractionState(newState) {
     if (['idle', 'dragging', 'settling'].includes(newState) && dialBInteractionState !== newState) {
         const oldState = dialBInteractionState;
         dialBInteractionState = newState;
-        // ADDED: Log Dial B interaction state change
-        console.log(`[AppState SET] DialBInteractionState changed. Old: ${oldState}, New: ${dialBInteractionState}`);
+        console.log(`[AppState SET] Target: DialBInteractionState. Requested: '${newState}'. Old: '${oldState}', Actual (New): '${dialBInteractionState}'`);
         emit('dialBInteractionChange', dialBInteractionState);
     }
 }
@@ -181,21 +196,22 @@ export function setAppStatus(newStatus) {
     if (['loading', 'starting-up', 'interactive', 'error'].includes(newStatus) && appStatus !== newStatus) {
         const oldStatus = appStatus;
         appStatus = newStatus;
-        // ADDED: Log app status change
-        console.log(`[AppState SET] AppStatus changed. Old: ${oldStatus}, New: ${appStatus}`);
+        console.log(`[AppState SET] Target: AppStatus. Requested: '${newStatus}'. Old: '${oldStatus}', Actual (New): '${appStatus}'`);
         emit('appStatusChanged', appStatus);
     }
 }
 
+/* // DEPRECATED for main terminal functionality
 export function setTerminalLcdMessage(message) {
     if (terminalLcdMessage !== message) {
         const oldMessage = terminalLcdMessage;
         terminalLcdMessage = message;
         // ADDED: Log terminal message change
-        // console.log(`[AppState SET] TerminalMessage changed. Old: "${oldMessage}", New: "${terminalLcdMessage}"`); // Can be verbose
+        // console.log(`[AppState SET] Target: TerminalMessage. Requested: "${message}". Old: "${oldMessage}", Actual (New): "${terminalLcdMessage}"`); 
         emit('terminalMessageChanged', terminalLcdMessage);
     }
 }
+*/
 
 // --- Event Subscription (Exported) ---
 export function subscribe(eventName, listener) {
@@ -225,4 +241,4 @@ if (!dials.B || Object.keys(dials.B).length === 0) {
         isDragging: false 
     });
 }
-console.log('[AppState] Initialized with default states:', { dials, targetColorProps, currentTheme, appStatus });
+console.log('[AppState INIT] Initialized with default states:', { dials: JSON.parse(JSON.stringify(dials)), targetColorProps: JSON.parse(JSON.stringify(targetColorProps)), currentTheme, appStatus });

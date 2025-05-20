@@ -5,23 +5,22 @@
  * It reflects dial state from appState.js and proposes changes to appState.js
  * based on user interaction.
  */
-import gsap from 'gsap';
-// appState, config will be passed as dependencies
+// GSAP is accessed via window.gsap, which is populated by main.js import
 
 class Dial {
     /**
      * @param {HTMLElement} containerElement - The main div container for the dial.
      * @param {string} dialId - 'A' or 'B'.
      * @param {object} appStateService - Reference to the appState module.
-     * @param {object} configService - Reference to the config module.
-     * @param {object} gsapService - Reference to GSAP (though typically imported directly).
+     * @param {object} configModuleParam - Reference to the config.js module (namespace object).
+     * @param {object} gsapService - Reference to GSAP (passed from main.js).
      */
-    constructor(containerElement, dialId, appStateService, configService, gsapService) {
+    constructor(containerElement, dialId, appStateService, configModuleParam, gsapService) { 
         this.containerElement = containerElement;
         this.dialId = dialId;
         this.appState = appStateService;
-        this.config = configService;
-        this.gsap = gsapService || gsap; // Use passed GSAP or import directly
+        this.configModule = configModuleParam; // Store the namespace object as this.configModule
+        this.gsap = gsapService; // Use passed GSAP instance
 
         this.canvas = this.containerElement.querySelector(`#dial-canvas-${this.dialId}`);
         if (!this.canvas) {
@@ -38,32 +37,27 @@ class Dial {
         this.isDragging = false;
         this.currentPointerX = 0;
         this.gsapValueTween = null;
-        this.isActiveDim = false; // Set by dialManager via setActiveDimState
+        this.isActiveDim = false; 
         this.dialBSettleTimer = null;
 
-        this.unsubscribers = []; // To store unsubscribe functions from appState
+        this.unsubscribers = []; 
 
         this._updateAndCacheComputedStyles();
 
         let initialState = this.appState.getDialState(this.dialId);
         if (!initialState || Object.keys(initialState).length === 0) {
-            // console.warn(`[Dial ${this.dialId} CONSTRUCTOR] Initial state not found in appState, setting defaults.`);
-            const initialHue = (this.dialId === 'B') ? 0.0 : this.config.DEFAULT_DIAL_A_HUE;
-            const initialRotation = (this.dialId === 'B') ? initialHue * this.config.DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG : 0;
+            const initialHue = (this.dialId === 'B') ? 0.0 : this.configModule.DEFAULT_DIAL_A_HUE;
+            const initialRotation = (this.dialId === 'B') ? initialHue * this.configModule.DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG : 0;
             initialState = {
                 id: this.dialId, hue: initialHue, rotation: initialRotation,
                 targetHue: initialHue, targetRotation: initialRotation, isDragging: false
             };
             this.appState.updateDialState(this.dialId, initialState);
-            // For Dial B, trueLensPower is set by lensManager during startup or by its own interaction.
-            // No need to setTrueLensPower here during initial construction.
         }
         
         this.resizeCanvas(true); 
         this._addDragListeners();
         this._subscribeToAppStateEvents();
-
-        // console.log(`[Dial ${this.dialId} CONSTRUCTOR] Initialized. Hue: ${initialState.hue.toFixed(1)}, Rotation: ${initialState.rotation.toFixed(1)}`);
     }
 
     _subscribeToAppStateEvents() {
@@ -100,7 +94,6 @@ class Dial {
     setActiveDimState(isActive) {
         if (this.isActiveDim !== isActive) {
             this.isActiveDim = isActive;
-            // console.log(`[Dial ${this.dialId} setActiveDimState] Setting to: ${isActive}`);
 
             if (document.body.classList.contains('theme-dim')) {
                 this.containerElement.classList.toggle('js-active-dim-dial', isActive);
@@ -114,7 +107,6 @@ class Dial {
 
     _handleInteractionStart(event) {
         if (this.appState.getAppStatus() !== 'interactive' || this.isDragging) {
-            // console.log(`[Dial ${this.dialId} _handleInteractionStart] Interaction blocked. AppStatus: ${this.appState.getAppStatus()}, IsDragging: ${this.isDragging}`);
             return;
         }
         if (event.type === 'touchstart' && event.cancelable) event.preventDefault();
@@ -126,14 +118,6 @@ class Dial {
 
         const currentState = this.appState.getDialState(this.dialId);
         
-        // --- DEBUG LOGGING ---
-        if (this.dialId === 'B') {
-            console.log(`[Dial B _handleInteractionStart] AppStatus: ${this.appState.getAppStatus()}`);
-            console.log(`[Dial B _handleInteractionStart] currentState from appState.getDialState('B'):`, JSON.parse(JSON.stringify(currentState)));
-            console.log(`[Dial B _handleInteractionStart] Current trueLensPower from appState: ${this.appState.getTrueLensPower()}`);
-        }
-        // --- END DEBUG LOGGING ---
-
         this.appState.updateDialState(this.dialId, {
             isDragging: true,
             targetHue: currentState.hue, 
@@ -154,10 +138,10 @@ class Dial {
 
         let newPointerX = event.touches ? event.touches[0].clientX : event.clientX;
         const deltaX = newPointerX - this.currentPointerX;
-        const currentState = this.appState.getDialState(this.dialId); // Get fresh state for target calculation
+        const currentState = this.appState.getDialState(this.dialId); 
 
-        let newTargetHue = currentState.targetHue + (deltaX / this.config.PIXELS_PER_DEGREE_HUE);
-        const newTargetRotation = currentState.targetRotation + (deltaX / this.config.PIXELS_PER_DEGREE_ROTATION);
+        let newTargetHue = currentState.targetHue + (deltaX / this.configModule.PIXELS_PER_DEGREE_HUE);
+        const newTargetRotation = currentState.targetRotation + (deltaX / this.configModule.PIXELS_PER_DEGREE_ROTATION);
 
         if (this.dialId === 'B') {
             newTargetHue = Math.max(0, Math.min(newTargetHue, 359.999));
@@ -166,17 +150,15 @@ class Dial {
 
         if (this.gsapValueTween) this.gsapValueTween.kill();
 
-        // The animation proxy should start from the *current animated value* (currentState.hue),
-        // not necessarily the targetHue from the previous move event.
         const animationProxy = { hue: currentState.hue, rotation: currentState.rotation };
-        this.gsapValueTween = this.gsap.to(animationProxy, {
+        this.gsapValueTween = this.gsap.to(animationProxy, { 
             rotation: newTargetRotation,
             hue: newTargetHue,
-            duration: this.config.GSAP_TWEEN_DURATION,
-            ease: this.config.GSAP_TWEEN_EASE,
+            duration: this.configModule.GSAP_TWEEN_DURATION, 
+            ease: this.configModule.GSAP_TWEEN_EASE,       
             overwrite: "auto",
             onUpdate: () => {
-                if (!this.isDragging && this.gsapValueTween) { // If dragging stopped mid-tween, kill it.
+                if (!this.isDragging && this.gsapValueTween) { 
                     this.gsapValueTween.kill();
                     this.gsapValueTween = null;
                     return;
@@ -201,25 +183,18 @@ class Dial {
             return;
         }
         
-        const endedDialId = this.dialId; // Capture before clearing isDragging
-        this.isDragging = false; // Set isDragging to false immediately
+        const endedDialId = this.dialId; 
+        this.isDragging = false; 
         
-        const finalState = this.appState.getDialState(endedDialId); // Get the state at the moment dragging stopped
+        const finalState = this.appState.getDialState(endedDialId); 
 
-        // Update appState to reflect dragging has stopped.
-        // The hue/rotation values in appState should be what the GSAP tween was last setting.
-        // The targetHue/targetRotation should be the final calculated target.
         this.appState.updateDialState(endedDialId, { 
             isDragging: false,
-            // targetHue and targetRotation are already up-to-date from the last _handleInteractionMove
         });
 
-
-        // If a tween was active, kill it and snap to its *final target values*
         if (this.gsapValueTween && this.gsapValueTween.isActive()) {
             this.gsapValueTween.kill(); 
             this.gsapValueTween = null;
-            // Snap to the targetHue/targetRotation that was being animated towards
             this.appState.updateDialState(endedDialId, { 
                 hue: finalState.targetHue, 
                 rotation: finalState.targetRotation 
@@ -227,7 +202,6 @@ class Dial {
             if (endedDialId === 'B') this.appState.setTrueLensPower((finalState.targetHue / 359.999) * 100);
 
         } else if (Math.abs(finalState.hue - finalState.targetHue) > 0.01 || Math.abs(finalState.rotation - finalState.targetRotation) > 0.01) {
-            // If no tween was active (e.g., very short drag), but current hue isn't at target, snap.
             this.appState.updateDialState(endedDialId, { 
                 hue: finalState.targetHue, 
                 rotation: finalState.targetRotation 
@@ -242,7 +216,7 @@ class Dial {
             this.dialBSettleTimer = setTimeout(() => {
                 this.appState.setDialBInteractionState('idle');
                 this.dialBSettleTimer = null;
-            }, this.config.LENS_OSCILLATION_RESTART_DELAY);
+            }, this.configModule.LENS_OSCILLATION_RESTART_DELAY);
         }
 
         this.containerElement.style.cursor = 'grab';
@@ -296,7 +270,7 @@ class Dial {
                 shadingStart: rootStyle.getPropertyValue('--dial-dim-active-shading-start-color').trim() || 'oklch(0% 0 0 / 0.1)',
                 shadingEnd: rootStyle.getPropertyValue('--dial-dim-active-shading-end-color').trim() || 'oklch(0% 0 0 / 0.15)'
             };
-        } else if (isDimTheme && !this.isActiveDim) { // UNLIT DIM STATE
+        } else if (isDimTheme && !this.isActiveDim) { 
             this.computedStyleVars = {
                 faceBgL: rootStyle.getPropertyValue('--dial-face-bg-l').trim() || '0.01', 
                 faceBgC: rootStyle.getPropertyValue('--dial-face-bg-c').trim() || '0',
@@ -307,7 +281,7 @@ class Dial {
                 ridgeHighlightL: "0", ridgeHighlightA: "0", 
                 shadingStart: "oklch(0 0 0 / 0)", shadingEnd: "oklch(0 0 0 / 0)" 
             };
-        } else { // Active Dark or Light themes
+        } else { 
             this.computedStyleVars = {
                 faceBgL: rootStyle.getPropertyValue('--dial-face-bg-l').trim() || '0.20',
                 faceBgC: rootStyle.getPropertyValue('--dial-face-bg-c').trim() || '0.005',
@@ -324,7 +298,7 @@ class Dial {
     }
 
     _draw() {
-        if (!this.ctx || !this.canvas) return;
+        if (!this.ctx || !this.canvas || !this.configModule) return; 
         
         if (!this.computedStyleVars.faceBgL) {
             this._updateAndCacheComputedStyles();
@@ -360,18 +334,18 @@ class Dial {
         this.ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
         if (drawDetailedContent) {
-            const angleStep = (2 * Math.PI) / this.config.NUM_RIDGES;
+            const angleStep = (2 * Math.PI) / this.configModule.NUM_RIDGES;
             const lightAngle = -Math.PI / 4; 
             const rotationRadians = rotation * Math.PI / 180;
-            const scaleFactor = this.config.DIAL_GRADIENT_SCALE_FACTOR;
+            const scaleFactor = this.configModule.DIAL_GRADIENT_SCALE_FACTOR;
 
-            for (let i = 0; i < this.config.NUM_RIDGES; i++) {
+            for (let i = 0; i < this.configModule.NUM_RIDGES; i++) {
                 const ridgeAngle = i * angleStep + rotationRadians;
                 const cosAngle = Math.cos(ridgeAngle); 
                 const sinAngle = Math.sin(ridgeAngle); 
 
                 if (cosAngle > 0.03) { 
-                    const fullPerspectiveWidth = (logicalWidth / this.config.NUM_RIDGES) * this.config.RIDGE_WIDTH_FACTOR * cosAngle;
+                    const fullPerspectiveWidth = (logicalWidth / this.configModule.NUM_RIDGES) * this.configModule.RIDGE_WIDTH_FACTOR * cosAngle;
                     const scaledPerspectiveWidth = fullPerspectiveWidth * scaleFactor;
                     const bgGap = (fullPerspectiveWidth - scaledPerspectiveWidth) / 2; 
                     const ridgeCenterX = logicalWidth / 2 + (sinAngle * logicalWidth / 2); 
@@ -389,7 +363,7 @@ class Dial {
                             const finalAlpha = Math.min(1.0, parseFloat(this.computedStyleVars.ridgeHighlightA) * highlightIntensity * 1.5);
                             this.ctx.fillStyle = `oklch(${this.computedStyleVars.ridgeHighlightL} ${this.computedStyleVars.ridgeC} ${this.computedStyleVars.ridgeH} / ${finalAlpha.toFixed(3)})`;
                             const hlx = coloredPartStartX + scaledPerspectiveWidth * 0.1; 
-                            const hlw = scaledPerspectiveWidth * this.config.HIGHLIGHT_WIDTH_FACTOR;
+                            const hlw = scaledPerspectiveWidth * this.configModule.HIGHLIGHT_WIDTH_FACTOR;
                             this.ctx.fillRect(hlx, 0, hlw, logicalHeight);
                         }
                     }
@@ -409,11 +383,6 @@ class Dial {
 
     _onAppStateDialUpdate(payload) {
         if (payload && payload.id === this.dialId) {
-            // If this update is for Dial B and it's due to the lensManager sync,
-            // log its new state to confirm.
-            if (this.dialId === 'B' && payload.state && payload.state.hue !== undefined) {
-                 // console.log(`[Dial B _onAppStateDialUpdate] Received update. New hue: ${payload.state.hue.toFixed(1)}, targetHue: ${payload.state.targetHue.toFixed(1)}`);
-            }
             this._draw();
         }
     }
@@ -433,7 +402,6 @@ class Dial {
     }
 
     destroy() {
-        // console.log(`[Dial ${this.dialId} DESTROY] Cleaning up.`);
         this._removeDragListeners();
         this.unsubscribers.forEach(unsub => unsub());
         this.unsubscribers = [];

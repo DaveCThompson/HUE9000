@@ -65,9 +65,71 @@ This section details issues addressed during and immediately after the V2.3 refa
 *   **Files Affected:** `src/js/startupSequenceManager.js`.
 *   **Key Learning:** The distinction between when a function that *builds* a GSAP timeline is called (and performs its state checks) versus when the *resulting timeline actually plays* is critical for complex, state-dependent sequences. State checks should occur at the point of GSAP execution if they depend on prior GSAP-driven state changes.
 
+### C.6. GSAP Instance Management and Plugin Registration (Critical Fix)
+*   **Symptom Series:**
+    1.  Initial errors: `Invalid property autoAlpha set to ... Missing plugin? gsap.registerPlugin()`.
+    2.  After attempting to fix by removing CDN and relying on `window.gsap`: `TypeError: Cannot read properties of undefined (reading 'set')` in `Button.js` (where `this.gsap` was undefined).
+    3.  After passing `gsap` to `ButtonManager` and then to `Button` constructor: `ReferenceError: gsap is not defined` in `animationUtils.js`.
+*   **Root Cause Analysis:**
+    1.  **`autoAlpha` Error:** When using GSAP with a module bundler like Vite, relying solely on CDN-based global registration of GSAP and its plugins is unreliable. The bundler might not correctly "see" or link these global instances with module-imported GSAP, or tree-shaking could interfere. `autoAlpha` is part of CSSPlugin, which is usually core but its registration needs to be solid.
+    2.  **`this.gsap` Undefined in `Button.js`:** `ButtonManager` was importing its own `gsap` instance but not passing it to the `Button` constructor. The `Button` constructor's fallback to `window.gsap` was unreliable during the synchronous initialization phase.
+    3.  **`gsap` Undefined in `animationUtils.js`:** This utility module was attempting to use a global `gsap` variable directly, which was no longer reliably available after removing the CDN and before a proper import was added to the utility itself.
+*   **Solution Implemented (Iterative):**
+    1.  **Centralized GSAP Setup (`main.js`):**
+        *   Removed GSAP CDN `<script>` tags from `index.html`.
+        *   Installed `gsap` as an npm dependency (`npm install gsap`).
+        *   In `main.js`, explicitly imported `gsap` and necessary plugins (e.g., `TextPlugin`) from the `gsap` package:
+            ```javascript
+            import { gsap } from "gsap";
+            import { TextPlugin } from "gsap/TextPlugin";
+            gsap.registerPlugin(TextPlugin);
+            ```
+        *   This configured `gsap` instance from `main.js` is now the single source of truth.
+    2.  **Dependency Injection:**
+        *   The configured `gsap` instance from `main.js` is explicitly passed to the `init` methods of all managers that require it (`buttonManager`, `dialManager`, `lensManager`, `terminalManager`, `startupSequenceManager`, `uiUpdater`).
+        *   Managers that create component instances (like `ButtonManager` creating `Button`s, or `DialManager` creating `Dial`s) are responsible for passing this `gsap` instance to their component constructors.
+        *   Example (`ButtonManager`):
+            ```javascript
+            // buttonManager.js
+            init(buttonElements, gsapInstance) {
+                this.gsap = gsapInstance;
+                // ...
+            }
+            addButton(element, ...) {
+                const buttonConfig = { ..., gsapInstance: this.gsap };
+                const buttonInstance = new Button(element, buttonConfig);
+                // ...
+            }
+            ```
+        *   Example (`Button.js` constructor):
+            ```javascript
+            constructor(domElement, config) {
+                this.gsap = config.gsapInstance;
+                if (!this.gsap) throw new Error("GSAP instance not provided to Button constructor");
+                // ...
+            }
+            ```
+    3.  **Direct Import in Utilities (`animationUtils.js`):**
+        *   For standalone utility modules like `animationUtils.js` that are not class-based managers, directly importing `gsap` is the cleanest approach:
+            ```javascript
+            // animationUtils.js
+            import { gsap } from "gsap";
+            // ... use gsap directly ...
+            ```
+*   **Files Affected:** `index.html`, `main.js`, `buttonManager.js`, `Button.js`, `animationUtils.js`, `dialManager.js`, `Dial.js`, `lensManager.js`, `terminalManager.js`, `startupSequenceManager.js`, `uiUpdater.js`.
+*   **Key Learning & Best Practice for GSAP with Vite/Module Bundlers:**
+    *   **NPM Installation:** Always install GSAP via npm/yarn.
+    *   **Central Import & Registration:** Import `gsap` and register all required plugins (like `TextPlugin`, `ScrollTrigger`, etc.) once in your main application entry point (e.g., `main.js`). This ensures all plugins are available to the GSAP instance used throughout the application.
+    *   **Explicit Dependency:**
+        *   For manager classes or components, pass the configured `gsap` instance via their `init` method or constructor. Store it as `this.gsap` and use that for all GSAP calls. This makes the dependency clear and avoids reliance on potentially unreliable globals.
+        *   For utility functions or modules that aren't class instances, importing `gsap` directly within that module is acceptable and often cleaner.
+    *   **Avoid `window.gsap`:** Do not rely on `window.gsap` as the primary way to access GSAP in a bundled environment. While it might sometimes work, it's less robust and can lead to the types of errors encountered. The imported `gsap` object is the canonical reference.
+    *   **CSSPlugin:** `CSSPlugin` (which handles `autoAlpha` and most DOM animations) is part of the GSAP core and is automatically registered when you import `gsap`. Explicit registration is usually not needed unless specific bundler issues arise. The `autoAlpha` errors were symptomatic of GSAP itself not being correctly available/configured, not necessarily a missing CSSPlugin registration *if GSAP itself was working*.
+
 ## Overall Current Learnings & Best Practices (from V2.3 Refactor)
 
 *   **Component State Synchronization:** The internal state of components (e.g., `Button.currentClasses`, `Dial`'s reflection of `appState`) must be the single source of truth for their logic, and methods like `setState` must reliably update both this JS state and the corresponding DOM attributes/classes.
 *   **Clear State Dependencies:** When one piece of state (e.g., `trueLensPower`) implies another (e.g., Dial B's `hue`), ensure mechanisms are in place to keep them synchronized, especially after programmatic changes like startup sequences.
 *   **GSAP Callback Context & Timing:** Be mindful of `this` context within GSAP callbacks. Arrow functions can help maintain lexical scope. Crucially, understand that calling a function that *builds* a GSAP timeline executes its internal logic (including state checks) *at build time*, not necessarily at playback time unless explicitly deferred using mechanisms like `gsap.call()`.
 *   **Startup Sequence Robustness:** Initial visibility and state of all elements must be rigorously controlled. Defer state-dependent animation setup until precedent state changes are guaranteed to have occurred within the GSAP sequence.
+*   **GSAP Instance Management:** (As detailed in C.6) Proper handling of GSAP instances and plugin registration is paramount when using module bundlers.

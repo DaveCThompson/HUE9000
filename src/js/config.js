@@ -117,4 +117,103 @@ export const LENS_GRADIENT_BREAKPOINTS = [
 ];
 export const NUM_LENS_GRADIENT_STOPS = LENS_GRADIENT_BREAKPOINTS[0].stops.length;
 
-// console.log("[Config] Configuration loaded (REFACTOR-V2.1)");
+// --- Terminal Configuration ---
+export const TERMINAL_MAX_LINES_IN_DOM = 150;
+export const TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR = 40;
+export const TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR = 15;
+export const TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR = 20;
+export const TERMINAL_NEW_LINE_DELAY_MIN_MS = 50;
+export const TERMINAL_NEW_LINE_DELAY_MAX_MS = 150;
+export const TERMINAL_CURSOR_BLINK_ON_MS = 530; // For CSS animation
+export const TERMINAL_CURSOR_BLINK_OFF_MS = 370; // For CSS animation
+
+// --- NEW: Advanced Flicker & Glow Profiles ---
+export const ADVANCED_FLICKER_PROFILES = {
+    terminalP0Flicker: { 
+        numCycles: 7,
+        periodStart: 0.18, periodEnd: 0.05,
+        onDurationRatio: 0.4,
+        amplitudeStart: 0.3, amplitudeEnd: 1.0,
+        glow: {
+            initialOpacity: 0.1, peakOpacity: 0.6, finalOpacity: 0.0,
+            initialSize: '0px', peakSize: '3px', finalSize: '0px', // For text-shadow blur
+            colorVar: '--terminal-text-glow-color', 
+            scaleWithAmplitude: true,
+            animatedProperties: { 
+                opacity: '--terminal-text-glow-opacity', 
+                blur: '--terminal-text-bloom-size'      
+            }
+        },
+        targetProperty: 'text-shadow-opacity-and-blur' 
+    },
+    buttonEnergizeP2P5: { 
+        numCycles: 12, 
+        periodStart: 0.15, periodEnd: 0.04,
+        onDurationRatio: 0.45,
+        amplitudeStart: 0.2, amplitudeEnd: 1.0, 
+        glow: {
+            initialOpacity: { selected: 0.3, unselected: 0.2 },
+            peakOpacity:    { selected: 0.9, unselected: 0.7 },
+            finalOpacity:   { selected: 0.65, unselected: 0.35 }, 
+            initialSize:    { selected: '2px', unselected: '1px' },
+            peakSize:       { selected: '15px', unselected: '10px' },
+            finalSize:      { selected: '12px', unselected: '6px' },   
+            colorVar: '--btn-glow-color', 
+            sizeVar: '--btn-glow-size',   
+            opacityVar: '--btn-glow-opacity',
+            scaleWithAmplitude: true,
+            isButtonSelected: null 
+        },
+        targetProperty: 'button-lights-and-frame' 
+    },
+    lcdP4Flicker: { 
+        numCycles: 5,
+        periodStart: 0.12, periodEnd: 0.06,
+        onDurationRatio: 0.5,
+        amplitudeStart: 0.3, amplitudeEnd: 0.8, 
+        glow: {
+            initialOpacity: 0.05, peakOpacity: 0.3, finalOpacity: 0.0, 
+            initialSize: '0px', peakSize: '8px', finalSize: '0px', 
+            colorVar: '--lcd-glow-color', 
+            sizeVar: '--lcd-glow-size',
+            opacityVar: '--lcd-glow-opacity',
+            scaleWithAmplitude: true
+        },
+        targetProperty: 'element-opacity-and-box-shadow' 
+    },
+    buttonP4DimlyLitFlicker: { 
+        numCycles: 6,
+        periodStart: 0.14, periodEnd: 0.05,
+        onDurationRatio: 0.4,
+        amplitudeStart: 0.25, amplitudeEnd: 0.9, 
+        glow: {
+            initialOpacity: 0.1, peakOpacity: 0.35, finalOpacity: 0.0, 
+            initialSize: '0px', peakSize: '6px', finalSize: '0px', 
+            colorVar: '--btn-dimly-lit-glow-color',
+            sizeVar: '--btn-dimly-lit-glow-size',
+            opacityVar: '--btn-dimly-lit-glow-opacity',
+            scaleWithAmplitude: true
+        },
+        targetProperty: 'button-lights-and-frame'
+    },
+    buttonP6EnergizeFlicker: { 
+        numCycles: 9, 
+        periodStart: 0.1, periodEnd: 0.03, 
+        onDurationRatio: 0.5,
+        amplitudeStart: 0.1, amplitudeEnd: 1.0, 
+        glow: {
+            initialOpacity: { selected: 0.25, unselected: 0.15 },
+            peakOpacity:    { selected: 0.8, unselected: 0.6 },
+            finalOpacity:   { selected: 0.65, unselected: 0.35 }, 
+            initialSize:    { selected: '1px', unselected: '0px' },
+            peakSize:       { selected: '14px', unselected: '9px' },
+            finalSize:      { selected: '12px', unselected: '6px' },   
+            colorVar: '--btn-glow-color', 
+            sizeVar: '--btn-glow-size', 
+            opacityVar: '--btn-glow-opacity',
+            scaleWithAmplitude: true,
+            isButtonSelected: null 
+        },
+        targetProperty: 'button-lights-and-frame'
+    }
+};

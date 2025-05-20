@@ -3,15 +3,15 @@
  * ...
  */
 
-import * as configModule from './config.js'; 
 import { 
     subscribe, 
     getDialState, 
     getTargetColorProperties, 
     getTrueLensPower, 
-    getTerminalLcdMessage,
     getAppStatus 
 } from './appState.js';
+import { createAdvancedFlicker } from './animationUtils.js'; 
+// GSAP instance will be passed to init and stored
 
 const uiElements = { 
   root: document.documentElement,
@@ -19,18 +19,31 @@ const uiElements = {
   logoContainer: null, 
   lcdA: null,          
   lcdB: null,          
-  terminalLcdContent: null 
+  terminalLcdContentElement: null 
 };
-let lastLcdValues = { A: null, B: null, Terminal: null };
+let lastLcdValues = { A: null, B: null }; 
 let dialLcdsActiveDim = false; 
+let localConfigModule = null; 
+let localGsap = null; // To store the passed GSAP instance
 
 const MANAGED_LCD_CLASSES = ['lcd--unlit', 'js-active-dim-lcd', 'lcd--dimly-lit'];
 
-export function init(elements) { 
+export function init(elements, configModuleParam, gsapInstance) { // Added gsapInstance
   console.log("[UIUpdater INIT] Initializing...");
   Object.assign(uiElements, elements);
+  localConfigModule = configModuleParam; 
+  localGsap = gsapInstance; // Store passed GSAP
 
-  const requiredElementKeys = ['logoContainer', 'lcdA', 'lcdB', 'terminalLcdContent'];
+  if (!localGsap) {
+    console.error("[UIUpdater INIT] CRITICAL: GSAP instance not provided.");
+    // Potentially fallback or throw, but main.js should always pass it.
+  }
+  if (!localConfigModule) {
+    console.error("[UIUpdater INIT] CRITICAL: configModule not provided.");
+  }
+
+
+  const requiredElementKeys = ['logoContainer', 'lcdA', 'lcdB', 'terminalLcdContentElement'];
   for (const key of requiredElementKeys) {
       if (!uiElements[key]) {
           console.error(`[UIUpdater INIT] CRITICAL ERROR: Required element reference "${key}" was not provided.`);
@@ -44,7 +57,6 @@ export function init(elements) {
       subscribe('dialUpdated', handleDialAUpdateForUIAccentAndLogoSwatch); 
       subscribe('targetColorChanged', handleTargetColorChangeForDynamicCSSVars); 
       subscribe('trueLensPowerChanged', handleTrueLensPowerChangeForLcdB); 
-      subscribe('terminalMessageChanged', handleTerminalMessageChange);
       subscribe('appStatusChanged', handleAppStatusChange);
   } catch (error) {
       console.error("[UIUpdater INIT] Error subscribing to appState events.", error);
@@ -59,25 +71,74 @@ export function init(elements) {
   console.log("[UIUpdater INIT] Initialization complete.");
 }
 
-export function setLcdState(lcdElement, stateName) {
+export function setLcdState(lcdElement, stateName, options = {}) {
+    const { skipClassChange = false, useP4Flicker = false, onComplete } = options;
+
     if (!lcdElement) {
-        // console.warn(`[UIUpdater setLcdState] Attempted to set state on null element. Requested state: ${stateName}`);
-        return;
+        console.warn(`[UIUpdater setLcdState] Attempted to set state on null element. Requested state: ${stateName}`);
+        if (onComplete && localGsap) localGsap.delayedCall(0, onComplete); 
+        return null; 
     }
-    const oldClasses = lcdElement.className; 
+    
+    let targetElementForClass = lcdElement;
+    let targetIdForLog = lcdElement.id || 'UnknownLCD';
 
-    MANAGED_LCD_CLASSES.forEach(cls => {
-        if (stateName !== cls) { 
-            lcdElement.classList.remove(cls);
-        }
-    });
+    // If the content element of the terminal is passed, target its parent for classes
+    if (lcdElement.id === 'terminal-lcd-content' && lcdElement.parentElement && lcdElement.parentElement.classList.contains('actual-lcd-screen-element')) {
+        targetElementForClass = lcdElement.parentElement;
+        targetIdForLog = targetElementForClass.id || targetElementForClass.classList[0] || 'TerminalContainer'; 
+    } else if (lcdElement.classList.contains('actual-lcd-screen-element')) {
+        // If the container itself is passed (e.g. from startupSequenceManager for terminalContainer)
+        targetElementForClass = lcdElement;
+        targetIdForLog = lcdElement.id || 'TerminalContainer';
+    }
+    
+    const oldClasses = targetElementForClass.className; 
+    let animationTimeline = null;
 
-    if (stateName && stateName !== 'active' && MANAGED_LCD_CLASSES.includes(stateName)) {
-        if (!lcdElement.classList.contains(stateName)) {
-            lcdElement.classList.add(stateName);
+    if (!skipClassChange) {
+        MANAGED_LCD_CLASSES.forEach(cls => {
+            if (stateName !== cls) { 
+                targetElementForClass.classList.remove(cls);
+            }
+        });
+
+        if (stateName && stateName !== 'active' && MANAGED_LCD_CLASSES.includes(stateName)) {
+            if (!targetElementForClass.classList.contains(stateName)) {
+                targetElementForClass.classList.add(stateName);
+            }
         }
     }
-    console.log(`[UIUpdater setLcdState] ID: ${lcdElement.id || 'UnknownLCD'}, Requested: '${stateName || 'active'}', OldClasses: '${oldClasses}', NewClasses: '${lcdElement.className}'`);
+    
+    // console.log(`[UIUpdater setLcdState] Target: ${targetIdForLog}, Requested State: '${stateName || 'active'}', SkipClassChange: ${skipClassChange}, UseP4Flicker: ${useP4Flicker}. OldDOMClasses: '${oldClasses}', NewDOMClasses: '${targetElementForClass.className}'`);
+
+    if (useP4Flicker && stateName === 'lcd--dimly-lit') { 
+        // console.log(`[UIUpdater setLcdState] Initiating P4 flicker for ${targetIdForLog} to lcd--dimly-lit.`);
+        animationTimeline = createAdvancedFlicker(
+            targetElementForClass,
+            'lcdP4Flicker', // Profile name from config
+            {
+                onStart: () => {
+                    if (!skipClassChange && !targetElementForClass.classList.contains('lcd--dimly-lit')) {
+                        targetElementForClass.classList.add('lcd--dimly-lit');
+                    }
+                },
+                onComplete: () => {
+                    // console.log(`[UIUpdater setLcdState] P4 Flicker complete for ${targetIdForLog}.`);
+                    if (!targetElementForClass.classList.contains('lcd--dimly-lit')) {
+                         targetElementForClass.classList.add('lcd--dimly-lit');
+                    }
+                    MANAGED_LCD_CLASSES.forEach(cls => { 
+                        if (cls !== 'lcd--dimly-lit') targetElementForClass.classList.remove(cls);
+                    });
+                    if (onComplete) onComplete();
+                }
+            }
+        );
+    } else {
+        if (onComplete && localGsap) localGsap.delayedCall(0, onComplete); 
+    }
+    return animationTimeline; 
 }
 
 
@@ -86,15 +147,16 @@ export function setDialLcdActiveDimState(isActive) {
         dialLcdsActiveDim = isActive;
         
         if (getAppStatus() === 'starting-up' && getCurrentPhaseNumber() < 4) {
-            // console.log(`[UIUpdater setDialLcdActiveDimState (P0-P3)] Setting Dial LCDs. Active: ${isActive}`);
             setLcdState(uiElements.lcdA, isActive ? 'js-active-dim-lcd' : 'lcd--unlit');
             setLcdState(uiElements.lcdB, isActive ? 'js-active-dim-lcd' : 'lcd--unlit');
         }
         
         const dialAState = getDialState('A');
-        let dialAText = "";
+        const defaultDialAHue = localConfigModule ? localConfigModule.DEFAULT_DIAL_A_HUE : 40.6;
+
+
         if (isActive || getAppStatus() === 'interactive' || (getAppStatus() === 'starting-up' && getCurrentPhaseNumber() >= 4) ) { 
-            dialAText = dialAState ? Math.round(((dialAState.hue % 360) + 360) % 360).toString() : String(Math.round(configModule.DEFAULT_DIAL_A_HUE));
+            dialAText = dialAState ? Math.round(((dialAState.hue % 360) + 360) % 360).toString() : String(Math.round(defaultDialAHue));
         }
         updateLcdDisplay(uiElements.lcdA, dialAText, 'A');
         
@@ -110,16 +172,15 @@ function getCurrentPhaseNumber() {
     const phaseStatusEl = document.getElementById('debug-phase-status');
     if (phaseStatusEl) {
         const text = phaseStatusEl.textContent;
-        if (text.includes("Idle")) return -1; // Idle before P0
-        if (text.includes("All Complete")) return 99; // Sequence complete
+        if (text.includes("Idle")) return -1; 
+        if (text.includes("All Complete")) return 99; 
         const match = text.match(/P(\d+)/);
         if (match) return parseInt(match[1], 10);
     }
-    // Fallback based on appStatus if debug panel is not fully updated yet
     const status = getAppStatus();
     if (status === 'interactive') return 99;
-    if (status === 'loading') return -2; // Even before idle
-    return 0; // Default to P0-ish if in 'starting-up' but no P# found
+    if (status === 'loading') return -2; 
+    return 0; 
 }
 
 
@@ -178,13 +239,14 @@ function updateDynamicCSSVar(targetKey, hueValue, isColorless) {
 
 function updateLcdDisplay(lcdElement, textContent, lcdId) { 
     if (!lcdElement) return;
+    if (lcdId === 'Terminal') return; // Terminal content is handled by TerminalManager
+
     const valueSpan = lcdElement.querySelector('.lcd-value') || lcdElement;
     
     const appStatus = getAppStatus();
-    // const currentPhase = getCurrentPhaseNumber(); // Not strictly needed here anymore
-
     let shouldBeBlank = false;
     if (appStatus === 'starting-up') {
+        // Check the class of the LCD element itself, not its parent for this logic
         if (lcdElement.classList.contains('lcd--unlit')) { 
             shouldBeBlank = true;
         }
@@ -196,11 +258,10 @@ function updateLcdDisplay(lcdElement, textContent, lcdId) {
         textContent = "";
     }
 
-    const currentText = (lcdId === 'Terminal') ? valueSpan.innerHTML : valueSpan.textContent;
+    const currentText = valueSpan.textContent;
 
     if (currentText !== textContent) {
-        if (lcdId === 'Terminal') valueSpan.innerHTML = textContent; 
-        else valueSpan.textContent = textContent;
+        valueSpan.textContent = textContent;
         lastLcdValues[lcdId] = textContent;
     }
 }
@@ -215,28 +276,29 @@ function handleTargetColorChangeForDynamicCSSVars(payload) {
 }
 function handleThemeChange(newTheme) { 
     if (!uiElements.body) return;
-    console.log(`[UIUpdater handleThemeChange] Received: ${newTheme}. Updating body class. Old: ${Array.from(uiElements.body.classList).filter(c => c.startsWith('theme-')).join(' ')}`);
+    // console.log(`[UIUpdater handleThemeChange] Received: ${newTheme}. Updating body class. Old: ${Array.from(uiElements.body.classList).filter(c => c.startsWith('theme-')).join(' ')}`);
     uiElements.body.classList.remove('theme-dim', 'theme-dark', 'theme-light');
     uiElements.body.classList.add(`theme-${newTheme}`);
-    console.log(`[UIUpdater handleThemeChange] New body classes: ${uiElements.body.className}`);
+    // console.log(`[UIUpdater handleThemeChange] New body classes: ${uiElements.body.className}`);
 }
 function handleTrueLensPowerChangeForLcdB(newTruePower01) { 
     if (uiElements.lcdB) updateLcdDisplay(uiElements.lcdB, `${Math.round(newTruePower01 * 100)}%`, 'B');
 }
-function handleTerminalMessageChange(message) { 
-    if (uiElements.terminalLcdContent) updateLcdDisplay(uiElements.terminalLcdContent, message, 'Terminal');
-}
 function handleAppStatusChange(newStatus) { 
-    console.log(`[UIUpdater handleAppStatusChange] Transitioning to: ${newStatus}. Current LCD classes before action: A='${uiElements.lcdA?.className}', B='${uiElements.lcdB?.className}', Term='${uiElements.terminalLcdContent?.className}'`);
+    // console.log(`[UIUpdater handleAppStatusChange] Transitioning to: ${newStatus}.`);
     
     if (newStatus === 'interactive') {
-        console.log(`[UIUpdater handleAppStatusChange] App is interactive. Ensuring all LCDs are 'active'.`);
+        // console.log(`[UIUpdater handleAppStatusChange] App is interactive. Ensuring Dial LCDs are 'active'.`);
         setLcdState(uiElements.lcdA, 'active');
         setLcdState(uiElements.lcdB, 'active');
-        setLcdState(uiElements.terminalLcdContent, 'active');
+        // For terminal, its parent '.actual-lcd-screen-element' gets the 'active' state
+        if (uiElements.terminalLcdContentElement?.parentElement && uiElements.terminalLcdContentElement.parentElement.classList.contains('actual-lcd-screen-element')) {
+            setLcdState(uiElements.terminalLcdContentElement.parentElement, 'active');
+        }
         
         const dialAState = getDialState('A');
-        const dialAText = dialAState ? Math.round(((dialAState.hue % 360) + 360) % 360).toString() : String(Math.round(configModule.DEFAULT_DIAL_A_HUE));
+        const defaultDialAHue = localConfigModule ? localConfigModule.DEFAULT_DIAL_A_HUE : 40.6;
+        const dialAText = dialAState ? Math.round(((dialAState.hue % 360) + 360) % 360).toString() : String(Math.round(defaultDialAHue));
         updateLcdDisplay(uiElements.lcdA, dialAText, 'A');
         updateLcdDisplay(uiElements.lcdB, `${Math.round(getTrueLensPower() * 100)}%`, 'B');
         
@@ -246,29 +308,32 @@ function handleAppStatusChange(newStatus) {
         if (logoSVG && logoSVG.style.opacity !== '0.05') { 
             logoSVG.style.opacity = '0.05'; 
         }
-        console.log(`[UIUpdater handleAppStatusChange] App is starting-up. LCD states will be managed by startupSequenceManager.`);
+        // console.log(`[UIUpdater handleAppStatusChange] App is starting-up. LCD states will be managed by startupSequenceManager.`);
     } else if (newStatus === 'loading') {
-        console.log(`[UIUpdater handleAppStatusChange] App is loading. Applying initial LCD states.`);
+        // console.log(`[UIUpdater handleAppStatusChange] App is loading. Applying initial LCD states.`);
         applyInitialLcdStates(); 
     }
-    console.log(`[UIUpdater handleAppStatusChange] AFTER actions. Current LCD classes: A='${uiElements.lcdA?.className}', B='${uiElements.lcdB?.className}', Term='${uiElements.terminalLcdContent?.className}'`);
 }
 function applyInitialLcdStates() { 
-    console.log(`[UIUpdater applyInitialLcdStates] AppStatus: ${getAppStatus()}, CurrentPhase: P${getCurrentPhaseNumber()}`);
-    if (uiElements.terminalLcdContent) updateLcdDisplay(uiElements.terminalLcdContent, getTerminalLcdMessage(), 'Terminal');
+    // console.log(`[UIUpdater applyInitialLcdStates] AppStatus: ${getAppStatus()}, CurrentPhase: P${getCurrentPhaseNumber()}`);
+    // Terminal message is handled by terminalManager
     
     const dialAState = getDialState('A');
+    const defaultDialAHue = localConfigModule ? localConfigModule.DEFAULT_DIAL_A_HUE : 40.6;
     const dialAText = dialAState ? Math.round(((dialAState.hue % 360) + 360) % 360).toString() : ""; 
     updateLcdDisplay(uiElements.lcdA, dialAText, 'A');
     
     const dialBText = (getAppStatus() === 'loading' || (getAppStatus() === 'starting-up' && getCurrentPhaseNumber() < 4)) ? "" : `${Math.round(getTrueLensPower() * 100)}%`;
     updateLcdDisplay(uiElements.lcdB, dialBText, 'B');
 
-    if (getAppStatus() === 'loading' || (getAppStatus() === 'starting-up' && getCurrentPhaseNumber() < 0 )) { // Only apply P0 states if truly at the beginning
-        console.log(`[UIUpdater applyInitialLcdStates] Setting P0 LCD states.`);
+    if (getAppStatus() === 'loading' || (getAppStatus() === 'starting-up' && getCurrentPhaseNumber() < 0 )) { 
+        // console.log(`[UIUpdater applyInitialLcdStates] Setting P0 LCD states.`);
         setLcdState(uiElements.lcdA, 'lcd--unlit');
         setLcdState(uiElements.lcdB, 'lcd--unlit');
-        setLcdState(uiElements.terminalLcdContent, 'js-active-dim-lcd'); 
+        // For terminal, its parent '.actual-lcd-screen-element' gets the 'js-active-dim-lcd' state
+        if (uiElements.terminalLcdContentElement?.parentElement && uiElements.terminalLcdContentElement.parentElement.classList.contains('actual-lcd-screen-element')) {
+            setLcdState(uiElements.terminalLcdContentElement.parentElement, 'js-active-dim-lcd'); 
+        }
     }
 }
 
@@ -292,7 +357,8 @@ function applyInitialDynamicCSSVars() {
         }
     });
     const dialAState = getDialState('A');
-    const initialDialAHue = dialAState ? dialAState.hue : configModule.DEFAULT_DIAL_A_HUE;
+    const defaultDialAHue = localConfigModule ? localConfigModule.DEFAULT_DIAL_A_HUE : 40.6;
+    const initialDialAHue = dialAState ? dialAState.hue : defaultDialAHue;
     if (uiElements.root) {
         const defaultChromaStr = getComputedStyle(uiElements.root).getPropertyValue(`--dynamic-ui-accent-chroma-base`).trim();
         const defaultChroma = parseFloat(defaultChromaStr) || 0.20;

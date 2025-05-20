@@ -12,8 +12,7 @@
     <!-- Main Stylesheet (Imports all other CSS partials) -->
     <link rel="stylesheet" href="./src/css/main.css">
 
-    <!-- GSAP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- GSAP will be imported and registered via JS modules (main.js) -->
     <style>
         /* Initial body opacity for fade-in, managed by JS/CSS */
         body {
@@ -49,10 +48,9 @@
         }
         #debug-phase-status { margin-top: 8px; font-weight: bold; }
         #debug-phase-info { font-size: 11px; margin-top: 4px; color: #ccc; max-width: 300px;}
-        /* #debug-attenuation-value { font-size: 11px; margin-top: 4px; color: #ccc;} */ /* REMOVED */
     </style>
 </head>
-<body class="theme-dim"> {/* Start with theme-dim, JS will manage this */}
+<body class="theme-dim">
     <div id="debug-controls">
         <div>HUE 9000 - Startup Debug (REFACTOR-V2.1)</div>
         <button id="btn-next-phase">Next Phase</button>
@@ -169,6 +167,7 @@
             </div>
         </div>
     </div>
+    <div id="lens-super-glow" aria-hidden="true"></div>
 
     <script type="module" src="./src/js/main.js" defer></script>
 </body>

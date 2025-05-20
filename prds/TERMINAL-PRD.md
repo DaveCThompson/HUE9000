@@ -156,4 +156,158 @@ The HUE 9000 terminal will be enhanced to provide a dynamic, auto-scrolling, typ
     *   Conduct thorough performance testing and optimize as needed.
     *   Finalize all configurable values in `config.js`.
 
+=============================
+
+Okay, we've made excellent progress! The terminal is displaying text, messages are flowing, and the basic structure is in place. The background and padding issues are also resolved.
+
+Here's a list of next steps to fully realize the Terminal PRD, with structured details for the immediate next step:
+
+## Next Steps - Overall Roadmap
+
+1.  **Refine Terminal Visuals & Polish (Immediate Next Step - Detailed Below):**
+    *   CRT Text Effects (Glow, Drop Shadow).
+    *   Scanline Overlay Aesthetics.
+    *   Cursor Blink Animation (ensure CSS variables are used).
+    *   Finalize Terminal Font Weight.
+2.  **Implement Remaining Message Triggers & Content:**
+    *   Dial Interactions (MOOD/Dial A, INTENSITY/Dial B) triggering status messages.
+    *   HUE ASSN Grid Button clicks triggering status messages.
+    *   Full content for `terminalMessages.js` including pseudo-randomization for status messages.
+3.  **Advanced Terminal Behavior:**
+    *   Refine scrolling behavior if any edge cases are found.
+    *   Implement DOM line limiting (`TERMINAL_MAX_LINES_IN_DOM`).
+    *   Consider max queue length if testing reveals issues (currently unbounded).
+4.  **Accessibility (ARIA):**
+    *   Ensure `role="log"` on the terminal container.
+    *   Ensure `aria-live="polite"` on `#terminal-lcd-content`.
+    *   Ensure cursor has `aria-hidden="true"`.
+5.  **Thorough Testing & Bug Fixing:**
+    *   Test all startup phases and interactive message triggers.
+    *   Test across different interaction speeds.
+    *   Performance profiling, especially with many lines and rapid messages.
+6.  **Code Cleanup & Final Review:**
+    *   Remove any temporary debug logs.
+    *   Ensure all configurations are in `config.js`.
+    *   Review for maintainability and adherence to project standards.
+
 ---
+
+## Detailed Next Step: Refine Terminal Visuals & Polish
+
+This step focuses on implementing the specific visual effects outlined in the PRD to achieve the desired CRT/retro-futuristic terminal aesthetic.
+
+**A. CRT Text Effects (PRD R3.2)**
+
+*   **Goal:** Apply subtle glow and drop shadow to all text within the terminal, including the cursor, using CSS variables for theme-independence of the effect's *style* (while color can adapt).
+*   **Files to Modify:**
+    *   `src/css/components/_terminal.css`
+    *   `src/css/core/_variables-theme-contract.css` (to ensure variables are defined, though they mostly are)
+*   **Detailed Actions & CSS Properties:**
+    1.  **Target Element:** The `text-shadow` property should be applied to `#terminal-lcd-content`. Since `.terminal-line` and `.terminal-cursor` inherit color, they should also effectively inherit the appearance of the text shadow if it's based on text color.
+    2.  **CSS Variables (from `_variables-theme-contract.css` - verify/ensure present):**
+        *   `--terminal-text-glow-radius: 8px;` (already defined)
+        *   `--terminal-text-glow-color-base-alpha: 0.15;` (already defined)
+        *   `--terminal-text-drop-shadow-offset-x: 0.5px;` (already defined)
+        *   `--terminal-text-drop-shadow-offset-y: 0.5px;` (already defined)
+        *   `--terminal-text-drop-shadow-blur: 0px;` (already defined)
+        *   `--terminal-text-drop-shadow-color: oklch(0 0 0 / 0.2);` (already defined)
+    3.  **CSS Implementation in `_terminal.css` (verify/refine existing):**
+        ```css
+        #terminal-lcd-content {
+            /* ... existing styles ... */
+            text-shadow:
+                /* Glow: Uses current LCD text color (via CSS vars) with a specific alpha */
+                0 0 var(--terminal-text-glow-radius) oklch(
+                    var(--lcd-active-text-l) /* From theme-contract/theme */
+                    calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) /* Dynamic part */
+                    var(--dynamic-lcd-hue) /* Dynamic part */
+                    / var(--terminal-text-glow-color-base-alpha) /* Fixed alpha for glow intensity */
+                ),
+                /* Drop Shadow: Fixed color and offsets */
+                var(--terminal-text-drop-shadow-offset-x) 
+                var(--terminal-text-drop-shadow-offset-y) 
+                var(--terminal-text-drop-shadow-blur) 
+                var(--terminal-text-drop-shadow-color);
+        }
+        ```
+        *   **Note:** The `oklch()` function for the glow color needs to correctly use the dynamic LCD hue/chroma variables that `uiUpdater.js` sets on `:root` and that the LCD text color itself uses. The current implementation in `_terminal.css` looks correct.
+
+**B. Scanline Overlay Aesthetics (PRD R3.3)**
+
+*   **Goal:** Implement a subtle, slowly rolling horizontal scanline effect over the terminal content.
+*   **Files to Modify:**
+    *   `src/css/components/_terminal.css`
+    *   `src/css/core/_variables-theme-contract.css` (for scanline properties)
+*   **Detailed Actions & CSS Properties:**
+    1.  **CSS Variables (in `_variables-theme-contract.css` - verify/ensure present):**
+        *   `--terminal-scanline-color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / 0.05);` (already defined, color based on LCD text but very faint)
+        *   `--terminal-scanline-thickness: 1px;` (already defined)
+        *   `--terminal-scanline-animation-duration: 8s;` (already defined)
+    2.  **CSS Implementation in `_terminal.css` (verify/refine existing):**
+        *   The current pseudo-element approach on `.terminal-block > .actual-lcd-screen-element::before` is good.
+        *   **Key properties to check/tune:**
+            *   `background-image`: The `repeating-linear-gradient`. The current definition creates lines of `var(--terminal-scanline-thickness)` with gaps of `calc(var(--terminal-scanline-thickness) * 3)`. This ratio can be tuned for density.
+            *   `background-size`: Currently `100% calc(var(--terminal-scanline-thickness) * 8)`. The `* 8` means the pattern repeats every 8 "thickness units". This, combined with the gradient stops, determines density.
+            *   `opacity`: Currently `0.3`. This is a key tuning parameter for subtlety.
+            *   `animation`: `terminalScanlineMove var(--terminal-scanline-animation-duration) linear infinite;`. The duration (`8s`) controls speed.
+            *   `z-index`: Currently `1`. Ensure it's above the terminal background but below the actual text content in `#terminal-lcd-content` (which is `z-index: 2`). This is correct.
+    3.  **Visual Tuning:** Adjust the gradient stops, `background-size` multiplier, `opacity`, and `animation-duration` to achieve the desired subtle, slow-rolling effect.
+
+**C. Cursor Blink Animation (PRD R1.4.2)**
+
+*   **Goal:** Ensure the cursor blinks using CSS animation driven by CSS variables.
+*   **Files to Modify:**
+    *   `src/css/components/_terminal.css`
+    *   `src/css/core/_variables-theme-contract.css` (variables are already defined)
+*   **Detailed Actions & CSS Properties:**
+    1.  **CSS Variables (from `_variables-theme-contract.css` - verify/ensure present):**
+        *   `--terminal-cursor-blink-on-duration: 0.53s;` (already defined)
+        *   `--terminal-cursor-blink-off-duration: 0.37s;` (already defined)
+    2.  **CSS Implementation in `_terminal.css` (verify/refine existing):**
+        ```css
+        .terminal-cursor {
+            /* ... existing styles ... */
+            animation: terminalCursorBlink var(--terminal-cursor-blink-on-duration) steps(1, end) 0s infinite alternate;
+            animation-duration: calc(var(--terminal-cursor-blink-on-duration) + var(--terminal-cursor-blink-off-duration)); /* Total cycle time */
+        }
+
+        @keyframes terminalCursorBlink {
+            0%, 100% { /* Visible state - should cover the 'on' duration percentage */
+                opacity: 1;
+            }
+            /* Calculate percentage for off state based on durations */
+            /* Example: If ON=0.53s, OFF=0.37s, Total=0.9s. Off state starts at 0.53/0.9 = 58.8% */
+            /* For steps(1, end) and alternate, 50% means it's visible for half the total duration, then invisible for half. */
+            /* The current steps(1, end) with alternate will make it visible for --terminal-cursor-blink-on-duration and then invisible for the same duration.
+               To achieve asymmetric on/off times with a single animation, it's more complex.
+               A simpler approach is to use the total duration and adjust keyframes if needed, or accept that `steps(1, end) alternate` gives a 50/50 duty cycle based on the *single* duration provided to `animation` shorthand.
+               The `animation-duration` property being set to the sum is correct for the total cycle.
+            */
+           /* For a 50/50 blink based on the *total* duration: */
+            50% { 
+                opacity: 0;
+            }
+        }
+        ```
+        *   **Refinement for Asymmetric Blink:** The current `steps(1, end) alternate` with `animation-duration` set to the sum of on/off times will result in the cursor being visible for `var(--terminal-cursor-blink-on-duration)` and then invisible for `var(--terminal-cursor-blink-off-duration)`. This is actually the desired outcome. The `50% { opacity: 0; }` keyframe combined with `alternate` and the calculated total duration should work.
+        *   **Verification:** Check if the blink timing feels right based on the PRD's on/off millisecond values.
+
+**D. Finalize Terminal Font Weight (PRD R1.1.5, R3.1.3)**
+
+*   **Goal:** Ensure the terminal uses the specified font weight via a CSS variable.
+*   **Files to Modify:**
+    *   `src/css/components/_terminal.css` (or `_lcd.css` if the style is on `.actual-lcd-screen-element`)
+    *   `src/css/core/_variables-theme-contract.css` (variable is already defined)
+*   **Detailed Actions & CSS Properties:**
+    1.  **CSS Variable (from `_variables-theme-contract.css` - verify/ensure present):**
+        *   `--terminal-font-weight: 500;` (already defined)
+    2.  **CSS Implementation:**
+        *   The PRD suggests applying this to `.actual-lcd-screen-element`.
+        *   In `_terminal.css`, the rule for `.terminal-block > .actual-lcd-screen-element` should include:
+            ```css
+            .terminal-block > .actual-lcd-screen-element {
+                /* ... existing styles ... */
+                font-weight: var(--terminal-font-weight);
+            }
+            ```
+        *   This will override any default `font-weight` from `_lcd.css` for the terminal container. The text within `#terminal-lcd-content` and `.terminal-line` should inherit this.

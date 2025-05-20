@@ -3,7 +3,7 @@
 
 #outer-glow {
   position: absolute;
-  width: 200%; 
+  width: 500%; 
   height: 200%; 
   top: -50%; 
   left: -50%; 
@@ -35,9 +35,14 @@
       oklch(var(--base-oklch-l) var(--dynamic-ui-accent-chroma) var(--dynamic-ui-accent-hue) / 0.0) 100% 
   );
   
+  /* MODIFIED: Added transform and transform-origin for Issue 2 */
+  transform-origin: center center;
+  transform: scale(var(--lens-outer-glow-dim-scale-multiplier, 1.0)); /* Default to 1.0 if var not set */
+
   transition:
       opacity var(--transition-duration-medium) ease,
       filter var(--transition-duration-medium) ease,
-      background var(--transition-duration-medium) linear; /* Hue/Chroma changes will transition */
+      background var(--transition-duration-medium) linear, /* Hue/Chroma changes will transition */
+      transform var(--transition-duration-medium) ease; /* Added transform transition */
   display: block; 
 }

@@ -1,0 +1,40 @@
+/* src/css/components/_lens-super-glow.css */
+/* Styles for the new #lens-super-glow element. Uses theme variables. */
+
+#lens-super-glow {
+    position: fixed; /* Fixed position to overlay the entire viewport */
+    inset: 0; /* Cover the entire viewport */
+    z-index: var(--z-index-lens-super-glow, 5000); /* High z-index to be on top */
+    pointer-events: none; /* Allow interactions with elements underneath */
+    mix-blend-mode: var(--lens-super-glow-blend-mode, screen); /* Blend mode for tinting effect */
+    opacity: var(--calc-lens-super-glow-opacity, 0); /* Controlled by JS via --lens-power */
+    
+    /* Background gradient for the super glow */
+    background: radial-gradient(
+        ellipse at center,
+        oklch(
+            var(--lens-super-glow-l, 0.7) /* Base lightness */
+            var(--lens-super-glow-base-chroma, 0.05) /* Low chroma for tint */
+            var(--dynamic-lens-super-glow-hue, 240) /* Hue from Dial A, JS updated */
+            / var(--calc-lens-super-glow-center-alpha, 0.5) /* Alpha at the center */
+        ) 0%,
+        oklch(
+            var(--lens-super-glow-l, 0.7)
+            var(--lens-super-glow-base-chroma, 0.05)
+            var(--dynamic-lens-super-glow-hue, 240)
+            / 0 /* Fully transparent at the edge */
+        ) var(--calc-lens-super-glow-edge-stop, 60%) /* Position of the transparent edge */
+    );
+
+    /* Use a transform to scale the apparent size of the glow, 
+       can be tied to --calc-lens-super-glow-size if needed,
+       or keep gradient edge stop for size control.
+       For now, gradient edge stop controls spread.
+    */
+    transform: scale(var(--calc-lens-super-glow-scale, 1));
+    
+    transition: opacity var(--transition-duration-slow) ease-out; 
+    /* Hue changes instantly via CSS var, opacity fades smoothly */
+
+    /* Dim mode specific adjustments will be via overriding the CSS variables */
+}

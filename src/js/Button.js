@@ -3,8 +3,9 @@
  * @description Represents a single UI button component, managing its state,
  * appearance (CSS classes, ARIA attributes), and specific animations.
  */
-import gsap from 'gsap';
-import { ButtonStates }  from './buttonManager.js'; // Will be exported from buttonManager
+// GSAP is accessed via this.gsap, which is populated from config.gsapInstance or window.gsap
+import { ButtonStates }  from './buttonManager.js'; 
+import { createAdvancedFlicker } from './animationUtils.js'; 
 
 class Button {
     /**
@@ -13,34 +14,42 @@ class Button {
      * @param {string} config.type - Type of button ('action', 'toggle', 'radio').
      * @param {string} config.groupId - The group ID this button belongs to.
      * @param {string} [config.value] - The value of the button, used for selection in groups.
+     * @param {object} [config.gsapInstance] - Passed GSAP instance.
      */
     constructor(domElement, config) {
         this.element = domElement;
         this.type = config.type;
         this.groupId = config.groupId;
         this.value = config.value;
-        this.gsap = gsap;
+        
+        if (config.gsapInstance) {
+            this.gsap = config.gsapInstance;
+        } else {
+            console.warn(`[Button CONSTRUCTOR] GSAP instance not passed for ${this.getIdentifier()}, falling back to window.gsap. This might cause issues if window.gsap is not correctly populated.`);
+            this.gsap = window.gsap;
+        }
+        if (!this.gsap) {
+            throw new Error(`[Button CONSTRUCTOR] GSAP instance is not available for ${this.getIdentifier()}.`);
+        }
+
 
         this.currentClasses = new Set();
         this.currentFlickerAnim = null;
-        this._pressTimeoutId = null; // For managing press effect timeout
+        this._pressTimeoutId = null; 
 
-        // console.log(`[Button Component CONSTRUCTOR] Created: ${this.getIdentifier()}, Group: ${this.groupId}, Type: ${this.type}, Value: ${this.value}`);
+        // console.log(`[Button CONSTRUCTOR] Created: ${this.getIdentifier()}. Group: ${this.groupId}, Type: ${this.type}, Value: ${this.value}`);
     }
 
     getIdentifier() {
-        return this.element.ariaLabel || this.element.id || this.value || 'UnnamedButton';
+        return this.element.ariaLabel || this.element.id || this.value || `UnnamedButton_${this.groupId}_${this.type}`;
     }
 
     setState(newStateClassesStr, options = {}) {
         const { skipAria = false, internalFlickerCall = false, forceState = false, phaseContext } = options;
-
-        const buttonIdForLogEarly = this.getIdentifier();
-        // const currentDOMClassesForRawLog = Array.from(this.element.classList);
-        // const oldInternalClassesForRawLog = Array.from(this.currentClasses);
-        // console.log(`[Button setState RAW ENTRY] Btn: ${buttonIdForLogEarly}, NewStateStr: "${newStateClassesStr}", Opts: ${JSON.stringify(options)}, DOM Before: [${currentDOMClassesForRawLog.join(' ')}], Internal Before: [${oldInternalClassesForRawLog.join(' ')}]`);
-
         const effectivePhaseContext = phaseContext || document.getElementById('debug-phase-status')?.textContent || 'UnknownPhase_ButtonSetState';
+        
+        // console.log(`[Button setState | ${effectivePhaseContext}] ID: ${this.getIdentifier()}, Current Classes Before: '${Array.from(this.currentClasses).join(' ')}', Requested: '${newStateClassesStr}', Element Classes Before: '${this.element.className}'`);
+
         const newClassesSet = new Set(newStateClassesStr ? newStateClassesStr.split(' ').filter(c => c) : []);
 
         let stateChanged = forceState;
@@ -59,33 +68,46 @@ class Button {
 
         if (!stateChanged && !forceState) {
             if (!skipAria) this._updateAriaAttributes();
+            // console.log(`[Button setState | ${effectivePhaseContext}] ID: ${this.getIdentifier()}, No change needed. Current Classes After: '${Array.from(this.currentClasses).join(' ')}', Element Classes After: '${this.element.className}'`);
             return;
         }
-
-        console.log(`[Button setState | ${effectivePhaseContext}] Btn: ${this.getIdentifier()}, Group: ${this.groupId}, OldInternalClasses: [${Array.from(this.currentClasses).join(' ')}], NewInternalClasses: [${Array.from(newClassesSet).join(' ')}], Opts: ${JSON.stringify(options)}`);
+        
+        // const oldInternalClassesForLog = Array.from(this.currentClasses).join(' ');
 
         if (!internalFlickerCall && this.currentFlickerAnim && this.currentFlickerAnim.isActive()) {
-            this.currentFlickerAnim.kill();
+            // console.log(`[Button setState | ${effectivePhaseContext}] ID: ${this.getIdentifier()}, Killing active flicker animation.`);
+            this.currentFlickerAnim.kill(); 
             this.currentFlickerAnim = null;
         }
-        if (!internalFlickerCall) this.element.classList.remove('is-flickering');
+        
+        if (!internalFlickerCall) { // Only clear props if not an internal call from flicker setup
+            // console.log(`[Button setState | ${effectivePhaseContext}] ID: ${this.getIdentifier()}, Not internal flicker call, clearing props.`);
+            this.element.classList.remove('is-flickering');
+            const lights = Array.from(this.element.querySelectorAll('.light'));
+            if (lights.length > 0) {
+                this.gsap.set(lights, { clearProps: "all" }); 
+            }
+            this.gsap.set(this.element, { clearProps: "css" }); 
+        }
+
 
         const managedStateClasses = [
-            ...ButtonStates.UNLIT.split(' '),
-            ...ButtonStates.DIMLY_LIT.split(' '),
-            ...ButtonStates.ENERGIZED_UNSELECTED.split(' '),
-            'is-selected'
+            ...ButtonStates.UNLIT.split(' ').filter(c => c),
+            ...ButtonStates.DIMLY_LIT.split(' ').filter(c => c),
+            ...ButtonStates.ENERGIZED_UNSELECTED.split(' ').filter(c => c), 
+            'is-selected' // This is a modifier, not a base state like the others
         ].filter(c => c);
         
-        managedStateClasses.forEach(s => this.element.classList.remove(s));
+        managedStateClasses.forEach(s => {
+            if (!newClassesSet.has(s)) { // Only remove if not part of the new state
+                this.element.classList.remove(s);
+            }
+        });
         newClassesSet.forEach(cls => this.element.classList.add(cls));
         this.currentClasses = newClassesSet;
 
-        if (this.currentClasses.has(ButtonStates.DIMLY_LIT) && effectivePhaseContext.includes("P4")) {
-            console.log(`[Button setState DEBUG P4 | ${effectivePhaseContext}] Btn: ${this.getIdentifier()} (Group: ${this.groupId}) CONFIRMED SET TO DIMLY-LIT. Current classes: [${Array.from(this.currentClasses).join(' ')}]`);
-        }
-
         if (!skipAria) this._updateAriaAttributes();
+        // console.log(`[Button setState | ${effectivePhaseContext}] ID: ${this.getIdentifier()}, Current Classes After: '${Array.from(this.currentClasses).join(' ')}', Element Classes After: '${this.element.className}'`);
     }
 
     _updateAriaAttributes(isSelectedOverride = null, isRadioGroupContext = false) {
@@ -119,85 +141,78 @@ class Button {
     getValue() { return this.value; }
     getCurrentClasses() { return new Set(this.currentClasses); }
 
-    /**
-     * Manages the GSAP flicker animation for this button.
-     * @param {string} targetStateClassesStr - The final state classes after flickering.
-     * @param {object} flickerParams - Parameters for the flicker effect.
-     * @param {number} flickerParams.onOpacity - Opacity when light is on.
-     * @param {number} flickerParams.offOpacity - Opacity when light is off.
-     * @param {number} flickerParams.stepDuration - Duration of each on/off step.
-     * @param {number} flickerParams.steps - Number of on/off cycles (steps-1 repeats).
-     * @param {boolean} [flickerParams.internalFlickerOnly=false] - If true, setState is not called at the start.
-     * @param {string} [flickerParams.phaseContext='UnknownPhase_Flicker'] - Logging context.
-     * @returns {gsap.core.Timeline} The GSAP timeline for the flicker animation.
-     */
-    playFlickerToState(targetStateClassesStr, flickerParams) {
-        const {
-            onOpacity, offOpacity, stepDuration, steps,
-            internalFlickerOnly = false,
-            phaseContext = 'UnknownPhase_Flicker'
-        } = flickerParams;
-
-        const buttonIdForLog = this.getIdentifier();
-        // console.log(`[Button playFlickerToState | ${phaseContext}] Btn: ${buttonIdForLog}, TargetState: "${targetStateClassesStr}"`);
-
-        if (this.currentFlickerAnim && this.currentFlickerAnim.isActive()) {
-            this.currentFlickerAnim.kill();
-        }
-
-        if (!internalFlickerOnly) {
-            this.setState(targetStateClassesStr, { skipAria: true, internalFlickerCall: true, forceState: true, phaseContext: `PreFlicker_${phaseContext}` });
-        }
-        this.element.classList.add('is-flickering');
-        let lights = Array.from(this.element.querySelectorAll('.light')).filter(l => l.offsetParent !== null);
-        let targetsForGsap = lights.length > 0 ? lights : (this.element.offsetParent !== null ? [this.element] : []);
-
-        const flickerTimeline = this.gsap.timeline({
-            onComplete: () => {
-                // console.log(`[Button Flicker Tween Complete | ${phaseContext}] Btn: ${buttonIdForLog}`);
-                this.element.classList.remove('is-flickering');
-                this.gsap.set(targetsForGsap, { clearProps: "opacity,autoAlpha" });
-                this.setState(targetStateClassesStr, { skipAria: false, forceState: true, phaseContext: `FlickerComplete_${phaseContext}` });
-                this.currentFlickerAnim = null;
-            }
-        });
-
-        if (targetsForGsap.length > 0) {
-            this.gsap.killTweensOf(targetsForGsap);
-
-            let setVars = {};
-            let fromVars = {};
-            let toVars = {};
-
-            if (offOpacity === 0) { // Use autoAlpha for true visibility toggling
-                setVars = { clearProps: "autoAlpha", autoAlpha: 0, immediateRender: true };
-                fromVars = { autoAlpha: 0 };
-                toVars = { autoAlpha: onOpacity };
-            } else {
-                setVars = { clearProps: "opacity", opacity: offOpacity, immediateRender: true };
-                fromVars = { opacity: offOpacity };
-                toVars = { opacity: onOpacity };
-            }
-            this.gsap.set(targetsForGsap, setVars);
-
-            flickerTimeline.fromTo(
-                targetsForGsap,
-                fromVars,
-                { ...toVars, duration: stepDuration, repeat: steps - 1, yoyo: true, ease: "steps(1)" }
-            );
-        } else {
-            // console.warn(`[Button playFlickerToState | ${phaseContext}] No visible targets for flicker on ${buttonIdForLog}`);
-            flickerTimeline.to({}, { duration: 0.01 }); // Ensure timeline has some duration
-        }
-        
-        this.currentFlickerAnim = flickerTimeline;
-        return flickerTimeline;
+    // Static method to access createAdvancedFlicker, or ensure buttonManager passes GSAP to it
+    static createAdvancedFlicker(target, profileName, options, gsapInstance) {
+        // This is a bit of a workaround if createAdvancedFlicker doesn't have GSAP internally
+        // Ideally, animationUtils.js imports GSAP itself.
+        // For now, assuming createAdvancedFlicker can access GSAP or is passed it.
+        return createAdvancedFlicker(target, profileName, options);
     }
 
-    /**
-     * Sets the visual state for when the button is pressed.
-     * @param {boolean} isPressed - True if the button is being pressed, false otherwise.
-     */
+
+    playFlickerToState(targetStateClassesStr, flickerProfileName, advancedFlickerOptions = {}) {
+        const {
+            phaseContext = 'UnknownPhase_Flicker',
+            isButtonSelectedOverride = null, 
+            onCompleteAll 
+        } = advancedFlickerOptions;
+
+        // This method now expects to be called from buttonManager, which creates the master timeline
+        // The actual flicker logic is now more directly handled by buttonManager's playFlickerToState
+        // This method in Button.js might become a simpler wrapper or be refactored if
+        // buttonManager orchestrates the timeline creation more directly.
+        // For now, let's assume buttonManager's playFlickerToState correctly sets up the timeline
+        // and this method is mostly for compatibility or future direct calls.
+
+        // The core logic of creating the flicker timeline is now in buttonManager's playFlickerToState
+        // This method might just return the timeline created by the manager or be deprecated.
+        // For this iteration, we assume buttonManager.playFlickerToState is the primary caller
+        // and it handles the timeline construction.
+
+        // If this method were to be self-contained for creating a flicker:
+        const tl = this.gsap.timeline();
+        tl.call(() => {
+            if (this.currentFlickerAnim && this.currentFlickerAnim.isActive()) {
+                this.currentFlickerAnim.kill();
+            }
+            this.element.classList.add('is-flickering');
+            this.setState(targetStateClassesStr, { 
+                skipAria: true, 
+                phaseContext: `PreFlicker_${phaseContext}`, 
+                forceState: true,
+                internalFlickerCall: true
+            });
+        });
+
+        const isSelectedForGlow = isButtonSelectedOverride !== null 
+            ? isButtonSelectedOverride 
+            : targetStateClassesStr.includes('is-selected');
+
+        const flickerOptionsForUtility = {
+            overrideGlowParams: { isButtonSelected: isSelectedForGlow },
+            lightTargetSelector: '.light',
+            onComplete: () => {
+                this.element.classList.remove('is-flickering');
+                this.setState(targetStateClassesStr, { 
+                    skipAria: false, 
+                    forceState: true, 
+                    phaseContext: `FlickerComplete_${phaseContext}` 
+                });
+                this.currentFlickerAnim = null;
+                if (onCompleteAll) onCompleteAll();
+            },
+        };
+
+        const actualFlickerSubTimeline = createAdvancedFlicker(
+            this.element, 
+            flickerProfileName,
+            flickerOptionsForUtility
+        );
+        tl.add(actualFlickerSubTimeline);
+        this.currentFlickerAnim = tl;
+        return tl;
+    }
+
     setPressedVisuals(isPressed) {
         if (this._pressTimeoutId && this.element.classList.contains('is-pressing') && !isPressed) {
             clearTimeout(this._pressTimeoutId);
@@ -223,23 +238,19 @@ class Button {
                 this.element.classList.remove('is-pressing');
                 this.element.removeEventListener('animationend', animationEndHandler);
                 this._pressTimeoutId = null;
-            }, pressAnimationDurationMs + 50); // Safety timeout
+            }, pressAnimationDurationMs + 50); 
         } else {
             this.element.classList.remove('is-pressing');
         }
     }
 
     destroy() {
-        // console.log(`[Button Component DESTROY] Destroying: ${this.getIdentifier()}`);
         if (this.currentFlickerAnim && this.currentFlickerAnim.isActive()) {
             this.currentFlickerAnim.kill();
         }
         if (this._pressTimeoutId) {
             clearTimeout(this._pressTimeoutId);
         }
-        // Remove any event listeners this component might have added to its element
-        // (e.g., the animationend listener in setPressedVisuals if it wasn't cleaned up)
-        // For now, setPressedVisuals cleans up its own listener.
     }
 }
 

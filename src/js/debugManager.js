@@ -8,7 +8,6 @@ let startupManager = null;
 let dom = { // Store references obtained during init
     statusDiv: null,
     phaseInfoDiv: null,
-    // attenuationDiv: null, // REMOVED
     nextPhaseButton: null,
     playAllButton: null,
     resetButton: null
@@ -59,18 +58,18 @@ function updatePhaseDisplay(phaseInfo) {
     currentStatusDiv.textContent = statusText; 
 
     if (oldStatusDOMText !== statusText) {
-        console.log(`[DebugManager updatePhaseDisplay] Status Update: Target="${statusText}", OldDOM="${oldStatusDOMText}", NewDOMReadback="${currentStatusDiv.textContent}"`);
+        // console.log(`[DebugManager updatePhaseDisplay] Status Update: Target="${statusText}", OldDOM="${oldStatusDOMText}", NewDOMReadback="${currentStatusDiv.textContent}"`);
     } else if (statusText !== currentStatusDiv.textContent) {
-        console.warn(`[DebugManager updatePhaseDisplay] Status Mismatch: Target="${statusText}", OldDOM="${oldStatusDOMText}", NewDOMReadback="${currentStatusDiv.textContent}" (Assignment might have failed or was reverted)`);
+        // console.warn(`[DebugManager updatePhaseDisplay] Status Mismatch: Target="${statusText}", OldDOM="${oldStatusDOMText}", NewDOMReadback="${currentStatusDiv.textContent}" (Assignment might have failed or was reverted)`);
     }
 
     const oldInfoDOMText = currentPhaseInfoDiv.textContent;
     currentPhaseInfoDiv.textContent = infoText; 
 
     if (oldInfoDOMText !== infoText) {
-        console.log(`[DebugManager updatePhaseDisplay] Info Update: Target="${infoText}", OldDOM="${oldInfoDOMText}", NewDOMReadback="${currentPhaseInfoDiv.textContent}"`);
+        // console.log(`[DebugManager updatePhaseDisplay] Info Update: Target="${infoText}", OldDOM="${oldInfoDOMText}", NewDOMReadback="${currentPhaseInfoDiv.textContent}"`);
     } else if (infoText !== currentPhaseInfoDiv.textContent) {
-        console.warn(`[DebugManager updatePhaseDisplay] Info Mismatch: Target="${infoText}", OldDOM="${oldInfoDOMText}", NewDOMReadback="${currentPhaseInfoDiv.textContent}" (Assignment might have failed or was reverted)`);
+        // console.warn(`[DebugManager updatePhaseDisplay] Info Mismatch: Target="${infoText}", OldDOM="${oldInfoDOMText}", NewDOMReadback="${currentPhaseInfoDiv.textContent}" (Assignment might have failed or was reverted)`);
     }
 }
 
@@ -97,8 +96,15 @@ function handleResetSequenceClick() {
 }
 
 function handleStartupPhaseChanged(phaseInfo) {
-    console.log("[DebugManager handleStartupPhaseChanged] Received phaseInfo:", JSON.parse(JSON.stringify(phaseInfo))); 
+    // console.log("[DebugManager handleStartupPhaseChanged] Received phaseInfo:", JSON.parse(JSON.stringify(phaseInfo))); 
     updatePhaseDisplay(phaseInfo);
+}
+
+export function setNextPhaseButtonEnabled(isEnabled) {
+    if (dom.nextPhaseButton) {
+        dom.nextPhaseButton.disabled = !isEnabled;
+        // console.log(`[DebugManager setNextPhaseButtonEnabled] Next Phase button ${isEnabled ? 'enabled' : 'disabled'}.`);
+    }
 }
 
 export function init(config) {
@@ -111,7 +117,6 @@ export function init(config) {
 
     dom.statusDiv = config.domElements.debugStatusDiv;
     dom.phaseInfoDiv = config.domElements.debugPhaseInfoDiv;
-    // dom.attenuationDiv = config.domElements.debugAttenuationDiv; // REMOVED
     dom.nextPhaseButton = config.domElements.nextPhaseButton;
     dom.playAllButton = config.domElements.playAllButton;
     dom.resetButton = config.domElements.resetButton;
@@ -126,12 +131,15 @@ export function init(config) {
         console.warn("[DebugManager INIT] One or more core debug DOM elements are missing. Debug panel may be non-functional.");
     }
 
-    if (dom.nextPhaseButton) dom.nextPhaseButton.addEventListener('click', handleNextPhaseClick);
+    if (dom.nextPhaseButton) {
+        dom.nextPhaseButton.addEventListener('click', handleNextPhaseClick);
+        setNextPhaseButtonEnabled(true); // Initially enabled
+    }
     if (dom.playAllButton) dom.playAllButton.addEventListener('click', handlePlayAllClick);
     if (dom.resetButton) dom.resetButton.addEventListener('click', handleResetSequenceClick);
 
     if (appState && typeof appState.subscribe === 'function') {
-        console.log("[DebugManager INIT] Subscribing to 'startup:phaseChanged'.");
+        // console.log("[DebugManager INIT] Subscribing to 'startup:phaseChanged'.");
         appState.subscribe('startup:phaseChanged', handleStartupPhaseChanged);
     } else {
         console.warn("[DebugManager INIT] appState or its subscribe method not available. Phase updates won't be received.");
