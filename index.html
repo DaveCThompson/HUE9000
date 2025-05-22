@@ -48,31 +48,11 @@
         #debug-phase-status { margin-top: 8px; font-weight: bold; }
         #debug-phase-info { font-size: 11px; margin-top: 4px; color: #ccc; max-width: 300px;}
 
-        /*
-        REMOVED TEMPORARY DEBUGGING STYLES FOR LCD TEXT
-        The following rules were causing the magenta/cyan flash on LCDs during P3:
-
-        body.theme-dim .hue-lcd-display.lcd--dimly-lit .lcd-value {
-            color: lime !important;
-            font-size: 20px !important;
-            font-weight: bold !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            text-shadow: none !important;
-            background-color: fuchsia !important;
-        }
-         body.theme-dim .actual-lcd-screen-element.lcd--dimly-lit #terminal-lcd-content {
-            color: lime !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-        */
-
     </style>
-  <script type="module" crossorigin src="/HUE9000/assets/index-DWccIxnL.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-h3-Jr8TZ.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-C--ByJ5z.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-C8NeMTCE.css">
 </head>
-<body class="theme-dim">
+<body class="theme-dim pre-boot"> {/* MODIFIED: Added pre-boot class */}
     <div id="debug-controls">
         <div>HUE 9000 - Startup Debug (REFACTOR-V2.1)</div>
         <button id="btn-next-phase">Next Phase</button>
