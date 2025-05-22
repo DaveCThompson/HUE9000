@@ -48,9 +48,10 @@
         }
         #debug-phase-status { margin-top: 8px; font-weight: bold; }
         #debug-phase-info { font-size: 11px; margin-top: 4px; color: #ccc; max-width: 300px;}
+
     </style>
 </head>
-<body class="theme-dim">
+<body class="theme-dim pre-boot"> {/* MODIFIED: Added pre-boot class */}
     <div id="debug-controls">
         <div>HUE 9000 - Startup Debug (REFACTOR-V2.1)</div>
         <button id="btn-next-phase">Next Phase</button>
@@ -87,12 +88,12 @@
                       </div>
                   </div>
                  <div class="panel-section lower-section">
-                     <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--left">
+                     <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--left" data-group-id="skill-scan-group">
                          <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 1"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 1</div></div>
                          <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 2"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 2</div></div>
                          <div class="block-label-bottom block-label-bottom--descriptor">SKILL SCAN</div>
                      </div>
-                    <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--right">
+                    <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--right" data-group-id="fit-eval-group">
                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 3"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 3</div></div>
                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 4"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 4</div></div>
                    <div class="block-label-bottom block-label-bottom--descriptor">FIT EVAL</div>

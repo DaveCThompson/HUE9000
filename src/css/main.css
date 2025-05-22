@@ -22,7 +22,7 @@
 @import url('./components/_lens-container.css');
 @import url('./components/_lens-core.css');
 @import url('./components/_lens-outer-glow.css');
-@import url('./components/_lens-super-glow.css'); /* ADDED: New Super Glow CSS */
+@import url('./components/_lens-super-glow.css');
 @import url('./components/_color-chips.css');
 @import url('./components/_grill.css');
 @import url('./components/_terminal.css'); 
@@ -56,41 +56,37 @@ body {
     align-items: center;
     min-height: 100vh;
 
-    /* Background is now fully controlled by theme variables */
-    background-color: oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
+    /* Background L values are modified by --startup-L-reduction-factor. Alphas are from theme. */
+    background-color: oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
+    /* MODIFIED: Reverted to direct background-image for noise, with multiply for noise layer */
     background-image:
         url('/public/noise.svg'), /* Noise texture overlay */
         linear-gradient(180deg,
-            oklch(var(--body-bg-top-l) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
-            oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%
+            oklch(calc(var(--body-bg-top-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
+            oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%
         );
-    background-repeat: repeat, no-repeat;
-    background-size: 150px 150px, cover;
+    background-repeat: repeat, no-repeat; /* repeat for noise, no-repeat for gradient */
+    background-size: 150px 150px, cover; /* size for noise, cover for gradient */
     background-position: 0 0, 0 0;
+    background-blend-mode: multiply, normal; /* Multiply for noise, normal for gradient */
+
 
     color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
     font-family: 'IBM Plex Mono', 'Inter', sans-serif;
-    padding: var(--space-3xl); /* Uses structural variable */
+    padding: var(--space-3xl); 
     touch-action: none;
     overflow: hidden;
+    /* position: relative; -- Not strictly needed if pseudo-element is removed */
+    /* z-index: 0; */
 
     transition:
-        color var(--transition-duration-medium) ease, /* Uses structural variable */
+        color var(--transition-duration-medium) ease, 
         background-color var(--transition-duration-medium) ease,
         background-image var(--transition-duration-medium) ease;
 }
 
+/* REMOVED: body::before noise overlay */
+
 *, *:before, *:after {
     box-sizing: inherit;
 }
-
-/*
-    IMPORTANT: Check for overly broad SVG styling.
-    If you have a rule like `svg { max-width: ...; }` or `svg { width: ...; }`
-    in _layout.css, _typography.css, or any other imported core file,
-    that could be the culprit.
-    It should be removed or made more specific if it's unintentionally shrinking the logo.
-    For example, instead of `svg { ... }`, it might need to be `.some-specific-icon-svg { ... }`.
-    Without seeing the content of _layout.css and _typography.css, I can't pinpoint it,
-    but this is the most likely place for such a rule if it's not in main.css directly.
-*/

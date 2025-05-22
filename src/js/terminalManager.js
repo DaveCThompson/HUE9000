@@ -4,7 +4,7 @@
  * message queuing, cursor, scrolling, and startup flicker effects.
  */
 import { getMessage } from './terminalMessages.js';
-import { createAdvancedFlicker } from './animationUtils.js'; 
+import { createAdvancedFlicker } from './animationUtils.js';
 
 class TerminalManager {
     constructor() {
@@ -16,33 +16,33 @@ class TerminalManager {
 
         this._messageQueue = [];
         this._isTyping = false;
-        this._currentLineElement = null; 
+        this._currentLineElement = null;
         this._cursorElement = null;
 
         this._domInitialized = false;
-        this._initialMessageFlickered = false; 
+        this._initialMessageFlickered = false;
     }
 
-    init(terminalContainerElement, terminalContentElement, appStateService, configModuleParam, gsapService) { 
+    init(terminalContainerElement, terminalContentElement, appStateService, configModuleParam, gsapService) {
         // console.log("[TerminalManager INIT] Initializing...");
         if (!terminalContainerElement || !terminalContentElement) {
             console.error("[TerminalManager INIT] CRITICAL: Terminal DOM elements not provided.");
             return;
         }
-        if (!appStateService || !configModuleParam || !gsapService) { 
+        if (!appStateService || !configModuleParam || !gsapService) {
             console.error("[TerminalManager INIT] CRITICAL: Missing appState, configModule, or gsap service.");
             return;
         }
 
-        this._terminalContainerElement = terminalContainerElement;
-        this._terminalContentElement = terminalContentElement; // This is the actual screen element
+        this._terminalContainerElement = terminalContainerElement; 
+        this._terminalContentElement = terminalContentElement; 
         this._appState = appStateService;
-        this._configModule = configModuleParam; 
-        this._gsap = gsapService; 
+        this._configModule = configModuleParam;
+        this._gsap = gsapService;
 
         this._setupDOM();
         this._appState.subscribe('requestTerminalMessage', this._handleRequestTerminalMessage.bind(this));
-        
+
         // console.log("[TerminalManager INIT] Initialization complete. Ready to receive messages.");
     }
 
@@ -65,9 +65,9 @@ class TerminalManager {
             // console.warn("[TerminalManager _handleRequestTerminalMessage] Received null payload.");
             return;
         }
-        
+
         let currentAppStateSnapshot = {};
-        if (payload.messageKey === 'BTN4_MESSAGE') {
+        if (payload.messageKey === 'BTN4_MESSAGE') { 
             currentAppStateSnapshot = {
                 theme: this._appState.getCurrentTheme(),
                 lensPower: this._appState.getTrueLensPower(),
@@ -80,13 +80,13 @@ class TerminalManager {
             };
         }
 
-        const messageContent = getMessage(payload, currentAppStateSnapshot, this._configModule); 
+        const messageContent = getMessage(payload, currentAppStateSnapshot, this._configModule);
         const messageObject = {
-            ...payload,
+            ...payload, 
             content: Array.isArray(messageContent) ? messageContent : [messageContent],
             linesTyped: 0
         };
-        
+
         this._messageQueue.push(messageObject);
         if (!this._isTyping) {
             this._processQueue();
@@ -95,7 +95,7 @@ class TerminalManager {
 
     async _processQueue() {
         if (this._messageQueue.length === 0) {
-            this._isTyping = false; 
+            this._isTyping = false;
             return;
         }
         if (this._isTyping && this._messageQueue.length > 0) {
@@ -104,7 +104,6 @@ class TerminalManager {
 
         this._isTyping = true;
         const messageObject = this._messageQueue.shift();
-        // console.log(`[TerminalManager _processQueue] Dequeued message. Source: '${messageObject.source}'. Lines: ${messageObject.content.length}. Remaining in queue: ${this._messageQueue.length}`);
 
         const delay = Math.random() * (this._configModule.TERMINAL_NEW_LINE_DELAY_MAX_MS - this._configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS) + this._configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS;
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -112,14 +111,24 @@ class TerminalManager {
         for (let i = 0; i < messageObject.content.length; i++) {
             const lineText = messageObject.content[i];
             this._addNewLineAndPrepareForTyping(); 
-            
-            if (messageObject.source === 'P0_INITIALIZING' && !this._initialMessageFlickered && this._currentLineElement) {
-                // console.log("[TerminalManager _processQueue] Preparing for P0 initial text flicker (Advanced).");
+
+            if (messageObject.source === 'P1_EMERGENCY_SUBSYSTEMS' && !this._initialMessageFlickered && this._currentLineElement) {
+                this._currentLineElement.classList.add('terminal-line--initial-boot');
+                // The color is now handled by CSS:
+                // body.theme-dim .actual-lcd-screen-element.lcd--unlit #terminal-lcd-content .terminal-line
+                // this._gsap.set(this._currentLineElement, { color: "oklch(0.75 0.05 130 / 1)" }); // REMOVED explicit JS color set
+                
                 this._currentLineElement.appendChild(this._cursorElement);
                 this._showCursor();
-                await this.playInitialTextFlicker(this._currentLineElement, lineText).then(); 
+                const flickerProfileToUse = messageObject.flickerProfile || 'textFlickerToDimlyLit';
+                const flickerResult = this.playInitialTextFlicker(this._currentLineElement, lineText, flickerProfileToUse);
+
+                if (flickerResult && flickerResult.completionPromise) {
+                    await flickerResult.completionPromise;
+                } else if (flickerResult && flickerResult.timeline) {
+                    await new Promise(res => flickerResult.timeline.eventCallback('onComplete', res).play());
+                }
                 this._initialMessageFlickered = true;
-                // console.log("[TerminalManager _processQueue] P0 initial text flicker (Advanced) complete.");
             } else {
                 this._showCursor();
                 await this._typeLine(lineText, messageObject.type);
@@ -129,7 +138,7 @@ class TerminalManager {
                 await new Promise(resolve => setTimeout(resolve, this._configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS / 2));
             }
         }
-        
+
         this._hideCursor();
         this._isTyping = false;
         this._processQueue(); 
@@ -138,19 +147,19 @@ class TerminalManager {
     _addNewLineAndPrepareForTyping() {
         this._currentLineElement = document.createElement('div');
         this._currentLineElement.className = 'terminal-line';
-        this._terminalContentElement.appendChild(this._currentLineElement); // Add to the screen element
-        
+        this._terminalContentElement.appendChild(this._currentLineElement); 
+
         this._scrollTerminal();
         this._limitMaxLines();
     }
 
     _typeLine(text, messageType = 'status') {
         return new Promise(resolve => {
-            if (!this._currentLineElement) { 
+            if (!this._currentLineElement) {
                 console.error("[TerminalManager _typeLine] _currentLineElement is null. Cannot type.");
                 resolve(); return;
             }
-            
+
             let speedPerChar;
             switch (messageType) {
                 case 'block': speedPerChar = this._configModule.TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR; break;
@@ -159,16 +168,16 @@ class TerminalManager {
             }
             const duration = (text.length * speedPerChar) / 1000;
 
-            this._currentLineElement.appendChild(this._cursorElement); 
+            this._currentLineElement.appendChild(this._cursorElement);
 
-            this._gsap.to(this._currentLineElement, { 
+            this._gsap.to(this._currentLineElement, {
                 duration: Math.max(0.1, duration), 
-                text: { 
+                text: {
                     value: text,
                     delimiter: "" 
                 },
                 ease: "none",
-                onUpdate: () => {
+                onUpdate: () => { 
                     if (this._currentLineElement && this._cursorElement && this._cursorElement.parentElement !== this._currentLineElement) {
                         this._currentLineElement.appendChild(this._cursorElement);
                     }
@@ -182,15 +191,10 @@ class TerminalManager {
             });
         });
     }
-    
-    _scrollTerminal() {
-        // Scroll the parent container if terminalContentElement is the screen itself
-        const scrollTarget = this._terminalContentElement.parentElement.classList.contains('terminal-block') 
-            ? this._terminalContentElement // If terminalContentElement IS the scrollable container
-            : this._terminalContentElement.parentElement; // If terminalContentElement is inside a scrollable container
 
-        if (scrollTarget) {
-            scrollTarget.scrollTop = scrollTarget.scrollHeight;
+    _scrollTerminal() {
+        if (this._terminalContainerElement) {
+            this._terminalContainerElement.scrollTop = this._terminalContainerElement.scrollHeight;
         }
     }
 
@@ -205,7 +209,7 @@ class TerminalManager {
     }
 
     _showCursor() {
-        if (this._cursorElement && this._currentLineElement) { 
+        if (this._cursorElement && this._currentLineElement) {
             if(this._cursorElement.parentElement !== this._currentLineElement) {
                 this._currentLineElement.appendChild(this._cursorElement);
             }
@@ -218,34 +222,31 @@ class TerminalManager {
             this._cursorElement.style.visibility = 'hidden';
         }
     }
-    
-    playInitialTextFlicker(textLineElement, textToSet) { 
-        // console.log(`[TerminalManager playInitialTextFlicker (Advanced)] Called for line: "${textToSet}"`, textLineElement);
+
+    playInitialTextFlicker(textLineElement, textToSet, flickerProfileName = 'textFlickerToDimlyLit') {
         if (!textLineElement) {
-            // console.warn("[TerminalManager playInitialTextFlicker (Advanced)] textLineElement is null.");
-            const tl = this._gsap.timeline(); return tl.to({}, {duration: 0.01}); 
+            const tl = this._gsap.timeline();
+            return { timeline: tl.to({}, {duration: 0.01}), completionPromise: Promise.resolve() };
         }
-        
-        // Ensure the line is clear before flicker and text animation
+
         const masterTl = this._gsap.timeline();
         masterTl.call(() => {
             textLineElement.textContent = ''; 
-            textLineElement.appendChild(this._cursorElement);
+            textLineElement.appendChild(this._cursorElement); 
         });
 
-        const flickerSubTl = createAdvancedFlicker(
+        const flickerResult = createAdvancedFlicker(
             textLineElement, 
-            'terminalP0Flicker', 
-            {} 
+            flickerProfileName,
+            {}
         );
-        masterTl.add(flickerSubTl);
-        
+        if (flickerResult && flickerResult.timeline) {
+            masterTl.add(flickerResult.timeline);
+        }
+
         const textAnimation = {
-            duration: (textToSet.length * this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) / 1000 * 0.75, 
-            text: { 
-                value: textToSet,
-                delimiter: "" 
-            },
+            duration: (textToSet.length * this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) / 1000 * 0.75,
+            text: { value: textToSet, delimiter: "" },
             ease: "none",
             onUpdate: () => {
                 if (textLineElement && this._cursorElement && this._cursorElement.parentElement !== textLineElement) {
@@ -256,41 +257,44 @@ class TerminalManager {
                 if (textLineElement && this._cursorElement && this._cursorElement.parentElement !== textLineElement) {
                     textLineElement.appendChild(this._cursorElement);
                 }
-                // console.log(`[TerminalManager playInitialTextFlicker (Advanced)] TextPlugin part complete for: "${textToSet}"`);
             }
         };
-        // Add text animation to the flicker timeline, potentially overlapping slightly
-        masterTl.to(textLineElement, textAnimation, masterTl.duration() * 0.25); 
-        
-        return masterTl;
+        const textStartTime = (flickerResult && flickerResult.timeline && flickerResult.timeline.duration() > 0) ? flickerResult.timeline.duration() * 0.25 : 0;
+        masterTl.to(textLineElement, textAnimation, textStartTime);
+
+        masterTl.call(() => {
+            this._gsap.set(textLineElement, { autoAlpha: 1 }); 
+            if (this._terminalContentElement) { 
+                this._gsap.set(this._terminalContentElement, { opacity: 1, visibility: 'visible' });
+            }
+        });
+
+
+        const overallCompletionPromise = new Promise(resolve => {
+            masterTl.eventCallback('onComplete', resolve);
+        });
+        if (masterTl.duration() === 0) {
+            masterTl.to({}, {duration: 0.001});
+        }
+        return { timeline: masterTl, completionPromise: overallCompletionPromise };
     }
 
-    playScreenFlickerToDimlyLit(terminalScreenElement, onCompleteCallback) {
-        console.trace("[TerminalManager playScreenFlickerToDimlyLit] TRACE"); 
-        // console.log(`[TerminalManager playScreenFlickerToDimlyLit] Called for terminal screen.`, terminalScreenElement);
+    playScreenFlickerToState(terminalScreenElement, profileName, onCompleteCallback) {
         if (!terminalScreenElement) {
-            // console.warn("[TerminalManager playScreenFlickerToDimlyLit] terminalScreenElement is null.");
-            const tl = this._gsap.timeline(); 
+            const tl = this._gsap.timeline();
             if (onCompleteCallback) tl.eventCallback("onComplete", onCompleteCallback);
-            return tl.to({}, { duration: 0.01 });
+            return { timeline: tl.to({}, { duration: 0.01 }), completionPromise: Promise.resolve() };
         }
 
-        // Ensure the flicker animation itself handles initial setup like opacity
-        const masterTl = this._gsap.timeline();
-        // No immediate class changes here; let createAdvancedFlicker and its onComplete handle it.
-        
-        const flickerSubTl = createAdvancedFlicker(
-            terminalScreenElement,
-            'lcdP4Flicker', 
+        return createAdvancedFlicker(
+            terminalScreenElement, 
+            profileName,
             {
-                onComplete: () => {
-                    // console.log(`[TerminalManager playScreenFlickerToDimlyLit] Flicker complete for terminal screen.`);
+                onTimelineComplete: () => {
                     if (onCompleteCallback) onCompleteCallback();
                 }
             }
         );
-        masterTl.add(flickerSubTl);
-        return masterTl;
     }
 }
 

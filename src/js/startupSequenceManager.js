@@ -1,703 +1,360 @@
 /**
- * @module startupSequenceManager
- * @description Manages the GSAP-driven multi-phase application startup sequence.
+ * @module startupSequenceManager (SSR-V1.0 Refactor -> XState Refactor)
+ * @description Manages the application startup sequence using XState.
  * Orchestrates visual changes and state updates across various UI managers.
  */
-import { ButtonStates } from './buttonManager.js'; 
-import { shuffleArray } from './utils.js';
-import { startupMessages as terminalStartupMessages } from './terminalMessages.js'; 
-
-// createAdvancedFlicker will be called by component managers or directly if needed
+import { interpret } from 'xstate';
+import { startupMachine } from './startupMachine.js'; // Import the machine definition
 
 // --- Module-level state for the startup sequence ---
-let localGsap = null; // Store passed GSAP instance
+let localGsap = null;
 let appStateService = null;
-let managerInstances = {}; 
-let domElementsRegistry = {}; 
-let configModule = null; // Will store the configModule namespace object
+let managerInstances = {};
+let domElementsRegistry = {};
+let configModule = null;
 
-let masterGsapTimeline = null;
-let currentPhaseDebugIndex = -1; 
-let isStepThroughMode = true;
-let isFullStartupPlaying = false;
-let p6CleanupPerformed = false;
+let fsmInterpreter = null;
+let previousFsmSnapshotValue = null; // To help detect actual changes
 
-const phaseOrder = [
-    "P0_Baseline", "P1_BodyFadeIn", "P2_MainPwr", "P3_Lens",
-    "P4_PreStartPriming", "P5_AuxLightsEnergize_Dim",
-    "P6_ThemeTransitionAndFinalEnergize", "P7_SystemReady",
-    "sequence_complete"
-];
+let LReductionProxy = { value: 0.85 }; 
+let opacityFactorProxy = { value: 0.15 }; 
 
-const phaseDescriptions = {
-    "P0_Baseline": "P0: Baseline Setup",
-    "P1_BodyFadeIn": "P1: Body Fade-In & Attenuation",
-    "P2_MainPwr": "P2: Main Power Energized",
-    "P3_Lens": "P3: Lens Activates",
-    "P4_PreStartPriming": "P4: Pre-Start Priming (Buttons, Dials, LCDs)",
-    "P5_AuxLightsEnergize_Dim": "P5: AUX Lights Energize (Dim Env)",
-    "P6_ThemeTransitionAndFinalEnergize": "P6: Theme Transition & SCAN/HUE ASSN Energize",
-    "P7_SystemReady": "P7: System Ready",
-    "sequence_complete": "All Startup Phases Done"
+
+const fsmStateToPhaseNameMap = {
+    'IDLE': 'Idle',
+    'RUNNING_SEQUENCE.PHASE_0_IDLE': 'startupPhaseP0_idle',
+    'RUNNING_SEQUENCE.PHASE_1_EMERGENCY_SUBSYSTEMS': 'startupPhaseP1_emergency',
+    'RUNNING_SEQUENCE.PHASE_2_BACKUP_POWER': 'startupPhaseP2_backupPower',
+    'RUNNING_SEQUENCE.PHASE_3_MAIN_POWER_ONLINE': 'startupPhaseP3_mainPowerOnline',
+    'RUNNING_SEQUENCE.PHASE_4_OPTICAL_CORE_REACTIVATE': 'startupPhaseP4_opticalCoreReactivate',
+    'RUNNING_SEQUENCE.PHASE_5_DIAGNOSTIC_INTERFACE': 'startupPhaseP5_diagnosticInterface',
+    'RUNNING_SEQUENCE.PHASE_6_MOOD_INTENSITY_CONTROLS': 'startupPhaseP6_moodIntensityControls',
+    'RUNNING_SEQUENCE.PHASE_7_HUE_CORRECTION_SYSTEMS': 'startupPhaseP7_hueCorrectionSystems',
+    'RUNNING_SEQUENCE.PHASE_8_EXTERNAL_LIGHTING_CONTROLS': 'startupPhaseP8_externalLightingControls',
+    'RUNNING_SEQUENCE.PHASE_9_AUX_LIGHTING_LOW': 'startupPhaseP9_auxLightingLow',
+    'RUNNING_SEQUENCE.PHASE_10_THEME_TRANSITION': 'startupPhaseP10_themeTransition',
+    'RUNNING_SEQUENCE.PHASE_11_SYSTEM_OPERATIONAL': 'startupPhaseP11_systemOperational',
+    'PAUSED_AWAITING_NEXT_STEP': 'PAUSED',
+    'SYSTEM_READY': 'sequence_complete',
+    'ERROR_STATE': 'ERROR'
 };
 
-const selectorsForDimExitAnimation = [
-    'body',
-    '.panel-bezel',
-    '.panel-section',
-    '.control-block',
-    '.button-unit',
-    '.button-unit .light',
-    '.button-unit .button-text',
-    '#logo-container',
-    '#logo-container svg.logo-svg',
-    '#logo-container svg.logo-svg .logo-dynamic-bg',
-    '#logo-container svg.logo-svg .logo-panel-bg-rect',
-    '.dial-canvas-container',
-    '.hue-lcd-display',
-    '.actual-lcd-screen-element', 
-    '#lens-container', 
-    '#color-lens',
-    '.grill-placeholder',
-    '.color-chip',
-    '.control-group-label',
-    '.block-label-bottom'
+const phaseDescriptionsForFSM = {
+    "Idle": "System Idle, awaiting startup.",
+    "startupPhaseP0_idle": "Phase 0: System Idle / Baseline Setup",
+    "startupPhaseP1_emergency": "Phase 1: Initializing Emergency Subsystems",
+    "startupPhaseP2_backupPower": "Phase 2: Activating Backup Power Systems",
+    "startupPhaseP3_mainPowerOnline": "Phase 3: Main Power Online",
+    "startupPhaseP4_opticalCoreReactivate": "Phase 4: Reactivating Optical Core",
+    "startupPhaseP5_diagnosticInterface": "Phase 5: Initializing Diagnostic Control Interface",
+    "startupPhaseP6_moodIntensityControls": "Phase 6: Initializing Mood and Intensity Controls",
+    "startupPhaseP7_hueCorrectionSystems": "Phase 7: Initializing Hue Correction Systems",
+    "startupPhaseP8_externalLightingControls": "Phase 8: Initializing External Lighting Controls",
+    "startupPhaseP9_auxLightingLow": "Phase 9: Activating Auxiliary Lighting: Low Intensity",
+    "startupPhaseP10_themeTransition": "Phase 10: Engaging Ambient Theme",
+    "startupPhaseP11_systemOperational": "Phase 11: HUE 9000 Operational",
+    "PAUSED": "Paused, awaiting next step.",
+    "sequence_complete": "All Startup Phases Done",
+    "ERROR": "Startup Error Occurred"
+};
+
+const fsmPhaseSequence = [
+    'PHASE_0_IDLE',
+    'PHASE_1_EMERGENCY_SUBSYSTEMS',
+    'PHASE_2_BACKUP_POWER',
+    'PHASE_3_MAIN_POWER_ONLINE',
+    'PHASE_4_OPTICAL_CORE_REACTIVATE',
+    'PHASE_5_DIAGNOSTIC_INTERFACE',
+    'PHASE_6_MOOD_INTENSITY_CONTROLS',
+    'PHASE_7_HUE_CORRECTION_SYSTEMS',
+    'PHASE_8_EXTERNAL_LIGHTING_CONTROLS',
+    'PHASE_9_AUX_LIGHTING_LOW',
+    'PHASE_10_THEME_TRANSITION',
+    'PHASE_11_SYSTEM_OPERATIONAL'
 ];
-let elementsAnimatedOnDimExit = []; 
 
 
-function _notifyPhaseChange(phaseName, status) {
-    let nextPhaseNameForDisplay, nextPhaseDescriptionForDisplay;
-    let descriptionForCurrentPhase = phaseDescriptions[phaseName] || phaseName;
+function _getPhaseNameFromFsmState(fsmStateValue) {
+    if (typeof fsmStateValue === 'string') return fsmStateToPhaseNameMap[fsmStateValue] || fsmStateValue;
+    if (typeof fsmStateValue === 'object') {
+        const parent = Object.keys(fsmStateValue)[0];
+        const child = fsmStateValue[parent];
+        return fsmStateToPhaseNameMap[`${parent}.${child}`] || `${parent}.${child}`;
+    }
+    return 'UnknownState';
+}
 
-    if (status === 'starting') {
-        const startingPhaseIndex = phaseOrder.indexOf(phaseName);
-        nextPhaseNameForDisplay = phaseOrder[startingPhaseIndex + 1] || 'sequence_complete';
-        nextPhaseDescriptionForDisplay = phaseDescriptions[nextPhaseNameForDisplay] || nextPhaseNameForDisplay;
-    } else { 
-        const completedPhaseIndex = phaseOrder.indexOf(phaseName);
-        if (phaseName === 'sequence_complete') {
-            nextPhaseNameForDisplay = 'N/A';
-            nextPhaseDescriptionForDisplay = 'N/A';
+function _notifyFsmTransition(snapshot) {
+    if (!appStateService || !snapshot) return;
+
+    const currentPhaseKey = _getPhaseNameFromFsmState(snapshot.value); 
+
+    let status = 'unknown';
+    if (snapshot.matches('IDLE')) status = 'ready';
+    else if (snapshot.matches('PAUSED_AWAITING_NEXT_STEP')) status = 'paused';
+    else if (snapshot.matches('SYSTEM_READY') || snapshot.matches('ERROR_STATE')) status = 'completed';
+    else if (snapshot.event && (snapshot.event.type.startsWith('done.invoke') || snapshot.event.type.startsWith('error.platform'))) status = 'completed';
+    else if (snapshot.changed) status = 'starting';
+
+    let nextPhaseKey = 'N/A';
+    let nextPhaseDescription = 'N/A';
+
+    if (snapshot.matches('PAUSED_AWAITING_NEXT_STEP')) {
+        const resumeTargetFsmStateName = snapshot.context.currentPhaseNameForResume; 
+        if (resumeTargetFsmStateName === 'SYSTEM_READY_TARGET') {
+            nextPhaseKey = 'sequence_complete';
         } else {
-            let referenceIndex = currentPhaseDebugIndex;
-            if (phaseName === 'Idle' && status === 'ready') {
-                referenceIndex = -1;
-            } else if (status === 'completed' && completedPhaseIndex !== -1) {
-                referenceIndex = completedPhaseIndex;
-            }
-            
-            nextPhaseNameForDisplay = phaseOrder[referenceIndex + 1] || 'sequence_complete';
-            nextPhaseDescriptionForDisplay = phaseDescriptions[nextPhaseNameForDisplay] || nextPhaseNameForDisplay;
+            const fullResumePath = `RUNNING_SEQUENCE.${resumeTargetFsmStateName}`;
+            nextPhaseKey = fsmStateToPhaseNameMap[fullResumePath] || resumeTargetFsmStateName;
         }
-        
-        if (!isStepThroughMode && status === 'completed' && completedPhaseIndex > currentPhaseDebugIndex) {
-            currentPhaseDebugIndex = completedPhaseIndex;
+        nextPhaseDescription = phaseDescriptionsForFSM[nextPhaseKey] || nextPhaseKey;
+    } else if (!snapshot.done && !snapshot.matches('ERROR_STATE')) {
+        const currentFsmStateName = typeof snapshot.value === 'string' ? snapshot.value.split('.').pop() : Object.values(snapshot.value)[0];
+        const currentIndex = fsmPhaseSequence.indexOf(currentFsmStateName);
+
+        if (currentIndex !== -1 && currentIndex < fsmPhaseSequence.length - 1) {
+            const nextFsmStateName = fsmPhaseSequence[currentIndex + 1];
+            const fullNextPath = `RUNNING_SEQUENCE.${nextFsmStateName}`;
+            nextPhaseKey = fsmStateToPhaseNameMap[fullNextPath] || nextFsmStateName;
+            nextPhaseDescription = phaseDescriptionsForFSM[nextPhaseKey] || nextPhaseKey;
+        } else if (currentIndex === fsmPhaseSequence.length - 1) { 
+            nextPhaseKey = 'sequence_complete';
+            nextPhaseDescription = phaseDescriptionsForFSM[nextPhaseKey];
         }
     }
+
 
     const phaseInfo = {
-        currentPhaseName: phaseName,
+        currentPhaseName: currentPhaseKey,
         status: status,
-        nextPhaseName: nextPhaseNameForDisplay,
-        description: descriptionForCurrentPhase,
-        nextPhaseDescription: nextPhaseDescriptionForDisplay
+        description: phaseDescriptionsForFSM[currentPhaseKey] || currentPhaseKey,
+        nextPhaseName: nextPhaseKey,
+        nextPhaseDescription: nextPhaseDescription,
+        fsmStateValue: snapshot.value,
+        fsmContext: snapshot.context
     };
+    appStateService.emit('startup:phaseChanged', phaseInfo);
 
-    if (appStateService && typeof appStateService.emit === 'function') {
-        appStateService.emit('startup:phaseChanged', phaseInfo);
-    } else {
-        console.error("[SSM _notifyPhaseChange] appStateService or emit method not available!");
-    }
-}
-
-
-function GsapPhase0_Baseline() {
-    const phaseName = "P0_Baseline";
-    const tl = localGsap.timeline({ 
-        onStart: () => { _notifyPhaseChange(phaseName, 'starting'); },
-        onComplete: () => { _notifyPhaseChange(phaseName, 'completed'); }
-    });
-    
-    tl.call(() => {
-        // console.log(`[Startup P0 EXEC] Setting initial states. Terminal message requested.`);
-        
-        if (domElementsRegistry.terminalContainer) {
-            localGsap.set(domElementsRegistry.terminalContainer, { clearProps: "all", opacity: 1, visibility: 'visible' });
-        }
-        if (domElementsRegistry.terminalContent) { 
-            localGsap.set(domElementsRegistry.terminalContent, { clearProps: "all", opacity: 1, visibility: 'visible' });
-        }
-
-        appStateService.emit('requestTerminalMessage', { type: 'startup', source: 'P0_INITIALIZING', messageKey: 'P0_INITIALIZING' });
-        
-        domElementsRegistry.root.style.setProperty('--global-dim-attenuation', domElementsRegistry.initialCssAttenuationValue || '0.3');
-
-        if (managerInstances.lensManager) managerInstances.lensManager.directUpdateLensVisuals(0);
-        if (managerInstances.dialManager) managerInstances.dialManager.setDialsActiveState(false); 
-        
-        if (managerInstances.uiUpdater) {
-            managerInstances.uiUpdater.setLcdState(domElementsRegistry.lcdA, 'lcd--unlit');
-            managerInstances.uiUpdater.setLcdState(domElementsRegistry.lcdB, 'lcd--unlit');
-            if (domElementsRegistry.terminalContainer) { 
-                 managerInstances.uiUpdater.setLcdState(domElementsRegistry.terminalContainer, 'js-active-dim-lcd', {skipClassChange: false});
-            }
-        }
-        if (managerInstances.dialManager) managerInstances.dialManager.resizeAllCanvases(true);
-    });
-    
-    const p0FlickerProfile = configModule.ADVANCED_FLICKER_PROFILES?.terminalP0Flicker;
-    let estimatedP0Duration = configModule.MIN_PHASE_DURATION_FOR_STEPPING;
-    if (p0FlickerProfile) {
-        const avgPeriod = (p0FlickerProfile.periodStart + p0FlickerProfile.periodEnd) / 2;
-        estimatedP0Duration = Math.max(estimatedP0Duration, p0FlickerProfile.numCycles * avgPeriod + 0.1); 
-    }
-    const p0Message = terminalStartupMessages?.P0_INITIALIZING || "INITIALIZING..."; 
-    const typingDuration = (p0Message.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) / 1000 * 0.75; 
-    estimatedP0Duration = Math.max(estimatedP0Duration, typingDuration + 0.1); 
-
-    tl.to({}, { duration: estimatedP0Duration }); 
-    return tl;
-}
-
-function GsapPhase1_BodyFadeIn(dimAttenuationProxy) { 
-    const phaseName = "P1_BodyFadeIn";
-    const tl = localGsap.timeline({ 
-        onStart: () => { _notifyPhaseChange(phaseName, 'starting'); },
-        onComplete: () => { _notifyPhaseChange(phaseName, 'completed'); }
-    });
-    tl.call(() => { /* console.log(`[Startup P1 EXEC] Starting body fade-in and attenuation.`); */ }, null, 0);
-
-    tl.to(domElementsRegistry.body, { 
-        opacity: 1, 
-        duration: configModule.BODY_FADE_IN_DURATION, 
-        ease: "power1.inOut",
-    }, "start_P1");
-
-    if (getComputedStyle(domElementsRegistry.root).getPropertyValue('--global-dim-attenuation')) {
-        tl.to(dimAttenuationProxy, { 
-            value: 0.0, duration: configModule.ATTENUATION_DURATION, ease: "power1.inOut",
-            onUpdate: () => {
-                domElementsRegistry.root.style.setProperty('--global-dim-attenuation', dimAttenuationProxy.value.toFixed(2));
-            },
-            onComplete: () => {
-                domElementsRegistry.root.style.setProperty('--global-dim-attenuation', '0.00');
-                dimAttenuationProxy.value = 0.0;
-            }
-        }, `start_P1+=${Math.min(0.1, configModule.BODY_FADE_IN_DURATION * 0.1)}`);
-    }
-    return tl;
-}
-
-function GsapPhase2_MainPowerEnergized() {
-    const phaseName = "P2_MainPwr";
-    const tl = localGsap.timeline({ 
-        onStart: () => { _notifyPhaseChange(phaseName, 'starting'); },
-        onComplete: () => { _notifyPhaseChange(phaseName, 'completed'); }
-    });
-    
-    tl.call(() => {
-        appStateService.emit('requestTerminalMessage', { type: 'startup', source: 'P2_MAIN_POWER_RESTORED', messageKey: 'P2_MAIN_POWER_RESTORED' });
-    }, null, 0); 
-
-    if (domElementsRegistry.mainPwrOnButton && domElementsRegistry.mainPwrOffButton && managerInstances.buttonManager) {
-        const pwrOnFlickerTimeline = managerInstances.buttonManager.playFlickerToState(
-            domElementsRegistry.mainPwrOnButton, ButtonStates.ENERGIZED_SELECTED,
-            { 
-                profileName: 'buttonEnergizeP2P5', 
-                phaseContext: `${phaseName}_ON_Flicker`,
-                isButtonSelectedOverride: true 
-            }
-        );
-        const pwrOffFlickerTimeline = managerInstances.buttonManager.playFlickerToState(
-            domElementsRegistry.mainPwrOffButton, ButtonStates.ENERGIZED_UNSELECTED,
-            { 
-                profileName: 'buttonEnergizeP2P5', 
-                phaseContext: `${phaseName}_OFF_Flicker`,
-                isButtonSelectedOverride: false 
-            }
-        );
-        if (pwrOnFlickerTimeline) tl.add(pwrOnFlickerTimeline, ">0.05"); 
-        if (pwrOffFlickerTimeline) tl.add(pwrOffFlickerTimeline, "<"); 
-    } else {
-        tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING }, ">0.05");
-    }
-    return tl;
-}
-
-function GsapPhase3_LensActivates() {
-    const phaseName = "P3_Lens";
-    const tl = localGsap.timeline({ 
-        onStart: () => { _notifyPhaseChange(phaseName, 'starting'); },
-        onComplete: () => { _notifyPhaseChange(phaseName, 'completed'); }
-    });
-    tl.call(() => { 
-        appStateService.emit('requestTerminalMessage', { type: 'startup', source: 'P3_OPTICAL_CORE_ENERGIZING', messageKey: 'P3_OPTICAL_CORE_ENERGIZING' });
-    }, null, 0);
-    if (managerInstances.lensManager) {
-        const lensAnimTimeline = managerInstances.lensManager.energizeLensCoreStartup(); 
-        tl.add(lensAnimTimeline, ">");
-    } else {
-        tl.to({}, { duration: configModule.P3_LENS_RAMP_DURATION_S }, ">");
-    }
-    return tl;
-}
-
-function GsapPhase4_PreStartPriming() {
-    const phaseName = "P4_PreStartPriming";
-    const tl = localGsap.timeline({ 
-        onStart: () => { _notifyPhaseChange(phaseName, 'starting'); },
-        onComplete: () => { _notifyPhaseChange(phaseName, 'completed'); }
-    });
-
-    tl.call(() => {
-        appStateService.emit('requestTerminalMessage', { type: 'startup', source: 'P4_SECONDARY_SYSTEMS_ONLINE', messageKey: 'P4_SECONDARY_SYSTEMS_ONLINE' });
-        if (managerInstances.dialManager) managerInstances.dialManager.setDialsActiveState(true); 
-        
-        const logoSVG = domElementsRegistry.logoContainer.querySelector('svg.logo-svg');
-        if (logoSVG && logoSVG.style.opacity !== '0.05') localGsap.set(logoSVG, { opacity: 0.05 }); 
-    }, null, 0);
-
-    const lcdFlickerMasterTl = localGsap.timeline(); 
-    const lcdElementsToFlicker = [];
-    if (domElementsRegistry.lcdA) lcdElementsToFlicker.push(domElementsRegistry.lcdA);
-    if (domElementsRegistry.lcdB) lcdElementsToFlicker.push(domElementsRegistry.lcdB);
-    
-    lcdElementsToFlicker.forEach((lcdEl, index) => {
-        if (managerInstances.uiUpdater) {
-            const flickerSubTl = managerInstances.uiUpdater.setLcdState(lcdEl, 'lcd--dimly-lit', { 
-                useP4Flicker: true,
-            });
-            if (flickerSubTl) lcdFlickerMasterTl.add(flickerSubTl, index * (configModule.P4_BUTTON_FADE_STAGGER * 0.5)); 
-        }
-    });
-
-    if (managerInstances.terminalManager && domElementsRegistry.terminalContainer) {
-        const terminalScreenFlickerTl = managerInstances.terminalManager.playScreenFlickerToDimlyLit(
-            domElementsRegistry.terminalContainer, 
-            () => { 
-                if (managerInstances.uiUpdater) {
-                    managerInstances.uiUpdater.setLcdState(domElementsRegistry.terminalContainer, 'lcd--dimly-lit', {skipClassChange: false});
-                }
-            }
-        );
-        if (terminalScreenFlickerTl) lcdFlickerMasterTl.add(terminalScreenFlickerTl, lcdElementsToFlicker.length * (configModule.P4_BUTTON_FADE_STAGGER * 0.5)); 
-    }
-
-    if (lcdFlickerMasterTl.duration() > 0) {
-        tl.add(lcdFlickerMasterTl, ">0.05"); 
-    } else {
-        tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING }, ">0.05");
-    }
-
-    if (managerInstances.buttonManager) {
-        const buttonsToPrimeElements = [];
-        managerInstances.buttonManager._buttons.forEach((buttonComponent, element) => { 
-            const primeGroups = ['skill-scan-group', 'fit-eval-group', 'env', 'lcd', 'logo', 'btn', 'light'];
-            if (primeGroups.includes(buttonComponent.getGroupId()) &&
-                buttonComponent.getGroupId() !== 'system-power' && 
-                !buttonComponent.getCurrentClasses().has('is-energized') &&
-                !buttonComponent.getCurrentClasses().has(ButtonStates.DIMLY_LIT)) {
-                buttonsToPrimeElements.push(element);
-            }
-        });
-
-        if (buttonsToPrimeElements.length > 0) {
-            shuffleArray(buttonsToPrimeElements);
-            const buttonPrimeMasterTl = localGsap.timeline(); 
-            buttonsToPrimeElements.forEach((btnEl, index) => {
-                const buttonInstance = managerInstances.buttonManager._buttons.get(btnEl);
-                if (buttonInstance) {
-                    const flickerTl = managerInstances.buttonManager.playFlickerToState(
-                        btnEl,
-                        ButtonStates.DIMLY_LIT,
-                        {
-                            profileName: 'buttonP4DimlyLitFlicker',
-                            phaseContext: `${phaseName}_BtnDimlyLit_${buttonInstance.getIdentifier()}`
-                        }
-                    );
-                    buttonPrimeMasterTl.add(flickerTl, index * configModule.P4_BUTTON_FADE_STAGGER);
-                }
-            });
-            tl.add(buttonPrimeMasterTl, `>${(configModule.P4_BUTTON_FADE_STAGGER || 0.03) * 1.5}`); 
+    if (managerInstances.debugManager) {
+        if (snapshot.matches('PAUSED_AWAITING_NEXT_STEP') || snapshot.matches('IDLE') || snapshot.matches('SYSTEM_READY') || snapshot.matches('ERROR_STATE')) {
+            managerInstances.debugManager.setNextPhaseButtonEnabled(true);
         } else {
-            tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING }, ">");
+            managerInstances.debugManager.setNextPhaseButtonEnabled(false);
         }
-    } else {
-        tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING }, ">");
     }
-    return tl;
-}
-
-function GsapPhase5_AuxLightsEnergizeOnly_Dim() {
-    const phaseName = "P5_AuxLightsEnergize_Dim";
-    const tl = localGsap.timeline({ 
-        onStart: () => { _notifyPhaseChange(phaseName, 'starting'); },
-        onComplete: () => { _notifyPhaseChange(phaseName, 'completed'); }
-    });
-    tl.call(() => {
-        appStateService.emit('requestTerminalMessage', { type: 'startup', source: 'P5_AUX_LIGHTS_ONLINE', messageKey: 'P5_AUX_LIGHTS_ONLINE' });
-    }, null, 0);
-
-    if (managerInstances.buttonManager && domElementsRegistry.auxLightLowButton && domElementsRegistry.auxLightHighButton) {
-        const flickerLowTimeline = managerInstances.buttonManager.playFlickerToState(
-            domElementsRegistry.auxLightLowButton, ButtonStates.ENERGIZED_SELECTED,
-            { 
-                profileName: 'buttonEnergizeP2P5', 
-                phaseContext: `${phaseName}_LOW_Flicker`,
-                isButtonSelectedOverride: true 
-            }
-        );
-        const flickerHighTimeline = managerInstances.buttonManager.playFlickerToState(
-            domElementsRegistry.auxLightHighButton, ButtonStates.ENERGIZED_UNSELECTED,
-            { 
-                profileName: 'buttonEnergizeP2P5', 
-                phaseContext: `${phaseName}_HIGH_Flicker`,
-                isButtonSelectedOverride: false 
-            }
-        );
-        if (flickerLowTimeline) tl.add(flickerLowTimeline, ">0.05");
-        if (flickerHighTimeline) tl.add(flickerHighTimeline, "<"); 
-    } else {
-        tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING }, ">0.05");
-    }
-    return tl;
-}
-
-function _performP6Cleanup() {
-    if (p6CleanupPerformed) return;
-    // console.log("[StartupSequenceManager _performP6Cleanup] Performing P6 cleanup.");
-
-    elementsAnimatedOnDimExit.forEach(el => {
-        el.classList.remove('animate-on-dim-exit');
-    });
-    elementsAnimatedOnDimExit = []; 
-
-    domElementsRegistry.body.classList.remove('is-transitioning-from-dim');
-    if (managerInstances.uiUpdater) managerInstances.uiUpdater.finalizeThemeTransition();
-    p6CleanupPerformed = true;
-}
-
-function GsapPhase6_ThemeTransitionAndFinalEnergize() {
-    const phaseName = "P6_ThemeTransitionAndFinalEnergize";
-    const tl = localGsap.timeline({ 
-        onStart: () => { _notifyPhaseChange(phaseName, 'starting'); },
-        onComplete: () => {
-            // This is the onComplete for the P6 phase itself
-            _performP6Cleanup(); 
-            _notifyPhaseChange(phaseName, 'completed');
-        }
-    });
-
-    const themeSetupTl = localGsap.timeline(); 
-    themeSetupTl.call(() => {
-        appStateService.emit('requestTerminalMessage', { type: 'startup', source: 'P6_AMBIENT_THEME_ENGAGED', messageKey: 'P6_AMBIENT_THEME_ENGAGED' });
-        if (managerInstances.uiUpdater) managerInstances.uiUpdater.prepareLogoForFullTheme();
-
-        elementsAnimatedOnDimExit = []; 
-        selectorsForDimExitAnimation.forEach(selector => {
-            document.querySelectorAll(selector).forEach(el => {
-                el.classList.add('animate-on-dim-exit');
-                elementsAnimatedOnDimExit.push(el);
-            });
-        });
-        
-        domElementsRegistry.body.classList.add('is-transitioning-from-dim');
-
-        if (managerInstances.uiUpdater) {
-            managerInstances.uiUpdater.setLcdState(domElementsRegistry.lcdA, 'active');
-            managerInstances.uiUpdater.setLcdState(domElementsRegistry.lcdB, 'active');
-            if (domElementsRegistry.terminalContainer) {
-                managerInstances.uiUpdater.setLcdState(domElementsRegistry.terminalContainer, 'active');
-            }
-        }
-    })
-    .call(() => {
-        appStateService.setTheme('dark'); 
-    }, null, `>${configModule.MIN_PHASE_DURATION_FOR_STEPPING * 0.1}`) 
-    .to({}, { duration: configModule.P6_CSS_TRANSITION_DURATION }); // This pause allows CSS transitions to run
-
-    tl.add(themeSetupTl, 0); 
-
-    // Determine when the button flickers should start relative to the theme transition
-    // Start them slightly after the theme change is initiated to ensure CSS variables are updated
-    const energizeStartTime = (configModule.MIN_PHASE_DURATION_FOR_STEPPING * 0.1) + 0.1; 
-    tl.addLabel("buttonFlickerInsertionPoint", energizeStartTime);
-
-    // This call will create and add the flicker animations timeline to the main P6 timeline (tl)
-    // at the 'buttonFlickerInsertionPoint'.
-    tl.call(() => {
-        const actualFlickerAnimationsTl = managerInstances.buttonManager.flickerDimlyLitToEnergizedStartup({
-            profileName: 'buttonP6EnergizeFlicker', 
-            stagger: configModule.P6_BUTTON_ENERGIZE_FLICKER_STAGGER,
-            phaseContext: `${phaseName}_AllDimToEnergized`,
-            specificGroups: ['skill-scan-group', 'fit-eval-group', 'env', 'lcd', 'logo', 'btn'],
-            targetThemeContext: 'theme-dark' 
-        });
-
-        // Add the returned timeline of flickers to the main P6 timeline (tl)
-        // This ensures tl's duration correctly reflects these added animations.
-        if (actualFlickerAnimationsTl && actualFlickerAnimationsTl.duration() > 0.01) {
-            tl.add(actualFlickerAnimationsTl, "buttonFlickerInsertionPoint");
-        }
-    }, null, energizeStartTime); // The call itself happens at energizeStartTime
-    
-    return tl;
 }
 
 
-function GsapPhase7_SystemReady() {
-    const phaseName = "P7_SystemReady";
-    const tl = localGsap.timeline({ 
-        onStart: () => { _notifyPhaseChange(phaseName, 'starting'); },
-        onComplete: () => {
-            isFullStartupPlaying = false;
-            _notifyPhaseChange(phaseName, 'completed'); 
-            _notifyPhaseChange('sequence_complete', 'completed'); 
-        }
-    });
-    tl.call(() => {
-        appStateService.emit('requestTerminalMessage', { type: 'startup', source: 'P7_SYSTEM_READY', messageKey: 'P7_SYSTEM_READY' });
-        if (managerInstances.buttonManager) {
-            managerInstances.buttonManager.confirmGroupSelected('system-power', domElementsRegistry.mainPwrOnButton);
-            managerInstances.buttonManager.confirmGroupSelected('light', domElementsRegistry.auxLightLowButton);
-            Object.keys(configModule.DEFAULT_ASSIGNMENT_SELECTIONS).forEach(targetKey => {
-                managerInstances.buttonManager.confirmGroupSelected(targetKey, configModule.DEFAULT_ASSIGNMENT_SELECTIONS[targetKey].toString());
-            });
-        }
-        appStateService.setAppStatus('interactive'); 
-    }, null, 0)
-    .call(() => {
-        if (managerInstances.dialManager) managerInstances.dialManager.resizeAllCanvases(true);
-    }, null, "+=0.05")
-    .to({}, { duration: configModule.P7_EFFECTIVE_DURATION }, ">");
-    return tl;
-}
-
-export function init(config) { 
-    localGsap = config.gsap; 
+export function init(config) {
+    localGsap = config.gsap;
     appStateService = config.appState;
     managerInstances = config.managers;
     domElementsRegistry = config.domElements;
-    configModule = config.configModule; 
+    configModule = config.configModule;
+
+    if (!domElementsRegistry.elementsAnimatedOnDimExit) {
+        domElementsRegistry.elementsAnimatedOnDimExit = [];
+    }
     if (!configModule) {
-        console.error("[StartupSequenceManager INIT] CRITICAL: configModule not provided in config!");
+        console.error("[StartupSequenceManager INIT] CRITICAL: configModule not provided!");
+    }
+
+    if (configModule && configModule.STARTUP_L_REDUCTION_FACTORS) {
+        LReductionProxy.value = configModule.STARTUP_L_REDUCTION_FACTORS.P0;
+        opacityFactorProxy.value = 1.0 - LReductionProxy.value;
+    } else {
+        console.warn("[StartupSequenceManager INIT] STARTUP_L_REDUCTION_FACTORS not found in config. Using default proxy values: L=0.85, O=0.15.");
+        LReductionProxy.value = 0.85;
+        opacityFactorProxy.value = 0.15;
     }
 }
 
-function buildMasterTimeline(dimAttenuationProxy) {
-    if (masterGsapTimeline) masterGsapTimeline.kill(); 
-    masterGsapTimeline = localGsap.timeline({ 
-        paused: true,
-        onComplete: () => {
-            if (isFullStartupPlaying) isFullStartupPlaying = false;
-            if (!p6CleanupPerformed) _performP6Cleanup(); // Final catch-all for P6 cleanup
-            
-            let finalPhaseIndexToNotify = currentPhaseDebugIndex;
-            if (appStateService.getAppStatus() === 'interactive') {
-                finalPhaseIndexToNotify = phaseOrder.indexOf("P7_SystemReady");
-            } else if (masterGsapTimeline.progress() === 1) {
-                finalPhaseIndexToNotify = phaseOrder.indexOf("P7_SystemReady");
-            }
-            
-            if (finalPhaseIndexToNotify < phaseOrder.indexOf("P7_SystemReady")) {
-                 _notifyPhaseChange(phaseOrder[phaseOrder.indexOf("P7_SystemReady")], 'completed');
-            }
-            _notifyPhaseChange('sequence_complete', 'completed');
-            if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(true);
-        }
-    });
-
-    masterGsapTimeline
-        .addLabel(phaseOrder[0]).add(GsapPhase0_Baseline())
-        .addLabel(phaseOrder[1], ">").add(GsapPhase1_BodyFadeIn(dimAttenuationProxy))
-        .addLabel(phaseOrder[2], ">").add(GsapPhase2_MainPowerEnergized())
-        .addLabel(phaseOrder[3], ">").add(GsapPhase3_LensActivates())
-        .addLabel(phaseOrder[4], ">").add(GsapPhase4_PreStartPriming())
-        .addLabel(phaseOrder[5], ">").add(GsapPhase5_AuxLightsEnergizeOnly_Dim())
-        .addLabel(phaseOrder[6], ">").add(GsapPhase6_ThemeTransitionAndFinalEnergize()) 
-        .addLabel(phaseOrder[7], ">").add(GsapPhase7_SystemReady())
-        .addLabel(phaseOrder[8], ">"); 
-
-    _notifyPhaseChange(currentPhaseDebugIndex < 0 ? 'Idle' : phaseOrder[currentPhaseDebugIndex], 'ready');
+function _performThemeTransitionCleanupLocal() { 
+    if (domElementsRegistry.elementsAnimatedOnDimExit && domElementsRegistry.elementsAnimatedOnDimExit.length > 0) {
+        domElementsRegistry.elementsAnimatedOnDimExit.forEach(el => {
+            el.classList.remove('animate-on-dim-exit');
+        });
+        domElementsRegistry.elementsAnimatedOnDimExit = []; 
+    }
+    domElementsRegistry.body.classList.remove('is-transitioning-from-dim');
+    if (managerInstances.uiUpdater) managerInstances.uiUpdater.finalizeThemeTransition();
+    console.log("[SSM _performThemeTransitionCleanupLocal] Theme transition classes removed.");
 }
 
-function resetVisualsAndState(forStepping = false, dimAttenuationProxy) {
-    p6CleanupPerformed = false;
-    if (masterGsapTimeline) masterGsapTimeline.pause(0).kill();
-    masterGsapTimeline = null;
-    localGsap.killTweensOf([domElementsRegistry.body, dimAttenuationProxy]); 
+function resetVisualsAndState(forStepping = false) {
+    console.log("[SSM resetVisualsAndState] Resetting visuals and state for P0 (Idle).");
+    if (fsmInterpreter) {
+        fsmInterpreter.stop();
+        fsmInterpreter = null;
+    }
+    previousFsmSnapshotValue = null;
+
+    // MODIFIED: Remove pre-boot class at the very start
+    if (domElementsRegistry.body.classList.contains('pre-boot')) {
+        domElementsRegistry.body.classList.remove('pre-boot');
+        console.log("[SSM resetVisualsAndState] 'pre-boot' class removed from body.");
+    }
+
+    localGsap.killTweensOf([domElementsRegistry.body, LReductionProxy, opacityFactorProxy]);
+
+    LReductionProxy.value = configModule.STARTUP_L_REDUCTION_FACTORS.P0;
+    opacityFactorProxy.value = 1.0 - LReductionProxy.value;
+    domElementsRegistry.root.style.setProperty('--startup-L-reduction-factor', LReductionProxy.value.toFixed(3));
+    domElementsRegistry.root.style.setProperty('--startup-opacity-factor', opacityFactorProxy.value.toFixed(3));
+    // Update boosted factor as well
+    const initialBoostedOpacity = Math.min(1, opacityFactorProxy.value * 1.25);
+    domElementsRegistry.root.style.setProperty('--startup-opacity-factor-boosted', initialBoostedOpacity.toFixed(3));
+
+    console.log(`[SSM resetVisualsAndState] Initial CSS vars set: L-factor: ${LReductionProxy.value.toFixed(3)}, O-factor: ${opacityFactorProxy.value.toFixed(3)}, O-boosted: ${initialBoostedOpacity.toFixed(3)}`);
+
+
     const logoSVG = domElementsRegistry.logoContainer?.querySelector('svg.logo-svg');
-    if (logoSVG) localGsap.killTweensOf(logoSVG); 
+    if (logoSVG) localGsap.killTweensOf(logoSVG);
 
     appStateService.setAppStatus('starting-up'); 
     appStateService.setTheme('dim'); 
 
-    if (managerInstances.buttonManager) managerInstances.buttonManager.setInitialDimStates();
+    if (managerInstances.buttonManager) managerInstances.buttonManager.setInitialDimStates(); 
     appStateService.setTrueLensPower(0);
     if (managerInstances.lensManager) managerInstances.lensManager.directUpdateLensVisuals(0);
 
     if (domElementsRegistry.logoContainer && managerInstances.uiUpdater) {
-        managerInstances.uiUpdater.injectLogoSVG();
-        const existingLogoSvg = domElementsRegistry.logoContainer.querySelector('svg.logo-svg');
-        if (existingLogoSvg) localGsap.set(existingLogoSvg, { opacity: 0.05 }); 
+        managerInstances.uiUpdater.injectLogoSVG(); 
     }
 
-    domElementsRegistry.root.style.setProperty('--global-dim-attenuation', dimAttenuationProxy.value.toFixed(2));
-    appStateService.updateDialState('A', { hue: configModule.DEFAULT_DIAL_A_HUE, targetHue: configModule.DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0 });
-    appStateService.updateDialState('B', { hue: 0, targetHue: 0, rotation: 0, targetRotation: 0 });
-    
+    appStateService.updateDialState('A', { hue: configModule.DEFAULT_DIAL_A_HUE, targetHue: configModule.DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0, isDragging: false });
+    appStateService.updateDialState('B', { hue: 0, targetHue: 0, rotation: 0, targetRotation: 0, isDragging: false });
+
     if (managerInstances.uiUpdater) {
-        managerInstances.uiUpdater.setLcdState(domElementsRegistry.lcdA, 'lcd--unlit');
-        managerInstances.uiUpdater.setLcdState(domElementsRegistry.lcdB, 'lcd--unlit');
-        if (domElementsRegistry.terminalContainer) {
-            managerInstances.uiUpdater.setLcdState(domElementsRegistry.terminalContainer, 'js-active-dim-lcd');
+        // setLcdState will apply 'lcd--unlit' which uses theme-dim's --lcd-unlit-text-a (now 0.85)
+        managerInstances.uiUpdater.setLcdState(domElementsRegistry.lcdA, 'lcd--unlit', { skipClassChange: false });
+        managerInstances.uiUpdater.setLcdState(domElementsRegistry.lcdB, 'lcd--unlit', { skipClassChange: false });
+        if (domElementsRegistry.terminalContainer) { 
+            managerInstances.uiUpdater.setLcdState(domElementsRegistry.terminalContainer, 'lcd--unlit', { skipClassChange: false });
         }
     }
-    if (domElementsRegistry.terminalContent) {
+    if (domElementsRegistry.terminalContent) { 
         domElementsRegistry.terminalContent.innerHTML = ''; 
+        // Opacity 1 for content area, visibility of text controlled by line flickers / typing
+        localGsap.set(domElementsRegistry.terminalContent, { opacity: 1, visibility: 'visible' }); 
         if (managerInstances.terminalManager) {
-            managerInstances.terminalManager._initialMessageFlickered = false; 
-            managerInstances.terminalManager._messageQueue = []; 
-            managerInstances.terminalManager._isTyping = false; 
+            managerInstances.terminalManager._initialMessageFlickered = false;
+            managerInstances.terminalManager._messageQueue = [];
+            managerInstances.terminalManager._isTyping = false;
+            if (managerInstances.terminalManager._cursorElement && managerInstances.terminalManager._cursorElement.parentNode) {
+                managerInstances.terminalManager._cursorElement.parentNode.removeChild(managerInstances.terminalManager._cursorElement);
+            }
         }
     }
 
     localGsap.set(domElementsRegistry.body, { opacity: forStepping ? 1 : 0 }); 
-    currentPhaseDebugIndex = -1;
+    console.log("[SSM resetVisualsAndState] P0 Idle state setup complete.");
 }
 
-export function start(stepMode = true, dimAttenuationProxyInstance) {
-    isStepThroughMode = stepMode;
-    isFullStartupPlaying = !isStepThroughMode;
+export function start(stepMode = true) {
+    resetVisualsAndState(stepMode); 
 
-    resetVisualsAndState(isStepThroughMode, dimAttenuationProxyInstance);
-    buildMasterTimeline(dimAttenuationProxyInstance); 
+    const initialFsmContext = {
+        dependencies: {
+            gsap: localGsap,
+            appStateService,
+            managerInstances,
+            domElementsRegistry,
+            configModule,
+            LReductionProxy, 
+            opacityFactorProxy, 
+            performThemeTransitionCleanup: _performThemeTransitionCleanupLocal,
+        },
+        isStepThroughMode: stepMode,
+        currentPhaseNameForResume: '', 
+        errorInfo: null,
+        themeTransitionCleanupPerformed: false 
+    };
 
-    if (!isStepThroughMode) { 
-        if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(false);
-        localGsap.delayedCall(configModule.MIN_PHASE_DURATION_FOR_STEPPING, () => { 
-            if (masterGsapTimeline) {
-                masterGsapTimeline.restart(); 
-            }
-        });
-    } else { 
-        if (masterGsapTimeline) masterGsapTimeline.pause(0);
-        if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(true);
-    }
-}
+    fsmInterpreter = interpret(startupMachine);
 
-export function playNextPhase() {
-    // console.log(`[SSM Stepper playNextPhase] currentPhaseDebugIndex: ${currentPhaseDebugIndex}`);
-    if (!masterGsapTimeline) {
-        console.warn("[StartupSequenceManager Stepper] Master timeline not built. Cannot step.");
-        if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(true); // Re-enable if stuck
-        return;
-    }
-    // if (masterGsapTimeline.labels) {
-    //     console.log(`[SSM Stepper playNextPhase] Master timeline labels:`, Object.keys(masterGsapTimeline.labels));
-    // }
-
-    if (masterGsapTimeline.isActive()) {
-        masterGsapTimeline.pause(); 
-    }
-
-    const targetPhaseIndex = currentPhaseDebugIndex + 1;
-
-    // Handle P6 cleanup specifically if we are moving FROM P6 TO P7
-    if (phaseOrder[currentPhaseDebugIndex] === "P6_ThemeTransitionAndFinalEnergize" &&
-        phaseOrder[targetPhaseIndex] === "P7_SystemReady") {
-        if (!p6CleanupPerformed) {
-            _performP6Cleanup();
+    fsmInterpreter.subscribe(snapshot => {
+        const currentValueString = JSON.stringify(snapshot.value);
+        if (snapshot.changed ||
+            currentValueString !== previousFsmSnapshotValue ||
+            snapshot.matches('ERROR_STATE') ||
+            snapshot.matches('SYSTEM_READY')) {
+            _notifyFsmTransition(snapshot);
+            previousFsmSnapshotValue = currentValueString;
         }
-    }
+    });
 
-    if (targetPhaseIndex >= phaseOrder.length - 1) { // "sequence_complete" is the last item
-        if (masterGsapTimeline.progress() < 1) {
-            if (phaseOrder[currentPhaseDebugIndex] === "P6_ThemeTransitionAndFinalEnergize" && !p6CleanupPerformed) _performP6Cleanup();
-            if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(false);
-            masterGsapTimeline.play(); 
-        } else {
-             // Already at the end, ensure button is enabled if sequence was already complete
-            if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(true);
-        }
-        isStepThroughMode = false; 
-        return;
-    }
-
-    const startLabel = phaseOrder[targetPhaseIndex];
-    const endLabel = phaseOrder[targetPhaseIndex + 1];
-    
-    if (typeof masterGsapTimeline.labels[startLabel] !== 'number') {
-        console.error(`[SSM Stepper] Invalid start label or label not found: ${startLabel}. Available labels:`, Object.keys(masterGsapTimeline.labels));
-        if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(true); // Re-enable if stuck
-        return;
-    }
-    const startTime = masterGsapTimeline.labels[startLabel];
-    let endTime = masterGsapTimeline.labels[endLabel];
-
-    if (typeof endTime !== 'number') {
-        if (endLabel === "sequence_complete") { 
-            endTime = masterGsapTimeline.duration();
-        } else {
-            console.warn(`[SSM Stepper] End label '${endLabel}' not found. Using timeline duration. Available labels:`, Object.keys(masterGsapTimeline.labels));
-            endTime = masterGsapTimeline.duration();
-        }
-    }
-    
-    if (typeof startTime !== 'number') {
-        console.error(`[SSM Stepper] startTime for ${startLabel} is not a number. Cannot play.`)
-        if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(true); // Re-enable
-        return;
-    }
-    masterGsapTimeline.pause(startTime); 
-    
-    const actualSegmentTime = Math.max(0, endTime - startTime);
-    const tweenDuration = Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING || 0.05, actualSegmentTime);
-
-    _notifyPhaseChange(startLabel, 'starting'); 
-    if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(false);
-
-    masterGsapTimeline.tweenFromTo(startTime, endTime, {
-        duration: tweenDuration,
-        ease: "none",
-        overwrite: true, // Kill any previous tween controlling the master timeline's playhead
-        onComplete: () => {
-            // console.log(`[SSM Stepper playNextPhase ONCOMPLETE] Phase ${startLabel} tween completed. Updating currentPhaseDebugIndex from ${currentPhaseDebugIndex} to ${targetPhaseIndex}.`);
-            if (masterGsapTimeline) masterGsapTimeline.pause(endTime); 
-            currentPhaseDebugIndex = targetPhaseIndex; 
-            
-            // Specific cleanup for P6 if this step was P6
-            if (startLabel === "P6_ThemeTransitionAndFinalEnergize" && !p6CleanupPerformed) {
-                _performP6Cleanup();
-            }
-            _notifyPhaseChange(startLabel, 'completed'); 
-            if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(true);
-        }
+    fsmInterpreter.start();
+    fsmInterpreter.send({
+        type: 'START_SEQUENCE',
+        isStepThroughMode: stepMode,
+        dependencies: initialFsmContext.dependencies
     });
 }
 
-export function resetSequence(dimAttenuationProxyInstance) {
-    start(true, dimAttenuationProxyInstance); 
-    if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(true);
+export function playNextPhase() {
+    if (fsmInterpreter) {
+        const currentState = fsmInterpreter.getSnapshot();
+        if (!currentState.done && !currentState.matches('ERROR_STATE')) {
+            fsmInterpreter.send({ type: 'NEXT_STEP_REQUESTED' });
+        } else {
+            console.log("[SSM playNextPhase] Sequence already complete or in error state. Reset to run again.");
+            if (managerInstances.debugManager) managerInstances.debugManager.setNextPhaseButtonEnabled(true);
+        }
+    }
+}
+
+export function resetSequence() {
+    start(true); 
 }
 
 export function getCurrentPhaseInfo() {
-    const currentName = currentPhaseDebugIndex < 0 ? "Idle" : phaseOrder[currentPhaseDebugIndex];
-    const nextName = (currentPhaseDebugIndex + 1 < phaseOrder.length) ? phaseOrder[currentPhaseDebugIndex + 1] : "None";
+    if (fsmInterpreter) {
+        const state = fsmInterpreter.getSnapshot();
+        const currentPhaseKey = _getPhaseNameFromFsmState(state.value);
+        let nextPhaseKey = 'N/A';
+        let nextPhaseDescription = 'N/A';
 
-    let status = 'ready'; 
-    if (masterGsapTimeline && masterGsapTimeline.isActive() && !isFullStartupPlaying) { 
-        status = 'starting'; 
-    } else if (currentName === "sequence_complete" || (masterGsapTimeline && masterGsapTimeline.progress() === 1)) {
-        status = 'completed';
+        if (state.matches('PAUSED_AWAITING_NEXT_STEP')) {
+            const resumeTargetFsmStateName = state.context.currentPhaseNameForResume;
+            if (resumeTargetFsmStateName === 'SYSTEM_READY_TARGET') {
+                nextPhaseKey = 'sequence_complete';
+            } else {
+                const fullResumePath = `RUNNING_SEQUENCE.${resumeTargetFsmStateName}`;
+                nextPhaseKey = fsmStateToPhaseNameMap[fullResumePath] || resumeTargetFsmStateName;
+            }
+            nextPhaseDescription = phaseDescriptionsForFSM[nextPhaseKey] || nextPhaseKey;
+        } else if (!state.done && !state.matches('ERROR_STATE')) {
+            const currentFsmStateName = typeof state.value === 'string' ? state.value.split('.').pop() : Object.values(state.value)[0];
+            const currentIndex = fsmPhaseSequence.indexOf(currentFsmStateName);
+            if (currentIndex !== -1 && currentIndex < fsmPhaseSequence.length - 1) {
+                const nextFsmStateName = fsmPhaseSequence[currentIndex + 1];
+                const fullNextPath = `RUNNING_SEQUENCE.${nextFsmStateName}`;
+                nextPhaseKey = fsmStateToPhaseNameMap[fullNextPath] || nextFsmStateName;
+                nextPhaseDescription = phaseDescriptionsForFSM[nextPhaseKey] || nextPhaseKey;
+            } else if (currentIndex === fsmPhaseSequence.length - 1) {
+                nextPhaseKey = 'sequence_complete';
+                nextPhaseDescription = phaseDescriptionsForFSM[nextPhaseKey];
+            }
+        }
+
+        return {
+            currentPhaseName: currentPhaseKey,
+            status: state.matches('PAUSED_AWAITING_NEXT_STEP') ? 'paused' : (state.done ? 'completed' : 'starting'),
+            description: phaseDescriptionsForFSM[currentPhaseKey] || currentPhaseKey,
+            nextPhaseName: nextPhaseKey,
+            nextPhaseDescription: nextPhaseDescription,
+        };
     }
+    const initialNextFsmStateName = fsmPhaseSequence[0]; 
+    const initialNextPath = `RUNNING_SEQUENCE.${initialNextFsmStateName}`;
+    const initialNextPhaseKey = fsmStateToPhaseNameMap[initialNextPath] || initialNextFsmStateName;
 
     return {
-        currentPhaseName: currentName,
-        status: status, 
-        description: phaseDescriptions[currentName] || currentName,
-        nextPhaseName: nextName,
-        nextPhaseDescription: phaseDescriptions[nextName] || nextName,
+        currentPhaseName: 'Idle',
+        status: 'ready',
+        description: phaseDescriptionsForFSM.Idle,
+        nextPhaseName: initialNextPhaseKey,
+        nextPhaseDescription: phaseDescriptionsForFSM[initialNextPhaseKey] || initialNextPhaseKey
     };
 }

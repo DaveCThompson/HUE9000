@@ -61,7 +61,9 @@
     --button-unit-pressed-effect-duration-css: 0.12s; 
     --button-unit-pressed-pulse-scale-factor-css: 1.15;
 
-    /* Core Opacity Values for Button Lights (used in theme contract) */
+    --button-unit-light-responsive-scale-factor: 1.33333333; 
+    --button-unit-light-responsive-blur-factor: 0.41666667; 
+
     --button-unit-light-opacity-initial-dim-unlit: 0; 
     --button-unit-light-opacity-dim-standby: 0.5;     
     --button-unit-light-opacity-dimly-lit: 0.8;       
@@ -72,11 +74,10 @@
 
 
     /* --- Lens Calculation Factors (Non-Themeable) --- */
-    --lens-power: 0.0; /* JS updated: 0.0 to 1.0 */
+    --lens-power: 0.0; 
     --base-oklch-l: 0.65; 
 
-    /* Existing #outer-glow - Base structural values */
-    --_s-base-outer-glow-opacity: 0.45; /* Original base opacity before PRD buff */
+    --_s-base-outer-glow-opacity: 0.45; 
     --_s-base-outer-glow-blur: 50px;
     --_s-tune-outer-glow-start-power-threshold: 0.35;
     --_s-tune-outer-glow-fade-in-duration: 0.8;
@@ -84,8 +85,7 @@
     --_s-tune-outer-glow-l-factor-min: 0.1;
     --_s-tune-outer-glow-c-factor-min: 0.02;
 
-    /* Existing #outer-glow - Effective base values (can be overridden by themes) */
-    --base-outer-glow-opacity: calc(var(--_s-base-outer-glow-opacity) * 1.33); /* PRD: ~33% buff */
+    --base-outer-glow-opacity: calc(var(--_s-base-outer-glow-opacity) * 1.33); 
     --base-outer-glow-blur: var(--_s-base-outer-glow-blur);
     --tune-outer-glow-start-power-threshold: var(--_s-tune-outer-glow-start-power-threshold);
     --tune-outer-glow-fade-in-duration: var(--_s-tune-outer-glow-fade-in-duration);
@@ -93,30 +93,25 @@
     --tune-outer-glow-l-factor-min: var(--_s-tune-outer-glow-l-factor-min);
     --tune-outer-glow-c-factor-min: var(--_s-tune-outer-glow-c-factor-min);
     
-    /* Existing #outer-glow - Calculated values */
     --calc-outer-glow-active-factor: clamp(0, (var(--lens-power) - var(--tune-outer-glow-start-power-threshold)) / var(--tune-outer-glow-fade-in-duration), 1);
     --calc-outer-glow-opacity: calc(var(--calc-outer-glow-active-factor) * pow(var(--lens-power), 4.5) * var(--base-outer-glow-opacity));
     --calc-outer-glow-blur: calc(var(--base-outer-glow-blur) * (var(--tune-outer-glow-blur-low-power-multiplier) - var(--calc-outer-glow-active-factor) * (var(--tune-outer-glow-blur-low-power-multiplier) - 1)));
     --calc-outer-glow-current-l-factor: calc(var(--tune-outer-glow-l-factor-min) + var(--calc-outer-glow-active-factor) * (1 - var(--tune-outer-glow-l-factor-min)));
     --calc-outer-glow-current-c-factor: calc(var(--tune-outer-glow-c-factor-min) + var(--calc-outer-glow-active-factor) * (1 - var(--tune-outer-glow-c-factor-min)));
 
-    /* NEW: #lens-super-glow - Base structural values */
-    --_s-base-lens-super-glow-opacity-reference: 0.08; /* A small base opacity to scale from */
-    --_s-base-lens-super-glow-strength-factor: 4.0; /* PRD: ~4x stronger than original outer-glow */
-    --_s-base-lens-super-glow-edge-stop: 60%; /* Default gradient edge */
-    --_s-base-lens-super-glow-scale: 1.0; /* Default element scale */
+    --_s-base-lens-super-glow-opacity-reference: 0.08; 
+    --_s-base-lens-super-glow-strength-factor: 4.0; 
+    --_s-base-lens-super-glow-edge-stop: 60%; 
+    --_s-base-lens-super-glow-scale: 1.0; 
 
-    /* NEW: #lens-super-glow - Effective base values (can be overridden by themes) */
     --base-lens-super-glow-opacity-reference: var(--_s-base-lens-super-glow-opacity-reference);
     --base-lens-super-glow-strength-factor: var(--_s-base-lens-super-glow-strength-factor);
     --base-lens-super-glow-edge-stop: var(--_s-base-lens-super-glow-edge-stop);
     --base-lens-super-glow-scale: var(--_s-base-lens-super-glow-scale);
 
-    /* NEW: #lens-super-glow - Calculated values */
-    /* Proportional to lens-power, similar curve to existing glow, scaled by strength factor */
-    --calc-lens-super-glow-raw-intensity: calc(var(--calc-outer-glow-active-factor) * pow(var(--lens-power), 0.75)); /* Softer power curve than outer-glow */
+    --calc-lens-super-glow-raw-intensity: calc(var(--calc-outer-glow-active-factor) * pow(var(--lens-power), 0.75)); 
     --calc-lens-super-glow-opacity: clamp(0, var(--calc-lens-super-glow-raw-intensity) * var(--base-lens-super-glow-opacity-reference) * var(--base-lens-super-glow-strength-factor), 0.95);
-    --calc-lens-super-glow-center-alpha: clamp(0.01, var(--calc-lens-super-glow-raw-intensity) * 0.5, 0.7); /* Alpha for the gradient center */
+    --calc-lens-super-glow-center-alpha: clamp(0.01, var(--calc-lens-super-glow-raw-intensity) * 0.5, 0.7); 
     --calc-lens-super-glow-edge-stop: var(--base-lens-super-glow-edge-stop);
     --calc-lens-super-glow-scale: var(--base-lens-super-glow-scale);
 
@@ -130,5 +125,8 @@
     --angle-20: 300.4694deg; --angle-21: 309.6037deg; --angle-22: 317.5547deg; --angle-23: 332.7886deg;
     --angle-24: 343.6520deg; --angle-25: 360deg;
 
-    --global-dim-attenuation: 0.0; 
+    /* --- Startup Dimming Factors --- */
+    --startup-L-reduction-factor: 0.85; /* Initial P0 value, JS will update. Range 0.0 (no reduction) to 1.0 (max reduction) */
+    --startup-opacity-factor: 0.15;   /* Initial P0 value, JS will update. Range 0.0 (transparent) to 1.0 (full base opacity) */
+    --startup-opacity-factor-boosted: clamp(0, calc(var(--startup-opacity-factor, 0) * 1.25), 1); /* For elements needing a faster fade-in */
 }

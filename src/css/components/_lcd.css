@@ -1,166 +1,160 @@
 /* src/css/components/_lcd.css (REFACTOR-V2.1) */
 /* Styles for LCD screens (Terminal, Dial LCDs). Uses theme variables. */
 
-.actual-lcd-screen-element, 
-.hue-lcd-display {          
+.actual-lcd-screen-element,
+.hue-lcd-display {
     width: 100%;
-    position: relative; 
-    overflow: hidden; 
-    /* Default 'active' state background. State classes will override this. */
+    position: relative;
+    overflow: hidden;
+    /* Background: Uses dynamic LCD hue, L values are theme-defined, NOT L-reduced by startup factor */
     background-image: radial-gradient(80.98% 80.98% at 50% 50%,
         oklch(var(--lcd-active-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
-        oklch(calc(var(--lcd-active-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 100% 
+        oklch(calc(var(--lcd-active-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 100%
     );
-    color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a)); 
-    border: 1px solid oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a)); 
-    border-radius: var(--space-xs); 
-    padding: var(--space-md); /* Default padding for LCDs. Terminal overrides this for its container. */
+    /* Text color: Uses theme-defined L value, NOT L-reduced by startup factor */
+    color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
+    /* Border color: Uses theme-defined L value, NOT L-reduced by startup factor */
+    border: 1px solid oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
+    border-radius: var(--space-xs);
+    padding: var(--space-md); 
     box-shadow: var(--lcd-active-shadow-inner-glow); 
     font-family: 'IBM Plex Mono', monospace;
     box-sizing: border-box;
-    opacity: var(--theme-component-opacity);
-    text-shadow: var(--lcd-text-shadow); 
- 
-    transition: 
-        background-color var(--transition-duration-medium) ease, 
-        background-image var(--transition-duration-medium) ease, 
+    opacity: var(--theme-component-opacity); /* Housing opacity is stable in theme-dim */
+    /* Text shadow alpha IS attenuated by startup-opacity-factor */
+    text-shadow: 0 0 5px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0)));
+
+    transition:
+        background-color var(--transition-duration-medium) ease,
+        background-image var(--transition-duration-medium) ease,
         border-color var(--transition-duration-medium) ease,
         color var(--transition-duration-medium) ease,
         box-shadow var(--transition-duration-medium) ease,
         opacity var(--transition-duration-medium) ease,
-        text-shadow var(--transition-duration-medium) ease; 
+        text-shadow var(--transition-duration-medium) ease;
 }
 
 /* CRT Overlay using ::after pseudo-element */
-/* This will NOT apply to .terminal-block > .actual-lcd-screen-element due to override in _terminal.css */
 .actual-lcd-screen-element::after,
 .hue-lcd-display::after {
     content: '';
     position: absolute;
-    inset: 0; 
-    background-image: url('/public/crt-overlay.png'); 
+    inset: 0;
+    background-image: url('/public/crt-overlay.png');
     background-size: var(--lcd-crt-overlay-size, 1920px 1120px);
     background-repeat: repeat;
     background-position: 0 0;
-    mix-blend-mode: var(--lcd-crt-overlay-blend-mode, multiply); 
-    opacity: var(--lcd-crt-overlay-opacity, 0.2);
-    pointer-events: none; 
-    z-index: 1; 
-    border-radius: inherit; 
+    mix-blend-mode: var(--lcd-crt-overlay-blend-mode, multiply);
+    opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * var(--startup-opacity-factor, 0)); 
+    pointer-events: none;
+    z-index: 1;
+    border-radius: inherit;
     transition: opacity var(--transition-duration-medium) ease;
 }
 
 /* Terminal LCD Specifics */
-.actual-lcd-screen-element { /* Base styles for any .actual-lcd-screen-element */
-    flex-grow: 1; 
+.actual-lcd-screen-element { 
+    flex-grow: 1;
     min-height: 50px;
-    font-size: 0.95em; 
-    font-weight: 500; /* Overridden by --terminal-font-weight for the main terminal */
-    line-height: 1.4; /* Overridden by .terminal-line for the main terminal */
+    font-size: 0.95em;
+    font-weight: 500; 
+    line-height: 1.4; 
     white-space: pre-wrap;
     word-break: break-all;
-    justify-content: flex-start; 
+    justify-content: flex-start;
     align-items: flex-start;
     text-align: left;
 }
-/* Ensure text content is above the overlay */
-/* #terminal-lcd-content (the inner div) handles its own z-indexing relative to its parent's ::before for scanlines */
 .actual-lcd-screen-element > #terminal-lcd-content {
-    /* No special z-index needed here as its parent (.actual-lcd-screen-element) is the positioning context for its own ::before (scanline) */
+    /* opacity: 1; -- Already set in _terminal.css */
 }
-.hue-lcd-display > .lcd-value { /* Dial LCD values */
+.hue-lcd-display > .lcd-value { 
     position: relative;
-    z-index: 2; 
+    z-index: 2;
 }
 
 
 /* Dial LCD Specifics */
 .hue-lcd-display {
-   height: var(--hue-lcd-display-height); 
+   height: var(--hue-lcd-display-height);
    display: flex;
    align-items: center;
    justify-content: center;
-   /* padding: var(--space-xs) var(--space-sm); Default padding is fine */
    flex-shrink: 0;
 }
 
-.hue-lcd-display .lcd-value { 
-   font-size: 1em; 
-   font-weight: 600; 
+.hue-lcd-display .lcd-value {
+   font-size: 1em;
+   font-weight: 600;
    line-height: 1;
    transition: color var(--transition-duration-medium) ease;
-   text-shadow: var(--lcd-text-shadow); 
-   /* position: relative; z-index: 2; already applied */
+   text-shadow: 0 0 5px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0)));
 }
 
 /* --- LCD State Classes --- */
-/* These apply to both .actual-lcd-screen-element (like the terminal container) and .hue-lcd-display */
-
 .lcd--unlit {
-    background-image: none !important; /* Ensure override */
+    background-image: none !important;
     background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
-    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
+    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a)); /* Uses specific unlit text color */
     border-color: oklch(var(--lcd-unlit-border-l) var(--lcd-unlit-border-c) var(--lcd-unlit-border-h) / var(--lcd-unlit-border-a));
     box-shadow: var(--lcd-unlit-shadow);
-    /* border-radius: var(--space-xs); Already set */
+    text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0); /* No shadow when unlit */
 }
-.lcd--unlit .lcd-value { /* For Dial LCDs */
+.lcd--unlit .lcd-value { /* For Dial LCDs when unlit */
     color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
+    text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0);
+    opacity: 0; /* Ensure dial LCD text is hidden when screen is unlit */
 }
-.lcd--unlit#terminal-lcd-content { /* For terminal text when its container is unlit */
+.lcd--unlit#terminal-lcd-content { /* For Terminal content area when its parent screen is unlit */
      color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
+     /* The .terminal-line--initial-boot will override this for the first line */
+     text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0);
 }
 .lcd--unlit::after { 
     opacity: 0 !important; 
 }
 
 
-.js-active-dim-lcd {
-    background-image: none !important; /* Ensure override */
+.js-active-dim-lcd { 
+    background-image: none !important;
     background-color: oklch(var(--lcd-active-dim-bg-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-bg-a));
     color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
     border-color: oklch(var(--lcd-active-dim-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-border-a));
     box-shadow: var(--lcd-active-dim-shadow);
-    /* border-radius: var(--space-xs); Already set */
+    text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5)); 
 }
-.js-active-dim-lcd .lcd-value { /* For Dial LCDs */
+.js-active-dim-lcd .lcd-value {
     color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
+    text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5));
 }
-.js-active-dim-lcd#terminal-lcd-content { /* For terminal text when its container is js-active-dim */
+.js-active-dim-lcd#terminal-lcd-content { 
      color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
+     text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--terminal-text-glow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5));
 }
-.js-active-dim-lcd::after {
-    /* opacity: calc(var(--lcd-crt-overlay-opacity) * 0.5); */
+.js-active-dim-lcd::after { 
+    opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 
 }
 
 
-.lcd--dimly-lit {
-    background-image: radial-gradient(circle, 
+.lcd--dimly-lit { 
+    background-image: radial-gradient(circle,
         oklch(var(--lcd-dimly-lit-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
-        oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100% 
-    ) !important; /* Ensure override */
+        oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100%
+    ) !important;
     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
     box-shadow: var(--lcd-dimly-lit-shadow);
     border-radius: 8px; 
-    border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a)); 
+    border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
+    text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7)); 
 }
-.lcd--dimly-lit .lcd-value { /* For Dial LCDs */
+.lcd--dimly-lit .lcd-value {
      color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
+     text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7));
 }
-.lcd--dimly-lit#terminal-lcd-content { /* For terminal text when its container is dimly-lit */
+.lcd--dimly-lit#terminal-lcd-content { 
      color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
+     text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--terminal-text-glow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7));
 }
-.lcd--dimly-lit::after {
-    opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5); 
-}
-
-
-/* Fallback for old .js-active-dim-lcd text styling if only that class is present */
-/* This section might be less relevant now with more explicit state classing */
-body.theme-dim .actual-lcd-screen-element.js-active-dim-lcd:not(.lcd--dimly-lit):not(.lcd--unlit),
-body.theme-dim .hue-lcd-display.js-active-dim-lcd:not(.lcd--dimly-lit):not(.lcd--unlit) .lcd-value {
-    /* color: oklch(var(--lcd-dim-active-text-l) var(--lcd-dim-active-text-c) var(--lcd-dim-active-text-h) / var(--lcd-active-text-a)); */
-}
-body.theme-dim .actual-lcd-screen-element:not(.js-active-dim-lcd):not(.lcd--dimly-lit):not(.lcd--unlit) {
-    /* color: oklch(var(--lcd-dim-active-text-l) var(--lcd-dim-active-text-c) var(--lcd-dim-active-text-h) / var(--lcd-active-text-a)); */
+.lcd--dimly-lit::after { 
+    opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 
 }

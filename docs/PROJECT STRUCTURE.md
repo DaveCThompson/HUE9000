@@ -1,6 +1,6 @@
 --- START OF FILE PROJECT_STRUCTURE.md ---
 
-# HUE 9000 Project Structure (REFACTOR-V2.3)
+# HUE 9000 Project Structure (REFACTOR-V2.3 - SSR-V1.0 Update)
 
 This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns.
 
@@ -22,7 +22,15 @@ HUE9000_Project/
 │   │   ├── gridManager.js
 │   │   ├── lensManager.js
 │   │   ├── main.js
-│   │   ├── startupSequenceManager.js  # Orchestrates the GSAP startup sequence
+│   │   ├── startupSequenceManager.js  # Orchestrates the GSAP startup sequence (SSR-V1.0)
+│   │   ├── startupPhase0.js           # SSR-V1.0: Phase 0 logic (Old P0+P1)
+│   │   ├── startupPhase1.js           # SSR-V1.0: Phase 1 logic (Old P2)
+│   │   ├── startupPhase2.js           # SSR-V1.0: Phase 2 logic (Old P3)
+│   │   ├── startupPhase3.js           # SSR-V1.0: Phase 3 logic (Old P4)
+│   │   ├── startupPhase4.js           # SSR-V1.0: Phase 4 logic (Old P5)
+│   │   ├── startupPhase5.js           # SSR-V1.0: Phase 5 logic (Old P6+P7)
+│   │   ├── terminalManager.js         # Manages terminal display
+│   │   ├── terminalMessages.js        # Terminal message content
 │   │   ├── toggleManager.js
 │   │   ├── uiUpdater.js
 │   │   └── utils.js

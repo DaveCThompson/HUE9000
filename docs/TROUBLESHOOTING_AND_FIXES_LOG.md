@@ -96,15 +96,15 @@ This section details issues addressed during and immediately after the V2.3 refa
                 // ...
             }
             addButton(element, ...) {
-                const buttonConfig = { ..., gsapInstance: this.gsap };
-                const buttonInstance = new Button(element, buttonConfig);
+                const buttonConfig = { ..., gsapInstance: this.gsap }; // Pass gsapInstance in config
+                const buttonInstance = new Button(element, buttonConfig); // Button constructor extracts it
                 // ...
             }
             ```
         *   Example (`Button.js` constructor):
             ```javascript
-            constructor(domElement, config) {
-                this.gsap = config.gsapInstance;
+            constructor(domElement, config, gsapInstance, /*...other deps*/) { // gsapInstance passed directly
+                this.gsap = gsapInstance;
                 if (!this.gsap) throw new Error("GSAP instance not provided to Button constructor");
                 // ...
             }
@@ -126,10 +126,73 @@ This section details issues addressed during and immediately after the V2.3 refa
     *   **Avoid `window.gsap`:** Do not rely on `window.gsap` as the primary way to access GSAP in a bundled environment. While it might sometimes work, it's less robust and can lead to the types of errors encountered. The imported `gsap` object is the canonical reference.
     *   **CSSPlugin:** `CSSPlugin` (which handles `autoAlpha` and most DOM animations) is part of the GSAP core and is automatically registered when you import `gsap`. Explicit registration is usually not needed unless specific bundler issues arise. The `autoAlpha` errors were symptomatic of GSAP itself not being correctly available/configured, not necessarily a missing CSSPlugin registration *if GSAP itself was working*.
 
-## Overall Current Learnings & Best Practices (from V2.3 Refactor)
+## Section D: XState Refactor & Key Considerations (Post V2.3 - SSR-V1.0)
 
-*   **Component State Synchronization:** The internal state of components (e.g., `Button.currentClasses`, `Dial`'s reflection of `appState`) must be the single source of truth for their logic, and methods like `setState` must reliably update both this JS state and the corresponding DOM attributes/classes.
-*   **Clear State Dependencies:** When one piece of state (e.g., `trueLensPower`) implies another (e.g., Dial B's `hue`), ensure mechanisms are in place to keep them synchronized, especially after programmatic changes like startup sequences.
-*   **GSAP Callback Context & Timing:** Be mindful of `this` context within GSAP callbacks. Arrow functions can help maintain lexical scope. Crucially, understand that calling a function that *builds* a GSAP timeline executes its internal logic (including state checks) *at build time*, not necessarily at playback time unless explicitly deferred using mechanisms like `gsap.call()`.
-*   **Startup Sequence Robustness:** Initial visibility and state of all elements must be rigorously controlled. Defer state-dependent animation setup until precedent state changes are guaranteed to have occurred within the GSAP sequence.
-*   **GSAP Instance Management:** (As detailed in C.6) Proper handling of GSAP instances and plugin registration is paramount when using module bundlers.
+This section highlights critical aspects and potential pitfalls related to the XState-orchestrated startup sequence, primarily for future maintenance and development.
+
+### D.1. XState Versioning & API Usage (v5 Focus)
+*   **Critical Pitfall:** XState v4 and v5 have significant API differences. The project uses **XState v5**.
+    *   **Context:** Provide initial context when `interpret`ing the machine or via an event payload assigned by an initial action, not `machine.withContext()`. The `dependencies` object (containing GSAP, managers, etc.) is passed in the payload of the `START_SEQUENCE` event and assigned to the FSM's context.
+    *   **Transitions Listener:** Use `actor.subscribe(snapshot => ...)` not `actor.onTransition()`.
+    *   **Conditional Transitions:** Use `guard:` not `cond:`. The guard function receives `({ context, event })`.
+    *   **Action/Guard Signatures:** Action implementations and guard functions receive an object like `{ context, event, ... }`. Access properties via `event.propertyName` or `context.propertyName`.
+    *   **`send` API:** Always send event objects: `actor.send({ type: 'EVENT_NAME', ...payload })`.
+    *   **Invoking Promises:** Use the `fromPromise` actor creator. The function provided to `fromPromise` receives an object with an `input` property (populated via the `invoke.input` field in the FSM config) and must return a Promise.
+        ```javascript
+        // Correct pattern for invoking a dynamically imported promise-returning function:
+        import { fromPromise } from 'xstate';
+        // ...
+        // Helper function in startupMachine.js:
+        // const createPhaseService = (importPath) => {
+        //   return fromPromise(async ({ input }) => {
+        //     const phaseModule = await import(importPath);
+        //     if (!phaseModule || typeof phaseModule.createPhaseTimeline !== 'function') { /* error handling */ }
+        //     return phaseModule.createPhaseTimeline(input.dependencies);
+        //   });
+        // };
+        // ...
+        // In machine state definition:
+        invoke: {
+          id: 'someService',
+          src: createPhaseService('./path-to-module.js'), // Use the helper
+          input: ({ context }) => ({ dependencies: context.dependencies }), // Pass data to fromPromise's input
+          onDone: { /* ... */ },
+          onError: { /* ... */ }
+        }
+        ```
+*   **Symptom of Mismatch:** Errors like `...is not a function` (e.g., `withContext`, `onTransition`, `getInitialSnapshot`), or incorrect behavior of actions/guards/event sending.
+*   **Files Affected:** `startupMachine.js`, `startupSequenceManager.js`.
+*   **Key Learning:** Always verify XState API usage against the documentation for XState v5. The `fromPromise` creator is standard for promise-based services. Ensure action/guard signatures are correct for v5.
+
+### D.2. Phase Service Promise Resolution & GSAP Timeline Completion
+*   **Critical Pitfall:** Each phase module (e.g., `startupPhaseX.js`) invoked by the FSM *must* return a Promise that resolves only after *all* its asynchronous operations (including all GSAP animations it initiates) are fully completed.
+    *   If a Promise from a phase service never resolves (e.g., a GSAP timeline within it hangs or its `onComplete` never fires), the FSM will stall in that phase's state.
+    *   The `createAdvancedFlicker` utility returns `{ timeline, completionPromise }`. Phase modules must correctly `await` these `completionPromise`s for logical task completion. Additionally, the GSAP `timeline`s returned by `createAdvancedFlicker` (or other GSAP animations) must be properly added to a main GSAP timeline for the phase, and this main timeline must also be played and awaited for visual completion.
+*   **Implementation Detail:**
+    *   Phase modules (`startupPhaseX.js`) are `async` functions.
+    *   They use `Promise.all()` to await all `completionPromise`s from flicker animations.
+    *   They construct a main GSAP timeline (`phaseInternalGsapTimeline`) for the phase, add flicker timelines to it, and then `await` the completion of this main timeline using `new Promise(resolve => phaseInternalGsapTimeline.eventCallback('onComplete', resolve).play());`.
+*   **Symptom of Mismatch:** Startup sequence stalls in a particular phase. Console logs might show individual promises resolving, but the phase service's main promise doesn't. Visuals for the phase might not complete.
+*   **Files Affected:** All `startupPhaseX.js` modules, `animationUtils.js`.
+*   **Key Learning:** Distinguish between awaiting the logical setup/promise of an animation and awaiting the completion of its actual GSAP timeline. Both are necessary for robust FSM phase progression. Ensure all created GSAP timelines are finite and their `onComplete` callbacks are reachable.
+
+### D.3. Dependency Injection & Context Integrity
+*   **Critical Pitfall:** All external dependencies (GSAP, `appStateService`, managers, DOM elements, config) must be correctly passed into the FSM's initial context by `startupSequenceManager.js` (via the `START_SEQUENCE` event's payload). Phase services receive these dependencies via the `input` argument of the function passed to `fromPromise`.
+*   **Symptom of Mismatch:** `TypeError: Cannot read properties of undefined (reading 'someManager')` or `someDependency is not a function` within FSM actions, guards, or phase services.
+*   **Files Affected:** `startupSequenceManager.js` (context creation), `startupMachine.js` (context assignment and `invoke.input`), all `startupPhaseX.js` modules (accessing `dependencies`).
+*   **Key Learning:** Ensure a clear and consistent dependency injection path from application initialization to FSM context to invoked services.
+
+### D.4. Visual Discrepancies & Animation Targeting
+*   **Potential Pitfall:** Animations might logically complete (Promises resolve, FSM transitions) but not produce the intended visual effect.
+    *   **Example (P1 MAIN PWR Buttons):** If these buttons "just appear" instead of visibly flickering, it could be due to:
+        1.  The `buttonEnergizeP2P5` animation profile in `config.js` having parameters that result in a non-perceptible visual change (e.g., amplitudes too similar, durations too short, glow too faint).
+        2.  `createAdvancedFlicker` not correctly targeting the `.light` elements within these specific buttons (check `baseTargetsForOpacity` via logging).
+    *   **Example (P3 HUE ASSN / BTN 1-4 Buttons):** If these don't appear `is-dimly-lit`:
+        1.  Ensure their HTML elements have the correct `data-group-id` attributes (`skill-scan-group`, `fit-eval-group` for BTN 1-4 containers; HUE ASSN buttons are grouped by `gridManager` as 'env', 'lcd', etc.).
+        2.  Verify the `buttonsToPrimeElements` logic in `startupPhase3.js` correctly identifies these buttons based on their `groupId`.
+        3.  Check the `buttonP4DimlyLitFlicker` profile for visibility.
+*   **Debugging Approach:** Use console logging within animation utilities and phase modules to verify targets and parameters. Temporarily exaggerate animation profile values to confirm the animation path is working. Inspect CSS for overrides.
+*   **Files Affected:** `animationUtils.js`, `config.js` (profiles), `startupPhaseX.js` (targeting logic), `index.html` (for `data-group-id`).
+*   **Key Learning:** Visual verification is as important as logical completion. Debug targeting and animation parameters if visuals don't match expectations. Ensure HTML attributes support JS targeting logic.
+
+---

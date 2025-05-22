@@ -7,17 +7,16 @@
    box-sizing: border-box;
    border: 1px solid oklch(var(--color-chip-border-l) var(--color-chip-border-c) var(--color-chip-border-h) / var(--color-chip-border-a));
    box-shadow: var(--color-chip-shadow-inset);
-   opacity: var(--theme-component-opacity); /* Apply global theme opacity */
-   transition: 
-        background-color var(--transition-duration-medium) ease, /* Though bg is static */
+   /* MODIFIED to use boosted factor and specific base opacity variable */
+   opacity: calc(var(--color-chip-base-opacity, var(--theme-component-opacity)) * var(--startup-opacity-factor-boosted, 0));
+   transition:
+        background-color var(--transition-duration-medium) ease, 
         box-shadow var(--transition-duration-medium) ease,
         border-color var(--transition-duration-medium) ease,
         opacity var(--transition-duration-medium) ease;
 }
 
 /* Static background colors for the 12 color chips */
-/* These are fixed hues at a consistent LCH 'L' and 'C' for visibility */
-/* Themes can adjust the perceived brightness via --theme-component-opacity or if these used CSS vars for L/C */
 .color-chip-0 { background-color: oklch(0.705 0 0); } /* Colorless/Grey */
 .color-chip-1 { background-color: oklch(0.705 0.15 246); }
 .color-chip-2 { background-color: oklch(0.705 0.15 278.727); }
@@ -31,10 +30,5 @@
 .color-chip-10 { background-color: oklch(0.705 0.15 180.545); }
 .color-chip-11 { background-color: oklch(0.705 0.15 213.273); }
 
-/* Dim mode specific appearance for color chips */
-body.theme-dim .color-chip {
-    /* Example: use the theme contract's unlit button background as a base for dim chips */
-    background-color: oklch(var(--btn-unlit-bg-l) var(--btn-unlit-bg-c) var(--btn-unlit-bg-h) / calc(var(--btn-unlit-bg-a) * 0.5) ); /* Even fainter */
-    border-color: oklch(var(--btn-unlit-border-l) var(--btn-unlit-border-c) var(--btn-unlit-border-h) / calc(var(--btn-unlit-border-a) * 0.5) );
-    box-shadow: none;
-}
+/* Dim mode specific appearance for color chips is handled in theme-dim.css for their bg/border
+   and the --color-chip-base-opacity variable. */

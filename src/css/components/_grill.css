@@ -2,38 +2,29 @@
 /* Styles for the .grill-placeholder. Uses theme variables. */
 
 .grill-placeholder {
-  flex-grow: 1; 
+  flex-grow: 1;
   height: 100%;
   width: 100%;
-  background-color: oklch(var(--grill-bg-l) var(--grill-bg-c) var(--grill-bg-h) / var(--grill-bg-a)); /* Uses alpha from theme */
-  background-image: url('/public/metal-grill.png'); 
-  background-size: 350px 350px; 
+  background-color: oklch(var(--grill-bg-l) var(--grill-bg-c) var(--grill-bg-h) / var(--grill-bg-a));
+  background-image: url('/public/metal-grill.png');
+  background-size: 350px 350px;
   background-repeat: repeat;
   background-position: center center;
-  background-blend-mode: multiply; 
-  color: oklch(var(--grill-placeholder-text-l) var(--grill-placeholder-text-c) var(--grill-placeholder-text-h)); 
-  border-radius: var(--radius-panel-tight); 
-  /* Grill opacity is NOT tied to --theme-component-opacity for better control */
-  opacity: var(--grill-opacity, 1); /* Default to full opacity, themes can override --grill-opacity */
+  background-blend-mode: multiply;
+  color: oklch(var(--grill-placeholder-text-l) var(--grill-placeholder-text-c) var(--grill-placeholder-text-h));
+  border-radius: var(--radius-panel-tight);
+  opacity: calc(var(--grill-opacity, 1) * var(--startup-opacity-factor-boosted, 0)); /* MODIFIED to use boosted factor */
   transition:
       background-color var(--transition-duration-medium) ease,
       opacity var(--transition-duration-medium) ease,
       color var(--transition-duration-medium) ease;
-  display: flex; 
+  display: flex;
   justify-content: center;
   align-items: center;
   font-size: 0.9em;
-  margin: var(--space-none); 
-  padding: var(--space-lg); 
+  margin: var(--space-none);
+  padding: var(--space-lg);
 }
 .grill-placeholder > span {
-  display: none; /* Placeholder text in HTML is for accessibility, not visual display */
-}
-
-/* Specific shadow for the grill area's container (center panel lower section) */
-/* This ensures the unique shadow for the grill area is applied */
-.center-panel .panel-section.lower-section {
-     box-shadow:
-        var(--panel-section-grill-shadow-inset-top, inset 0px 6px 8px -4px oklch(0% 0 0 / 0.35)), /* Themeable strong inset */
-        var(--panel-section-shadow-inner); /* Standard inner shadows from theme */
+  display: none; 
 }

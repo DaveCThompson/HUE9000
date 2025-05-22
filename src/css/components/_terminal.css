@@ -2,57 +2,58 @@
 /* Styles for the HUE 9000 Enhanced Terminal */
 
 /* Main Terminal Element Container (.actual-lcd-screen-element within .terminal-block) */
-.terminal-block > .actual-lcd-screen-element { 
+/* Opacity for this container is var(--theme-component-opacity) from _lcd.css, not affected by --startup-opacity-factor */
+.terminal-block > .actual-lcd-screen-element {
     overflow-y: hidden !important; /* Managed by terminalManager.js */
     font-weight: var(--terminal-font-weight, 500);
     position: relative; /* For scanline overlay positioning */
-    display: flex; 
-    flex-direction: column; 
+    display: flex;
+    flex-direction: column;
     padding: 0; /* Override default LCD padding from _lcd.css for this specific container */
-    /* The background color/image for this container will be set by LCD state classes 
-       (e.g., .js-active-dim-lcd, .lcd--dimly-lit) or the default active LCD style. */
 }
 
 /* Terminal Content Area (where lines are added) */
+/* Opacity of #terminal-lcd-content is managed by terminalManager.js (e.g., during initial flicker) */
+/* Its text color is inherited from parent .actual-lcd-screen-element. */
+/* Text shadow alpha IS attenuated by --startup-opacity-factor. */
 #terminal-lcd-content {
     text-shadow:
-        0 0 var(--terminal-text-glow-radius) oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--terminal-text-glow-color-base-alpha)),
+        0 0 var(--terminal-text-glow-radius) oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--terminal-text-glow-base-alpha) * var(--startup-opacity-factor, 0))), /* MODIFIED */
         var(--terminal-text-drop-shadow-offset-x) var(--terminal-text-drop-shadow-offset-y) var(--terminal-text-drop-shadow-blur) var(--terminal-text-drop-shadow-color);
-    
+
     position: relative;
     z-index: 2;
     width: 100%;
-    flex-grow: 1; 
-    padding: var(--space-3xl); /* Padding for the text block inside the terminal screen */
+    flex-grow: 1;
+    padding: var(--space-3xl);
     box-sizing: border-box;
-    color: inherit; /* Inherit text color from parent .actual-lcd-screen-element */
+    color: inherit;
 }
 
 /* Individual Terminal Lines */
 .terminal-line {
-    white-space: pre-wrap; 
-    word-break: break-all; 
-    display: flex; 
-    align-items: baseline; 
-    line-height: 1.7; /* INCREASED: Line spacing */
-    /* color: inherit; Ensure text color is also inherited if not directly set */
+    white-space: pre-wrap;
+    word-break: break-all;
+    display: flex;
+    align-items: baseline;
+    line-height: 1.7;
+    color: inherit;
 }
 
 /* Terminal Cursor */
 .terminal-cursor {
-    display: inline-block; 
-    /* background-color set by JS to match text for dynamic scenarios, or use CSS var */
-    background-color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)); 
+    display: inline-block;
+    background-color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue));
     animation: terminalCursorBlink var(--terminal-cursor-blink-on-duration) steps(1, end) 0s infinite alternate;
-    margin-left: 1px; 
+    margin-left: 1px;
     user-select: none;
 }
 
 @keyframes terminalCursorBlink {
-    0%, 100% { 
+    0%, 100% {
         opacity: 1;
     }
-    50% { 
+    50% {
         opacity: 0;
     }
 }
@@ -62,7 +63,8 @@
 
 
 /* Scanline Overlay for the terminal container */
-.terminal-block > .actual-lcd-screen-element::before { 
+/* Opacity IS attenuated by --startup-opacity-factor */
+.terminal-block > .actual-lcd-screen-element::before {
     content: '';
     position: absolute;
     top: 0;
@@ -70,17 +72,17 @@
     right: 0;
     bottom: 0;
     pointer-events: none;
-    z-index: 1; 
+    z-index: 1;
     background-image: repeating-linear-gradient(
         transparent,
-        transparent calc(var(--terminal-scanline-thickness) * 3), 
+        transparent calc(var(--terminal-scanline-thickness) * 3),
         var(--terminal-scanline-color) calc(var(--terminal-scanline-thickness) * 3),
-        var(--terminal-scanline-color) calc(var(--terminal-scanline-thickness) * 4) 
+        var(--terminal-scanline-color) calc(var(--terminal-scanline-thickness) * 4)
     );
-    background-size: 100% calc(var(--terminal-scanline-thickness) * 8); 
-    opacity: 0.3; 
+    background-size: 100% calc(var(--terminal-scanline-thickness) * 8);
+    opacity: calc(0.3 * var(--startup-opacity-factor, 0)); /* MODIFIED (assuming 0.3 is base opacity for scanlines) */
     animation: terminalScanlineMove var(--terminal-scanline-animation-duration) linear infinite;
-    border-radius: inherit; 
+    border-radius: inherit;
 }
 
 @keyframes terminalScanlineMove {
@@ -88,7 +90,7 @@
         background-position-y: 0;
     }
     100% {
-        background-position-y: calc(var(--terminal-scanline-thickness) * 8); 
+        background-position-y: calc(var(--terminal-scanline-thickness) * 8);
     }
 }
 

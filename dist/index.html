@@ -11,8 +11,7 @@
 
     <!-- Main Stylesheet (Imports all other CSS partials) -->
 
-    <!-- GSAP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- GSAP will be imported and registered via JS modules (main.js) -->
     <style>
         /* Initial body opacity for fade-in, managed by JS/CSS */
         body {
@@ -48,12 +47,32 @@
         }
         #debug-phase-status { margin-top: 8px; font-weight: bold; }
         #debug-phase-info { font-size: 11px; margin-top: 4px; color: #ccc; max-width: 300px;}
-        /* #debug-attenuation-value { font-size: 11px; margin-top: 4px; color: #ccc;} */ /* REMOVED */
+
+        /*
+        REMOVED TEMPORARY DEBUGGING STYLES FOR LCD TEXT
+        The following rules were causing the magenta/cyan flash on LCDs during P3:
+
+        body.theme-dim .hue-lcd-display.lcd--dimly-lit .lcd-value {
+            color: lime !important;
+            font-size: 20px !important;
+            font-weight: bold !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            text-shadow: none !important;
+            background-color: fuchsia !important;
+        }
+         body.theme-dim .actual-lcd-screen-element.lcd--dimly-lit #terminal-lcd-content {
+            color: lime !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        */
+
     </style>
-  <script type="module" crossorigin src="/HUE9000/assets/index-D1NUP-pX.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-CuOuztCn.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-DWccIxnL.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-h3-Jr8TZ.css">
 </head>
-<body class="theme-dim"> {/* Start with theme-dim, JS will manage this */}
+<body class="theme-dim">
     <div id="debug-controls">
         <div>HUE 9000 - Startup Debug (REFACTOR-V2.1)</div>
         <button id="btn-next-phase">Next Phase</button>
@@ -90,12 +109,12 @@
                       </div>
                   </div>
                  <div class="panel-section lower-section">
-                     <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--left">
+                     <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--left" data-group-id="skill-scan-group">
                          <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 1"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 1</div></div>
                          <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 2"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 2</div></div>
                          <div class="block-label-bottom block-label-bottom--descriptor">SKILL SCAN</div>
                      </div>
-                    <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--right">
+                    <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--right" data-group-id="fit-eval-group">
                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 3"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 3</div></div>
                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 4"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 4</div></div>
                    <div class="block-label-bottom block-label-bottom--descriptor">FIT EVAL</div>
@@ -170,6 +189,7 @@
             </div>
         </div>
     </div>
+    <div id="lens-super-glow" aria-hidden="true"></div>
 
 </body>
 </html>

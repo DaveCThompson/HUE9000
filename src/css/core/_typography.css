@@ -3,6 +3,7 @@
 
 body {
     font-family: 'IBM Plex Mono', 'Inter', sans-serif; /* Prioritize monospace for UI feel */
+    /* Body text color alpha is NOT attenuated here; body opacity handles global dimming. */
     color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -10,8 +11,9 @@ body {
 }
 
 /* --- Shared Label Styles --- */
+/* Label text L value is modified by --startup-L-reduction-factor. Alpha is from theme. */
 .control-group-label {
-   color: oklch(var(--theme-text-secondary-l) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a));
+   color: oklch(calc(var(--theme-text-secondary-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a)); /* MODIFIED */
    font-size: 0.9em;
    font-weight: 600;
    text-transform: uppercase;
@@ -22,7 +24,7 @@ body {
    box-sizing: border-box;
 }
 .control-group-label.label-top {
-   position: relative; 
+   position: relative;
    display: flex;
    align-items: center;
    justify-content: center;
@@ -30,8 +32,8 @@ body {
    min-height: var(--control-label-height);
    padding: 0 var(--space-sm);
    line-height: 1.1;
-   background-color: transparent; 
-   z-index: 1; 
+   background-color: transparent;
+   z-index: 1;
 }
 .control-group-label.label-top.is-invisible { /* For Hue Assn grid placeholder */
    opacity: 0;
@@ -39,15 +41,15 @@ body {
 }
 
 /* Consolidated Bottom Label Styling */
+/* Label background L value is modified by --startup-L-reduction-factor. Alpha is from theme. */
 .block-label-bottom {
   position: absolute;
   left: 50%;
   bottom: 0;
-  transform: translate(-50%, calc(50% + 0.1875rem)); 
+  transform: translate(-50%, calc(50% + 0.1875rem));
   line-height: 1;
   white-space: nowrap;
-  /* Background should match the panel section it's on, or be transparent to it */
-  background-color: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a)); 
+  background-color: oklch(calc(var(--panel-section-bg-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a)); /* MODIFIED */
   border-radius: var(--space-xs);
   pointer-events: none;
   transition: color var(--transition-duration-medium) ease, background-color var(--transition-duration-medium) ease;
@@ -55,21 +57,23 @@ body {
 
 .block-label-bottom--control-group { /* Not currently used, but for smaller group labels */
   padding: 0 var(--control-label-padding);
-  color: oklch(var(--theme-text-secondary-l) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a));
+  /* Label text L value is modified by --startup-L-reduction-factor. Alpha is from theme. */
+  color: oklch(calc(var(--theme-text-secondary-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a)); /* MODIFIED */
   font-size: 0.9em;
   font-weight: 600;
   text-transform: uppercase;
-  z-index: 3; 
+  z-index: 3;
 }
 
 .block-label-bottom--descriptor { /* For MAIN PWR, TERMINAL, etc. */
-  padding: var(--space-lg); 
-  color: oklch(var(--theme-text-tertiary-l) var(--theme-text-tertiary-c) var(--theme-text-tertiary-h) / var(--theme-text-tertiary-a)); 
+  padding: var(--space-lg);
+  /* Label text L value is modified by --startup-L-reduction-factor. Alpha is from theme. */
+  color: oklch(calc(var(--theme-text-tertiary-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--theme-text-tertiary-c) var(--theme-text-tertiary-h) / var(--theme-text-tertiary-a)); /* MODIFIED */
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.8em;
   font-weight: 500;
   text-transform: uppercase;
-  z-index: 1; 
+  z-index: 1;
 }
 
 /* Specific text styles for components like LCDs will be in their respective component CSS files */

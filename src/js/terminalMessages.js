@@ -5,14 +5,22 @@
  */
 
 // --- Startup Messages ---
-export const startupMessages = { // Added export
-    P0_INITIALIZING: "INITIALIZING FOR BAWA...",
-    P2_MAIN_POWER_RESTORED: "MAIN POWER RESTORED... STANDBY BAWA",
-    P3_OPTICAL_CORE_ENERGIZING: "OPTICAL CORE ENERGIZING FOR BAWA...",
-    P4_SECONDARY_SYSTEMS_ONLINE: "SECONDARY SYSTEMS ONLINE... STANDBY BAWA.",
-    P5_AUX_LIGHTS_ONLINE: "AUXILIARY LIGHTS ONLINE. DEFAULT: LOW.",
-    P6_AMBIENT_THEME_ENGAGED: "AMBIENT THEME ENGAGED. ALL SYSTEMS NOMINAL.",
-    P7_SYSTEM_READY: "ALL SYSTEMS ONLINE. HUE 9000 READY FOR BAWA."
+export const startupMessages = {
+    P1_EMERGENCY_SUBSYSTEMS: "GOOD MORNING. INITIATING STARTUP PROTOCOL.",
+    P2_BACKUP_POWER: "BACKUP POWER ENGAGED.",
+    P3_MAIN_POWER_ONLINE: "MAIN POWER STABLE.",
+    P4_OPTICAL_CORE_REACTIVATE: "OPTICAL CORE REACTIVATED.",
+    P5_DIAGNOSTIC_INTERFACE: "DIAGNOSTICS ONLINE.",
+    P6_MOOD_INTENSITY_CONTROLS: "MOOD CONTROLS ACTIVE.",
+    P7_HUE_CORRECTION_SYSTEMS: "HUE SYSTEMS ALIGNED.",
+    P8_EXTERNAL_LIGHTING_CONTROLS: "EXTERNAL LIGHTING RESPONSIVE.",
+    P9_AUX_LIGHTING_LOW: "AUX LIGHTING: LOW INTENSITY.",
+    // P10: No text
+    P11_SYSTEM_OPERATIONAL: "ALL SYSTEMS NOMINAL. HUE 9000 OPERATIONAL.",
+
+
+
+
 };
 
 // --- Block Messages (Triggered by BTN1-4) ---
@@ -42,7 +50,7 @@ const blockMessages = {
         "  - POWER REGULATION: STABLE.",
         "ALL SYSTEMS FUNCTIONING WITHIN NORMAL PARAMETERS."
     ],
-    BTN4_MESSAGE: [
+    BTN4_MESSAGE: [ // This will be populated by getMessage
         "SYSTEM STATUS QUERY:",
         "  - CURRENT OPERATING THEME: {currentTheme}",
         "  - LENS POWER OUTPUT: {lensPower}%",
@@ -54,11 +62,9 @@ const blockMessages = {
         "  - ASSIGNED BUTTON HUE: {btnHue}°",
         "SYSTEM NOMINAL. AWAITING INPUT."
     ]
-    // Add more block messages as needed
 };
 
 // --- Status Message Templates/Variations ---
-// For now, simple direct messages. Can be expanded with randomization.
 const statusMessageTemplates = {
     dialA: (data) => `MOOD DIAL SET TO ${data.value}°`,
     dialB: (data) => `INTENSITY DIAL SET TO ${data.value}%`,
@@ -66,7 +72,7 @@ const statusMessageTemplates = {
     lcdHue: (data) => `LCD HUE ASSIGNED: ${data.hue}°`,
     logoHue: (data) => `LOGO HUE ASSIGNED: ${data.hue}°`,
     btnHue: (data) => `BUTTON HUE ASSIGNED: ${data.hue}°`,
-    // Add more status message types as needed
+    FSM_ERROR: (data) => `CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}` // For FSM errors
 };
 
 /**
@@ -76,19 +82,25 @@ const statusMessageTemplates = {
  * @param {string} payload.source - Descriptive source, e.g., 'dialA', 'BTN1', 'P0_INITIALIZING'.
  * @param {object} [payload.data] - Optional data for message interpolation.
  * @param {string} [payload.messageKey] - Optional specific key for direct lookup.
+ * @param {string[]} [payload.content] - Optional direct content override.
+ * @param {object} currentAppState - Snapshot of relevant app state for interpolation.
  * @returns {string | string[]} A single message string or an array of strings for multi-line blocks.
  */
 export function getMessage(payload, currentAppState = {}) {
     const { type, source, data, messageKey } = payload;
 
+    if (payload.content) { // If content is directly provided, use it
+        return payload.content;
+    }
+
     switch (type) {
         case 'startup':
-            return startupMessages[source] || `Unknown startup event: ${source}`;
-        
+            return startupMessages[messageKey || source] || `Unknown startup event: ${messageKey || source}`;
+
         case 'block':
             if (messageKey && blockMessages[messageKey]) {
-                if (messageKey === 'BTN4_MESSAGE') { // Special handling for BTN4 status query
-                    return blockMessages[messageKey].map(line => 
+                if (messageKey === 'BTN4_MESSAGE') {
+                    return blockMessages[messageKey].map(line =>
                         line.replace('{currentTheme}', currentAppState.theme || 'N/A')
                             .replace('{lensPower}', currentAppState.lensPower !== undefined ? Math.round(currentAppState.lensPower * 100) : 'N/A')
                             .replace('{dialAHue}', currentAppState.dialA?.hue !== undefined ? Math.round(currentAppState.dialA.hue) : 'N/A')
@@ -104,11 +116,14 @@ export function getMessage(payload, currentAppState = {}) {
             return `Unknown block message key: ${messageKey || source}`;
 
         case 'status':
+            if (messageKey && statusMessageTemplates[messageKey] && data) { // Check messageKey first for status
+                return statusMessageTemplates[messageKey](data);
+            }
             if (statusMessageTemplates[source] && data) {
                 return statusMessageTemplates[source](data);
             }
             return `Status update from ${source}: ${JSON.stringify(data)}`;
-        
+
         default:
             return `Unknown message type: ${type} from ${source}`;
     }

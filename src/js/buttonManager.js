@@ -1,375 +1,350 @@
 /**
- * @module buttonManager (REFACTOR-V2.3 - Componentized)
- * @description Centralized authority for managing button logical states (CSS classes),
- * ARIA attributes, and complex animations like flickering.
- * Delegates element-specific logic to Button component instances.
- * Relies on CSS themes and variables for visual appearance of states.
+ * @module buttonManager (REFACTOR-V2.3)
+ * @description Manages all button components, their states, and group behaviors.
+ * Leverages Button.js for individual button logic.
  */
-// GSAP instance will be passed to methods or stored if init receives it
+import Button from './Button.js'; // Default import for Button class
+import { createAdvancedFlicker } from './animationUtils.js';
 import { shuffleArray } from './utils.js';
-import { DEFAULT_ASSIGNMENT_SELECTIONS, ADVANCED_FLICKER_PROFILES } from './config.js';
-import Button from './Button.js'; 
+import { gsap } from "gsap"; // Import gsap directly
 
+// Define ButtonStates authoritatively here
 export const ButtonStates = {
+    // Core States
     UNLIT: 'is-unlit',
-    DIMLY_LIT: 'is-dimly-lit',
-    ENERGIZED_UNSELECTED: 'is-energized',
+    DIMLY_LIT: 'is-dimly-lit', // Generic dimly-lit, implies unselected
+    ENERGIZED_UNSELECTED: 'is-energized', // Base energized, unselected
     ENERGIZED_SELECTED: 'is-energized is-selected',
+
+    // Dimly Lit Variants (if explicit selection state is needed while dim)
+    DIMLY_LIT_UNSELECTED: 'is-dimly-lit', // Same as DIMLY_LIT for now
+    DIMLY_LIT_SELECTED: 'is-dimly-lit is-selected', // If a dim button can be "selected"
+
+    // Interaction States (transient, often combined with core states)
+    PRESSING: 'is-pressing',
+    FLICKERING: 'is-flickering' // Added for managing flicker visual state
 };
 
-class ButtonManager {
-    constructor() {
-        this._buttons = new Map(); 
-        this.gsap = null; // To store the GSAP instance from init
+
+export class ButtonManager { // Export the class
+    constructor(gsapInstance, appState, configModule, uiUpdater) {
+        this.gsap = gsapInstance;
+        this.appState = appState;
+        this.config = configModule;
+        this.uiUpdater = uiUpdater;
+        this._buttons = new Map();
+        this._buttonGroups = new Map();
+        this.debug = true; // Enable debug logging
     }
 
-    init(buttonElements, gsapInstance) { // Accept gsapInstance
-        console.log(`[ButtonManager INIT] Initializing with ${buttonElements?.length || 0} elements.`);
-        if (!gsapInstance) {
-            console.error("[ButtonManager INIT] CRITICAL: GSAP instance not provided.");
-            // Fallback to window.gsap if not passed, though direct pass is preferred
-            this.gsap = window.gsap; 
-            if (!this.gsap) throw new Error("GSAP instance not available in ButtonManager");
-        } else {
-            this.gsap = gsapInstance;
+    init(buttonElements, gsapInstance) {
+        this.gsap = gsapInstance || this.gsap; // Ensure GSAP is set
+        if (this.debug) console.log('[ButtonManager INIT] Initializing buttons:', buttonElements?.length);
+        if (buttonElements && buttonElements.length > 0) {
+            buttonElements.forEach(element => {
+                this.addButton(element);
+            });
         }
-
-        if (!buttonElements || buttonElements.length === 0) return;
-        buttonElements.forEach(element => this.addButton(element));
+        this.setInitialDimStates();
     }
 
     addButton(element, explicitGroupId = null) {
-        if (!element || typeof element.classList === 'undefined' || this._buttons.has(element)) return;
+        if (!element || this._buttons.has(element)) return;
 
-        let type = 'action';
-        if (element.classList.contains('button-unit--toggle')) type = 'toggle';
-        if (element.getAttribute('role') === 'radio') type = 'radio';
+        const buttonConfig = this._generateButtonConfig(element, explicitGroupId);
+        const buttonInstance = new Button(element, buttonConfig, this.gsap, this.appState, this.config, this.uiUpdater);
+        this._buttons.set(element, buttonInstance);
 
-        const buttonTextContent = element.querySelector('.button-text')?.textContent.trim();
-        if (buttonTextContent && ['BTN 1', 'BTN 2', 'BTN 3', 'BTN 4'].includes(buttonTextContent)) {
-            if (!element.classList.contains('button-unit--action')) {
-                element.classList.add('button-unit--action');
+        const finalGroupId = buttonInstance.getGroupId();
+        if (finalGroupId) {
+            if (!this._buttonGroups.has(finalGroupId)) {
+                this._buttonGroups.set(finalGroupId, new Set());
             }
-            type = 'action'; 
+            this._buttonGroups.get(finalGroupId).add(buttonInstance);
         }
+        // Log moved to Button constructor for earlier _isSelected state
+        // if (this.debug) console.log(`[ButtonManager ADD] Added button: ${buttonInstance.getIdentifier()}, Group: ${finalGroupId}, Initial Selected: ${buttonInstance.isSelected()}`);
+    }
+
+    _generateButtonConfig(element, explicitGroupId = null) {
+        const type = element.classList.contains('button-unit--toggle') ? 'toggle' :
+                     element.classList.contains('button-unit--action') ? 'action' :
+                     element.classList.contains('button-unit--radio') ? 'radio' : 'default';
 
         let groupId = explicitGroupId;
         if (!groupId) {
-            groupId = element.dataset.groupId;
-            if (!groupId) {
-                const groupContainer = element.closest('[data-group-id]');
-                if (groupContainer) groupId = groupContainer.dataset.groupId;
-                else {
-                    const hueAssignColumn = element.closest('.hue-assignment-column');
-                    if (hueAssignColumn && hueAssignColumn.dataset.assignmentTarget) {
-                        groupId = hueAssignColumn.dataset.assignmentTarget;
-                    } else {
-                        const scanBlockParent = element.closest('.scan-button-block');
-                        if (scanBlockParent) {
-                            const descriptorLabel = scanBlockParent.querySelector('.block-label-bottom--descriptor');
-                            if (descriptorLabel?.textContent.toLowerCase().includes('skill scan')) groupId = 'skill-scan-group';
-                            else if (descriptorLabel?.textContent.toLowerCase().includes('fit eval')) groupId = 'fit-eval-group';
-                            else groupId = `scan-button-${element.textContent.trim() || Math.random().toString(36).substr(2, 5)}`;
-                        }
-                    }
+            groupId = element.closest('[data-group-id]')?.dataset.groupId || null;
+            if (!groupId && type === 'radio') {
+                const radioGroupContainer = element.closest('[role="radiogroup"]');
+                if (radioGroupContainer) {
+                    groupId = radioGroupContainer.dataset.assignmentTarget ||
+                              radioGroupContainer.id ||
+                              `radio-group-${[...this._buttonGroups.keys()].length}`;
                 }
             }
         }
-        if (!groupId) {
-            groupId = `button-auto-group-${element.ariaLabel || element.textContent.trim().replace(/\s+/g, '-') || Math.random().toString(36).substr(2, 5)}`;
-        }
+        const value = element.dataset.toggleValue || element.dataset.value || null;
+        const isSelectedByDefault = element.classList.contains('is-selected');
+
+        return { type, groupId, value, isSelectedByDefault };
+    }
 
 
-        const value = element.dataset.toggleValue || element.dataset.rowIndex;
-        const buttonConfig = { 
-            type, 
-            groupId, 
-            value,
-            gsapInstance: this.gsap // Pass the stored GSAP instance
-        };
-
-        const buttonInstance = new Button(element, buttonConfig);
-        this._buttons.set(element, buttonInstance);
-        // Initial state during addButton should ensure it's clean before P0 reset might happen
-        this.gsap.set(element, { clearProps: "all" });
-        const classesToRemoveOnInit = ['is-energized', 'is-selected', 'is-dimly-lit', 'is-flickering'];
-        classesToRemoveOnInit.forEach(cls => element.classList.remove(cls));
-        element.classList.add(ButtonStates.UNLIT); // Directly add is-unlit
-        buttonInstance.setState(ButtonStates.UNLIT, { forceState: true, phaseContext: "ButtonManager_AddButton_Init" });
+    getButtonInstance(element) {
+        return this._buttons.get(element);
     }
 
     setInitialDimStates() {
-        this._buttons.forEach((buttonInstance, element) => {
-            // Clear all GSAP inline styles first
-            this.gsap.set(element, { clearProps: "all" });
-            
-            // Explicitly remove all known state classes
-            const classesToRemove = ['is-energized', 'is-selected', 'is-dimly-lit', 'is-flickering', ButtonStates.UNLIT];
-            classesToRemove.forEach(cls => element.classList.remove(cls));
-            
-            // Clear GSAP props from lights as well
-            const lights = Array.from(element.querySelectorAll('.light'));
-            if (lights.length > 0) this.gsap.set(lights, { clearProps: "all" });
-            
-            // Set to UNLIT. forceState true will ensure internal currentClasses are also reset.
-            buttonInstance.setState(ButtonStates.UNLIT, { skipAria: true, forceState: true, phaseContext: "P0_Reset_InitialDim" });
-            // console.log(`[ButtonManager setInitialDimStates] Button: ${buttonInstance.getIdentifier()}, Classes after UNLIT set: '${element.className}'`);
+        if (this.debug) console.log('[BM setInitialDimStates] Setting initial states for all buttons to UNLIT.');
+        this._buttons.forEach(buttonInstance => {
+            const buttonId = buttonInstance.getIdentifier();
+            // console.log(`[BM setInitialDimStates] Processing: ${buttonId}, Current _isSelected before any action: ${buttonInstance.isSelected()}`);
+            if (buttonInstance.isSelected()) {
+                // console.log(`[BM setInitialDimStates] Button ${buttonId} is selected by default. Forcing _isSelected to false before setting UNLIT state.`);
+                buttonInstance.setSelected(false, { skipAnimation: true, phaseContext: `P0_ForceUnselect_${buttonId}` });
+                // console.log(`[BM setInitialDimStates] Button ${buttonId} _isSelected after force unselect: ${buttonInstance.isSelected()}`);
+            }
+            buttonInstance.setState(ButtonStates.UNLIT, { skipAnimation: true, themeContext: 'theme-dim', phaseContext: `P0_InitialUnlit_BM_${buttonId}`, forceState: true });
+            // console.log(`[BM setInitialDimStates] Button ${buttonId} final DOM classes after UNLIT: '${buttonInstance.element.className}', final _isSelected: ${buttonInstance.isSelected()}`);
         });
     }
 
-    smoothTransitionButtonsToState(buttonsToTransition, targetStateClass, options = {}) {
-        const { stagger = 0.02, phaseContext = "UnknownPhase_SmoothTransition" } = options;
-        const tl = this.gsap.timeline();
+    handleButtonInteraction(buttonElement, eventType = 'click') {
+        const buttonInstance = this._buttons.get(buttonElement);
+        if (!buttonInstance) return;
+        const buttonId = buttonInstance.getIdentifier();
 
-        if (!buttonsToTransition || buttonsToTransition.length === 0) {
-            return tl.to({}, {duration: 0.01});
+        if (this.debug) console.log(`[BM INTERACTION] Event: ${eventType} on ${buttonId}, AppStatus: ${this.appState.getAppStatus()}`);
+
+        if (this.appState.getAppStatus() !== 'interactive' && buttonInstance.getGroupId() !== 'system-power') {
+            if (this.debug) console.log(`[BM INTERACTION] Blocked, app not interactive for ${buttonId}`);
+            return;
         }
 
-        buttonsToTransition.forEach((element, index) => {
-            const buttonInstance = this._buttons.get(element);
-            if (buttonInstance) {
-                const currentInstanceClasses = buttonInstance.getCurrentClasses();
-                const isAlreadyEnergized = currentInstanceClasses.has('is-energized');
-                const isTargetEnergized = targetStateClass.includes('is-energized');
-                const primaryTargetState = targetStateClass.split(' ')[0];
+        buttonInstance.handleInteraction(eventType);
 
-                if (!currentInstanceClasses.has(primaryTargetState) && (!isAlreadyEnergized || isTargetEnergized)) {
-                    tl.call(() => {
-                        buttonInstance.setState(targetStateClass, { phaseContext: `${phaseContext}_SetState` });
-                    }, null, index * stagger);
+        const groupId = buttonInstance.getGroupId();
+        if (groupId && (buttonInstance.config.type === 'toggle' || buttonInstance.config.type === 'radio')) {
+            if (buttonInstance.isSelected()) {
+                this._buttonGroups.get(groupId).forEach(member => {
+                    if (member !== buttonInstance && member.isSelected()) {
+                        if (this.debug) console.log(`[BM INTERACTION] Deselecting other member ${member.getIdentifier()} in group ${groupId}`);
+                        member.setSelected(false, { themeContext: this.appState.getCurrentTheme(), phaseContext: `GroupAutoDeselect_${member.getIdentifier()}` });
+                    }
+                });
+            }
+        }
+        this.appState.emit('buttonInteracted', { buttonIdentifier: buttonId, newState: buttonInstance.getCurrentStateClasses() });
+    }
+
+    setGroupSelected(groupId, selectedButtonValueOrElement) {
+        const group = this._buttonGroups.get(groupId);
+        if (!group) {
+            console.warn(`[BM setGroupSelected] Group not found: ${groupId}`);
+            return;
+        }
+        if (this.debug) console.log(`[BM setGroupSelected] Group: ${groupId}, Target: ${typeof selectedButtonValueOrElement === 'string' ? selectedButtonValueOrElement : selectedButtonValueOrElement.ariaLabel}`);
+
+        group.forEach(buttonInstance => {
+            let shouldBeSelected = false;
+            if (typeof selectedButtonValueOrElement === 'string') {
+                shouldBeSelected = buttonInstance.config.value === selectedButtonValueOrElement;
+            } else { // Assuming it's an element
+                shouldBeSelected = buttonInstance.element === selectedButtonValueOrElement;
+            }
+            // Use forceState: true to ensure the visual update happens even if _isSelected is already correct
+            buttonInstance.setSelected(shouldBeSelected, { skipAnimation: true, themeContext: this.appState.getCurrentTheme(), phaseContext: `setGroupSelected_${groupId}_${buttonInstance.getIdentifier()}`, forceState: true });
+        });
+    }
+
+
+    playFlickerToState(buttonElement, targetState, options) {
+        const buttonInstance = this._buttons.get(buttonElement);
+        if (!buttonInstance) {
+            console.warn(`[BM playFlickerToState - ${options.phaseContext}] Button instance NOT FOUND for element:`, buttonElement);
+            return { timeline: null, completionPromise: Promise.resolve() };
+        }
+
+        const { profileName, phaseContext = "UnknownPhase", isButtonSelectedOverride = null } = options;
+        const buttonId = buttonInstance.getIdentifier();
+        // console.log(`[BM playFlickerToState - ${phaseContext}] START for: ${buttonId}. TargetState: '${targetState}', Profile: '${profileName}', isSelectedOverrideOpt: ${isButtonSelectedOverride}, Current btn._isSelected: ${buttonInstance.isSelected()}`);
+
+        // Determine expected starting base state from profile name
+        let expectedBaseStartState = ButtonStates.UNLIT; // Default assumption
+        if (profileName.toLowerCase().includes('fromdimlylit')) {
+            expectedBaseStartState = ButtonStates.DIMLY_LIT;
+        }
+        // console.log(`[BM playFlickerToState - ${phaseContext}] For ${buttonId}: Profile '${profileName}' implies starting from '${expectedBaseStartState}'.`);
+
+        // Force the button to this expected starting base state (without selection aspect)
+        // This ensures the flicker animation starts from a visually consistent point.
+        // The 'is-selected' class will be handled by the final setState in onTimelineComplete.
+        let baseStateToSet = expectedBaseStartState;
+        if (expectedBaseStartState === ButtonStates.DIMLY_LIT) baseStateToSet = ButtonStates.DIMLY_LIT_UNSELECTED; // Ensure it's unselected variant
+        else if (expectedBaseStartState === ButtonStates.ENERGIZED_UNSELECTED) baseStateToSet = ButtonStates.ENERGIZED_UNSELECTED;
+        // else it's UNLIT, which is fine.
+
+        // Temporarily unselect if the base state implies it, to match visual start of flicker
+        if (baseStateToSet === ButtonStates.DIMLY_LIT_UNSELECTED || baseStateToSet === ButtonStates.UNLIT) {
+            if (buttonInstance.isSelected()) {
+                 // console.log(`[BM playFlickerToState - ${phaseContext}] For ${buttonId}: Temporarily unselecting for flicker base state ${baseStateToSet}.`);
+                 buttonInstance.setSelected(false, { skipAnimation: true, phaseContext: `PreFlickerTempUnselect_${phaseContext}_${buttonId}`, forceState: true });
+            }
+        }
+        buttonInstance.setState(baseStateToSet, { skipAnimation: true, phaseContext: `PreFlickerForceBaseState_${phaseContext}_${buttonId}`, forceState: true });
+        // console.log(`[BM playFlickerToState - ${phaseContext}] For ${buttonId}: DOM classes AFTER forcing base state '${baseStateToSet}': '${buttonInstance.element.className}'`);
+
+
+        const impliesSelectionInTargetState = targetState.includes('is-selected');
+        let isSelectedForGlowAnimation = impliesSelectionInTargetState;
+
+        // Set the button's internal _isSelected state correctly *before* the flicker starts.
+        // This is for the *final* state the button should be in after the flicker.
+        if (buttonInstance.isSelected() !== impliesSelectionInTargetState) {
+            // console.log(`[BM playFlickerToState - ${phaseContext}] Button ${buttonId} _isSelected (${buttonInstance.isSelected()}) mismatches target's implied selection (${impliesSelectionInTargetState}). Setting _isSelected to ${impliesSelectionInTargetState} for final state.`);
+            buttonInstance.setSelected(impliesSelectionInTargetState, { skipAnimation: true, phaseContext: `PreFlickerSetFinalSelected_${phaseContext}_${buttonId}`, forceState: true });
+        }
+
+        // Allow explicit override for flicker's glow animation if provided
+        if (typeof isButtonSelectedOverride === 'boolean') {
+            isSelectedForGlowAnimation = isButtonSelectedOverride;
+        }
+        // console.log(`[BM playFlickerToState - ${phaseContext}] For ${buttonId}: isSelectedForGlowAnimation (to createAdvancedFlicker): ${isSelectedForGlowAnimation}. Button instance _isSelected (for final state): ${buttonInstance.isSelected()}`);
+
+        const flickerOptions = {
+            ...options,
+            overrideGlowParams: { ...(options.overrideGlowParams || {}), isButtonSelected: isSelectedForGlowAnimation },
+            onTimelineComplete: () => {
+                // console.log(`[BM playFlickerToState - FlickerEnd_${phaseContext}] For: ${buttonId}. Button _isSelected BEFORE final setState: ${buttonInstance.isSelected()}. Target state for setState: '${targetState}'`);
+                // The buttonInstance._isSelected should now be correctly set for the final state.
+                // setState will use this _isSelected to correctly apply/remove 'is-selected' class.
+                buttonInstance.setState(targetState, {
+                    skipAnimation: true,
+                    themeContext: this.appState.getCurrentTheme(),
+                    phaseContext: `FlickerEnd_${phaseContext}_${buttonId}`,
+                    forceState: true // Ensure DOM update
+                });
+                if (options.onComplete) options.onComplete();
+            }
+        };
+        delete flickerOptions.onComplete; // Handled by internal onTimelineComplete
+
+        const { timeline, completionPromise } = createAdvancedFlicker(buttonElement, profileName, flickerOptions);
+        return { timeline, completionPromise };
+    }
+
+
+    flickerDimlyLitToEnergizedStartup(options) {
+        const { profileNameUnselected, profileNameSelected, stagger, phaseContext, specificGroups = null, targetThemeContext } = options;
+
+        const buttonsToEnergize = [];
+        this._buttons.forEach(buttonInstance => {
+            const currentClasses = buttonInstance.getCurrentClasses(); // Reads from DOM
+            const isDimlyLit = currentClasses.has(ButtonStates.DIMLY_LIT.split(' ')[0]);
+
+            if (isDimlyLit) {
+                if (specificGroups && Array.isArray(specificGroups)) {
+                    if (specificGroups.includes(buttonInstance.getGroupId())) {
+                        buttonsToEnergize.push(buttonInstance);
+                    }
+                } else { // If no specificGroups, energize all dimly lit buttons
+                    buttonsToEnergize.push(buttonInstance);
                 }
-            } else {
-                console.warn(`[ButtonManager smoothTransitionButtonsToState | ${phaseContext}] Button element not managed:`, element);
             }
         });
-        if (tl.duration() === 0) tl.to({}, {duration: 0.01});
-        return tl;
+
+        if (this.debug) console.log(`[BM flickerDimlyLitToEnergizedStartup - ${phaseContext}] Total buttons to energize from DIMLY_LIT: ${buttonsToEnergize.length}`);
+        if (buttonsToEnergize.length === 0) {
+            return { masterTimeline: null, masterCompletionPromise: Promise.resolve() };
+        }
+
+        shuffleArray(buttonsToEnergize);
+        const masterFlickerTl = this.gsap.timeline();
+        const allCompletionPromises = [];
+
+        buttonsToEnergize.forEach((buttonInstance, index) => {
+            let targetState = ButtonStates.ENERGIZED_UNSELECTED;
+            let effectiveProfileName = profileNameUnselected;
+            let isSelectedForFinalState = false;
+
+            const groupId = buttonInstance.getGroupId();
+            const buttonValue = buttonInstance.config.value;
+            const buttonId = buttonInstance.getIdentifier();
+
+            // Determine if this button should be selected by default in its group
+            if (this.config.DEFAULT_ASSIGNMENT_SELECTIONS.hasOwnProperty(groupId)) {
+                if (this.config.DEFAULT_ASSIGNMENT_SELECTIONS[groupId].toString() === buttonValue) {
+                    targetState = ButtonStates.ENERGIZED_SELECTED;
+                    effectiveProfileName = profileNameSelected;
+                    isSelectedForFinalState = true;
+                }
+            } else if (buttonInstance.config.type === 'toggle' && buttonInstance.config.isSelectedByDefault) {
+                // For toggle buttons not in DEFAULT_ASSIGNMENT_SELECTIONS, respect their isSelectedByDefault
+                // This primarily applies to MAIN PWR and AUX LIGHT if they were handled this way.
+                // However, this function is typically for SCAN, HUE ASSN, etc.
+                // For this specific function, we assume non-assignment-grid toggles are handled elsewhere or
+                // their default selection is managed by setGroupSelected after this.
+                // So, for now, we only use DEFAULT_ASSIGNMENT_SELECTIONS for selection logic here.
+            }
+            // Action buttons are always unselected unless explicitly set otherwise.
+            // For this startup sequence, they become ENERGIZED_UNSELECTED.
+
+            // if (this.debug) console.log(`[BM flickerDimlyLitToEnergizedStartup - ${phaseContext}] Button: ${buttonId}, TargetState: ${targetState}, Profile: ${effectiveProfileName}, isSelectedForFinalState: ${isSelectedForFinalState}`);
+
+            const { timeline: flickerTl, completionPromise } = this.playFlickerToState(
+                buttonInstance.element,
+                targetState,
+                {
+                    profileName: effectiveProfileName,
+                    phaseContext: `${phaseContext}_${buttonId}`,
+                    isButtonSelectedOverride: isSelectedForFinalState // Hint for flicker animation glow
+                }
+            );
+
+            if (flickerTl) {
+                masterFlickerTl.add(flickerTl, stagger * index);
+            }
+            allCompletionPromises.push(completionPromise);
+        });
+
+        const masterCompletionPromise = Promise.all(allCompletionPromises).then(() => {
+            if (this.debug) console.log(`[BM flickerDimlyLitToEnergizedStartup - ${phaseContext}] All ${buttonsToEnergize.length} button flickers completed.`);
+        }).catch(error => {
+            console.error(`[BM flickerDimlyLitToEnergizedStartup - ${phaseContext}] Error during grouped flicker completion: ${error}`, error);
+        });
+
+        return { masterTimeline: masterFlickerTl, masterCompletionPromise };
     }
 
-    setState(buttonElement, newStateClassesStr, options = {}) {
-        const buttonInstance = this._buttons.get(buttonElement);
-        if (buttonInstance) {
-            buttonInstance.setState(newStateClassesStr, options);
-        } else {
-            console.warn(`[ButtonManager setState] Button element not managed:`, buttonElement);
-        }
+    setButtonsToState(buttonElements, targetState, options = {}) {
+        const { staggerTime = 0.05, phaseContext = "BatchSetState" } = options;
+        const tl = this.gsap.timeline();
+
+        buttonElements.forEach((element, index) => {
+            const buttonInstance = this._buttons.get(element);
+            if (buttonInstance) {
+                const buttonId = buttonInstance.getIdentifier();
+                tl.call(() => {
+                    // console.log(`[BM setButtonsToState - ${phaseContext}] Button: ${buttonId}, TargetState: ${targetState}`);
+                    const impliesSelection = targetState.includes('is-selected');
+                    if (buttonInstance.isSelected() !== impliesSelection) {
+                        buttonInstance.setSelected(impliesSelection, { skipAnimation: true, phaseContext: `BatchSetSelected_${phaseContext}_${buttonId}`, forceState: true });
+                    }
+                    buttonInstance.setState(targetState, {
+                        themeContext: this.appState.getCurrentTheme(),
+                        phaseContext: `${phaseContext}_${buttonId}`,
+                        forceState: true
+                    });
+                }, null, index * staggerTime);
+            }
+        });
+        return { timeline: tl, completionPromise: Promise.resolve() }; // This is a synchronous setup of a GSAP timeline
     }
 
     setPressedVisuals(buttonElement, isPressed) {
         const buttonInstance = this._buttons.get(buttonElement);
         if (buttonInstance) {
             buttonInstance.setPressedVisuals(isPressed);
-        } else {
-             console.warn(`[ButtonManager setPressedVisuals] Button element not managed:`, buttonElement);
         }
-    }
-
-    setGroupSelected(groupId, selectedButtonValueOrElement) {
-        let selectedElement = null;
-        if (typeof selectedButtonValueOrElement === 'string' || typeof selectedButtonValueOrElement === 'number') {
-            const valueToMatch = String(selectedButtonValueOrElement);
-            for (const [element, buttonInstance] of this._buttons.entries()) {
-                if (buttonInstance.getGroupId() === groupId && buttonInstance.getValue() === valueToMatch) {
-                    selectedElement = element;
-                    break;
-                }
-            }
-        } else if (selectedButtonValueOrElement instanceof HTMLElement && this._buttons.has(selectedButtonValueOrElement)) {
-            selectedElement = selectedButtonValueOrElement;
-        }
-
-        if (!selectedElement) {
-            console.warn(`[ButtonManager setGroupSelected] Could not find button for group '${groupId}' with value/element:`, selectedButtonValueOrElement);
-            return;
-        }
-
-        const effectivePhaseContext = document.getElementById('debug-phase-status')?.textContent || 'SetGroupSelected_Manual';
-        const currentBodyThemeClass = Array.from(document.body.classList).find(cls => cls.startsWith('theme-')) || 'theme-dim';
-        let isRadioGroup = false;
-
-        this._buttons.forEach((buttonInstance, element) => {
-            if (buttonInstance.getGroupId() === groupId) {
-                if (buttonInstance.type === 'radio') isRadioGroup = true;
-                const isSelected = (element === selectedElement);
-                let targetStateClasses;
-
-                if (currentBodyThemeClass === 'theme-dim') {
-                    if (groupId === 'system-power' || groupId === 'light') { 
-                        targetStateClasses = isSelected ? ButtonStates.ENERGIZED_SELECTED : ButtonStates.ENERGIZED_UNSELECTED;
-                    } else { 
-                        targetStateClasses = isSelected ? ButtonStates.DIMLY_LIT : ButtonStates.UNLIT;
-                    }
-                } else { 
-                    targetStateClasses = isSelected ? ButtonStates.ENERGIZED_SELECTED : ButtonStates.ENERGIZED_UNSELECTED;
-                }
-                buttonInstance.setState(targetStateClasses, { skipAria: true, phaseContext: `${effectivePhaseContext}_SetStateForGroup` });
-            }
-        });
-
-        this._buttons.forEach((buttonInstance, element) => {
-            if (buttonInstance.getGroupId() === groupId) {
-                buttonInstance._updateAriaAttributes((element === selectedElement), isRadioGroup);
-            }
-        });
-    }
-
-    confirmGroupSelected(groupId, selectedButtonValueOrElement) {
-        let selectedElement = null;
-        if (typeof selectedButtonValueOrElement === 'string' || typeof selectedButtonValueOrElement === 'number') {
-            const valueToMatch = String(selectedButtonValueOrElement);
-            for (const [element, buttonInstance] of this._buttons.entries()) {
-                if (buttonInstance.getGroupId() === groupId && buttonInstance.getValue() === valueToMatch) {
-                    selectedElement = element;
-                    break;
-                }
-            }
-        } else if (selectedButtonValueOrElement instanceof HTMLElement && this._buttons.has(selectedButtonValueOrElement)) {
-            selectedElement = selectedButtonValueOrElement;
-        }
-
-        if (!selectedElement) {
-            return;
-        }
-
-        let isRadioGroup = false;
-        this._buttons.forEach((buttonInstance, element) => {
-            if (buttonInstance.getGroupId() === groupId) {
-                if (buttonInstance.type === 'radio') isRadioGroup = true;
-                buttonInstance._updateAriaAttributes((element === selectedElement), isRadioGroup);
-            }
-        });
-    }
-
-    playFlickerToState(buttonElement, targetStateClassesStr, flickerOptions = {}) {
-        const buttonInstance = this._buttons.get(buttonElement);
-        if (!buttonInstance) {
-            console.warn(`[ButtonManager playFlickerToState] Button element not managed:`, buttonElement);
-            const dummyTl = this.gsap.timeline();
-            if (typeof flickerOptions.onCompleteAll === 'function') this.gsap.delayedCall(0, flickerOptions.onCompleteAll);
-            return dummyTl.to({}, {duration: 0.01});
-        }
-
-        const { profileName = 'buttonP6EnergizeFlicker', phaseContext, onCompleteAll, isButtonSelectedOverride } = flickerOptions;
-        
-        const masterFlickerTl = this.gsap.timeline(); // Create a new timeline to return
-
-        masterFlickerTl.call(() => {
-            if (buttonInstance.currentFlickerAnim && buttonInstance.currentFlickerAnim.isActive()) {
-                buttonInstance.currentFlickerAnim.kill(); // Kill previous flicker on this specific button instance
-            }
-            buttonElement.classList.add('is-flickering');
-            buttonInstance.setState(targetStateClassesStr, { 
-                skipAria: true, 
-                phaseContext: `PreFlicker_${phaseContext}`, 
-                forceState: true,
-                internalFlickerCall: true // Prevent setState from clearing GSAP props during flicker setup
-            });
-        });
-        
-        const isSelectedForGlow = isButtonSelectedOverride !== null 
-            ? isButtonSelectedOverride 
-            : targetStateClassesStr.includes('is-selected');
-
-        const advancedFlickerOptionsForUtility = {
-            overrideGlowParams: { 
-                isButtonSelected: isSelectedForGlow, 
-            },
-            lightTargetSelector: '.light', 
-            onComplete: () => {
-                buttonElement.classList.remove('is-flickering');
-                // GSAP clearProps for lights/element should ideally be part of createAdvancedFlicker's cleanup
-                // or done carefully here if createAdvancedFlicker doesn't fully clean up CSS vars.
-                // For now, let createAdvancedFlicker handle its own animation properties.
-                buttonInstance.setState(targetStateClassesStr, { 
-                    skipAria: false, 
-                    forceState: true, 
-                    phaseContext: `FlickerComplete_${phaseContext}` 
-                });
-                buttonInstance.currentFlickerAnim = null;
-                if (onCompleteAll) { 
-                    onCompleteAll();
-                }
-            },
-        };
-        
-        const actualFlickerSubTimeline = Button.createAdvancedFlicker( // Assuming createAdvancedFlicker is static or accessible
-            buttonElement, 
-            profileName,
-            advancedFlickerOptionsForUtility,
-            this.gsap // Pass GSAP instance to createAdvancedFlicker if it's not importing it directly
-        );
-        
-        masterFlickerTl.add(actualFlickerSubTimeline);
-        
-        buttonInstance.currentFlickerAnim = masterFlickerTl; // Store the master timeline
-        return masterFlickerTl;
-    }
-
-    flickerDimlyLitToEnergizedStartup(options = {}) {
-        const {
-            profileName = 'buttonP6EnergizeFlicker', 
-            stagger = 0.02,
-            phaseContext = "UnknownPhase_EnergizeDimlyLit",
-            specificGroups = null,
-            targetThemeContext = null 
-        } = options;
-
-        const effectiveTheme = targetThemeContext || (document.body.classList.contains('theme-dark') ? 'theme-dark' : (document.body.classList.contains('theme-light') ? 'theme-light' : 'theme-dim'));
-        // console.log(`[ButtonManager flickerDimlyLitToEnergizedStartup | ${phaseContext}] Called. Profile: ${profileName}, Theme: ${effectiveTheme}, Groups: ${specificGroups ? specificGroups.join(',') : 'ALL'}`);
-
-
-        const masterTl = this.gsap.timeline();
-        const buttonsToEnergize = [];
-
-        this._buttons.forEach((buttonInstance, btnElement) => {
-            const currentInstanceClasses = buttonInstance.getCurrentClasses();
-            const hasDimlyLit = currentInstanceClasses.has(ButtonStates.DIMLY_LIT);
-            const groupMatches = (specificGroups === null || specificGroups.includes(buttonInstance.getGroupId()));
-
-            if (hasDimlyLit && groupMatches) {
-                buttonsToEnergize.push(btnElement);
-            }
-        });
-        
-        // console.log(`[ButtonManager flickerDimlyLitToEnergizedStartup | ${phaseContext}] Total buttons found with 'is-dimly-lit' in specified groups: ${buttonsToEnergize.length}`);
-
-        if (buttonsToEnergize.length === 0) {
-            return masterTl.to({}, { duration: 0.01 });
-        }
-
-        shuffleArray(buttonsToEnergize);
-
-        buttonsToEnergize.forEach((btnElement, index) => {
-            const buttonInstance = this._buttons.get(btnElement);
-            if (!buttonInstance) return;
-
-            let targetEnergizedStateClasses = ButtonStates.ENERGIZED_UNSELECTED;
-            let isSelectedForGlow = false;
-
-            if (effectiveTheme === 'theme-dark' || effectiveTheme === 'theme-light') {
-                if (buttonInstance.getGroupId() === 'light') { 
-                    isSelectedForGlow = (buttonInstance.getValue() === 'off'); 
-                    targetEnergizedStateClasses = isSelectedForGlow ? ButtonStates.ENERGIZED_SELECTED : ButtonStates.ENERGIZED_UNSELECTED;
-                } else if (['env', 'lcd', 'logo', 'btn'].includes(buttonInstance.getGroupId())) { 
-                    isSelectedForGlow = (DEFAULT_ASSIGNMENT_SELECTIONS[buttonInstance.getGroupId()] !== undefined &&
-                        buttonInstance.getValue() === String(DEFAULT_ASSIGNMENT_SELECTIONS[buttonInstance.getGroupId()]));
-                    targetEnergizedStateClasses = isSelectedForGlow ? ButtonStates.ENERGIZED_SELECTED : ButtonStates.ENERGIZED_UNSELECTED;
-                } else { 
-                    isSelectedForGlow = false;
-                    targetEnergizedStateClasses = ButtonStates.ENERGIZED_UNSELECTED;
-                }
-            }
-            
-            const flickerSubTimeline = this.playFlickerToState(btnElement, targetEnergizedStateClasses, {
-                profileName: profileName,
-                phaseContext: `${phaseContext}_${buttonInstance.getIdentifier()}`,
-                isButtonSelectedOverride: isSelectedForGlow 
-            });
-            masterTl.add(flickerSubTimeline, index * stagger);
-        });
-        return masterTl;
     }
 }
-
-const buttonManager = new ButtonManager();
-export default buttonManager;

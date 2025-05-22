@@ -18,7 +18,8 @@
     "vite": "^6.3.4"
   },
   "dependencies": {
-    "gsap": "^3.13.0"
+    "gsap": "^3.13.0",
+    "xstate": "^5.19.3"
   },
   "description": ""
 }

@@ -1,6 +1,29 @@
 /* src/css/core/_layout.css (REFACTOR-V2.1) */
 /* Main page structure, panel layout rules. Uses structural variables. */
 
+/* --- Pre-Boot Styling for LCDs to prevent FOUC --- */
+body.pre-boot .actual-lcd-screen-element,
+body.pre-boot .hue-lcd-display {
+    box-shadow: none !important;
+    background-image: none !important; 
+    /* Use explicit unlit values, not theme contract defaults during pre-boot */
+    background-color: oklch(0.02 0 0 / 0.4) !important; /* Match --lcd-unlit-bg-* from contract */
+    color: oklch(0 0 0 / 0) !important; /* Text off */
+    border-color: oklch(0.05 0 0 / 0.1) !important; /* Match --lcd-unlit-border-* from contract */
+}
+
+body.pre-boot .hue-lcd-display .lcd-value {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+body.pre-boot #terminal-lcd-content { /* Target the inner content div for terminal */
+    opacity: 0 !important; 
+    visibility: hidden !important;
+    color: oklch(0 0 0 / 0) !important; /* Ensure text inside is also initially transparent */
+}
+
+
 /* --- Core Application Structure --- */
 .app-wrapper {
     display: flex;
@@ -88,20 +111,17 @@
 .center-panel .top-section {
     display: flex; 
     flex-direction: column; 
-    align-items: center; /* Center children like logo and lens */
+    align-items: center; 
     justify-content: flex-start; 
-    /* padding is from .panel-section base in _panel-bezel.css */
     flex-grow: 1; 
     min-height: 0; 
 }
 .center-panel .lower-section {
      display: flex; 
-     padding: var(--space-none); /* Remove default section padding if grill fills it */
+     padding: var(--space-none); 
      flex-shrink: 0; 
-     align-items: stretch; /* Make grill placeholder stretch */
-     justify-content: stretch; /* Make grill placeholder stretch */
-     /* height from var(--height-lower-section) via .panel-section .lower-section base in _panel-bezel.css */
-     /* box-shadow for grill area will be on .grill-placeholder or this section in _grill.css / _panel-bezel.css */
+     align-items: stretch; 
+     justify-content: stretch; 
 }
 
 

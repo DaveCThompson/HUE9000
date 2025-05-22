@@ -12,7 +12,7 @@ import { setTargetColorProperties, getAppStatus } from './appState.js';
 let localButtonManager = null; 
 
 export function init(hueAssignmentColumns, buttonManagerInstance) {
-    console.log("[GridManager INIT] Initializing...");
+    // console.log("[GridManager INIT] Initializing...");
     if (!buttonManagerInstance) {
       console.error("[GridManager INIT] CRITICAL: ButtonManager instance not provided.");
       return;
@@ -30,20 +30,19 @@ export function init(hueAssignmentColumns, buttonManagerInstance) {
             console.warn("[GridManager INIT] Column found without 'data-assignment-target'. Skipping.", columnElement);
             return;
         }
-        console.log(`[GridManager INIT] Processing column for target: '${assignmentTarget}'`);
+        // console.log(`[GridManager INIT] Processing column for target: '${assignmentTarget}'`);
 
         const defaultSelectedRowIndex = DEFAULT_ASSIGNMENT_SELECTIONS[assignmentTarget];
 
-        // Clear existing buttons but preserve label
         const labelEl = columnElement.querySelector('.control-group-label.label-top');
         columnElement.innerHTML = ''; 
         if (labelEl) columnElement.appendChild(labelEl);
 
-        for (let i = 0; i < 12; i++) { // 12 rows/chips
+        for (let i = 0; i < 12; i++) { 
             const button = document.createElement('div');
             button.classList.add('button-unit', 'button-unit--toggle', 'button-unit--s'); 
-            button.dataset.toggleValue = i.toString(); // Value for group selection (used by buttonManager)
-            button.dataset.rowIndex = i.toString();    // Index for hue lookup AND as value for Button component
+            button.dataset.toggleValue = i.toString(); 
+            button.dataset.rowIndex = i.toString();    
             button.setAttribute('role', 'radio');      
             button.setAttribute('aria-label', `Assign ${assignmentTarget.toUpperCase()} to Hue from Row ${i + 1}`);
             
@@ -72,25 +71,26 @@ export function init(hueAssignmentColumns, buttonManagerInstance) {
 
             button.addEventListener('click', (event) => {
                 const clickedBtn = event.currentTarget;
-                if (getAppStatus() !== 'interactive') {
-                    console.log(`[GridManager Click] Interaction blocked for ${assignmentTarget}-${i}, app not interactive.`);
+                const currentAppStatus = getAppStatus();
+                // console.log(`[GridManager Click] Clicked: Target='${assignmentTarget}', RowIndex='${clickedBtn.dataset.rowIndex}', AppStatus: '${currentAppStatus}'`);
+
+                if (currentAppStatus !== 'interactive') {
+                    console.log(`[GridManager Click] Interaction blocked for ${assignmentTarget}-${i}, app not interactive. Status: ${currentAppStatus}`);
                     return;
                 }
                 
-                const buttonInstance = localButtonManager._buttons.get(clickedBtn); // Get the Button component instance
+                const buttonInstance = localButtonManager._buttons.get(clickedBtn); 
                 if (!buttonInstance) {
                     console.error("[GridManager Click] Clicked button not managed by ButtonManager:", clickedBtn);
                     return;
                 }
-                const buttonGroupId = buttonInstance.getGroupId(); // Use getter
+                const buttonGroupId = buttonInstance.getGroupId(); 
                 if (!buttonGroupId) {
                      console.error("[GridManager Click] Clicked button instance missing groupId:", clickedBtn);
                     return;
                 }
 
-                console.log(`[GridManager Click] Button clicked: Target='${buttonGroupId}', RowIndex='${clickedBtn.dataset.rowIndex}'`);
-
-                localButtonManager.setGroupSelected(buttonGroupId, clickedBtn.dataset.toggleValue); // toggleValue is used for selection matching
+                localButtonManager.setGroupSelected(buttonGroupId, clickedBtn.dataset.toggleValue); 
 
                 const hueIndex = parseInt(clickedBtn.dataset.rowIndex, 10);
                 const hueToSet = HUE_ASSIGNMENT_ROW_HUES[hueIndex];
@@ -101,5 +101,5 @@ export function init(hueAssignmentColumns, buttonManagerInstance) {
             setTargetColorProperties(assignmentTarget, HUE_ASSIGNMENT_ROW_HUES[defaultSelectedRowIndex]);
         }
     });
-    console.log("[GridManager INIT] Hue assignment buttons generated and registered.");
+    // console.log("[GridManager INIT] Hue assignment buttons generated and registered.");
 }
