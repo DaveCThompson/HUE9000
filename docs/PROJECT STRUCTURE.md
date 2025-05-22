@@ -1,6 +1,7 @@
---- START OF FILE PROJECT_STRUCTURE.md ---
-
-# HUE 9000 Project Structure (REFACTOR-V2.3 - SSR-V1.0 Update)
+---
+file: PROJECT_STRUCTURE.md
+---
+# HUE 9000 Project Structure (REFACTOR-V2.3 - XState Update)
 
 This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns.
 
@@ -22,13 +23,10 @@ HUE9000_Project/
 │   │   ├── gridManager.js
 │   │   ├── lensManager.js
 │   │   ├── main.js
-│   │   ├── startupSequenceManager.js  # Orchestrates the GSAP startup sequence (SSR-V1.0)
-│   │   ├── startupPhase0.js           # SSR-V1.0: Phase 0 logic (Old P0+P1)
-│   │   ├── startupPhase1.js           # SSR-V1.0: Phase 1 logic (Old P2)
-│   │   ├── startupPhase2.js           # SSR-V1.0: Phase 2 logic (Old P3)
-│   │   ├── startupPhase3.js           # SSR-V1.0: Phase 3 logic (Old P4)
-│   │   ├── startupPhase4.js           # SSR-V1.0: Phase 4 logic (Old P5)
-│   │   ├── startupPhase5.js           # SSR-V1.0: Phase 5 logic (Old P6+P7)
+│   │   ├── startupSequenceManager.js  # Orchestrates the XState startup sequence
+│   │   ├── startupMachine.js          # XState machine definition for startup
+│   │   ├── startupPhase0.js           # Startup phase logic (pattern: startupPhaseX.js)
+│   │   ├── ...                        # (startupPhase1.js through startupPhase11.js)
 │   │   ├── terminalManager.js         # Manages terminal display
 │   │   ├── terminalMessages.js        # Terminal message content
 │   │   ├── toggleManager.js
@@ -36,14 +34,14 @@ HUE9000_Project/
 │   │   └── utils.js
 │   └── css/
 │       ├── core/                          # Foundational CSS (non-component specific)
-│       │   ├── _variables-structural.css  # Non-themeable (spacers, fixed sizes)
+│       │   ├── _variables-structural.css  # Non-themeable (spacers, fixed sizes, startup factors)
 │       │   ├── _variables-theme-contract.css # Defines ALL themeable variable NAMES + default/fallback values
 │       │   ├── _layout.css                # Main page structure, panel layout rules
 │       │   └── _typography.css            # Base font settings, text styles
 │       │
 │       ├── themes/                        # Theme-specific variable overrides
-│       │   ├── theme-dim.css              # Overrides for DIM mode
-│       │   ├── theme-dark.css             # Overrides for DARK mode
+│       │   ├── theme-dim.css              # Overrides for DIM mode (startup)
+│       │   ├── theme-dark.css             # Overrides for DARK mode (primary full theme)
 │       │   └── theme-light.css            # Overrides for LIGHT mode
 │       │
 │       ├── components/                    # Styles for individual UI components
@@ -55,12 +53,14 @@ HUE9000_Project/
 │       │   ├── _lens-container.css
 │       │   ├── _lens-core.css
 │       │   ├── _lens-outer-glow.css
+│       │   ├── _lens-super-glow.css
 │       │   ├── _color-chips.css
-│       │   └── _grill.css
+│       │   ├── _grill.css
+│       │   └── _terminal.css
 │       │
 │       ├── animations/                    # Reusable animations & startup transitions
 │       │   ├── _effects.css
-│       │   └── _startup-transition.css
+│       │   └── _startup-transition.css    # Styles for .is-transitioning-from-dim
 │       │
 │       ├── utilities/
 │       │   └── _utilities.css

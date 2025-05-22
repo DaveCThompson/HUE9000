@@ -1,3 +1,6 @@
+---
+file: FLICKER_PROFILES.md
+---
 # HUE 9000 Flicker Profile Reference
 
 This document details the standardized flicker animation profiles used for UI element transitions.

@@ -1,4 +1,7 @@
-# HUE 9000 Project Overview (REFACTOR-V2.3)
+---
+file: PROJECT_OVERVIEW.md
+---
+# HUE 9000 Project Overview (REFACTOR-V2.3 - XState Update)
 
 ## 1. Project Intent & Core Concept
 
@@ -11,21 +14,16 @@
 **Key Visual Centerpiece:** The dynamic "lens" display. Its appearance, including a complex radial gradient and an outer glow, changes dramatically based on an "intensity" or "power" value (controlled by Dial B). Its core color (hue) is controlled by the "MOOD" dial (Dial A). This component's visual updates are managed independently and should not be affected by global theme opacity modifiers for its core and glow.
 
 **Startup Sequence:**
-The interface "powers on" with a choreographed, multi-phase sequence. `body` starts with `theme-dim` active. Elements are initially unpowered or in a very dim state. The sequence includes:
-*   **Initial Phases (P0-P1):** Body fades in. UI elements remain very dim. Dials and their LCDs are unlit/blank.
-*   **Power & Core Activation (P2-P3):** Main Power buttons energize with a flicker effect (appearing as "dark theme energized" within the `theme-dim` environment). The central Lens activates, its radial gradient becoming visible and energizing.
-*   **System Priming (P4):** Secondary buttons (SCAN, HUE ASSN, FIT EVAL, AUX) transition to a `is-dimly-lit` state. Dials and their LCDs become "active dim," showing ridges and initial values.
-*   **Full Energization & Theme Transition (P5/P6 in revised sequence):** A global CSS transition occurs as the `body` theme shifts from `theme-dim` to `theme-dark`. Concurrently, previously `is-dimly-lit` buttons (SCAN, HUE ASSN, FIT EVAL) flicker to their final, fully energized states, now styled by `theme-dark`. **This flicker sequence is initiated at the correct point in P6 after the theme change has begun processing.**
-*   **System Ready (P6/P7 in revised sequence):** All systems are declared online, and the UI becomes fully interactive.
+The interface "powers on" with a choreographed, multi-phase sequence (P0-P11), orchestrated by an XState Finite State Machine. `body` starts with `theme-dim` active. Elements are progressively revealed and energized, with their appearance during startup controlled by animated CSS variables (`--startup-L-reduction-factor`, `--startup-opacity-factor`) that affect lightness and effect opacity, respectively. The sequence culminates in a transition to the main `theme-dark`.
 (Full details in `STARTUP_SEQUENCE.md`)
 
-## 2. Architecture & Key Technologies (REFACTOR-V2.3)
+## 2. Architecture & Key Technologies (REFACTOR-V2.3 - XState Update)
 
 **Frontend:** HTML5, CSS3, JavaScript (ES Modules).
 
 **Styling (Refactored Approach):**
 *   **CSS Custom Properties (Variables):** The primary mechanism for all theming and dynamic styling.
-    *   `src/css/core/_variables-structural.css`: Defines non-themeable variables.
+    *   `src/css/core/_variables-structural.css`: Defines non-themeable variables (including startup factors).
     *   `src/css/core/_variables-theme-contract.css`: **Crucial file.** Declares all themeable CSS variable *names* with defaults.
     *   `src/css/themes/theme-*.css`: Override variables from the theme contract.
 *   **OKLCH Color Space:** Preferred.
@@ -43,14 +41,19 @@ The interface "powers on" with a choreographed, multi-phase sequence. `body` sta
     *   `lensManager.js`: Manages the central lens display visuals.
     *   `toggleManager.js`: Manages toggle button groups (MAIN PWR, AUX LIGHT).
     *   `uiUpdater.js`: Handles global UI updates (themes, LCDs, dynamic CSS variables).
-    *   `startupSequenceManager.js`: Orchestrates the GSAP-driven startup sequence.
+    *   `startupSequenceManager.js`: Orchestrates the XState-driven startup sequence.
     *   `debugManager.js`: Manages the debug panel UI and logic.
-*   **Utilities:** `utils.js`.
+    *   `terminalManager.js`: Manages terminal display.
+*   **Startup Sequence Phase Modules (XState Refactor):**
+    *   `startupPhase0.js` ... `startupPhase11.js`: Logic for each distinct startup phase.
+    *   `startupMachine.js`: XState machine definition for the startup sequence.
+*   **Utilities:** `utils.js`, `terminalMessages.js`.
 (All modules include console logging for key operations).
 
 **Animation & Interaction:**
-*   **GSAP:** Core to startup sequence, dial dragging, lens smoothing, button light flickers.
-*   **CSS Transitions:** Used for smooth visual changes when theme variables update and for specific state changes (e.g., buttons fading to `is-dimly-lit`, global theme transition).
+*   **XState:** Orchestrates the multi-phase startup sequence.
+*   **GSAP:** Core to startup phase animations, dial dragging, lens smoothing, button light flickers.
+*   **CSS Transitions:** Used for smooth visual changes when theme variables update and for specific state changes (e.g., global theme transition from `theme-dim` to `theme-dark`).
 
 ## 3. Core Principles & Design Intentions (Preservation Areas)
 
@@ -60,7 +63,7 @@ The interface "powers on" with a choreographed, multi-phase sequence. `body` sta
 *   Dynamic Lens Gradient & Logic (exempt from global theme opacity for core/glow).
 *   **Hue Assignment System.**
 *   **Button Visuals & States:** Clear distinction between states: `is-unlit`, `is-dimly-lit`, `.is-energized` (selected/unselected, with `theme-dim` overrides for MAIN PWR/AUX), `is-pressing`, and flickering effects.
-*   **Startup Sequence:** The multi-phase `theme-dim` to Full power-on sequence.
+*   **Startup Sequence:** The multi-phase `theme-dim` to Full power-on sequence, orchestrated by XState and animated CSS dimming factors.
 
 
 ## 5. Key Performance Learnings & Optimizations Implemented
