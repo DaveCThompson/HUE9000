@@ -94,7 +94,7 @@ body.theme-dark {
     --dial-housing-border-l: 0.06; --dial-housing-border-a: 0.2;
     --dial-face-bg-l: 0.20;
     --dial-ridge-l: 0.45;
-    --dial-ridge-highlight-l: 0.95; --dial-ridge-highlight-a: 0.85;
+    --dial-ridge-highlight-l: 0.75; --dial-ridge-highlight-a: 0.85;
     --dial-shading-start-color: oklch(0% 0 0 / 0.35);
     --dial-shading-end-color: oklch(0% 0 0 / 0.4);
     --dial-dim-active-face-bg-l: 0.18;

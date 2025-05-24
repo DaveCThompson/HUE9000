@@ -175,12 +175,12 @@
     --dial-housing-border-l: 0.08; --dial-housing-border-c: 0.005; --dial-housing-border-h: 240; --dial-housing-border-a: 0.1;
     --dial-face-bg-l: 0.20; --dial-face-bg-c: 0.005; --dial-face-bg-h: 240;
     --dial-ridge-l: 0.45; --dial-ridge-c: 0.005; --dial-ridge-h: 240;
-    --dial-ridge-highlight-l: 0.95; --dial-ridge-highlight-c: 0.005; --dial-ridge-highlight-h: 240; --dial-ridge-highlight-a: 0.85;
+    --dial-ridge-highlight-l: 0.55; --dial-ridge-highlight-c: 0.005; --dial-ridge-highlight-h: 240; --dial-ridge-highlight-a: 0.85;
     --dial-shading-start-color: oklch(0% 0 0 / 0.35);
     --dial-shading-end-color: oklch(0% 0 0 / 0.4);
     --dial-dim-active-face-bg-l: 0.12; --dial-dim-active-face-bg-c: 0.003; --dial-dim-active-face-bg-h: 240;
     --dial-dim-active-ridge-l: 0.25;
-    --dial-dim-active-ridge-highlight-l: 0.60; --dial-dim-active-ridge-highlight-a: 0.4;
+    --dial-dim-active-ridge-highlight-l: 0.4; --dial-dim-active-ridge-highlight-a: 0.4;
     --dial-dim-active-shading-start-color: oklch(0% 0 0 / 0.1); 
     --dial-dim-active-shading-end-color: oklch(0% 0 0 / 0.15); 
 
