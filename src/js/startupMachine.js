@@ -4,16 +4,31 @@
  */
 import { createMachine, assign, fromPromise } from 'xstate'; 
 
-const createPhaseService = (importPath) => {
-    return fromPromise(async ({ input }) => { 
-        const phaseModule = await import(importPath);
+// MODIFIED: Static imports for all startup phases
+import * as startupPhase0 from './startupPhase0.js';
+import * as startupPhase1 from './startupPhase1.js';
+import * as startupPhase2 from './startupPhase2.js';
+import * as startupPhase3 from './startupPhase3.js';
+import * as startupPhase4 from './startupPhase4.js';
+import * as startupPhase5 from './startupPhase5.js';
+import * as startupPhase6 from './startupPhase6.js';
+import * as startupPhase7 from './startupPhase7.js';
+import * as startupPhase8 from './startupPhase8.js';
+import * as startupPhase9 from './startupPhase9.js';
+import * as startupPhase10 from './startupPhase10.js';
+import * as startupPhase11 from './startupPhase11.js';
+
+// Helper function to create a promise service from a statically imported module
+const createStaticPhaseService = (phaseModule) => {
+    return fromPromise(async ({ input }) => {
         if (!phaseModule || typeof phaseModule.createPhaseTimeline !== 'function') {
-            console.error(`Error importing or finding createPhaseTimeline in ${importPath}`);
-            throw new Error(`Failed to load phase module: ${importPath}`);
+            console.error(`Error: createPhaseTimeline not found in phase module.`);
+            throw new Error(`Failed to load phase module.`);
         }
         return phaseModule.createPhaseTimeline(input.dependencies);
     });
 };
+
 
 export const startupMachine = createMachine({ 
     id: 'hue9000Startup',
@@ -28,22 +43,16 @@ export const startupMachine = createMachine({
     },
     states: {
         IDLE: {
-            // REMOVED entry action that caused the error.
-            // setCurrentStartupPhaseNumber(-1) is handled by startupSequenceManager.resetVisualsAndState()
-            // before the FSM is started or when reset.
             on: {
                 START_SEQUENCE: {
                     target: 'RUNNING_SEQUENCE.PHASE_0_IDLE', 
                     actions: [
                         assign({
                             isStepThroughMode: ({ event }) => event.isStepThroughMode,
-                            dependencies: ({ event }) => event.dependencies, // Dependencies are assigned here
+                            dependencies: ({ event }) => event.dependencies, 
                             themeTransitionCleanupPerformed: false, 
                             errorInfo: null,
                         }),
-                        // Ensure phase number is set to 0 when starting the sequence,
-                        // if not already handled by PHASE_0_IDLE entry.
-                        // This is now handled by PHASE_0_IDLE's entry action.
                         'logStartSequence'
                     ]
                 }
@@ -56,7 +65,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP0', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP0Service',
-                        src: createPhaseService('./startupPhase0.js'), 
+                        src: createStaticPhaseService(startupPhase0), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_1_EMERGENCY_SUBSYSTEMS' }) },
@@ -70,7 +79,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP1', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP1Service',
-                        src: createPhaseService('./startupPhase1.js'), 
+                        src: createStaticPhaseService(startupPhase1), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_2_BACKUP_POWER' }) },
@@ -84,7 +93,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP2', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP2Service',
-                        src: createPhaseService('./startupPhase2.js'), 
+                        src: createStaticPhaseService(startupPhase2), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_3_MAIN_POWER_ONLINE' }) },
@@ -98,7 +107,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP3', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP3Service',
-                        src: createPhaseService('./startupPhase3.js'), 
+                        src: createStaticPhaseService(startupPhase3), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_4_OPTICAL_CORE_REACTIVATE' }) },
@@ -112,7 +121,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP4', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP4Service',
-                        src: createPhaseService('./startupPhase4.js'), 
+                        src: createStaticPhaseService(startupPhase4), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_5_DIAGNOSTIC_INTERFACE' }) },
@@ -126,7 +135,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP5', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP5Service',
-                        src: createPhaseService('./startupPhase5.js'), 
+                        src: createStaticPhaseService(startupPhase5), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_6_MOOD_INTENSITY_CONTROLS' }) },
@@ -140,7 +149,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP6', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP6Service',
-                        src: createPhaseService('./startupPhase6.js'), 
+                        src: createStaticPhaseService(startupPhase6), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_7_HUE_CORRECTION_SYSTEMS' }) },
@@ -154,7 +163,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP7', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP7Service',
-                        src: createPhaseService('./startupPhase7.js'), 
+                        src: createStaticPhaseService(startupPhase7), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_8_EXTERNAL_LIGHTING_CONTROLS' }) },
@@ -168,7 +177,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP8', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP8Service',
-                        src: createPhaseService('./startupPhase8.js'), 
+                        src: createStaticPhaseService(startupPhase8), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_9_AUX_LIGHTING_LOW' }) },
@@ -182,7 +191,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP9', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP9Service',
-                        src: createPhaseService('./startupPhase9.js'), 
+                        src: createStaticPhaseService(startupPhase9), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_10_THEME_TRANSITION' }) },
@@ -196,7 +205,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP10', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP10Service',
-                        src: createPhaseService('./startupPhase10.js'), 
+                        src: createStaticPhaseService(startupPhase10), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'PHASE_11_SYSTEM_OPERATIONAL' }) },
@@ -210,7 +219,7 @@ export const startupMachine = createMachine({
                     entry: ['setPhaseNumberActionP11', 'performThemeTransitionCleanupIfNeeded', 'notifyPhaseChangeAction'], 
                     invoke: {
                         id: 'phaseP11Service',
-                        src: createPhaseService('./startupPhase11.js'), 
+                        src: createStaticPhaseService(startupPhase11), // MODIFIED
                         input: ({ context }) => ({ dependencies: context.dependencies }),
                         onDone: [
                             { target: '#hue9000Startup.PAUSED_AWAITING_NEXT_STEP', guard: 'isStepThrough', actions: assign({ currentPhaseNameForResume: 'SYSTEM_READY_TARGET' }) },
@@ -280,7 +289,6 @@ export const startupMachine = createMachine({
                 });
             }
         },
-        // Specific actions to set phase number on entry to each phase state
         setPhaseNumberActionP0: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(0),
         setPhaseNumberActionP1: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(1),
         setPhaseNumberActionP2: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(2),
@@ -297,8 +305,6 @@ export const startupMachine = createMachine({
         setPhaseNumberActionError: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(-2),
 
         notifyPhaseChangeAction: ({ context, event, _event }) => {
-            // This is now primarily for XState inspector. Actual notification to debugManager
-            // happens via startupSequenceManager's subscription to the FSM state.
         },
         enableNextStepButtonAction: ({ context }) => {
             context.dependencies?.managerInstances?.debugManager?.setNextPhaseButtonEnabled(true);
