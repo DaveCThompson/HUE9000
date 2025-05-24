@@ -1,24 +1,32 @@
 /* src/css/components/_terminal.css */
 /* Styles for the HUE 9000 Enhanced Terminal */
 
-/* Main Terminal Element Container (.actual-lcd-screen-element within .terminal-block) */
-/* Opacity for this container is var(--theme-component-opacity) from _lcd.css, not affected by --startup-opacity-factor */
 .terminal-block > .actual-lcd-screen-element {
-    overflow-y: hidden !important; /* Managed by terminalManager.js */
+    overflow-y: hidden !important; 
     font-weight: var(--terminal-font-weight, 500);
-    position: relative; /* For scanline overlay positioning */
+    position: relative; 
     display: flex;
     flex-direction: column;
-    padding: 0; /* Override default LCD padding from _lcd.css for this specific container */
+    padding: 0; 
+    /* Default text color, overridden by state classes below */
+    color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
 }
 
-/* Terminal Content Area (where lines are added) */
-/* Opacity of #terminal-lcd-content is managed by terminalManager.js (e.g., during initial flicker) */
-/* Its text color is inherited from parent .actual-lcd-screen-element. */
-/* Text shadow alpha IS attenuated by --startup-opacity-factor. */
+/* Specific text color for terminal when its screen is .lcd--dimly-lit */
+.terminal-block > .actual-lcd-screen-element.lcd--dimly-lit {
+    color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor, 0)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
+}
+
+/* Specific text color for terminal when its screen is .lcd--unlit */
+/* This ensures text has a visible base color even if its content area opacity is managed by JS */
+.terminal-block > .actual-lcd-screen-element.lcd--unlit {
+    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a)); 
+}
+
+
 #terminal-lcd-content {
     text-shadow:
-        0 0 var(--terminal-text-glow-radius) oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--terminal-text-glow-base-alpha) * var(--startup-opacity-factor, 0))), /* MODIFIED */
+        0 0 var(--terminal-text-glow-radius) oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--terminal-text-glow-base-alpha) * var(--startup-opacity-factor, 0))),
         var(--terminal-text-drop-shadow-offset-x) var(--terminal-text-drop-shadow-offset-y) var(--terminal-text-drop-shadow-blur) var(--terminal-text-drop-shadow-color);
 
     position: relative;
@@ -27,23 +35,28 @@
     flex-grow: 1;
     padding: var(--space-3xl);
     box-sizing: border-box;
-    color: inherit;
+    /* Opacity of this content area is managed by JS (uiUpdater & terminalManager) */
 }
 
-/* Individual Terminal Lines */
 .terminal-line {
     white-space: pre-wrap;
     word-break: break-all;
     display: flex;
     align-items: baseline;
     line-height: 1.7;
-    color: inherit;
+    color: inherit; 
 }
 
-/* Terminal Cursor */
+.terminal-line--initial-boot {
+    /* No specific color override needed here. Color is inherited.
+       Glow is from flicker. Line opacity (autoAlpha) is from flicker.
+       Parent #terminal-lcd-content opacity is set to 1 by terminalManager for P1. */
+}
+
+
 .terminal-cursor {
     display: inline-block;
-    background-color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue));
+    background-color: currentColor; 
     animation: terminalCursorBlink var(--terminal-cursor-blink-on-duration) steps(1, end) 0s infinite alternate;
     margin-left: 1px;
     user-select: none;
@@ -62,8 +75,6 @@
 }
 
 
-/* Scanline Overlay for the terminal container */
-/* Opacity IS attenuated by --startup-opacity-factor */
 .terminal-block > .actual-lcd-screen-element::before {
     content: '';
     position: absolute;
@@ -80,7 +91,7 @@
         var(--terminal-scanline-color) calc(var(--terminal-scanline-thickness) * 4)
     );
     background-size: 100% calc(var(--terminal-scanline-thickness) * 8);
-    opacity: calc(0.3 * var(--startup-opacity-factor, 0)); /* MODIFIED (assuming 0.3 is base opacity for scanlines) */
+    opacity: calc(0.3 * var(--startup-opacity-factor, 0)); 
     animation: terminalScanlineMove var(--terminal-scanline-animation-duration) linear infinite;
     border-radius: inherit;
 }
@@ -94,7 +105,6 @@
     }
 }
 
-/* Disable generic CRT overlay from _lcd.css for the main terminal container */
 .terminal-block > .actual-lcd-screen-element::after {
     display: none !important;
 }

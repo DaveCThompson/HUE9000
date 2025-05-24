@@ -9,12 +9,12 @@ import { startupMessages } from './terminalMessages.js';
 export async function createPhaseTimeline(dependencies) {
     const {
         gsap, appStateService, managerInstances, domElementsRegistry, configModule,
-        LReductionProxy, opacityFactorProxy // Receive new proxies
+        LReductionProxy, opacityFactorProxy 
     } = dependencies;
 
     console.log(`[startupP6_moodIntensityControls EXEC] Start. Current L-factor: ${LReductionProxy.value.toFixed(3)}, O-factor: ${opacityFactorProxy.value.toFixed(3)}`);
 
-    return new Promise((resolve, reject) => { // Removed async
+    return new Promise((resolve, reject) => {
         try {
             const tl = gsap.timeline({
                 onComplete: () => {
@@ -22,9 +22,7 @@ export async function createPhaseTimeline(dependencies) {
                     resolve();
                 }
             });
-            // const completionPromises = []; // Removed
 
-            // 1. Animate L-reduction and Opacity factors to P6 target values
             const targetLFactor = configModule.STARTUP_L_REDUCTION_FACTORS.P6;
             const targetOFactor = 1.0 - targetLFactor;
             const factorAnimationDuration = configModule.STARTUP_DIM_FACTORS_ANIMATION_DURATION;
@@ -54,7 +52,6 @@ export async function createPhaseTimeline(dependencies) {
                 tl.to({}, {duration: 0.01}, "start_P6_effects"); 
             }
 
-            // 2. Emit Terminal Message
             const messageKey = 'P6_MOOD_INTENSITY_CONTROLS';
             const messageTextForDurationCalc = startupMessages[messageKey] || "";
             appStateService.emit('requestTerminalMessage', {
@@ -63,61 +60,75 @@ export async function createPhaseTimeline(dependencies) {
                 messageKey: messageKey,
             });
 
-            // 3. Dials become active (visuals appear)
-            if (managerInstances.dialManager) {
-                tl.call(() => managerInstances.dialManager.setDialsActiveState(true), null, "start_P6_effects+=0.01");
+            // Dial Canvases Fade-In & Activation
+            let dialFadeInEndTime = tl.duration(); // Time after factor animations
+            if (managerInstances.dialManager && domElementsRegistry.dialA && domElementsRegistry.dialB) {
+                const dialCanvasContainers = [domElementsRegistry.dialA, domElementsRegistry.dialB];
+                
+                // Set initial opacity to 0 for fade-in, ensuring this happens before the .to tween
+                tl.set(dialCanvasContainers, { opacity: 0 }, "start_P6_effects");
+
+                tl.call(() => {
+                    console.log(`[startupP6_moodIntensityControls EXEC] Calling dialManager.setDialsActiveState(true) to draw dial content.`);
+                    managerInstances.dialManager.setDialsActiveState(true); 
+                }, null, "start_P6_effects+=0.01") 
+                .to(dialCanvasContainers, { 
+                    opacity: 1, 
+                    duration: configModule.DIAL_CANVAS_FADE_IN_DURATION || 0.5,
+                    ease: "power1.out",
+                    stagger: configModule.STARTUP_LCD_GROUP_APPEAR_STAGGER 
+                }, "start_P6_effects+=0.05"); 
+                dialFadeInEndTime = Math.max(dialFadeInEndTime, 0.05 + (configModule.DIAL_CANVAS_FADE_IN_DURATION || 0.5) + configModule.STARTUP_LCD_GROUP_APPEAR_STAGGER);
             }
 
-            // 4. LCDs A, B, and Terminal Screen flicker to DIMLY_LIT
-            const lcdElementsToFlicker = [];
-            if (domElementsRegistry.lcdA) lcdElementsToFlicker.push({el: domElementsRegistry.lcdA, phaseCtx: 'P6_LcdA_ToDim'});
-            if (domElementsRegistry.lcdB) lcdElementsToFlicker.push({el: domElementsRegistry.lcdB, phaseCtx: 'P6_LcdB_ToDim'});
-            if (domElementsRegistry.terminalContainer) lcdElementsToFlicker.push({el: domElementsRegistry.terminalContainer, phaseCtx: 'P6_TerminalScreen_ToDim'});
 
+            const lcdElementsToFlicker = [];
+            if (domElementsRegistry.lcdA) lcdElementsToFlicker.push({el: domElementsRegistry.lcdA, phaseCtx: 'P6_LcdA_ToDim', profile: 'lcdScreenFlickerToDimlyLit'});
+            if (domElementsRegistry.lcdB) lcdElementsToFlicker.push({el: domElementsRegistry.lcdB, phaseCtx: 'P6_LcdB_ToDim', profile: 'lcdScreenFlickerToDimlyLit'});
+            if (domElementsRegistry.terminalContainer) lcdElementsToFlicker.push({el: domElementsRegistry.terminalContainer, phaseCtx: 'P6_TerminalScreen_ToDim', profile: 'terminalScreenFlickerToDimlyLit'}); // MODIFIED: Use new profile
+
+            let maxLcdFlickerEndTime = dialFadeInEndTime;
 
             if (managerInstances.uiUpdater && lcdElementsToFlicker.length > 0) {
                 lcdElementsToFlicker.forEach((item, index) => {
-                    const {el, phaseCtx} = item;
+                    const {el, phaseCtx, profile} = item; // MODIFIED: Destructure profile
+                    
+                    let flickerOptions = {
+                        useFlicker: true,
+                        flickerProfileName: profile, // MODIFIED: Use profile from item
+                        phaseContext: phaseCtx
+                    };
+                    if (el === domElementsRegistry.terminalContainer) {
+                        console.log(`[startupP6_moodIntensityControls EXEC] Terminal screen flicker using profile: ${profile}. Text should persist.`);
+                    } else {
+                        console.log(`[startupP6_moodIntensityControls EXEC] Dial LCD ${el.id} to lcd--dimly-lit with flicker using profile: ${profile}.`);
+                    }
+
                     const flickerResult = managerInstances.uiUpdater.setLcdState(
                         el,
-                        'lcd--dimly-lit',
-                        {
-                            useFlicker: true,
-                            flickerProfileName: 'lcdScreenFlickerToDimlyLit',
-                            phaseContext: phaseCtx
-                        }
+                        'lcd--dimly-lit', 
+                        flickerOptions
                     );
                     if (flickerResult && flickerResult.timeline) {
-                        tl.add(flickerResult.timeline, `start_P6_effects+=${index * (configModule.P4_LCD_FADE_STAGGER || 0.05)}`);
+                        const flickerStartTime = dialFadeInEndTime * 0.2 + (index * configModule.STARTUP_LCD_GROUP_APPEAR_STAGGER);
+                        tl.add(flickerResult.timeline, `start_P6_effects+=${flickerStartTime}`);
+                        maxLcdFlickerEndTime = Math.max(maxLcdFlickerEndTime, flickerStartTime + flickerResult.timeline.duration());
                     }
-                    // completionPromises.push(flickerResult.completionPromise); // Removed
                 });
             } else {
                  console.warn(`[startupP6_moodIntensityControls EXEC] uiUpdater or LCD elements not available for flicker.`);
             }
-
-            // REMOVED: await Promise.all(completionPromises);
-            // console.log(`[startupP6_moodIntensityControls EXEC] All LCD flickers ADDED to timeline.`);
             
-
-            // 5. Ensure Minimum Duration
             let phaseDurationSeconds = Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, factorAnimationDuration);
             if (messageTextForDurationCalc) {
                 const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
                 phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2);
             }
-            // if (lcdElementsToFlicker.length > 0) {
-            //     const estimatedFlickerDur = configModule.estimateFlickerDuration('lcdScreenFlickerToDimlyLit') + (lcdElementsToFlicker.length -1) * (configModule.P4_LCD_FADE_STAGGER || 0.05);
-            //     phaseDurationSeconds = Math.max(phaseDurationSeconds, estimatedFlickerDur);
-            // }
-            phaseDurationSeconds = Math.max(phaseDurationSeconds, tl.duration());
+            phaseDurationSeconds = Math.max(phaseDurationSeconds, maxLcdFlickerEndTime);
 
 
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
-            }
-            if (tl.duration() === 0 && phaseDurationSeconds > 0) {
-                tl.to({}, { duration: phaseDurationSeconds });
             }
             if (tl.getChildren(true,true,true,0).length === 1 && tl.getChildren(true,true,true,0)[0].vars.duration === 0.01 && phaseDurationSeconds > 0.01) {
                  tl.to({}, { duration: Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, phaseDurationSeconds) });

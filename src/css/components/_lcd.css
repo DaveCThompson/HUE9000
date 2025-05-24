@@ -6,6 +6,12 @@
     width: 100%;
     position: relative;
     overflow: hidden;
+    /* MODIFIED: Added background-color as a fallback for the gradient */
+    background-color: oklch(
+        var(--lcd-active-grad-end-l) /* Use the L value of the darkest part of the gradient */
+        calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) 
+        var(--dynamic-lcd-hue)
+    );
     /* Background: Uses dynamic LCD hue, L values are theme-defined, NOT L-reduced by startup factor */
     background-image: radial-gradient(80.98% 80.98% at 50% 50%,
         oklch(var(--lcd-active-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
@@ -25,7 +31,7 @@
     text-shadow: 0 0 5px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0)));
 
     transition:
-        background-color var(--transition-duration-medium) ease,
+        background-color var(--transition-duration-medium) ease, /* MODIFIED: Added background-color to transition */
         background-image var(--transition-duration-medium) ease,
         border-color var(--transition-duration-medium) ease,
         color var(--transition-duration-medium) ease,
@@ -93,7 +99,7 @@
 
 /* --- LCD State Classes --- */
 .lcd--unlit {
-    background-image: none !important;
+    background-image: none !important; /* Important to override the base gradient */
     background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
     color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a)); /* Uses specific unlit text color */
     border-color: oklch(var(--lcd-unlit-border-l) var(--lcd-unlit-border-c) var(--lcd-unlit-border-h) / var(--lcd-unlit-border-a));
@@ -116,7 +122,7 @@
 
 
 .js-active-dim-lcd { 
-    background-image: none !important;
+    background-image: none !important; /* Important to override the base gradient */
     background-color: oklch(var(--lcd-active-dim-bg-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-bg-a));
     color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
     border-color: oklch(var(--lcd-active-dim-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-border-a));
@@ -137,6 +143,12 @@
 
 
 .lcd--dimly-lit { 
+    /* MODIFIED: Ensure background-color is also set for dimly-lit state */
+    background-color: oklch(
+        var(--lcd-dimly-lit-grad-end-l) /* Use the L value of the darkest part of its gradient */
+        calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) 
+        var(--dynamic-lcd-hue)
+    ) !important; /* Important to ensure it overrides the base background-color if needed */
     background-image: radial-gradient(circle,
         oklch(var(--lcd-dimly-lit-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
         oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100%

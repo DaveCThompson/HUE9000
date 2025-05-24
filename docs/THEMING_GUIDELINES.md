@@ -46,10 +46,18 @@ This document outlines the principles and conventions for theming the HUE 9000 i
 ## Specific Component Guidelines
 
 ### 1. LCD Displays (Mood, Intensity, Terminal)
-*   **DIM Mode:**
-    *   Terminal LCD text is visible but its glow/shadow is very dim due to `--startup-opacity-factor`. The screen background itself is `lcd--unlit` or `lcd--dimly-lit`.
-    *   Dial LCD text is **blank** (opacity 0) until Phase P6. In Phase P6, their screens flicker to `lcd--dimly-lit` and text becomes visible, showing initial values.
-    *   The `lcd--unlit` class is applied by `uiUpdater.js` initially. `lcd--dimly-lit` is applied with flicker in P6. `active` state is applied in P10.
+*   **DIM Mode (Phases P0-P5):**
+    *   Terminal LCD text (from P1) remains visible. Its screen background (`.actual-lcd-screen-element`) is styled as `lcd--unlit` by `uiUpdater.js`.
+    *   Dial LCDs (A & B) are styled as `lcd--unlit`. Their text (`.lcd-value`) is opacity 0.
+*   **DIM Mode (Phases P6-P9):**
+    *   Terminal screen background flickers to `lcd--dimly-lit` (using `terminalScreenFlickerToDimlyLit` profile, container `autoAlpha` stays 1, text persists).
+    *   Dial LCD screens flicker to `lcd--dimly-lit` (using `lcdScreenFlickerToDimlyLit` profile, container `autoAlpha` animates from 0). Their text becomes visible.
+    *   **Key Point for LCD Flickers:** `uiUpdater.setLcdState` ensures that for profiles starting from `autoAlpha:0` (like for Dial LCDs), the `autoAlpha:0` is set by GSAP *before* the target class (e.g., `.lcd--dimly-lit`) is applied, preventing a visual flash of the class styles.
+*   **Theme Transition (Phase P10):**
+    *   All LCDs are set to an 'active' state (classless regarding `lcd--unlit`/`lcd--dimly-lit`) by `uiUpdater.js` *before* `appStateService.setTheme('dark')` is called.
+    *   Their `background-image` (and `background-color` fallback) transitions via CSS due to changing theme variables. Text remains visible.
+    *   `uiUpdater.applyInitialLcdStates()` is called again after a short delay post-theme-set to ensure final state consistency.
+*   **CSS Fallback:** `_lcd.css` includes a `background-color` for LCD elements, derived from their gradient's darkest stop. This acts as a fallback during CSS transitions of `background-image` to prevent full transparency if the gradient momentarily fails to render.
 
 ### 2. UI Elements (e.g., Hue Wheels/Dials, Lens Accents)
 *   **DIM Mode Dials:** Dials are unlit/featureless (canvas drawn flat dark grey by `Dial.js` instances) until Phase P6. In Phase P6, `dialManager.js` calls `DialInstance.setActiveDimState(true)`, causing dial canvases to be redrawn by their `Dial.js` instances to show an "active dim" state using "dim active" variables from `theme-dim.css` (further attenuated by startup factors).
@@ -75,3 +83,4 @@ This document outlines the principles and conventions for theming the HUE 9000 i
 
 ## Maintaining Consistency & Performance
 *   (As before, emphasizing testing the button lifecycle via `Button.js` components, the startup sequence, and the Phase P10 transition).
+*   **LCD State Management:** Pay close attention to the order of operations in `uiUpdater.js -> setLcdState` and `applyInitialLcdStates`. For elements animated with flicker profiles starting from `autoAlpha:0`, ensure GSAP sets this invisibility *before* any CSS classes that define a visible state are applied to prevent visual flashes. For CSS transitions involving `background-image` gradients driven by variables, ensure a suitable `background-color` fallback is present.

@@ -3,7 +3,7 @@
  * @description Provides utility functions for creating complex animations,
  * such as advanced flicker and glow effects.
  */
-import { gsap } from "gsap"; // Import gsap
+import { gsap as globalGsap } from "gsap"; // Import gsap, but we'll prefer injected if available
 import { ADVANCED_FLICKER_PROFILES } from './config.js';
 
 /**
@@ -27,6 +27,17 @@ function getGlowParam(glowProfile, paramName, defaultValue = 0) {
 
 
 export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
+    // Prefer options.gsap if provided (from a manager that has the main instance), else use imported globalGsap
+    const gsap = options.gsapInstance || globalGsap; 
+    if (!gsap || typeof gsap.timeline !== 'function') {
+        console.error("[CAF] GSAP instance is not valid!", {optionsGsap: options.gsapInstance, globalGsap});
+        // Fallback to a dummy timeline to prevent crashes, though animation won't work
+        const dummyTimeline = globalGsap.timeline();
+        dummyTimeline.to({}, {duration: 0.001});
+        return { timeline: dummyTimeline, completionPromise: Promise.resolve() };
+    }
+
+
     const profileNameForLog = typeof profileOrParams === 'string' ? profileOrParams : 'CustomProfile';
     const targetIdForLog = targets && targets.length > 0 && targets[0] ? (targets[0].id || targets[0].className.split(' ')[0] || targets[0].tagName) : 'unknownTarget';
     // console.log(`[CAF START - ${profileNameForLog} for ${targetIdForLog}] Options:`, JSON.parse(JSON.stringify(options)));
@@ -107,7 +118,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             gsap.set(baseTargetsForOpacity, {clearProps: "all", overwrite: true});
         }
     } else if (profile.targetProperty === 'text-shadow-opacity-and-blur' || profile.targetProperty === 'element-opacity-and-box-shadow') {
-        baseTargetsForOpacity = elementsToAnimate; // The element itself is the target for autoAlpha
+        baseTargetsForOpacity = elementsToAnimate; 
         gsap.killTweensOf(baseTargetsForOpacity);
     }
 
@@ -117,8 +128,6 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     if (isTransitioningFromEffectivelyUnlit) {
         // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Profile indicates transition FROM UNLIT. Setting initial autoAlpha to 0 for baseTargetsForOpacity.`);
         if (baseTargetsForOpacity.length > 0) {
-            // For textFlickerToDimlyLit, baseTargetsForOpacity is the textLineElement.
-            // Setting its autoAlpha to 0 will hide the text content.
             tl.set(baseTargetsForOpacity, { autoAlpha: 0, immediateRender: true });
         }
         if (profile.glow && (profile.glow.opacityVar || profile.glow.animatedProperties?.opacity)) {
@@ -128,8 +137,6 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             if (profile.glow.sizeVar) initialGlowCSS[profile.glow.sizeVar] = '0px';
             if (profile.glow.animatedProperties?.blur) initialGlowCSS[profile.glow.animatedProperties.blur] = '0px';
             if (Object.keys(initialGlowCSS).length > 0) {
-                // For textFlickerToDimlyLit, elementsToAnimate is the textLineElement.
-                // This sets CSS variables on the textLineElement for its text-shadow.
                 tl.set(elementsToAnimate, { css: initialGlowCSS, immediateRender: true });
             }
         }
@@ -156,17 +163,10 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             }
         }
     }
-    // if (baseTargetsForOpacity.length > 0 && baseTargetsForOpacity[0]) {
-    //      tl.call(() => { 
-    //         // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Opacity AFTER all initial sets for ${baseTargetsForOpacity[0].id || baseTargetsForOpacity[0].className}: ${gsap.getProperty(baseTargetsForOpacity[0], "opacity")}`);
-    //     });
-    // }
-
 
     let currentTime = 0;
     let lastOnDuration = 0.01;
 
-    // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Starting flicker loop. Profile amplitudeStart: ${profile.amplitudeStart}, amplitudeEnd: ${profile.amplitudeEnd}`);
     for (let i = 0; i < profile.numCycles; i++) {
         const cycleProgress = profile.numCycles > 1 ? i / (profile.numCycles - 1) : 1;
         const currentPeriod = profile.periodStart + cycleProgress * (profile.periodEnd - profile.periodStart);
@@ -179,8 +179,6 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         const currentPeakOpacity = getGlowParam(profile.glow, 'peakOpacity', 1);
         const currentPeakSize = getGlowParam(profile.glow, 'peakSize', '5px');
 
-        // For textFlickerToDimlyLit, baseTargetsForOpacity is the textLineElement.
-        // This animates the opacity of the textLineElement itself.
         const onState = { autoAlpha: currentAmplitude, duration: onDuration, ease: "power1.inOut" };
         const onGlowCSS = {};
         if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
@@ -194,7 +192,6 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         }
         if (baseTargetsForOpacity.length > 0) tl.to(baseTargetsForOpacity, onState, currentTime);
         if (Object.keys(onGlowCSS).length > 0) {
-            // This animates CSS variables on elementsToAnimate (the textLineElement) for its text-shadow.
             tl.to(elementsToAnimate, { css: onGlowCSS, duration: onDuration, ease: "power1.inOut" }, currentTime);
         }
         currentTime += onDuration;
@@ -224,13 +221,11 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     }
 
     const finalSettleDuration = Math.max(0.15, profile.periodEnd * 1.5);
-    // For textFlickerToDimlyLit, this sets the final opacity of the textLineElement.
     const finalState = { autoAlpha: profile.amplitudeEnd, duration: finalSettleDuration, ease: "sine.out" };
     const finalGlowCSS = {};
     if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
         const finalGlowOpacityValue = getGlowParam(profile.glow, 'finalOpacity', 0);
         const finalGlowSizeValue = getGlowParam(profile.glow, 'finalSize', '0px');
-        // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Final Glow - Opacity: ${finalGlowOpacityValue}, Size: ${finalGlowSizeValue}`);
 
         if (profile.glow.opacityVar) finalGlowCSS[profile.glow.opacityVar] = finalGlowOpacityValue;
         if (profile.glow.sizeVar) finalGlowCSS[profile.glow.sizeVar] = typeof finalGlowSizeValue === 'number' ? `${finalGlowSizeValue}px` : finalGlowSizeValue;
@@ -243,13 +238,11 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     const overlapTime = lastOnDuration * 0.3; 
     if (baseTargetsForOpacity.length > 0) tl.to(baseTargetsForOpacity, finalState, `>-=${overlapTime}`);
     if (Object.keys(finalGlowCSS).length > 0) {
-        // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Setting finalGlowCSS:`, finalGlowCSS);
         tl.to(elementsToAnimate, { css: finalGlowCSS, duration: finalSettleDuration, ease: "sine.out" }, "<"); 
     }
 
     if (tl.duration() === 0) { 
         tl.to({}, {duration: 0.001});
     }
-    // console.log(`[CAF END - ${profileNameForLog} for ${targetIdForLog}], Total timeline duration: ${tl.duration().toFixed(3)}`);
     return { timeline: tl, completionPromise };
 }

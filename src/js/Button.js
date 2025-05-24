@@ -2,45 +2,40 @@
  * @module Button
  * @description Represents a single UI button component, managing its state,
  * appearance (CSS classes, ARIA attributes), and specific animations.
+ * (REFACTOR-V2.3 - Ambient Animations Update)
  */
-import { ButtonStates }  from './buttonManager.js'; // Import from buttonManager
-// createAdvancedFlicker is not directly used here, but by buttonManager
+import { ButtonStates }  from './buttonManager.js';
 
 class Button {
-    /**
-     * @param {HTMLElement} domElement - The HTMLElement for this button.
-     * @param {object} config - Configuration object for the button.
-     * @param {string} config.type - Type of button ('action', 'toggle', 'radio').
-     * @param {string} config.groupId - The group ID this button belongs to.
-     * @param {string} [config.value] - The value of the button, used for selection in groups.
-     * @param {boolean} config.isSelectedByDefault - Initial selected state from DOM.
-     * @param {object} gsapInstance - Passed GSAP instance.
-     * @param {object} appStateService - Reference to appState.
-     * @param {object} configModule - Reference to config.js.
-     * @param {object} uiUpdaterService - Reference to uiUpdater.
-     */
     constructor(domElement, config, gsapInstance, appStateService, configModule, uiUpdaterService) {
         this.element = domElement;
-        this.config = config;
+        this.config = config; // { type, groupId, value, isSelectedByDefault }
         this.gsap = gsapInstance;
         this.appState = appStateService;
-        this.configModule = configModule;
+        this.configModule = configModule; // Passed by ButtonManager
         this.uiUpdater = uiUpdaterService;
+        this.debugAmbient = false; // MODIFIED: Default to false for less verbose logging
 
         if (!this.gsap) {
             throw new Error(`[Button CONSTRUCTOR ${this.getIdentifier()}] GSAP instance is not available.`);
         }
+        if (!this.configModule) {
+        }
 
-        this.currentClasses = new Set(); // Will be populated by setState
+        this.currentClasses = new Set();
         this.currentFlickerAnim = null;
         this._pressTimeoutId = null;
         this._isSelected = config.isSelectedByDefault || false;
 
-        console.log(`[Button CONSTRUCTOR - ${this.getIdentifier()}] ID: ${this.element.id}, AriaLabel: ${this.element.ariaLabel}, Group: ${this.config.groupId}, Value: ${this.config.value}, isSelectedByDefault: ${config.isSelectedByDefault}, Initial _isSelected: ${this._isSelected}`);
+        this._isResonating = false; 
+        this.idleLightDriftTweens = [];
+        this.stateTransitionEchoTween = null;
 
-        // Initial ARIA update based on internal _isSelected
         this._updateAriaAttributes();
-        // Initial class state is set by buttonManager's setInitialDimStates -> setState(UNLIT)
+    }
+
+    setConfigModule(configModuleInstance) {
+        this.configModule = configModuleInstance;
     }
 
     getIdentifier() {
@@ -54,192 +49,107 @@ class Button {
 
         const newClassesArray = newStateClassesStr ? newStateClassesStr.split(' ').filter(c => c) : [];
         const newClassesSet = new Set(newClassesArray);
-
-        console.log(`[Button setState - ${buttonId}] ENTER. Requested state string: '${newStateClassesStr}'. Current _isSelected: ${this._isSelected}. PhaseContext: ${effectivePhaseContext}. Current DOM classes: '${this.element.className}'`);
-
-        // Determine if a visual update is truly needed
         let stateChanged = forceState;
+
         if (!stateChanged) {
             const currentManagedClassesOnElement = new Set();
             Object.values(ButtonStates).flatMap(s => s.split(' ')).forEach(cls => {
-                if (this.element.classList.contains(cls)) {
-                    currentManagedClassesOnElement.add(cls);
-                }
+                if (this.element.classList.contains(cls)) currentManagedClassesOnElement.add(cls);
             });
-
             const targetManagedClasses = new Set(newClassesArray);
             if (this._isSelected) targetManagedClasses.add('is-selected'); else targetManagedClasses.delete('is-selected');
 
-
-            if (currentManagedClassesOnElement.size !== targetManagedClasses.size) {
-                stateChanged = true;
-            } else {
+            if (currentManagedClassesOnElement.size !== targetManagedClasses.size) stateChanged = true;
+            else {
                 for (const cls of targetManagedClasses) {
-                    if (!currentManagedClassesOnElement.has(cls)) {
-                        stateChanged = true;
-                        break;
-                    }
+                    if (!currentManagedClassesOnElement.has(cls)) { stateChanged = true; break; }
                 }
             }
         }
 
         if (!stateChanged && !forceState) {
-            console.log(`[Button setState - ${buttonId}] No actual class change needed for '${newStateClassesStr}', _isSelected: ${this._isSelected}. DOM classes already reflect target. Skipping full update.`);
             if (!skipAria) this._updateAriaAttributes();
             return;
         }
-        console.log(`[Button setState - ${buttonId}] Proceeding with state update. stateChanged: ${stateChanged}, forceState: ${forceState}`);
-
 
         if (!internalFlickerCall && this.currentFlickerAnim && this.currentFlickerAnim.isActive()) {
-            console.log(`[Button setState - ${buttonId}] Killing active flicker animation.`);
-            this.currentFlickerAnim.kill();
-            this.currentFlickerAnim = null;
+            this.currentFlickerAnim.kill(); this.currentFlickerAnim = null;
         }
 
-        if (!internalFlickerCall) { // Only clear props if not part of an ongoing flicker's onComplete
+        if (!internalFlickerCall) {
             this.element.classList.remove(ButtonStates.FLICKERING);
             const lights = Array.from(this.element.querySelectorAll('.light'));
-            if (lights.length > 0) {
-                this.gsap.set(lights, { clearProps: "all" });
-            }
-            this.gsap.set(this.element, { clearProps: "css" }); // Clear inline styles set by GSAP
-            console.log(`[Button setState - ${buttonId}] Cleared GSAP props (not internal flicker call).`);
+            if (lights.length > 0) this.gsap.set(lights, { clearProps: "all" });
+            this.gsap.set(this.element, { clearProps: "css" }); 
         }
 
-        // Define all possible state classes managed by ButtonStates (excluding 'is-selected' initially)
-        const allPossibleStateClasses = Object.values(ButtonStates)
-            .flatMap(s => s.split(' '))
-            .filter(c => c && c !== 'is-selected');
-        const uniqueStateClasses = [...new Set(allPossibleStateClasses)];
-
-        // Remove all managed state classes from the element
-        uniqueStateClasses.forEach(cls => {
-            if (this.element.classList.contains(cls)) {
-                this.element.classList.remove(cls);
-            }
+        const allPossibleStateClasses = Object.values(ButtonStates).flatMap(s => s.split(' ')).filter(c => c && c !== 'is-selected');
+        [...new Set(allPossibleStateClasses)].forEach(cls => {
+            if (this.element.classList.contains(cls)) this.element.classList.remove(cls);
         });
+        newClassesSet.forEach(cls => { if (cls !== 'is-selected') this.element.classList.add(cls); });
 
-        // Add the new base state classes (those not 'is-selected')
-        newClassesSet.forEach(cls => {
-            if (cls !== 'is-selected') {
-                this.element.classList.add(cls);
-            }
-        });
+        if (this._isSelected) this.element.classList.add('is-selected');
+        else this.element.classList.remove('is-selected');
 
-        // Explicitly manage 'is-selected' based on the button's internal _isSelected state
-        console.log(`[Button setState - ${buttonId}] BEFORE managing 'is-selected' class. _isSelected: ${this._isSelected}. Element has 'is-selected': ${this.element.classList.contains('is-selected')}`);
-        if (this._isSelected) {
-            this.element.classList.add('is-selected');
-        } else {
-            this.element.classList.remove('is-selected');
-        }
-        console.log(`[Button setState - ${buttonId}] AFTER managing 'is-selected' class. Element has 'is-selected': ${this.element.classList.contains('is-selected')}`);
-
-        // Update internal currentClasses set from the DOM to ensure it's the source of truth
         this.currentClasses.clear();
         this.element.classList.forEach(cls => this.currentClasses.add(cls));
-
-        console.log(`[Button setState - ${buttonId}] Final DOM classes: '${this.element.className}'. Final internal currentClasses: '${Array.from(this.currentClasses).join(' ')}'`);
-
         if (!skipAria) this._updateAriaAttributes();
     }
 
     _updateAriaAttributes() {
         const isEffectivelySelected = this._isSelected;
+        if (this.config.type === 'toggle') this.element.setAttribute('aria-pressed', isEffectivelySelected.toString());
+        else if (this.config.type === 'radio') this.element.setAttribute('aria-checked', isEffectivelySelected.toString());
 
-        if (this.config.type === 'toggle') {
-            this.element.setAttribute('aria-pressed', isEffectivelySelected.toString());
-        } else if (this.config.type === 'radio') {
-            this.element.setAttribute('aria-checked', isEffectivelySelected.toString());
-        }
-
-        const isVisuallyInteractive = Array.from(this.currentClasses).some(cls =>
+        const isVisuallyInteractive = Array.from(this.element.classList).some(cls =>
             cls === ButtonStates.ENERGIZED_UNSELECTED.split(' ')[0] ||
             cls === ButtonStates.DIMLY_LIT.split(' ')[0]
         );
-
         this.element.setAttribute('tabindex', isVisuallyInteractive ? '0' : '-1');
     }
 
     getElement() { return this.element; }
     getGroupId() { return this.config.groupId; }
     getValue() { return this.config.value; }
-    getCurrentClasses() { return new Set(this.element.classList); } // Read directly from DOM for most current
-    getCurrentStateClasses() {
-        return Array.from(this.element.classList).join(' ');
-    }
-
-    isSelected() {
-        return this._isSelected;
-    }
+    getCurrentClasses() { return new Set(this.element.classList); }
+    getCurrentStateClasses() { return Array.from(this.element.classList).join(' '); }
+    isSelected() { return this._isSelected; }
 
     setSelected(selected, options = {}) {
         const { skipAnimation = false, themeContext = 'theme-dark', phaseContext = 'ButtonSetSelected' } = options;
         const buttonId = this.getIdentifier();
-        console.log(`[Button setSelected - ${buttonId}] ENTER. Target selected: ${selected}. Current _isSelected: ${this._isSelected}. PhaseContext: ${phaseContext}. Current DOM classes: '${this.element.className}'`);
 
+        let domNeedsUpdateForSelectedClass = false;
         if (this._isSelected === selected) {
-            console.log(`[Button setSelected - ${buttonId}] _isSelected already matches target (${selected}). Checking if DOM class 'is-selected' needs update.`);
-            // Even if _isSelected matches, the DOM might not reflect it if setState was called with a generic state.
-            let domNeedsUpdate = false;
-            if (selected && !this.element.classList.contains('is-selected')) {
-                domNeedsUpdate = true;
-                console.log(`[Button setSelected - ${buttonId}] DOM needs 'is-selected' added.`);
-            }
-            if (!selected && this.element.classList.contains('is-selected')) {
-                domNeedsUpdate = true;
-                console.log(`[Button setSelected - ${buttonId}] DOM needs 'is-selected' removed.`);
-            }
-
-            if (!domNeedsUpdate) {
-                console.log(`[Button setSelected - ${buttonId}] No change to _isSelected or DOM 'is-selected' class needed. Returning.`);
+            if (selected && !this.element.classList.contains('is-selected')) domNeedsUpdateForSelectedClass = true;
+            if (!selected && this.element.classList.contains('is-selected')) domNeedsUpdateForSelectedClass = true;
+            if (!domNeedsUpdateForSelectedClass) {
                 return;
             }
-            // If DOM needs update, proceed to setState, but _isSelected itself doesn't change.
         } else {
             this._isSelected = selected;
-            console.log(`[Button setSelected - ${buttonId}] Updated _isSelected to: ${this._isSelected}`);
         }
 
+        let baseStateClass = ButtonStates.ENERGIZED_UNSELECTED;
+        if (this.element.classList.contains(ButtonStates.DIMLY_LIT.split(' ')[0])) baseStateClass = ButtonStates.DIMLY_LIT_UNSELECTED;
+        else if (this.element.classList.contains(ButtonStates.UNLIT.split(' ')[0])) baseStateClass = ButtonStates.UNLIT;
+        else if (this.element.classList.contains(ButtonStates.ENERGIZED_UNSELECTED.split(' ')[0])) baseStateClass = ButtonStates.ENERGIZED_UNSELECTED;
 
-        // Determine the base classes (e.g., 'is-dimly-lit', 'is-energized') currently on the element,
-        // excluding 'is-selected' to preserve the base visual state.
-        let baseStateClass = ButtonStates.ENERGIZED_UNSELECTED; // Default if no other base found
-        if (this.element.classList.contains(ButtonStates.DIMLY_LIT.split(' ')[0])) {
-            baseStateClass = ButtonStates.DIMLY_LIT_UNSELECTED; // Use the unselected variant
-        } else if (this.element.classList.contains(ButtonStates.UNLIT.split(' ')[0])) {
-            baseStateClass = ButtonStates.UNLIT;
-        } else if (this.element.classList.contains(ButtonStates.ENERGIZED_UNSELECTED.split(' ')[0])) {
-            baseStateClass = ButtonStates.ENERGIZED_UNSELECTED;
-        }
-        // If it was 'is-energized is-selected', baseStateClass becomes 'is-energized'
-
-        // Construct the new full state string
         let targetStateClasses = baseStateClass;
         if (this._isSelected) {
-            // If baseStateClass already implies selection (e.g. from a faulty definition), don't double add.
-            // But our ButtonStates are defined such that base states are unselected.
             if (baseStateClass === ButtonStates.DIMLY_LIT_UNSELECTED) targetStateClasses = ButtonStates.DIMLY_LIT_SELECTED;
             else if (baseStateClass === ButtonStates.ENERGIZED_UNSELECTED) targetStateClasses = ButtonStates.ENERGIZED_SELECTED;
-            else if (baseStateClass === ButtonStates.UNLIT) targetStateClasses = ButtonStates.ENERGIZED_SELECTED; // Or UNLIT if selected unlit is a thing
-            // else it's already a selected state string, or we default to ENERGIZED_SELECTED
+            else if (baseStateClass === ButtonStates.UNLIT) targetStateClasses = ButtonStates.ENERGIZED_SELECTED; 
         } else {
-            // If unselecting, ensure we revert to the unselected version of the base state.
             if (baseStateClass === ButtonStates.DIMLY_LIT_SELECTED) targetStateClasses = ButtonStates.DIMLY_LIT_UNSELECTED;
             else if (baseStateClass === ButtonStates.ENERGIZED_SELECTED) targetStateClasses = ButtonStates.ENERGIZED_UNSELECTED;
-            // else it's already an unselected state string or UNLIT.
         }
-
-
-        console.log(`[Button setSelected - ${buttonId}] Determined targetStateClasses for setState: '${targetStateClasses}' based on new _isSelected: ${this._isSelected} and base: '${baseStateClass}'`);
-        this.setState(targetStateClasses, { skipAnimation, themeContext, phaseContext, forceState: true }); // forceState to ensure DOM update
+        this.setState(targetStateClasses, { skipAnimation, themeContext, phaseContext, forceState: true });
     }
-
 
     handleInteraction(eventType) {
         const buttonId = this.getIdentifier();
-        console.log(`[Button handleInteraction - ${buttonId}] Event: ${eventType}, Type: ${this.config.type}, Current _isSelected: ${this._isSelected}`);
         if (this.config.type === 'toggle') {
             this.setSelected(!this._isSelected, { themeContext: this.appState.getCurrentTheme(), phaseContext: `ToggleInteract_${buttonId}` });
         } else if (this.config.type === 'radio') {
@@ -247,42 +157,166 @@ class Button {
                 this.setSelected(true, { themeContext: this.appState.getCurrentTheme(), phaseContext: `RadioInteract_${buttonId}` });
             }
         } else if (this.config.type === 'action') {
-            console.log(`[Button handleInteraction - ${buttonId}] Action triggered.`);
         }
     }
 
-
     setPressedVisuals(isPressed) {
         const buttonId = this.getIdentifier();
-        // console.log(`[Button setPressedVisuals - ${buttonId}] isPressed: ${isPressed}`);
         if (this._pressTimeoutId && this.element.classList.contains(ButtonStates.PRESSING) && !isPressed) {
-            clearTimeout(this._pressTimeoutId);
-            this._pressTimeoutId = null;
+            clearTimeout(this._pressTimeoutId); this._pressTimeoutId = null;
         }
-
         if (isPressed) {
             this.element.classList.add(ButtonStates.PRESSING);
             const pressAnimationDurationString = getComputedStyle(this.element).getPropertyValue('--button-unit-pressed-effect-duration-css').trim() || '0.12s';
             const pressAnimationDurationMs = parseFloat(pressAnimationDurationString) * (pressAnimationDurationString.endsWith('ms') ? 1 : 1000);
-
             this._pressTimeoutId = setTimeout(() => {
-                this.element.classList.remove(ButtonStates.PRESSING);
-                this._pressTimeoutId = null;
+                this.element.classList.remove(ButtonStates.PRESSING); this._pressTimeoutId = null;
             }, pressAnimationDurationMs + 50);
         } else {
             this.element.classList.remove(ButtonStates.PRESSING);
         }
     }
 
+    updateHarmonicResonanceVisuals(progress) {
+        if (!this.configModule || !this._isResonating) {
+            return;
+        }
+        const lights = Array.from(this.element.querySelectorAll('.light'));
+        if (!lights.length) {
+            return;
+        }
+
+        const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
+        const dipAmount = progress * R_PARAMS.LIGHT_OPACITY_DIP_FACTOR; 
+        const targetOpacity = R_PARAMS.BASE_LIGHT_OPACITY_SELECTED * (1 - dipAmount);
+
+        // MODIFIED: Conditional logging based on this.debugAmbient
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()} updateHarmonicResonanceVisuals] Resonating: ${this._isResonating}. Progress: ${progress.toFixed(3)}, Target Opacity: ${targetOpacity.toFixed(3)}`);
+
+        this.gsap.to(lights, {
+            opacity: targetOpacity,
+            duration: R_PARAMS.TICK_UPDATE_DURATION,
+            ease: "none" 
+        });
+    }
+
+    startHarmonicResonance() {
+        if (!this.configModule) return;
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Attempting to START Harmonic Resonance. Current _isResonating: ${this._isResonating}`);
+        if (this._isResonating) return; 
+
+        this._isResonating = true;
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Harmonic Resonance STARTED. _isResonating: ${this._isResonating}`);
+    }
+
+    stopHarmonicResonance() {
+        if (!this.configModule) return;
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Attempting to STOP Harmonic Resonance. Current _isResonating: ${this._isResonating}`);
+        if (!this._isResonating) return; 
+
+        this._isResonating = false;
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Harmonic Resonance STOPPED. _isResonating: ${this._isResonating}`);
+        const lights = Array.from(this.element.querySelectorAll('.light'));
+        if (lights.length > 0) {
+            this.gsap.to(lights, {
+                opacity: this.configModule.HARMONIC_RESONANCE_PARAMS.BASE_LIGHT_OPACITY_SELECTED,
+                duration: 0.1, 
+                ease: "none",
+                overwrite: "auto"
+            });
+        }
+    }
+
+    startIdleLightDrift() {
+        if (!this.configModule) return;
+        this.stopIdleLightDrift(); 
+
+        const lights = Array.from(this.element.querySelectorAll('.light'));
+        if (!lights.length) return;
+
+        const D_PARAMS = this.configModule.IDLE_LIGHT_DRIFT_PARAMS;
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Starting Idle Light Drift for ${lights.length} lights.`);
+
+        lights.forEach((light, index) => {
+            const baseOpacity = D_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED;
+            const variation = baseOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
+            const minOpacity = baseOpacity - variation;
+            const maxOpacity = baseOpacity + variation;
+
+            const tween = this.gsap.fromTo(light,
+                { opacity: this.gsap.utils.random(minOpacity, maxOpacity) }, 
+                {
+                    opacity: this.gsap.utils.random(minOpacity, maxOpacity),
+                    duration: this.gsap.utils.random(D_PARAMS.PERIOD_MIN, D_PARAMS.PERIOD_MAX) / 2, 
+                    yoyo: true,
+                    repeat: -1,
+                    delay: this.gsap.utils.random(0, D_PARAMS.PERIOD_MAX / 4) + (index * D_PARAMS.STAGGER_PER_LIGHT), 
+                    ease: "sine.inOut",
+                    overwrite: "auto"
+                }
+            );
+            this.idleLightDriftTweens.push(tween);
+        });
+    }
+
+    stopIdleLightDrift() {
+        if (!this.configModule) return;
+        if (this.idleLightDriftTweens.length === 0) return;
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Stopping Idle Light Drift (${this.idleLightDriftTweens.length} tweens).`);
+        this.idleLightDriftTweens.forEach(tween => tween.kill());
+        this.idleLightDriftTweens = [];
+
+        const lights = Array.from(this.element.querySelectorAll('.light'));
+        if (lights.length > 0) {
+            this.gsap.set(lights, { 
+                opacity: this.configModule.IDLE_LIGHT_DRIFT_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED,
+            });
+        }
+    }
+
+    playStateTransitionEcho() {
+        if (!this.configModule) return;
+        if (this.stateTransitionEchoTween && this.stateTransitionEchoTween.isActive()) {
+            this.stateTransitionEchoTween.kill();
+        }
+
+        const lights = Array.from(this.element.querySelectorAll('.light'));
+        if (!lights.length) return;
+
+        const E_PARAMS = this.configModule.STATE_TRANSITION_ECHO_PARAMS;
+
+        const tl = this.gsap.timeline({
+            delay: E_PARAMS.DELAY_AFTER_TRANSITION,
+            onComplete: () => { this.stateTransitionEchoTween = null; }
+        });
+        this.stateTransitionEchoTween = tl;
+
+        const baseOpacity = parseFloat(getComputedStyle(lights[0]).opacity); 
+
+        for (let i = 0; i < E_PARAMS.NUM_PULSES; i++) {
+            const pulseIntensityFactor = E_PARAMS.INITIAL_LIGHT_INTENSITY_FACTOR * Math.pow(E_PARAMS.LIGHT_DECAY_FACTOR, i);
+            const targetPulseOpacity = baseOpacity * (1 - pulseIntensityFactor); 
+            const pulsePeriod = E_PARAMS.BASE_PULSE_PERIOD * Math.pow(E_PARAMS.PERIOD_DECAY_FACTOR, i);
+
+            tl.to(lights, {
+                opacity: targetPulseOpacity,
+                duration: pulsePeriod / 2,
+                yoyo: true,
+                repeat: 1, 
+                ease: "sine.out"
+            }, i === 0 ? ">" : `-=${pulsePeriod * 0.3}`); 
+        }
+    }
+
+
     destroy() {
         const buttonId = this.getIdentifier();
-        if (this.currentFlickerAnim && this.currentFlickerAnim.isActive()) {
-            this.currentFlickerAnim.kill();
-        }
-        if (this._pressTimeoutId) {
-            clearTimeout(this._pressTimeoutId);
-        }
-        console.log(`[Button DESTROY - ${buttonId}] Destroyed.`);
+        if (this.currentFlickerAnim && this.currentFlickerAnim.isActive()) this.currentFlickerAnim.kill();
+        if (this._pressTimeoutId) clearTimeout(this._pressTimeoutId);
+
+        this.stopHarmonicResonance();
+        this.stopIdleLightDrift();
+        if (this.stateTransitionEchoTween && this.stateTransitionEchoTween.isActive()) this.stateTransitionEchoTween.kill();
     }
 }
 

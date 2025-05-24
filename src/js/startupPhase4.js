@@ -14,7 +14,7 @@ export async function createPhaseTimeline(dependencies) {
 
     console.log(`[startupP4_opticalCoreReactivate EXEC] Start. Current L-factor: ${LReductionProxy.value.toFixed(3)}, O-factor: ${opacityFactorProxy.value.toFixed(3)}`);
 
-    return new Promise((resolve, reject) => { // Removed async
+    return new Promise((resolve, reject) => {
         try {
             const tl = gsap.timeline({
                 onComplete: () => {

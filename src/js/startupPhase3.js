@@ -43,6 +43,12 @@ export async function createPhaseTimeline(dependencies) {
                     ease: "power1.inOut",
                     onUpdate: () => {
                         domElementsRegistry.root.style.setProperty('--startup-opacity-factor', opacityFactorProxy.value.toFixed(3));
+                         // Also update boosted factor
+                        const currentBoosted = parseFloat(domElementsRegistry.root.style.getPropertyValue('--startup-opacity-factor-boosted')) || 0;
+                        const newBoosted = Math.min(1, opacityFactorProxy.value * 1.25);
+                         if (Math.abs(currentBoosted - newBoosted) > 0.001) {
+                           domElementsRegistry.root.style.setProperty('--startup-opacity-factor-boosted', newBoosted.toFixed(3));
+                        }
                     }
                 }, "start_P3_effects");
             }
@@ -93,7 +99,7 @@ export async function createPhaseTimeline(dependencies) {
             // 4. Await flicker completions
             if (completionPromises.length > 0) {
                 await Promise.all(completionPromises);
-                console.log(`[startupP3_mainPowerOnline EXEC] All button flickers complete.`);
+                // console.log(`[startupP3_mainPowerOnline EXEC] All button flickers complete.`); // Redundant if using GSAP timeline for overall phase
             }
 
             // 5. Ensure Minimum Duration
@@ -102,15 +108,18 @@ export async function createPhaseTimeline(dependencies) {
                 const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
                 phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2);
             }
-            const estimatedFlickerDur = configModule.estimateFlickerDuration('buttonFlickerFromDimlyLitToFullyLitSelectedFast') + 0.05;
-            phaseDurationSeconds = Math.max(phaseDurationSeconds, estimatedFlickerDur);
+            // GSAP timeline `tl` already includes the flicker timelines if they were added.
+            // So, `tl.duration()` will reflect their contribution.
+            phaseDurationSeconds = Math.max(phaseDurationSeconds, tl.duration());
 
 
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
             }
-            if (tl.duration() === 0 && phaseDurationSeconds > 0) {
-                tl.to({}, { duration: phaseDurationSeconds });
+             if (tl.getChildren(true,true,true,0).length === 1 && tl.getChildren(true,true,true,0)[0].vars.duration === 0.01 && phaseDurationSeconds > 0.01) {
+                 tl.to({}, { duration: Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, phaseDurationSeconds) });
+            } else if (tl.duration() === 0) {
+                 tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
             }
 
             tl.eventCallback('onComplete', () => {

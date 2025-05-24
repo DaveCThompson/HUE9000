@@ -4,7 +4,7 @@
  * templates, and logic for pseudo-randomization of status messages.
  */
 
-// --- Startup Messages ---
+// Startup Sequence Messages
 export const startupMessages = {
     P1_EMERGENCY_SUBSYSTEMS: "GOOD MORNING. INITIATING STARTUP PROTOCOL.",
     P2_BACKUP_POWER: "BACKUP POWER ENGAGED.",
@@ -15,15 +15,10 @@ export const startupMessages = {
     P7_HUE_CORRECTION_SYSTEMS: "HUE SYSTEMS ALIGNED.",
     P8_EXTERNAL_LIGHTING_CONTROLS: "EXTERNAL LIGHTING RESPONSIVE.",
     P9_AUX_LIGHTING_LOW: "AUX LIGHTING: LOW INTENSITY.",
-    // P10: No text
     P11_SYSTEM_OPERATIONAL: "ALL SYSTEMS NOMINAL. HUE 9000 OPERATIONAL.",
-
-
-
-
 };
 
-// --- Block Messages (Triggered by BTN1-4) ---
+// Block Messages (Triggered by BTN1-4)
 const blockMessages = {
     BTN1_MESSAGE: [
         "SKILL SCAN PROTOCOL INITIATED.",
@@ -50,7 +45,7 @@ const blockMessages = {
         "  - POWER REGULATION: STABLE.",
         "ALL SYSTEMS FUNCTIONING WITHIN NORMAL PARAMETERS."
     ],
-    BTN4_MESSAGE: [ // This will be populated by getMessage
+    BTN4_MESSAGE: [ 
         "SYSTEM STATUS QUERY:",
         "  - CURRENT OPERATING THEME: {currentTheme}",
         "  - LENS POWER OUTPUT: {lensPower}%",
@@ -64,7 +59,7 @@ const blockMessages = {
     ]
 };
 
-// --- Status Message Templates/Variations ---
+// Status Message Templates/Variations
 const statusMessageTemplates = {
     dialA: (data) => `MOOD DIAL SET TO ${data.value}°`,
     dialB: (data) => `INTENSITY DIAL SET TO ${data.value}%`,
@@ -72,38 +67,35 @@ const statusMessageTemplates = {
     lcdHue: (data) => `LCD HUE ASSIGNED: ${data.hue}°`,
     logoHue: (data) => `LOGO HUE ASSIGNED: ${data.hue}°`,
     btnHue: (data) => `BUTTON HUE ASSIGNED: ${data.hue}°`,
-    FSM_ERROR: (data) => `CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}` // For FSM errors
+    FSM_ERROR: (data) => `CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}`
 };
 
-/**
- * Retrieves a message based on the request payload.
- * @param {object} payload - The message request payload from appState.
- * @param {string} payload.type - 'status', 'block', or 'startup'.
- * @param {string} payload.source - Descriptive source, e.g., 'dialA', 'BTN1', 'P0_INITIALIZING'.
- * @param {object} [payload.data] - Optional data for message interpolation.
- * @param {string} [payload.messageKey] - Optional specific key for direct lookup.
- * @param {string[]} [payload.content] - Optional direct content override.
- * @param {object} currentAppState - Snapshot of relevant app state for interpolation.
- * @returns {string | string[]} A single message string or an array of strings for multi-line blocks.
- */
-export function getMessage(payload, currentAppState = {}) {
-    const { type, source, data, messageKey } = payload;
 
-    if (payload.content) { // If content is directly provided, use it
+export function getMessage(payload, currentAppState = {}, configModule = null) { // Added configModule as param
+    const { type, source, data, messageKey } = payload || {};
+
+    if (payload && payload.content && Array.isArray(payload.content)) { 
         return payload.content;
     }
+    if (payload && payload.content && typeof payload.content === 'string') {
+        return [payload.content]; // Ensure it's always an array
+    }
+
 
     switch (type) {
         case 'startup':
-            return startupMessages[messageKey || source] || `Unknown startup event: ${messageKey || source}`;
+            return [startupMessages[messageKey || source] || `Unknown startup event: ${messageKey || source}`];
 
         case 'block':
             if (messageKey && blockMessages[messageKey]) {
                 if (messageKey === 'BTN4_MESSAGE') {
+                    // Ensure configModule and its DEFAULT_DIAL_A_HUE are available
+                    const defaultDialAHue = configModule?.DEFAULT_DIAL_A_HUE ?? 'N/A_CONF';
+                    
                     return blockMessages[messageKey].map(line =>
                         line.replace('{currentTheme}', currentAppState.theme || 'N/A')
                             .replace('{lensPower}', currentAppState.lensPower !== undefined ? Math.round(currentAppState.lensPower * 100) : 'N/A')
-                            .replace('{dialAHue}', currentAppState.dialA?.hue !== undefined ? Math.round(currentAppState.dialA.hue) : 'N/A')
+                            .replace('{dialAHue}', currentAppState.dialA?.hue !== undefined ? Math.round(currentAppState.dialA.hue) : String(Math.round(defaultDialAHue)))
                             .replace('{dialBHue}', currentAppState.dialB?.hue !== undefined ? Math.round(currentAppState.dialB.hue) : 'N/A')
                             .replace('{envHue}', currentAppState.envHue?.hue !== undefined ? Math.round(currentAppState.envHue.hue) : 'N/A')
                             .replace('{lcdHue}', currentAppState.lcdHue?.hue !== undefined ? Math.round(currentAppState.lcdHue.hue) : 'N/A')
@@ -113,18 +105,18 @@ export function getMessage(payload, currentAppState = {}) {
                 }
                 return blockMessages[messageKey];
             }
-            return `Unknown block message key: ${messageKey || source}`;
+            return [`Unknown block message key: ${messageKey || source}`];
 
         case 'status':
-            if (messageKey && statusMessageTemplates[messageKey] && data) { // Check messageKey first for status
-                return statusMessageTemplates[messageKey](data);
+            if (messageKey && statusMessageTemplates[messageKey] && data) { 
+                return [statusMessageTemplates[messageKey](data)];
             }
             if (statusMessageTemplates[source] && data) {
-                return statusMessageTemplates[source](data);
+                return [statusMessageTemplates[source](data)];
             }
-            return `Status update from ${source}: ${JSON.stringify(data)}`;
+            return [`Status update from ${source}: ${JSON.stringify(data)}`];
 
         default:
-            return `Unknown message type: ${type} from ${source}`;
+            return [`Unknown message type: ${type} from ${source}`];
     }
 }

@@ -16,7 +16,7 @@ export async function createPhaseTimeline(dependencies) {
 
     console.log(`[startupP5_diagnosticInterface EXEC] Start. Current L-factor: ${LReductionProxy.value.toFixed(3)}, O-factor: ${opacityFactorProxy.value.toFixed(3)}`);
 
-    return new Promise((resolve, reject) => { // Removed async
+    return new Promise((resolve, reject) => {
         try {
             const tl = gsap.timeline({
                 onComplete: () => {
@@ -24,7 +24,6 @@ export async function createPhaseTimeline(dependencies) {
                     resolve();
                 }
             });
-            // const completionPromises = []; // Removed
 
             // 1. Animate L-reduction and Opacity factors to P5 target values
             const targetLFactor = configModule.STARTUP_L_REDUCTION_FACTORS.P5;
@@ -79,7 +78,7 @@ export async function createPhaseTimeline(dependencies) {
                 diagnosticButtons.forEach((btnEl, index) => {
                     const buttonInstance = managerInstances.buttonManager.getButtonInstance(btnEl);
                     if (buttonInstance) {
-                        const { timeline: flickerTl /*, completionPromise*/ } = managerInstances.buttonManager.playFlickerToState(
+                        const { timeline: flickerTl } = managerInstances.buttonManager.playFlickerToState(
                             btnEl,
                             ButtonStates.DIMLY_LIT,
                             {
@@ -87,36 +86,25 @@ export async function createPhaseTimeline(dependencies) {
                                 phaseContext: `P5_DiagBtn_${buttonInstance.getIdentifier()}_ToDim`
                             }
                         );
-                        if (flickerTl) tl.add(flickerTl, `start_P5_effects+=${index * (configModule.P4_BUTTON_FADE_STAGGER || 0.04)}`);
-                        // completionPromises.push(completionPromise); // Removed
+                        // Use new semantic stagger constant
+                        if (flickerTl) tl.add(flickerTl, `start_P5_effects+=${index * configModule.STARTUP_BUTTON_GROUP_APPEAR_STAGGER}`);
                     }
                 });
             } else {
                 console.warn(`[startupP5_diagnosticInterface EXEC] Diagnostic buttons or buttonManager not available. Buttons found: ${diagnosticButtons.length}`);
             }
-
-            // REMOVED: await Promise.all(completionPromises);
-            // console.log(`[startupP5_diagnosticInterface EXEC] All diagnostic button flickers ADDED to timeline.`);
             
-
             // 4. Ensure Minimum Duration
             let phaseDurationSeconds = Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, factorAnimationDuration);
             if (messageTextForDurationCalc) {
                 const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
                 phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2);
             }
-            // if (diagnosticButtons.length > 0) {
-            //     const estimatedFlickerDur = configModule.estimateFlickerDuration('buttonFlickerToDimlyLit') + (diagnosticButtons.length -1) * (configModule.P4_BUTTON_FADE_STAGGER || 0.04);
-            //     phaseDurationSeconds = Math.max(phaseDurationSeconds, estimatedFlickerDur);
-            // }
             phaseDurationSeconds = Math.max(phaseDurationSeconds, tl.duration());
 
 
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
-            }
-            if (tl.duration() === 0 && phaseDurationSeconds > 0) {
-                tl.to({}, { duration: phaseDurationSeconds });
             }
             if (tl.getChildren(true,true,true,0).length === 1 && tl.getChildren(true,true,true,0)[0].vars.duration === 0.01 && phaseDurationSeconds > 0.01) {
                  tl.to({}, { duration: Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, phaseDurationSeconds) });

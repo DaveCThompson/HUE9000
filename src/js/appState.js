@@ -69,7 +69,7 @@ let currentTheme = 'dim'; // Start in dim theme
 let currentTrueLensPower = 0.0; // Power value from 0.0 to 1.0
 let dialBInteractionState = 'idle'; // 'idle', 'dragging', 'settling'
 let appStatus = 'loading'; // 'loading', 'starting-up', 'interactive', 'error'
-// let terminalLcdMessage = "INITIALIZING..."; // DEPRECATED for main terminal functionality
+let currentStartupPhaseNumber = -1; // -1: Idle/Pre-P0, 0-11 for phases, 99: Complete
 
 
 // --- State Getter Functions (Exported) ---
@@ -111,7 +111,11 @@ export function getAppStatus() {
   // console.log(`[AppState GET] Target: appStatus. Requested: Value. Actual: '${appStatus}'`);
   return appStatus; 
 }
-// export function getTerminalLcdMessage() { return terminalLcdMessage; } // DEPRECATED
+export function getCurrentStartupPhaseNumber() {
+  // console.log(`[AppState GET] Target: currentStartupPhaseNumber. Requested: Value. Actual: ${currentStartupPhaseNumber}`);
+  return currentStartupPhaseNumber;
+}
+
 
 // --- State Setter Functions (Exported) ---
 
@@ -201,17 +205,15 @@ export function setAppStatus(newStatus) {
     }
 }
 
-/* // DEPRECATED for main terminal functionality
-export function setTerminalLcdMessage(message) {
-    if (terminalLcdMessage !== message) {
-        const oldMessage = terminalLcdMessage;
-        terminalLcdMessage = message;
-        // ADDED: Log terminal message change
-        // console.log(`[AppState SET] Target: TerminalMessage. Requested: "${message}". Old: "${oldMessage}", Actual (New): "${terminalLcdMessage}"`); 
-        emit('terminalMessageChanged', terminalLcdMessage);
+export function setCurrentStartupPhaseNumber(phaseNumber) {
+    if (typeof phaseNumber === 'number' && currentStartupPhaseNumber !== phaseNumber) {
+        const oldPhaseNumber = currentStartupPhaseNumber;
+        currentStartupPhaseNumber = phaseNumber;
+        console.log(`[AppState SET] Target: CurrentStartupPhaseNumber. Requested: ${phaseNumber}. Old: ${oldPhaseNumber}, Actual (New): ${currentStartupPhaseNumber}`);
+        emit('startupPhaseNumberChanged', currentStartupPhaseNumber);
     }
 }
-*/
+
 
 // --- Event Subscription (Exported) ---
 export function subscribe(eventName, listener) {
@@ -241,4 +243,4 @@ if (!dials.B || Object.keys(dials.B).length === 0) {
         isDragging: false 
     });
 }
-console.log('[AppState INIT] Initialized with default states:', { dials: JSON.parse(JSON.stringify(dials)), targetColorProps: JSON.parse(JSON.stringify(targetColorProps)), currentTheme, appStatus });
+console.log('[AppState INIT] Initialized with default states:', { dials: JSON.parse(JSON.stringify(dials)), targetColorProps: JSON.parse(JSON.stringify(targetColorProps)), currentTheme, appStatus, currentStartupPhaseNumber });

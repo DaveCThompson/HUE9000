@@ -2,11 +2,10 @@
  * @module startupMachine
  * @description Defines the XState machine for the HUE 9000 startup sequence.
  */
-import { createMachine, assign, fromPromise } from 'xstate'; // Import fromPromise
+import { createMachine, assign, fromPromise } from 'xstate'; 
 
-// Helper to create the promise logic for invoking phase modules
 const createPhaseService = (importPath) => {
-    return fromPromise(async ({ input }) => { // The function for fromPromise is async
+    return fromPromise(async ({ input }) => { 
         const phaseModule = await import(importPath);
         if (!phaseModule || typeof phaseModule.createPhaseTimeline !== 'function') {
             console.error(`Error importing or finding createPhaseTimeline in ${importPath}`);
@@ -16,30 +15,35 @@ const createPhaseService = (importPath) => {
     });
 };
 
-// इंश्योर 'export' is present before 'const startupMachine'
 export const startupMachine = createMachine({ 
     id: 'hue9000Startup',
     initial: 'IDLE',
     predictableActionArguments: true,
     context: {
-        dependencies: null,
+        dependencies: null, // Initialized as null
         isStepThroughMode: true,
-        currentPhaseNameForResume: '',
+        currentPhaseNameForResume: '', 
         errorInfo: null,
         themeTransitionCleanupPerformed: false, 
     },
     states: {
         IDLE: {
+            // REMOVED entry action that caused the error.
+            // setCurrentStartupPhaseNumber(-1) is handled by startupSequenceManager.resetVisualsAndState()
+            // before the FSM is started or when reset.
             on: {
                 START_SEQUENCE: {
                     target: 'RUNNING_SEQUENCE.PHASE_0_IDLE', 
                     actions: [
                         assign({
                             isStepThroughMode: ({ event }) => event.isStepThroughMode,
-                            dependencies: ({ event }) => event.dependencies,
+                            dependencies: ({ event }) => event.dependencies, // Dependencies are assigned here
                             themeTransitionCleanupPerformed: false, 
                             errorInfo: null,
                         }),
+                        // Ensure phase number is set to 0 when starting the sequence,
+                        // if not already handled by PHASE_0_IDLE entry.
+                        // This is now handled by PHASE_0_IDLE's entry action.
                         'logStartSequence'
                     ]
                 }
@@ -49,6 +53,7 @@ export const startupMachine = createMachine({
             initial: 'PHASE_0_IDLE',
             states: {
                 PHASE_0_IDLE: { 
+                    entry: ['setPhaseNumberActionP0', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP0Service',
                         src: createPhaseService('./startupPhase0.js'), 
@@ -59,10 +64,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
-                    exit: 'notifyPhaseChangeAction'
+                    exit: 'notifyPhaseChangeAction' 
                 },
                 PHASE_1_EMERGENCY_SUBSYSTEMS: { 
+                    entry: ['setPhaseNumberActionP1', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP1Service',
                         src: createPhaseService('./startupPhase1.js'), 
@@ -73,10 +78,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_2_BACKUP_POWER: { 
+                    entry: ['setPhaseNumberActionP2', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP2Service',
                         src: createPhaseService('./startupPhase2.js'), 
@@ -87,10 +92,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_3_MAIN_POWER_ONLINE: { 
+                    entry: ['setPhaseNumberActionP3', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP3Service',
                         src: createPhaseService('./startupPhase3.js'), 
@@ -101,10 +106,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_4_OPTICAL_CORE_REACTIVATE: { 
+                    entry: ['setPhaseNumberActionP4', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP4Service',
                         src: createPhaseService('./startupPhase4.js'), 
@@ -115,10 +120,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_5_DIAGNOSTIC_INTERFACE: { 
+                    entry: ['setPhaseNumberActionP5', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP5Service',
                         src: createPhaseService('./startupPhase5.js'), 
@@ -129,10 +134,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_6_MOOD_INTENSITY_CONTROLS: { 
+                    entry: ['setPhaseNumberActionP6', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP6Service',
                         src: createPhaseService('./startupPhase6.js'), 
@@ -143,10 +148,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_7_HUE_CORRECTION_SYSTEMS: { 
+                    entry: ['setPhaseNumberActionP7', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP7Service',
                         src: createPhaseService('./startupPhase7.js'), 
@@ -157,10 +162,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_8_EXTERNAL_LIGHTING_CONTROLS: { 
+                    entry: ['setPhaseNumberActionP8', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP8Service',
                         src: createPhaseService('./startupPhase8.js'), 
@@ -171,10 +176,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_9_AUX_LIGHTING_LOW: { 
+                    entry: ['setPhaseNumberActionP9', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP9Service',
                         src: createPhaseService('./startupPhase9.js'), 
@@ -185,10 +190,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_10_THEME_TRANSITION: { 
+                    entry: ['setPhaseNumberActionP10', 'notifyPhaseChangeAction'],
                     invoke: {
                         id: 'phaseP10Service',
                         src: createPhaseService('./startupPhase10.js'), 
@@ -199,10 +204,10 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: 'notifyPhaseChangeAction',
                     exit: 'notifyPhaseChangeAction'
                 },
                 PHASE_11_SYSTEM_OPERATIONAL: { 
+                    entry: ['setPhaseNumberActionP11', 'performThemeTransitionCleanupIfNeeded', 'notifyPhaseChangeAction'], 
                     invoke: {
                         id: 'phaseP11Service',
                         src: createPhaseService('./startupPhase11.js'), 
@@ -213,85 +218,29 @@ export const startupMachine = createMachine({
                         ],
                         onError: { target: '#hue9000Startup.ERROR_STATE', actions: 'assignError' }
                     },
-                    entry: ['notifyPhaseChangeAction', 'performThemeTransitionCleanupIfNeeded'], 
-                    exit: ['notifyPhaseChangeAction', 'markThemeTransitionCleanupPerformed']
+                    exit: ['markThemeTransitionCleanupPerformed', 'notifyPhaseChangeAction']
                 }
             }
         },
         PAUSED_AWAITING_NEXT_STEP: {
-            entry: 'enableNextStepButtonAction',
+            entry: ['enableNextStepButtonAction', 'notifyPhaseChangeAction'], 
             on: {
                 NEXT_STEP_REQUESTED: [
                     { target: 'SYSTEM_READY', guard: ({ context }) => context.currentPhaseNameForResume === 'SYSTEM_READY_TARGET', actions: 'disableNextStepButtonAction' },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_0_IDLE',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_0_IDLE',
+                    ...[0,1,2,3,4,5,6,7,8,9,10,11].map(num => ({
+                        target: `RUNNING_SEQUENCE.PHASE_${num}_${ (num === 0) ? 'IDLE' : (num === 1) ? 'EMERGENCY_SUBSYSTEMS' : (num === 2) ? 'BACKUP_POWER' : (num === 3) ? 'MAIN_POWER_ONLINE' : (num === 4) ? 'OPTICAL_CORE_REACTIVATE' : (num === 5) ? 'DIAGNOSTIC_INTERFACE' : (num === 6) ? 'MOOD_INTENSITY_CONTROLS' : (num === 7) ? 'HUE_CORRECTION_SYSTEMS' : (num === 8) ? 'EXTERNAL_LIGHTING_CONTROLS' : (num === 9) ? 'AUX_LIGHTING_LOW' : (num === 10) ? 'THEME_TRANSITION' : 'SYSTEM_OPERATIONAL'}`,
+                        guard: ({ context }) => context.currentPhaseNameForResume === `PHASE_${num}_${ (num === 0) ? 'IDLE' : (num === 1) ? 'EMERGENCY_SUBSYSTEMS' : (num === 2) ? 'BACKUP_POWER' : (num === 3) ? 'MAIN_POWER_ONLINE' : (num === 4) ? 'OPTICAL_CORE_REACTIVATE' : (num === 5) ? 'DIAGNOSTIC_INTERFACE' : (num === 6) ? 'MOOD_INTENSITY_CONTROLS' : (num === 7) ? 'HUE_CORRECTION_SYSTEMS' : (num === 8) ? 'EXTERNAL_LIGHTING_CONTROLS' : (num === 9) ? 'AUX_LIGHTING_LOW' : (num === 10) ? 'THEME_TRANSITION' : 'SYSTEM_OPERATIONAL'}`,
                         actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_1_EMERGENCY_SUBSYSTEMS',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_1_EMERGENCY_SUBSYSTEMS',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_2_BACKUP_POWER',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_2_BACKUP_POWER',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_3_MAIN_POWER_ONLINE',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_3_MAIN_POWER_ONLINE',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_4_OPTICAL_CORE_REACTIVATE',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_4_OPTICAL_CORE_REACTIVATE',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_5_DIAGNOSTIC_INTERFACE',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_5_DIAGNOSTIC_INTERFACE',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_6_MOOD_INTENSITY_CONTROLS',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_6_MOOD_INTENSITY_CONTROLS',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_7_HUE_CORRECTION_SYSTEMS',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_7_HUE_CORRECTION_SYSTEMS',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_8_EXTERNAL_LIGHTING_CONTROLS',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_8_EXTERNAL_LIGHTING_CONTROLS',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_9_AUX_LIGHTING_LOW',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_9_AUX_LIGHTING_LOW',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_10_THEME_TRANSITION',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_10_THEME_TRANSITION',
-                        actions: 'disableNextStepButtonAction'
-                    },
-                    {
-                        target: 'RUNNING_SEQUENCE.PHASE_11_SYSTEM_OPERATIONAL',
-                        guard: ({ context }) => context.currentPhaseNameForResume === 'PHASE_11_SYSTEM_OPERATIONAL',
-                        actions: 'disableNextStepButtonAction'
-                    }
+                    }))
                 ]
             }
         },
         SYSTEM_READY: {
             type: 'final',
-            entry: ['setAppStatusInteractive', 'notifySystemReadyToDebugManager', 'enableNextStepButtonAction']
+            entry: ['setPhaseNumberActionReady', 'setAppStatusInteractive', 'notifySystemReadyToDebugManager', 'enableNextStepButtonAction']
         },
         ERROR_STATE: {
-            entry: ['logError', 'setAppStatusError', 'displayErrorInTerminal', 'enableNextStepButtonAction']
+            entry: ['setPhaseNumberActionError', 'logError', 'setAppStatusError', 'displayErrorInTerminal', 'enableNextStepButtonAction', 'notifyPhaseChangeAction']
         }
     }
 }, {
@@ -331,26 +280,35 @@ export const startupMachine = createMachine({
                 });
             }
         },
+        // Specific actions to set phase number on entry to each phase state
+        setPhaseNumberActionP0: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(0),
+        setPhaseNumberActionP1: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(1),
+        setPhaseNumberActionP2: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(2),
+        setPhaseNumberActionP3: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(3),
+        setPhaseNumberActionP4: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(4),
+        setPhaseNumberActionP5: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(5),
+        setPhaseNumberActionP6: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(6),
+        setPhaseNumberActionP7: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(7),
+        setPhaseNumberActionP8: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(8),
+        setPhaseNumberActionP9: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(9),
+        setPhaseNumberActionP10: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(10),
+        setPhaseNumberActionP11: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(11),
+        setPhaseNumberActionReady: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(99),
+        setPhaseNumberActionError: ({context}) => context.dependencies?.appStateService?.setCurrentStartupPhaseNumber(-2),
+
         notifyPhaseChangeAction: ({ context, event, _event }) => {
-            // This is a placeholder, actual notification to debugManager is in startupSequenceManager
+            // This is now primarily for XState inspector. Actual notification to debugManager
+            // happens via startupSequenceManager's subscription to the FSM state.
         },
         enableNextStepButtonAction: ({ context }) => {
-            if (context.dependencies && context.dependencies.managerInstances && context.dependencies.managerInstances.debugManager) {
-                context.dependencies.managerInstances.debugManager.setNextPhaseButtonEnabled(true);
-            }
+            context.dependencies?.managerInstances?.debugManager?.setNextPhaseButtonEnabled(true);
         },
         disableNextStepButtonAction: ({ context }) => {
-            if (context.dependencies && context.dependencies.managerInstances && context.dependencies.managerInstances.debugManager) {
-                context.dependencies.managerInstances.debugManager.setNextPhaseButtonEnabled(false);
-            }
+            context.dependencies?.managerInstances?.debugManager?.setNextPhaseButtonEnabled(false);
         },
         performThemeTransitionCleanupIfNeeded: ({ context }) => { 
-            console.log("[FSM Action] Attempting performThemeTransitionCleanupIfNeeded. Cleanup performed context:", context.themeTransitionCleanupPerformed);
-            if (context.dependencies && context.dependencies.performThemeTransitionCleanup && !context.themeTransitionCleanupPerformed) {
-                console.log("[FSM Action] Calling performThemeTransitionCleanup.");
+            if (context.dependencies?.performThemeTransitionCleanup && !context.themeTransitionCleanupPerformed) {
                 context.dependencies.performThemeTransitionCleanup();
-            } else if (!context.dependencies || !context.dependencies.performThemeTransitionCleanup) {
-                console.warn("[FSM Action] performThemeTransitionCleanup dependency not found!");
             }
         },
         markThemeTransitionCleanupPerformed: assign({ 

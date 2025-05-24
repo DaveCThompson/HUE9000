@@ -73,6 +73,18 @@ const fsmPhaseSequence = [
     'PHASE_11_SYSTEM_OPERATIONAL'
 ];
 
+// Helper to extract numeric phase from FSM state name string
+function getNumericPhaseFromFsmStateName(fsmStateName) {
+    if (!fsmStateName || typeof fsmStateName !== 'string') return -1; // Default for unknown/idle
+    const match = fsmStateName.match(/PHASE_(\d+)_/i);
+    if (match && match[1]) {
+        return parseInt(match[1], 10);
+    }
+    if (fsmStateName === 'IDLE') return -1;
+    if (fsmStateName === 'SYSTEM_READY' || fsmStateName === 'sequence_complete') return 99; // Arbitrary number for complete
+    return -1; // Default for non-numbered states
+}
+
 
 function _getPhaseNameFromFsmState(fsmStateValue) {
     if (typeof fsmStateValue === 'string') return fsmStateToPhaseNameMap[fsmStateValue] || fsmStateValue;
@@ -88,6 +100,9 @@ function _notifyFsmTransition(snapshot) {
     if (!appStateService || !snapshot) return;
 
     const currentPhaseKey = _getPhaseNameFromFsmState(snapshot.value); 
+    const numericPhase = getNumericPhaseFromFsmStateName(typeof snapshot.value === 'string' ? snapshot.value : Object.values(snapshot.value)[0]);
+    appStateService.setCurrentStartupPhaseNumber(numericPhase);
+
 
     let status = 'unknown';
     if (snapshot.matches('IDLE')) status = 'ready';
@@ -212,6 +227,7 @@ function resetVisualsAndState(forStepping = false) {
     if (logoSVG) localGsap.killTweensOf(logoSVG);
 
     appStateService.setAppStatus('starting-up'); 
+    appStateService.setCurrentStartupPhaseNumber(-1); // Reset to pre-P0 state
     appStateService.setTheme('dim'); 
 
     if (managerInstances.buttonManager) managerInstances.buttonManager.setInitialDimStates(); 
