@@ -113,8 +113,7 @@
 }
 .lcd--unlit#terminal-lcd-content { /* For Terminal content area when its parent screen is unlit */
      color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
-     /* The .terminal-line--initial-boot will override this for the first line */
-     text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0);
+     /* MODIFIED: Removed text-shadow rule from here. Glow is controlled by _terminal.css */
 }
 .lcd--unlit::after { 
     opacity: 0 !important; 
@@ -135,7 +134,7 @@
 }
 .js-active-dim-lcd#terminal-lcd-content { 
      color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
-     text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--terminal-text-glow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5));
+     /* MODIFIED: Removed text-shadow rule from here. Glow is controlled by _terminal.css */
 }
 .js-active-dim-lcd::after { 
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 
@@ -165,7 +164,7 @@
 }
 .lcd--dimly-lit#terminal-lcd-content { 
      color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-     text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--terminal-text-glow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7));
+     /* MODIFIED: Removed text-shadow rule from here. Glow is controlled by _terminal.css */
 }
 .lcd--dimly-lit::after { 
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 

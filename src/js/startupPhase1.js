@@ -85,23 +85,31 @@ export async function createPhaseTimeline(dependencies) {
             
             // Phase 1 does NOT interact with main power buttons. Removed that logic.
 
-            // 4. Ensure Minimum Duration
+            // 4. Ensure Minimum Duration & Add Pause for Auto-Play
             let phaseDurationSeconds = Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, factorAnimationDuration, configModule.BODY_FADE_IN_DURATION);
             if (messageTextForDurationCalc) {
                 const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
                 phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2);
             }
-            phaseDurationSeconds = Math.max(phaseDurationSeconds, tl.duration());
-
-
+            
+            // Ensure the timeline runs at least as long as calculated phase-specific content
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
             }
-             if (tl.getChildren(true,true,true,0).length === 1 && tl.getChildren(true,true,true,0)[0].vars.duration === 0.01 && phaseDurationSeconds > 0.01) {
-                 tl.to({}, { duration: Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, phaseDurationSeconds) });
-            } else if (tl.duration() === 0) {
-                 tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+
+            // Add the 0.5s pause only if not in step-through mode
+            if (!isStepThrough) {
+                tl.to({}, { duration: 0.5 }); // Add the pause
             }
+            
+            // Final safety net for empty timelines (should ideally not be hit if phases have content)
+            // or if only pause was added.
+            if (tl.duration() < configModule.MIN_PHASE_DURATION_FOR_STEPPING && isStepThrough) {
+                 tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+            } else if (tl.duration() < 0.5 && !isStepThrough) {
+                 tl.to({}, { duration: 0.5 - tl.duration() }); // Ensure total is at least 0.5s for auto-play
+            }
+
 
             tl.play();
 

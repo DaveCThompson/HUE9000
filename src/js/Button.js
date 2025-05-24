@@ -14,7 +14,7 @@ class Button {
         this.appState = appStateService;
         this.configModule = configModule; // Passed by ButtonManager
         this.uiUpdater = uiUpdaterService;
-        this.debugAmbient = false; // MODIFIED: Default to false for less verbose logging
+        this.debugAmbient = false; 
 
         if (!this.gsap) {
             throw new Error(`[Button CONSTRUCTOR ${this.getIdentifier()}] GSAP instance is not available.`);
@@ -27,7 +27,7 @@ class Button {
         this._pressTimeoutId = null;
         this._isSelected = config.isSelectedByDefault || false;
 
-        this._isResonating = false; 
+        this._isResonating = false; // Internal flag, primarily for consistency if JS logic was still used
         this.idleLightDriftTweens = [];
         this.stateTransitionEchoTween = null;
 
@@ -178,53 +178,41 @@ class Button {
     }
 
     updateHarmonicResonanceVisuals(progress) {
-        if (!this.configModule || !this._isResonating) {
+        // This method is now largely obsolete for the CSS-driven Harmonic Resonance.
+        // It's kept in case direct JS manipulation is needed for other effects or if the CSS approach is reverted.
+        // If enableHarmonicResonance is false in AAM, or if the CSS method is active, this won't have a direct visual effect.
+        if (!this.configModule || !this._isResonating) { // _isResonating is still set by start/stop
             return;
         }
-        const lights = Array.from(this.element.querySelectorAll('.light'));
-        if (!lights.length) {
-            return;
-        }
-
-        const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
-        const dipAmount = progress * R_PARAMS.LIGHT_OPACITY_DIP_FACTOR; 
-        const targetOpacity = R_PARAMS.BASE_LIGHT_OPACITY_SELECTED * (1 - dipAmount);
-
-        // MODIFIED: Conditional logging based on this.debugAmbient
-        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()} updateHarmonicResonanceVisuals] Resonating: ${this._isResonating}. Progress: ${progress.toFixed(3)}, Target Opacity: ${targetOpacity.toFixed(3)}`);
-
-        this.gsap.to(lights, {
-            opacity: targetOpacity,
-            duration: R_PARAMS.TICK_UPDATE_DURATION,
-            ease: "none" 
-        });
+        // If direct JS control was still needed:
+        // const lights = Array.from(this.element.querySelectorAll('.light'));
+        // if (!lights.length) return;
+        // const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
+        // const dipAmount = progress * R_PARAMS.LIGHT_OPACITY_DIP_FACTOR; 
+        // const targetOpacity = R_PARAMS.BASE_LIGHT_OPACITY_SELECTED * (1 - dipAmount);
+        // this.gsap.to(lights, { opacity: targetOpacity, duration: R_PARAMS.TICK_UPDATE_DURATION, ease: "none" });
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()} updateHarmonicResonanceVisuals] Called. Progress: ${progress.toFixed(3)}. (CSS method should be active)`);
     }
 
     startHarmonicResonance() {
         if (!this.configModule) return;
-        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Attempting to START Harmonic Resonance. Current _isResonating: ${this._isResonating}`);
-        if (this._isResonating) return; 
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Attempting to START Harmonic Resonance. Current _isResonating: ${this._isResonating}, Class active: ${this.element.classList.contains('is-resonating')}`);
+        if (this.element.classList.contains('is-resonating')) return; 
 
-        this._isResonating = true;
-        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Harmonic Resonance STARTED. _isResonating: ${this._isResonating}`);
+        this._isResonating = true; // Keep internal flag for consistency
+        this.element.classList.add('is-resonating'); 
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Harmonic Resonance STARTED. Added .is-resonating class.`);
     }
 
     stopHarmonicResonance() {
         if (!this.configModule) return;
-        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Attempting to STOP Harmonic Resonance. Current _isResonating: ${this._isResonating}`);
-        if (!this._isResonating) return; 
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Attempting to STOP Harmonic Resonance. Current _isResonating: ${this._isResonating}, Class active: ${this.element.classList.contains('is-resonating')}`);
+        if (!this.element.classList.contains('is-resonating')) return;
 
-        this._isResonating = false;
-        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Harmonic Resonance STOPPED. _isResonating: ${this._isResonating}`);
-        const lights = Array.from(this.element.querySelectorAll('.light'));
-        if (lights.length > 0) {
-            this.gsap.to(lights, {
-                opacity: this.configModule.HARMONIC_RESONANCE_PARAMS.BASE_LIGHT_OPACITY_SELECTED,
-                duration: 0.1, 
-                ease: "none",
-                overwrite: "auto"
-            });
-        }
+        this._isResonating = false; // Keep internal flag for consistency
+        this.element.classList.remove('is-resonating');
+        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Harmonic Resonance STOPPED. Removed .is-resonating class.`);
+        // Lights will revert to their normal opacity via CSS, no need for GSAP.set here.
     }
 
     startIdleLightDrift() {

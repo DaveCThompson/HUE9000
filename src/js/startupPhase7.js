@@ -117,15 +117,9 @@ export async function createPhaseTimeline(dependencies) {
                         if (flickerTl) {
                             const startTime = index * stagger;
                             tl.add(flickerTl, `start_P7_effects+=${startTime}`);
-                            // maxFlickerCompletionTime should be based on the actual duration of the added timeline
-                            // not just the estimated individual flicker duration.
-                            // However, for simplicity in ensuring phase length, using estimated is a fallback.
-                            // A more robust way is to await all flickerPromises if not added to master timeline.
-                            // Since they ARE added to master timeline, tl.duration() will grow.
                         }
                     }
                 });
-                // After adding all flicker timelines, the last one's effective completion time:
                 if (hueAssignButtons.length > 0) {
                     maxFlickerCompletionTime = ((hueAssignButtons.length -1) * stagger) + individualFlickerDuration;
                 }
@@ -134,25 +128,26 @@ export async function createPhaseTimeline(dependencies) {
                 console.warn(`[startupP7_hueCorrectionSystems EXEC] No Hue Assignment buttons found.`);
             }
             
-            // Ensure Minimum Duration
-            // Base it on the longest of: factor animation, message typing, or calculated flicker completion.
             let phaseDurationSeconds = Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, factorAnimationDuration);
             if (messageTextForDurationCalc) {
                 const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
-                phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2); // Add buffer for message processing
+                phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2); 
             }
             phaseDurationSeconds = Math.max(phaseDurationSeconds, maxFlickerCompletionTime);
             
-            // Ensure the timeline runs at least as long as the calculated required duration
-            // This check should happen AFTER all animations have been added to the timeline.
-            // tl.duration() at this point reflects the current length based on added tweens.
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
             }
             
-            // If timeline is still empty (e.g. no factors, no buttons), give it minimal duration
-            if (tl.duration() === 0) {
+            const isStepThrough = dependencies.dependencies?.isStepThroughMode || dependencies.isStepThroughMode;
+            if (!isStepThrough) {
+                tl.to({}, { duration: 0.5 }); // Add the pause
+            }
+
+            if (tl.duration() < configModule.MIN_PHASE_DURATION_FOR_STEPPING && isStepThrough) {
                  tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+            } else if (tl.duration() < 0.5 && !isStepThrough) {
+                 tl.to({}, { duration: 0.5 - tl.duration() });
             }
 
             tl.play();

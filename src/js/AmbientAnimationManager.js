@@ -17,7 +17,8 @@ class AmbientAnimationManager {
         this.globalResonanceParams = { progress: 0 }; // 0 to 1
         this.resonanceTicker = null;
 
-        this.debug = false; // MODIFIED: Default to false for less verbose logging
+        this.debug = false; 
+        this.enableHarmonicResonance = false; // Flag to disable Harmonic Resonance
 
         this._updateResonance = this._updateResonance.bind(this); // Bind this context
     }
@@ -37,33 +38,26 @@ class AmbientAnimationManager {
 
         this.resonanceTicker = this.gsap.ticker;
         this._handleAppStatusChange(this.appState.getAppStatus()); // Initial check
-        if (this.debug) console.log(`[AAM INIT] Initialization complete. Initial isActive: ${this.isActive}`);
+        if (this.debug) console.log(`[AAM INIT] Initialization complete. Initial isActive: ${this.isActive}, HarmonicResonanceEnabled: ${this.enableHarmonicResonance}`);
     }
 
     _updateResonance() {
-        if (!this.isActive || !this.configModule) {
+        if (!this.isActive || !this.configModule || !this.enableHarmonicResonance) { 
             return;
         }
 
         const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
         const time = this.gsap.ticker.time;
         this.globalResonanceParams.progress = (Math.sin((time * Math.PI * 2) / R_PARAMS.PERIOD) + 1) / 2;
-        // MODIFIED: Removed per-tick logging for resonance progress
-        // if (this.debug) console.log(`[AAM _updateResonance] Global progress: ${this.globalResonanceParams.progress.toFixed(3)}`);
 
+        // MODIFIED: Update CSS Custom Property instead of iterating buttons
+        const dipAmount = this.globalResonanceParams.progress * R_PARAMS.LIGHT_OPACITY_DIP_FACTOR; 
+        const targetOpacityForResonance = R_PARAMS.BASE_LIGHT_OPACITY_SELECTED * (1 - dipAmount);
+        document.documentElement.style.setProperty('--harmonic-resonance-opacity-target', targetOpacityForResonance.toFixed(3));
 
-        const buttons = this.buttonManager.getAllButtonInstances();
-        // let resonatingButtonFound = false; // MODIFIED: Removed as per-button logging is removed
-        for (const button of buttons) {
-            if (button._isResonating) { 
-                // MODIFIED: Removed per-button, per-tick logging
-                // if (this.debug && !resonatingButtonFound) console.log(`[AAM _updateResonance] Updating resonance for button: ${button.getIdentifier()}`);
-                button.updateHarmonicResonanceVisuals(this.globalResonanceParams.progress);
-                // resonatingButtonFound = true;
-            }
+        if (this.debug && Math.random() < 0.01) { // Log occasionally to reduce spam
+             console.log(`[AAM _updateResonance] CSS Var --harmonic-resonance-opacity-target set to: ${targetOpacityForResonance.toFixed(3)}`);
         }
-        // MODIFIED: Removed logging for no resonating buttons found
-        // if (this.debug && !resonatingButtonFound) console.log('[AAM _updateResonance] No resonating buttons found to update.');
     }
 
     _handleAppStatusChange(newStatus) {
@@ -72,7 +66,7 @@ class AmbientAnimationManager {
         this.isActive = (newStatus === 'interactive');
 
         if (this.isActive) {
-            if (!previouslyActive) { 
+            if (!previouslyActive && this.enableHarmonicResonance) { 
                 this.resonanceTicker.add(this._updateResonance);
                 if (this.debug) console.log('[AAM _handleAppStatusChange] Resonance ticker ADDED.');
             }
@@ -82,14 +76,16 @@ class AmbientAnimationManager {
                 this._applyAmbientAnimation(button);
             }
         } else { 
-            if (previouslyActive) { 
+            if (previouslyActive && this.enableHarmonicResonance) { 
                 this.resonanceTicker.remove(this._updateResonance);
                 if (this.debug) console.log('[AAM _handleAppStatusChange] Resonance ticker REMOVED.');
+                // Reset the CSS variable when resonance stops globally
+                document.documentElement.style.removeProperty('--harmonic-resonance-opacity-target');
             }
             const buttons = this.buttonManager.getAllButtonInstances();
             if (this.debug && buttons.length > 0) console.log(`[AAM _handleAppStatusChange] App no longer interactive. Stopping ambient animations for ${buttons.length} buttons.`);
             for (const button of buttons) {
-                button.stopHarmonicResonance();
+                button.stopHarmonicResonance(); // This will remove .is-resonating class
                 button.stopIdleLightDrift();
             }
         }
@@ -114,7 +110,7 @@ class AmbientAnimationManager {
             return;
         }
 
-        buttonInstance.stopHarmonicResonance(); // Ensure clean state
+        buttonInstance.stopHarmonicResonance(); // Ensure clean state (removes .is-resonating)
         buttonInstance.stopIdleLightDrift();   // Ensure clean state
 
         const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
@@ -133,10 +129,13 @@ class AmbientAnimationManager {
 
         if (isEnergized) {
             if (isSelected) {
-                if (this.debug) console.log(`[AAM _applyAmbientAnimation] Starting HARMONIC RESONANCE for selected button: ${buttonInstance.getIdentifier()}`);
-                buttonInstance.startHarmonicResonance();
-                if (this.resonanceTicker && this.resonanceTicker.started) { 
-                     buttonInstance.updateHarmonicResonanceVisuals(this.globalResonanceParams.progress);
+                if (this.enableHarmonicResonance) { 
+                    if (this.debug) console.log(`[AAM _applyAmbientAnimation] Starting HARMONIC RESONANCE for selected button: ${buttonInstance.getIdentifier()}`);
+                    buttonInstance.startHarmonicResonance(); // This will add .is-resonating class
+                    // No need to call updateHarmonicResonanceVisuals here, CSS var handles it.
+                } else {
+                    if (this.debug) console.log(`[AAM _applyAmbientAnimation] Harmonic Resonance DISABLED. Not starting for ${buttonInstance.getIdentifier()}`);
+                    buttonInstance.stopHarmonicResonance(); 
                 }
             } else { 
                 if (this.debug) console.log(`[AAM _applyAmbientAnimation] Starting IDLE LIGHT DRIFT for unselected, energized button: ${buttonInstance.getIdentifier()}`);
@@ -152,6 +151,7 @@ class AmbientAnimationManager {
         if (this.resonanceTicker) {
             this.resonanceTicker.remove(this._updateResonance);
         }
+        document.documentElement.style.removeProperty('--harmonic-resonance-opacity-target');
     }
 }
 

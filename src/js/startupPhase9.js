@@ -49,10 +49,6 @@ export async function createPhaseTimeline(dependencies) {
                 const auxHighButtonInst = managerInstances.buttonManager.getButtonInstance(domElementsRegistry.auxLightHighButton);
 
                 if (auxLowButtonInst) {
-                    // Explicitly set the final selection state BEFORE calling playFlickerToState
-                    // This ensures buttonInstance._isSelected is correct when playFlickerToState's internal logic runs.
-                    // auxLowButtonInst.setSelected(true, { skipAnimation: true, phaseContext: `P9_PreFlicker_AuxLow_SetSelectedTrue`});
-
                     const flickerLow = managerInstances.buttonManager.playFlickerToState(
                         domElementsRegistry.auxLightLowButton,
                         ButtonStates.ENERGIZED_SELECTED, // Target final state string
@@ -69,8 +65,6 @@ export async function createPhaseTimeline(dependencies) {
                 }
 
                 if (auxHighButtonInst) {
-                    // auxHighButtonInst.setSelected(false, { skipAnimation: true, phaseContext: `P9_PreFlicker_AuxHigh_SetSelectedFalse`});
-
                     const flickerHigh = managerInstances.buttonManager.playFlickerToState(
                         domElementsRegistry.auxLightHighButton,
                         ButtonStates.ENERGIZED_UNSELECTED, // Target final state string
@@ -96,11 +90,20 @@ export async function createPhaseTimeline(dependencies) {
             }
             phaseDurationSeconds = Math.max(phaseDurationSeconds, tl.duration()); // tl.duration() now includes flicker times
 
+            // Ensure the timeline runs at least as long as calculated phase-specific content
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
             }
-            if (tl.duration() === 0 && phaseDurationSeconds > 0) {
-                tl.to({}, { duration: phaseDurationSeconds });
+
+            const isStepThrough = dependencies.dependencies?.isStepThroughMode || dependencies.isStepThroughMode;
+            if (!isStepThrough) {
+                tl.to({}, { duration: 0.5 }); // Add the pause
+            }
+            
+            if (tl.duration() < configModule.MIN_PHASE_DURATION_FOR_STEPPING && isStepThrough) {
+                 tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+            } else if (tl.duration() < 0.5 && !isStepThrough) {
+                 tl.to({}, { duration: 0.5 - tl.duration() });
             }
 
             tl.play();

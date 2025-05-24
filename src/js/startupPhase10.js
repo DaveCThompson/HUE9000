@@ -103,6 +103,17 @@ export async function createPhaseTimeline(dependencies) {
                 tl.to({}, { duration: requiredGsapDuration - tl.duration() });
             }
             
+            const isStepThrough = dependencies.dependencies?.isStepThroughMode || dependencies.isStepThroughMode;
+            if (!isStepThrough) {
+                tl.to({}, { duration: 0.5 }); // Add the pause
+            }
+
+            if (tl.duration() < configModule.MIN_PHASE_DURATION_FOR_STEPPING && isStepThrough) {
+                 tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+            } else if (tl.duration() < 0.5 && !isStepThrough) {
+                 tl.to({}, { duration: 0.5 - tl.duration() });
+            }
+
             tl.eventCallback('onComplete', () => {
                 if (debugLcd) console.log(`[startupP10_themeTransition EXEC] Main GSAP timeline part complete. Duration: ${tl.duration().toFixed(3)}`);
                 resolve();

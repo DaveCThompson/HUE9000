@@ -74,11 +74,10 @@ body.theme-dim {
     --lcd-unlit-bg-c: 0;
     --lcd-unlit-bg-h: 0;
     --lcd-unlit-bg-a: 0.9;
-    /* Text for UNLIT LCDs (Dial A/B, Terminal) */
-    --lcd-unlit-text-l: 0.85; 
+    --lcd-unlit-text-l: 0.90; /* MODIFIED: Text lightness for unlit LCDs (e.g., P1-P5 terminal) */
     --lcd-unlit-text-c: 0;    
     --lcd-unlit-text-h: 0;    
-    --lcd-unlit-text-a: 1; /* MODIFIED: Base Alpha is 1. JS controls opacity of .lcd-value / #terminal-lcd-content for unlit state */
+    --lcd-unlit-text-a: 1; 
     --lcd-unlit-border-l: 0.03;
     --lcd-unlit-border-a: 0.15;
     --lcd-unlit-shadow: none;
@@ -94,9 +93,9 @@ body.theme-dim {
     --lcd-active-dim-shadow: none;
     --lcd-active-dim-chroma-factor: 0; 
 
-    --lcd-dimly-lit-grad-start-l: 0.32;
-    --lcd-dimly-lit-grad-end-l: 0.26;
-    --lcd-dimly-lit-text-l: 0.90;       
+    --lcd-dimly-lit-grad-start-l: 0.22;
+    --lcd-dimly-lit-grad-end-l: 0.18;
+    --lcd-dimly-lit-text-l: 0.90; /* MODIFIED: Text lightness for dimly-lit LCDs (e.g., P6-P9 terminal) */
     --lcd-dimly-lit-text-c: 0;          
     --lcd-dimly-lit-text-h: 0;
     --lcd-dimly-lit-text-a: 1; 
@@ -104,7 +103,6 @@ body.theme-dim {
     --lcd-dimly-lit-chroma-factor: 0;   
 
     --lcd-text-shadow-base-alpha: 0.25; 
-    --terminal-text-glow-base-alpha: 0.30; 
 
 
     /* --- Component: Logo --- */
@@ -161,6 +159,11 @@ body.theme-dim {
     --grill-bg-a: 0; /* Make background-color transparent */
     --grill-opacity: 0.08; /* Base opacity for grill texture in dim mode */
     --grill-blend-mode: normal; /* Use normal blend mode with transparent background */
+
+    /* --- Component: Terminal Text Glow (Theme-Specific) --- */
+    --terminal-text-glow-color: oklch(0.85 0.10 160); /* Bright Cyan for dim mode */
+    --theme-terminal-glow-opacity-factor: 1.0; /* Full intensity */
+    --theme-terminal-glow-size-factor: 1.0;    /* Full size */
 }
 
 

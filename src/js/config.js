@@ -159,10 +159,10 @@ export const ADVANCED_FLICKER_PROFILES = {
     textFlickerToDimlyLit: { 
         numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
         amplitudeStart: 0.0, 
-        amplitudeEnd: 1.0, // Text itself should be fully opaque after flicker, glow provides "dim"
+        amplitudeEnd: 1.0, 
         glow: { 
-            initialOpacity: 0.0, peakOpacity: 0.4, finalOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity, 
-            initialSize: '0px', peakSize: '3px', finalSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize, 
+            initialOpacity: 0.0, peakOpacity: 1.0, finalOpacity: 1.0, // MODIFIED: Target new baseline
+            initialSize: '0px', peakSize: '18px', finalSize: '16px', // MODIFIED: Target new baseline
             colorVar: '--terminal-text-glow-color', scaleWithAmplitude: false, 
             animatedProperties: { opacity: '--terminal-text-glow-opacity', blur: '--terminal-text-bloom-size' }
         }, 
@@ -178,16 +178,16 @@ export const ADVANCED_FLICKER_PROFILES = {
             opacityVar: '--lcd-glow-opacity', scaleWithAmplitude: true
         }, targetProperty: 'element-opacity-and-box-shadow'
     },
-    terminalScreenFlickerToDimlyLit: { // MODIFIED: New profile for Terminal Screen
+    terminalScreenFlickerToDimlyLit: { 
         numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
-        amplitudeStart: 1.0, // Element (terminal container) starts and stays opaque
-        amplitudeEnd: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, // Element (terminal container) ends at dimly lit opacity
-        glow: { // Glow animates from off to dimly lit
+        amplitudeStart: 1.0, 
+        amplitudeEnd: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, 
+        glow: { 
             initialOpacity: 0.0, peakOpacity: 0.4, finalOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity,
             initialSize: '0px', peakSize: '9px', finalSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize,
             colorVar: '--lcd-glow-color', sizeVar: '--lcd-glow-size',
-            opacityVar: '--lcd-glow-opacity', scaleWithAmplitude: false // Glow intensity not tied to element opacity here
-        }, targetProperty: 'element-opacity-and-box-shadow' // Still targets element for box-shadow (glow)
+            opacityVar: '--lcd-glow-opacity', scaleWithAmplitude: false 
+        }, targetProperty: 'element-opacity-and-box-shadow' 
     },
     buttonFlickerToDimlyLit: {
         numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
@@ -287,15 +287,15 @@ export const IDLE_LIGHT_DRIFT_PARAMS = {
     ELIGIBILITY_CLASS: 'is-energized'
 };
 
-export const STATE_TRANSITION_ECHO_PARAMS = {
-    NUM_PULSES: 20, 
-    INITIAL_LIGHT_INTENSITY_FACTOR: 1, 
-    LIGHT_DECAY_FACTOR: 0.9,          
-    INITIAL_GLOW_OPACITY_FACTOR: 0.9,
+export const STATE_TRANSITION_ECHO_PARAMS = { 
+    NUM_PULSES: 15,                             
+    INITIAL_LIGHT_INTENSITY_FACTOR: 0.45,       
+    LIGHT_DECAY_FACTOR: 0.55,                   
+    INITIAL_GLOW_OPACITY_FACTOR: 0.5,
     GLOW_OPACITY_DECAY_FACTOR: 0.4,
-    INITIAL_GLOW_SIZE_FACTOR: 0.9, 
+    INITIAL_GLOW_SIZE_FACTOR: 0.3, 
     GLOW_SIZE_DECAY_FACTOR: 0.5,
-    BASE_PULSE_PERIOD: 0.250, 
-    PERIOD_DECAY_FACTOR: 0.65, 
+    BASE_PULSE_PERIOD: 0.12,                    
+    PERIOD_DECAY_FACTOR: 0.60,                  
     DELAY_AFTER_TRANSITION: 0.05 
 };

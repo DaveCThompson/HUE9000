@@ -31,7 +31,13 @@ export async function createPhaseTimeline(dependencies) {
         // --startup-L-reduction-factor and --startup-opacity-factor.
         // No animation of these factors is needed for P0 itself.
 
-        tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+        // MODIFIED: Add 0.5s pause if not in step-through mode
+        const isStepThrough = dependencies.dependencies?.isStepThroughMode || dependencies.isStepThroughMode;
+        let phaseDuration = configModule.MIN_PHASE_DURATION_FOR_STEPPING;
+        if (!isStepThrough) {
+            phaseDuration += 0.5;
+        }
+        tl.to({}, { duration: phaseDuration });
         
         if (tl.duration() > 0) {
             tl.play();

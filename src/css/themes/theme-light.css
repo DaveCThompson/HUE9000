@@ -75,9 +75,9 @@ body.theme-light {
 
 
     /* --- Component: LCD Screens --- */
-    --lcd-active-grad-start-l: 0.6; 
-    --lcd-active-grad-end-l: 0.5;
-    --lcd-active-text-l: 1.0;       
+    --lcd-active-grad-start-l: 0.35; 
+    --lcd-active-grad-end-l: 0.27;
+    --lcd-active-text-l: 0.94; /* MODIFIED: Text lightness for active LCDs in light theme */
     --lcd-active-text-a: 1;
     --lcd-active-border-l: 0.70;     
     --lcd-active-border-a: 0.45; 
@@ -154,4 +154,9 @@ body.theme-light {
     --grill-bg-a: 0.9; 
     --grill-placeholder-text-l:0.60;
     --grill-opacity: 1;
+
+    /* --- Component: Terminal Text Glow (Theme-Specific) --- */
+    --terminal-text-glow-color: oklch(0.80 0.06 160); /* Less chromatic, slightly darker base for light mode */
+    --theme-terminal-glow-opacity-factor: 0.7; /* MODIFIED: 30% reduction from baseline (1.0 * 0.7 = 0.7) */
+    --theme-terminal-glow-size-factor: 0.7;    /* MODIFIED: 30% reduction from baseline (16px * 0.7 = 11.2px) */
 }

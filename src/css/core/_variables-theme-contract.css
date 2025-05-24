@@ -122,11 +122,14 @@
     --btn-dimly-lit-glow-size: 4px;
     --btn-dimly-lit-glow-opacity: 0;
 
+    /* MODIFIED: Added for CSS-driven Harmonic Resonance */
+    --harmonic-resonance-opacity-target: var(--btn-energized-selected-light-a); /* Default to non-resonating selected opacity */
+
 
     /* --- Component: LCD Screens --- */
     --lcd-active-grad-start-l: 0.10;
     --lcd-active-grad-end-l: 0.06;
-    --lcd-active-text-l: 0.90;
+    --lcd-active-text-l: 0.92; 
     --lcd-active-text-c: 0;       --lcd-active-text-h: 0; --lcd-active-text-a: 1;
     --lcd-active-border-l: 0.12;     --lcd-active-border-c: 0;     --lcd-active-border-h: 0; --lcd-active-border-a: 0.6;
     --lcd-active-inner-glow-bottom-l: 0.95; --lcd-active-inner-glow-bottom-c: 0; --lcd-active-inner-glow-bottom-h: 0; --lcd-active-inner-glow-bottom-a: 0.1;
@@ -137,12 +140,13 @@
     --lcd-base-chroma-factor: 1.0;
 
     --lcd-unlit-bg-l: 0.02; --lcd-unlit-bg-c: 0; --lcd-unlit-bg-h: 0; --lcd-unlit-bg-a: 0.4;
-    --lcd-unlit-text-l: 0; --lcd-unlit-text-c: 0; --lcd-unlit-text-h: 0; --lcd-unlit-text-a: 0;
+    --lcd-unlit-text-l: 0.90; 
+    --lcd-unlit-text-c: 0; --lcd-unlit-text-h: 0; --lcd-unlit-text-a: 1; 
     --lcd-unlit-border-l: 0.05; --lcd-unlit-border-c: 0; --lcd-unlit-border-h: 0; --lcd-unlit-border-a: 0.1;
     --lcd-unlit-shadow: none;
 
     --lcd-active-dim-bg-l: 0.05; --lcd-active-dim-bg-c: var(--dynamic-lcd-chroma); --lcd-active-dim-bg-h: var(--dynamic-lcd-hue); --lcd-active-dim-bg-a: 0.7;
-    --lcd-active-dim-text-l: 0.80;
+    --lcd-active-dim-text-l: 0.80; 
     --lcd-active-dim-text-c: var(--dynamic-lcd-chroma); --lcd-active-dim-text-h: var(--dynamic-lcd-hue); --lcd-active-dim-text-a: 1;
     --lcd-active-dim-border-l: 0.10; --lcd-active-dim-border-c: var(--dynamic-lcd-chroma); --lcd-active-dim-border-h: var(--dynamic-lcd-hue); --lcd-active-dim-border-a: 0.3;
     --lcd-active-dim-shadow: none;
@@ -151,7 +155,7 @@
 
     --lcd-dimly-lit-grad-start-l: 0.32;
     --lcd-dimly-lit-grad-end-l: 0.26;
-    --lcd-dimly-lit-text-l: 0.80;
+    --lcd-dimly-lit-text-l: 0.90; 
     --lcd-dimly-lit-text-c: var(--dynamic-lcd-chroma); --lcd-dimly-lit-text-h: var(--dynamic-lcd-hue); --lcd-dimly-lit-text-a: 1;
     --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.15);
     --lcd-dimly-lit-chroma-factor: 0.3;
@@ -227,7 +231,7 @@
 
 
     /* --- Component: Color Chips --- */
-    --color-chip-base-opacity: var(--theme-component-opacity); /* Base opacity for color chips, multiplied by --startup-opacity-factor-boosted */
+    --color-chip-base-opacity: var(--theme-component-opacity); 
     --color-chip-border-l: 0.1; --color-chip-border-c:0; --color-chip-border-h:0; --color-chip-border-a: 0.2;
     --color-chip-shadow-inset: inset 0 0 1px oklch(0% 0 0 / 0.2);
 
@@ -241,8 +245,6 @@
     --terminal-font-weight: 500;
     --terminal-cursor-blink-on-duration: 0.53s;
     --terminal-cursor-blink-off-duration: 0.37s;
-    --terminal-text-glow-radius: 8px;
-    --terminal-text-glow-base-alpha: 0.15; /* Base alpha for terminal glow, multiplied by --startup-opacity-factor */
     --terminal-text-drop-shadow-offset-x: 0.5px;
     --terminal-text-drop-shadow-offset-y: 0.5px;
     --terminal-text-drop-shadow-blur: 0px;
@@ -251,8 +253,11 @@
     --terminal-scanline-thickness: 1px;
     --terminal-scanline-animation-duration: 8s;
 
-
-    --terminal-text-glow-opacity: 0; 
-    --terminal-text-bloom-size: 0px; 
-    --terminal-text-glow-color: oklch(var(--lcd-active-text-l) var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue) / var(--terminal-text-glow-opacity)); 
+    /* Terminal Text Glow - Unified Variables */
+    --terminal-text-glow-color: oklch(0.85 0.10 160); 
+    --terminal-text-glow-opacity: 1.0; 
+    --terminal-text-bloom-size: 16px;  
+    /* Theme-specific scaling factors for terminal glow */
+    --theme-terminal-glow-opacity-factor: 1.0; 
+    --theme-terminal-glow-size-factor: 1.0;    
 }

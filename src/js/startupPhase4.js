@@ -80,23 +80,28 @@ export async function createPhaseTimeline(dependencies) {
                 tl.to({}, { duration: Math.max(0, (configModule.LENS_STARTUP_RAMP_DURATION / 1000) - factorAnimationDuration) }, "start_P4_effects+=" + factorAnimationDuration);
             }
 
-            // 4. Ensure Minimum Duration
+            // 4. Ensure Minimum Duration & Add Pause for Auto-Play
             let phaseDurationSeconds = Math.max(configModule.LENS_STARTUP_RAMP_DURATION / 1000 + 0.05, factorAnimationDuration);
             if (messageTextForDurationCalc) {
                 const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
                 phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2);
             }
             phaseDurationSeconds = Math.max(phaseDurationSeconds, configModule.MIN_PHASE_DURATION_FOR_STEPPING);
-            phaseDurationSeconds = Math.max(phaseDurationSeconds, tl.duration());
-
-
+            
+            // Ensure the timeline runs at least as long as calculated phase-specific content
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
             }
-             if (tl.getChildren(true,true,true,0).length === 1 && tl.getChildren(true,true,true,0)[0].vars.duration === 0.01 && phaseDurationSeconds > 0.01) {
-                 tl.to({}, { duration: Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, phaseDurationSeconds) });
-            } else if (tl.duration() === 0) {
+
+            const isStepThrough = dependencies.dependencies?.isStepThroughMode || dependencies.isStepThroughMode;
+            if (!isStepThrough) {
+                tl.to({}, { duration: 0.5 }); // Add the pause
+            }
+
+            if (tl.duration() < configModule.MIN_PHASE_DURATION_FOR_STEPPING && isStepThrough) {
                  tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+            } else if (tl.duration() < 0.5 && !isStepThrough) {
+                 tl.to({}, { duration: 0.5 - tl.duration() });
             }
 
             tl.play();

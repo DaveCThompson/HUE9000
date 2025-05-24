@@ -96,31 +96,35 @@ export async function createPhaseTimeline(dependencies) {
                 console.warn(`[startupP3_mainPowerOnline EXEC] Main power buttons or buttonManager not available.`);
             }
 
-            // 4. Await flicker completions
-            if (completionPromises.length > 0) {
-                await Promise.all(completionPromises);
-                // console.log(`[startupP3_mainPowerOnline EXEC] All button flickers complete.`); // Redundant if using GSAP timeline for overall phase
-            }
+            // 4. Await flicker completions (if not relying on GSAP timeline for overall phase timing)
+            // Since flickers are added to the main timeline `tl`, we don't need to explicitly await here.
+            // The `tl.duration()` will reflect their contribution.
 
-            // 5. Ensure Minimum Duration
+            // 5. Ensure Minimum Duration & Add Pause for Auto-Play
             let phaseDurationSeconds = Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, factorAnimationDuration);
             if (messageTextForDurationCalc) {
                 const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
                 phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2);
             }
             // GSAP timeline `tl` already includes the flicker timelines if they were added.
-            // So, `tl.duration()` will reflect their contribution.
             phaseDurationSeconds = Math.max(phaseDurationSeconds, tl.duration());
 
 
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
             }
-             if (tl.getChildren(true,true,true,0).length === 1 && tl.getChildren(true,true,true,0)[0].vars.duration === 0.01 && phaseDurationSeconds > 0.01) {
-                 tl.to({}, { duration: Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, phaseDurationSeconds) });
-            } else if (tl.duration() === 0) {
-                 tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+            
+            const isStepThrough = dependencies.dependencies?.isStepThroughMode || dependencies.isStepThroughMode;
+            if (!isStepThrough) {
+                tl.to({}, { duration: 0.5 }); // Add the pause
             }
+
+            if (tl.duration() < configModule.MIN_PHASE_DURATION_FOR_STEPPING && isStepThrough) {
+                 tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+            } else if (tl.duration() < 0.5 && !isStepThrough) {
+                 tl.to({}, { duration: 0.5 - tl.duration() });
+            }
+
 
             tl.eventCallback('onComplete', () => {
                 console.log(`[startupP3_mainPowerOnline EXEC] End. L-factor: ${LReductionProxy.value.toFixed(3)}, O-factor: ${opacityFactorProxy.value.toFixed(3)}. GSAP Duration: ${tl.duration().toFixed(3)}`);

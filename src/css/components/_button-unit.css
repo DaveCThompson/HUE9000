@@ -19,7 +19,7 @@
     border: 1px solid oklch(var(--btn-unlit-border-l) var(--btn-unlit-border-c) var(--btn-unlit-border-h) / var(--btn-unlit-border-a));
     color: oklch(var(--btn-unlit-text-l) var(--btn-unlit-text-c) var(--btn-unlit-text-h) / var(--btn-unlit-text-a));
     box-shadow: 0 0 var(--btn-glow-size, 0px) var(--btn-glow-spread, 0px) var(--btn-glow-color, transparent);
-    opacity: var(--theme-component-opacity); /* MODIFIED - Uses theme-dim's base opacity, not affected by --startup-opacity-factor */
+    opacity: var(--theme-component-opacity); 
 
     transition:
         transform var(--button-unit-transition-duration) ease,
@@ -272,4 +272,11 @@
   width: 100%;
   position: relative;
   z-index: 2;
+}
+
+/* CSS-driven Harmonic Resonance */
+.button-unit.is-energized.is-selected.is-resonating .light {
+    opacity: var(--harmonic-resonance-opacity-target, var(--btn-energized-selected-light-a));
+    /* Optional: A very short transition can smooth CSS var updates if they aren't perfectly synced with frames */
+    /* transition: opacity 0.016s linear; */
 }

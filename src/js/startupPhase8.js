@@ -101,7 +101,7 @@ export async function createPhaseTimeline(dependencies) {
                 console.warn(`[startupP8_externalLightingControls EXEC] AUX Light buttons or buttonManager not available for DIMLY_LIT flicker.`);
             }
             
-            // 4. Ensure Minimum Duration
+            // 4. Ensure Minimum Duration & Add Pause for Auto-Play
             let phaseDurationSeconds = Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, factorAnimationDuration);
             if (messageTextForDurationCalc) {
                 const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
@@ -111,16 +111,20 @@ export async function createPhaseTimeline(dependencies) {
             const estimatedAuxFlickerDur = configModule.estimateFlickerDuration('buttonFlickerToDimlyLit') + 0.03;
             phaseDurationSeconds = Math.max(phaseDurationSeconds, auxFlickerOffset + estimatedAuxFlickerDur);
             
-            phaseDurationSeconds = Math.max(phaseDurationSeconds, tl.duration());
-
-
+            // Ensure the timeline runs at least as long as calculated phase-specific content
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
             }
-            if (tl.getChildren(true,true,true,0).length === 1 && tl.getChildren(true,true,true,0)[0].vars.duration === 0.01 && phaseDurationSeconds > 0.01) {
-                 tl.to({}, { duration: Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, phaseDurationSeconds) });
-            } else if (tl.duration() === 0) {
+
+            const isStepThrough = dependencies.dependencies?.isStepThroughMode || dependencies.isStepThroughMode;
+            if (!isStepThrough) {
+                tl.to({}, { duration: 0.5 }); // Add the pause
+            }
+
+            if (tl.duration() < configModule.MIN_PHASE_DURATION_FOR_STEPPING && isStepThrough) {
                  tl.to({}, { duration: configModule.MIN_PHASE_DURATION_FOR_STEPPING });
+            } else if (tl.duration() < 0.5 && !isStepThrough) {
+                 tl.to({}, { duration: 0.5 - tl.duration() });
             }
 
             tl.play();

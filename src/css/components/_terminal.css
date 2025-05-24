@@ -25,8 +25,8 @@
 
 
 #terminal-lcd-content {
+    /* MODIFIED: Only the drop shadow remains here */
     text-shadow:
-        0 0 var(--terminal-text-glow-radius) oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--terminal-text-glow-base-alpha) * var(--startup-opacity-factor, 0))),
         var(--terminal-text-drop-shadow-offset-x) var(--terminal-text-drop-shadow-offset-y) var(--terminal-text-drop-shadow-blur) var(--terminal-text-drop-shadow-color);
 
     position: relative;
@@ -45,11 +45,20 @@
     align-items: baseline;
     line-height: 1.7;
     color: inherit; 
+    /* MODIFIED: Glow text-shadow moved here */
+    text-shadow:
+        0 0 calc(var(--terminal-text-bloom-size, 0px) * var(--theme-terminal-glow-size-factor, 1))
+           oklch(
+               from var(--terminal-text-glow-color, oklch(0.85 0.10 160)) /* Base color */
+               l c h / calc(var(--terminal-text-glow-opacity, 0) * var(--theme-terminal-glow-opacity-factor, 1)) /* Apply opacity factor */
+           );
+    /* Note: The drop shadow from #terminal-lcd-content will still apply to the text in .terminal-line due to inheritance.
+       If a distinct drop shadow per line is ever needed, it would also be added here. */
 }
 
 .terminal-line--initial-boot {
     /* No specific color override needed here. Color is inherited.
-       Glow is from flicker. Line opacity (autoAlpha) is from flicker.
+       Glow is from its own text-shadow rule now. Line opacity (autoAlpha) is from flicker.
        Parent #terminal-lcd-content opacity is set to 1 by terminalManager for P1. */
 }
 
@@ -94,15 +103,6 @@
     opacity: calc(0.3 * var(--startup-opacity-factor, 0)); 
     animation: terminalScanlineMove var(--terminal-scanline-animation-duration) linear infinite;
     border-radius: inherit;
-}
-
-@keyframes terminalScanlineMove {
-    0% {
-        background-position-y: 0;
-    }
-    100% {
-        background-position-y: calc(var(--terminal-scanline-thickness) * 8);
-    }
 }
 
 .terminal-block > .actual-lcd-screen-element::after {

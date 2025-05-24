@@ -1,6 +1,3 @@
----
-file: FLICKER_PROFILES.md
----
 # HUE 9000 Flicker Profile Reference
 
 This document details the standardized flicker animation profiles used for UI element transitions.
@@ -60,20 +57,21 @@ For profiles named `...From[InitialState]To...`, these starting parameters are d
    *(Primarily for terminal messages)*
 
 *   **1. `textFlickerToDimlyLit`**
-    *   **Transition:** Unlit -> Dimly Lit
+    *   **Transition:** Unlit -> "Dimly Lit" (which is now a brighter baseline for terminal text)
     *   **`targetProperty`**: `text-shadow-opacity-and-blur`
     *   **Starting State:**
         *   `amplitudeStart`: 0.0
         *   `glow.initialOpacity`: 0.0
         *   `glow.initialSize`: '0px'
-    *   **Ending State (matches "Dimly Lit" target):**
-        *   `amplitudeEnd`: 0.8
-        *   `glow.finalOpacity`: 0.2
-        *   `glow.finalSize`: '2px'
+    *   **Ending State (matches new "Dimly Lit" target for terminal text, before theme scaling):**
+        *   `amplitudeEnd`: 1.0 <!-- MODIFIED: Text itself is fully opaque -->
+        *   `glow.finalOpacity`: 0.8 <!-- MODIFIED: Brighter baseline glow opacity -->
+        *   `glow.finalSize`: '13px' <!-- MODIFIED: Larger baseline glow size -->
     *   **Glow Variables:**
         *   `glow.colorVar`: `--terminal-text-glow-color`
         *   `glow.animatedProperties`: `{ opacity: '--terminal-text-glow-opacity', blur: '--terminal-text-bloom-size' }`
     *   *(Other dynamic parameters like `numCycles`, `period`, `peakOpacity` are defined in `config.js`)*
+    *   *Note: Theme-specific CSS variables (`--theme-terminal-glow-opacity-factor`, `--theme-terminal-glow-size-factor`) further scale this baseline glow.*
 
 ---
 ### B. LCD Screen Element Profiles
