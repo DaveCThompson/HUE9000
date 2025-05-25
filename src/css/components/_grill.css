@@ -7,7 +7,7 @@
   width: 100%;
   background-color: oklch(var(--grill-bg-l) var(--grill-bg-c) var(--grill-bg-h) / var(--grill-bg-a));
   background-image: url('/public/metal-grill.png');
-  background-size: 350px 350px;
+  background-size: 337px 228px;
   background-repeat: repeat;
   background-position: center center;
   /* background-blend-mode is now controlled by theme-dim.css or theme-dark.css via --grill-blend-mode */
