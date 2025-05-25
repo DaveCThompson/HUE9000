@@ -7,6 +7,8 @@
  */
 import { HUE_ASSIGNMENT_ROW_HUES, DEFAULT_ASSIGNMENT_SELECTIONS, DEFAULT_DIAL_A_HUE } from './config.js';
 
+const DEBUG_APP_STATE = true; // Global debug flag for appState logging
+
 // --- Simple Event Emitter Implementation ---
 class EventEmitter {
   constructor() {
@@ -35,13 +37,13 @@ const emitter = new EventEmitter();
 
 // --- Standalone emit function to be exported ---
 export function emit(eventName, payload) {
-    // ADDED: Console log for event emission
-    // For complex payloads, only log keys to avoid overly verbose logs by default.
-    let payloadSummary = payload;
-    if (payload && typeof payload === 'object' && Object.keys(payload).length > 3) { // Heuristic for complex object
-        payloadSummary = `{ ${Object.keys(payload).join(', ')}, ... }`;
+    if (DEBUG_APP_STATE) {
+        let payloadSummary = payload;
+        if (payload && typeof payload === 'object' && Object.keys(payload).length > 3) { 
+            payloadSummary = `{ ${Object.keys(payload).join(', ')}, ... }`;
+        }
+        console.log(`[AppState EMIT] Event: '${eventName}'. Payload:`, payloadSummary !== undefined ? payloadSummary : 'N/A', payload !== undefined && payloadSummary !== payload ? { fullPayload: payload } : '');
     }
-    console.log(`[AppState EMIT] Event: '${eventName}'. Payload:`, payloadSummary !== undefined ? payloadSummary : 'N/A', payload !== undefined && payloadSummary !== payload ? { fullPayload: payload } : '');
     if (!emitter.events[eventName]) return;
     emitter.events[eventName].forEach(listener => {
       try {
@@ -77,42 +79,41 @@ let currentStartupPhaseNumber = -1; // -1: Idle/Pre-P0, 0-11 for phases, 99: Com
 export function getDialState(dialId) {
   const dial = dials[dialId];
   if (!dial) {
-    // ADDED: Log if dial state is requested before full initialization
-    console.warn(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual: Undefined (not initialized).`);
+    if (DEBUG_APP_STATE) console.warn(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual: Undefined (not initialized).`);
     return undefined;
   }
-  // console.log(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual:`, JSON.parse(JSON.stringify(dial)));
+  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual:`, JSON.parse(JSON.stringify(dial)));
   return { ...dial }; // Return a clone
 }
 
 export function getTargetColorProperties(targetKey) {
   const props = targetColorProps[targetKey];
   if (!props) {
-    console.warn(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual: Undefined (invalid key).`);
+    if (DEBUG_APP_STATE) console.warn(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual: Undefined (invalid key).`);
     return undefined;
   }
-  // console.log(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual:`, JSON.parse(JSON.stringify(props)));
+  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual:`, JSON.parse(JSON.stringify(props)));
   return { ...props };
 }
 
 export function getCurrentTheme() { 
-  // console.log(`[AppState GET] Target: currentTheme. Requested: Value. Actual: '${currentTheme}'`);
+  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: currentTheme. Requested: Value. Actual: '${currentTheme}'`);
   return currentTheme; 
 }
 export function getTrueLensPower() { 
-  // console.log(`[AppState GET] Target: trueLensPower. Requested: Value. Actual: ${currentTrueLensPower.toFixed(3)}`);
+  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: trueLensPower. Requested: Value. Actual: ${currentTrueLensPower.toFixed(3)}`);
   return currentTrueLensPower; 
 }
 export function getDialBInteractionState() { 
-  // console.log(`[AppState GET] Target: dialBInteractionState. Requested: Value. Actual: '${dialBInteractionState}'`);
+  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: dialBInteractionState. Requested: Value. Actual: '${dialBInteractionState}'`);
   return dialBInteractionState; 
 }
 export function getAppStatus() { 
-  // console.log(`[AppState GET] Target: appStatus. Requested: Value. Actual: '${appStatus}'`);
+  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: appStatus. Requested: Value. Actual: '${appStatus}'`);
   return appStatus; 
 }
 export function getCurrentStartupPhaseNumber() {
-  // console.log(`[AppState GET] Target: currentStartupPhaseNumber. Requested: Value. Actual: ${currentStartupPhaseNumber}`);
+  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: currentStartupPhaseNumber. Requested: Value. Actual: ${currentStartupPhaseNumber}`);
   return currentStartupPhaseNumber;
 }
 
@@ -130,7 +131,7 @@ export function updateDialState(dialId, newState) {
         targetRotation: 0, 
         isDragging: false 
     };
-    console.log(`[AppState SET] Target: Dial '${dialId}'. Requested: Initialization. Actual (New State):`, JSON.parse(JSON.stringify(dials[dialId])));
+    if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: Dial '${dialId}'. Requested: Initialization. Actual (New State):`, JSON.parse(JSON.stringify(dials[dialId])));
   }
   
   const oldState = { ...dials[dialId] }; 
@@ -145,7 +146,7 @@ export function updateDialState(dialId, newState) {
                             oldState.targetRotation !== dials[dialId].targetRotation;
   
   if (hasRelevantChange) {
-    console.log(`[AppState SET] Target: Dial '${dialId}'. Requested (Changes):`, JSON.parse(JSON.stringify(newState)), `Old State:`, JSON.parse(JSON.stringify(oldState)), "Actual (New State):", JSON.parse(JSON.stringify(dials[dialId])));
+    if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: Dial '${dialId}'. Requested (Changes):`, JSON.parse(JSON.stringify(newState)), `Old State:`, JSON.parse(JSON.stringify(oldState)), "Actual (New State):", JSON.parse(JSON.stringify(dials[dialId])));
     emit('dialUpdated', { id: dialId, state: { ...dials[dialId] } });
   }
 }
@@ -160,11 +161,11 @@ export function setTargetColorProperties(targetKey, hueFromGrid) {
       const oldProps = { ...currentProps };
       currentProps.hue = normalizedHue;
       currentProps.isColorless = isColorless;
-      console.log(`[AppState SET] Target: TargetColor '${targetKey}'. Requested Hue: ${hueFromGrid}, Normalized: ${normalizedHue}. Old Props:`, oldProps, "Actual (New Props):", { ...currentProps });
+      if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: TargetColor '${targetKey}'. Requested Hue: ${hueFromGrid}, Normalized: ${normalizedHue}. Old Props:`, oldProps, "Actual (New Props):", { ...currentProps });
       emit('targetColorChanged', { targetKey, hue: normalizedHue, isColorless });
     }
   } else {
-    console.warn(`[AppState SET] Target: TargetColor '${targetKey}'. Requested Hue: ${hueFromGrid}. Error: Invalid targetKey.`);
+    if (DEBUG_APP_STATE) console.warn(`[AppState SET] Target: TargetColor '${targetKey}'. Requested Hue: ${hueFromGrid}. Error: Invalid targetKey.`);
   }
 }
 
@@ -172,7 +173,7 @@ export function setTheme(theme) {
   if (['dim', 'dark', 'light'].includes(theme) && currentTheme !== theme) {
     const oldTheme = currentTheme;
     currentTheme = theme;
-    console.log(`[AppState SET] Target: Theme. Requested: '${theme}'. Old: '${oldTheme}', Actual (New): '${currentTheme}'`);
+    if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: Theme. Requested: '${theme}'. Old: '${oldTheme}', Actual (New): '${currentTheme}'`);
     emit('themeChanged', currentTheme);
   }
 }
@@ -182,7 +183,7 @@ export function setTrueLensPower(powerPercentage) {
     if (Math.abs(currentTrueLensPower - newPower01) > 0.0001) {
         const oldPower = currentTrueLensPower;
         currentTrueLensPower = newPower01;
-        console.log(`[AppState SET] Target: TrueLensPower. Requested: ${powerPercentage}%. Old: ${oldPower.toFixed(3)}, Actual (New): ${currentTrueLensPower.toFixed(3)} (0-1 scale)`);
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: TrueLensPower. Requested: ${powerPercentage}%. Old: ${oldPower.toFixed(3)}, Actual (New): ${currentTrueLensPower.toFixed(3)} (0-1 scale)`);
         emit('trueLensPowerChanged', currentTrueLensPower);
     }
 }
@@ -191,7 +192,7 @@ export function setDialBInteractionState(newState) {
     if (['idle', 'dragging', 'settling'].includes(newState) && dialBInteractionState !== newState) {
         const oldState = dialBInteractionState;
         dialBInteractionState = newState;
-        console.log(`[AppState SET] Target: DialBInteractionState. Requested: '${newState}'. Old: '${oldState}', Actual (New): '${dialBInteractionState}'`);
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: DialBInteractionState. Requested: '${newState}'. Old: '${oldState}', Actual (New): '${dialBInteractionState}'`);
         emit('dialBInteractionChange', dialBInteractionState);
     }
 }
@@ -200,7 +201,7 @@ export function setAppStatus(newStatus) {
     if (['loading', 'starting-up', 'interactive', 'error'].includes(newStatus) && appStatus !== newStatus) {
         const oldStatus = appStatus;
         appStatus = newStatus;
-        console.log(`[AppState SET] Target: AppStatus. Requested: '${newStatus}'. Old: '${oldStatus}', Actual (New): '${appStatus}'`);
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: AppStatus. Requested: '${newStatus}'. Old: '${oldStatus}', Actual (New): '${appStatus}'`);
         emit('appStatusChanged', appStatus);
     }
 }
@@ -209,7 +210,7 @@ export function setCurrentStartupPhaseNumber(phaseNumber) {
     if (typeof phaseNumber === 'number' && currentStartupPhaseNumber !== phaseNumber) {
         const oldPhaseNumber = currentStartupPhaseNumber;
         currentStartupPhaseNumber = phaseNumber;
-        console.log(`[AppState SET] Target: CurrentStartupPhaseNumber. Requested: ${phaseNumber}. Old: ${oldPhaseNumber}, Actual (New): ${currentStartupPhaseNumber}`);
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: CurrentStartupPhaseNumber. Requested: ${phaseNumber}. Old: ${oldPhaseNumber}, Actual (New): ${currentStartupPhaseNumber}`);
         emit('startupPhaseNumberChanged', currentStartupPhaseNumber);
     }
 }
@@ -218,7 +219,7 @@ export function setCurrentStartupPhaseNumber(phaseNumber) {
 // --- Event Subscription (Exported) ---
 export function subscribe(eventName, listener) {
   if (typeof listener !== 'function') {
-        console.error(`[AppState Subscribe] Listener for event '${eventName}' is not a function.`);
+        if (DEBUG_APP_STATE) console.error(`[AppState Subscribe] Listener for event '${eventName}' is not a function.`);
         return () => {};
     }
   return emitter.on(eventName, listener);
@@ -243,4 +244,4 @@ if (!dials.B || Object.keys(dials.B).length === 0) {
         isDragging: false 
     });
 }
-console.log('[AppState INIT] Initialized with default states:', { dials: JSON.parse(JSON.stringify(dials)), targetColorProps: JSON.parse(JSON.stringify(targetColorProps)), currentTheme, appStatus, currentStartupPhaseNumber });
+if (DEBUG_APP_STATE) console.log('[AppState INIT] Initialized with default states:', { dials: JSON.parse(JSON.stringify(dials)), targetColorProps: JSON.parse(JSON.stringify(targetColorProps)), currentTheme, appStatus, currentStartupPhaseNumber });

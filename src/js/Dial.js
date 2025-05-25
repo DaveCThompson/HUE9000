@@ -39,6 +39,7 @@ class Dial {
         this.gsapValueTween = null;
         this.isActiveDim = false; 
         this.dialBSettleTimer = null;
+        // REMOVED: this.drawCallQueued = false; 
 
         this.unsubscribers = []; 
 
@@ -55,25 +56,21 @@ class Dial {
             this.appState.updateDialState(this.dialId, initialState);
         }
         
-        // Initial draw in constructor. At this point, appState.getCurrentStartupPhaseNumber() might be -1.
         console.log(`[Dial ${this.dialId} CONSTRUCTOR] Before initial resizeCanvas/draw. Current phase from appState: ${this.appState.getCurrentStartupPhaseNumber()}, isActiveDim: ${this.isActiveDim}`);
         this.resizeCanvas(true); 
         this._addDragListeners();
         this._subscribeToAppStateEvents();
-        // console.log(`[Dial ${this.dialId} CONSTRUCTOR] Initialized. isActiveDim: ${this.isActiveDim}`);
     }
 
     _subscribeToAppStateEvents() {
         this.unsubscribers.push(this.appState.subscribe('dialUpdated', this._onAppStateDialUpdate.bind(this)));
         this.unsubscribers.push(this.appState.subscribe('themeChanged', this._onThemeChange.bind(this)));
         this.unsubscribers.push(this.appState.subscribe('appStatusChanged', this._onAppStatusChange.bind(this)));
-        // Also subscribe to startupPhaseNumberChanged to redraw if P0 fix depends on it
         this.unsubscribers.push(this.appState.subscribe('startupPhaseNumberChanged', this._onStartupPhaseChange.bind(this)));
     }
 
     _onStartupPhaseChange(newPhaseNumber) {
-        // console.log(`[Dial ${this.dialId} _onStartupPhaseChange] Phase changed to ${newPhaseNumber}. Redrawing.`);
-        this._draw(); // Redraw to apply P0 fix if phase number was key
+        this._draw(); 
     }
 
     resizeCanvas(forceDraw = false) {
@@ -102,11 +99,8 @@ class Dial {
     }
 
     setActiveDimState(isActive) {
-        // console.log(`[Dial ${this.dialId} setActiveDimState] Called with isActive: ${isActive}. Current this.isActiveDim: ${this.isActiveDim}`);
         if (this.isActiveDim !== isActive) {
             this.isActiveDim = isActive;
-            // console.log(`[Dial ${this.dialId} setActiveDimState] this.isActiveDim changed to: ${this.isActiveDim}`);
-
             if (document.body.classList.contains('theme-dim')) {
                 this.containerElement.classList.toggle('js-active-dim-dial', isActive);
             } else {
@@ -184,6 +178,8 @@ class Dial {
                 if (this.dialId === 'B') {
                     this.appState.setTrueLensPower((animationProxy.hue / 359.999) * 100);
                 }
+                // REVERTED: Call _draw() directly
+                this._draw();
             },
             onComplete: () => { this.gsapValueTween = null; }
         });
@@ -268,7 +264,6 @@ class Dial {
         const rootStyle = getComputedStyle(document.documentElement);
         const isDimTheme = document.body.classList.contains('theme-dim');
         const useDimActiveStyles = isDimTheme && this.isActiveDim;
-        // console.log(`[Dial ${this.dialId} _updateAndCacheComputedStyles] isDimTheme: ${isDimTheme}, this.isActiveDim: ${this.isActiveDim}, useDimActiveStyles: ${useDimActiveStyles}`);
 
         if (useDimActiveStyles) {
             this.computedStyleVars = {
@@ -308,7 +303,6 @@ class Dial {
                 shadingEnd: rootStyle.getPropertyValue('--dial-shading-end-color').trim() || 'oklch(0% 0 0 / 0.4)'
             };
         }
-        // console.log(`[Dial ${this.dialId} _updateAndCacheComputedStyles] Cached faceBgL: ${this.computedStyleVars.faceBgL}`);
     }
 
     _draw() {
@@ -338,19 +332,14 @@ class Dial {
         const isDimTheme = document.body.classList.contains('theme-dim');
         const isDuringThemeTransition = document.body.classList.contains('is-transitioning-from-dim');
 
-        // CRITICAL P0-P5 DIAL APPEARANCE (UNLIT IN DIM THEME):
-        // Includes initial draw where currentPhaseNum might be -1.
-        // Dials must be black during these early phases if not explicitly 'active-dim'.
         const isEarlyStartupUnlitState = isDimTheme && 
                                          !this.isActiveDim && 
                                          appStatus === 'starting-up' && 
                                          (currentPhaseNum === -1 || (currentPhaseNum >= 0 && currentPhaseNum < 6));
 
         if (isEarlyStartupUnlitState) {
-            // console.log(`[Dial ${this.dialId} _draw] In P0-P5 unlit state (phase: ${currentPhaseNum}, isActiveDim: ${this.isActiveDim}). Drawing pure black background.`);
             this.ctx.fillStyle = 'oklch(0 0 0)'; 
         } else {
-            // console.log(`[Dial ${this.dialId} _draw] Not in P0-P5 unlit state (phase: ${currentPhaseNum}, isActiveDim: ${this.isActiveDim}). Drawing with faceBgL: ${this.computedStyleVars.faceBgL}`);
             this.ctx.fillStyle = `oklch(${this.computedStyleVars.faceBgL} ${this.computedStyleVars.faceBgC} ${this.computedStyleVars.faceBgH})`;
         }
         this.ctx.fillRect(0, 0, logicalWidth, logicalHeight);
@@ -363,12 +352,11 @@ class Dial {
             drawDetailedContent = this.isActiveDim || appStatus === 'interactive';
         }
         
-        if (isEarlyStartupUnlitState) { // Override: Do not draw ridges if in the P0-P5 unlit state
+        if (isEarlyStartupUnlitState) { 
             drawDetailedContent = false;
         }
 
         if (drawDetailedContent) {
-            // console.log(`[Dial ${this.dialId} _draw] Drawing detailed content (ridges/shading).`);
             const angleStep = (2 * Math.PI) / this.configModule.NUM_RIDGES;
             const lightAngle = -Math.PI / 4; 
             const rotationRadians = rotation * Math.PI / 180;
@@ -413,19 +401,18 @@ class Dial {
                 this.ctx.fillStyle = gradient;
                 this.ctx.fillRect(0, 0, logicalWidth, logicalHeight);
             }
-        } else {
-            // console.log(`[Dial ${this.dialId} _draw] Skipping detailed content. isEarlyStartupUnlitState: ${isEarlyStartupUnlitState}, drawDetailedContent flag: ${drawDetailedContent}`);
         }
     }
 
     _onAppStateDialUpdate(payload) {
         if (payload && payload.id === this.dialId) {
-            this._draw();
+            if (!this.isDragging) { // Only draw if not currently being dragged (GSAP onUpdate handles draw during drag)
+                this._draw();
+            }
         }
     }
 
     _onThemeChange() {
-        // console.log(`[Dial ${this.dialId} _onThemeChange] Theme changed. Updating styles and redrawing.`);
         this._updateAndCacheComputedStyles();
         requestAnimationFrame(() => { 
             const dpr = window.devicePixelRatio || 1;
@@ -435,7 +422,6 @@ class Dial {
     }
 
     _onAppStatusChange(newStatus) {
-        // console.log(`[Dial ${this.dialId} _onAppStatusChange] App status changed to: ${newStatus}. Updating styles and redrawing.`);
         this._updateAndCacheComputedStyles(); 
         this._draw(); 
     }
@@ -446,7 +432,6 @@ class Dial {
         this.unsubscribers = [];
         if (this.gsapValueTween) this.gsapValueTween.kill();
         if (this.dialBSettleTimer) clearTimeout(this.dialBSettleTimer);
-        // console.log(`[Dial ${this.dialId} DESTROY] Destroyed.`);
     }
 }
 

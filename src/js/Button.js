@@ -2,7 +2,7 @@
  * @module Button
  * @description Represents a single UI button component, managing its state,
  * appearance (CSS classes, ARIA attributes), and specific animations.
- * (REFACTOR-V2.3 - Ambient Animations Update)
+ * (REFACTOR-V2.3 - Ambient Animations Update - CSS Idle Drift)
  */
 import { ButtonStates }  from './buttonManager.js';
 
@@ -15,11 +15,13 @@ class Button {
         this.configModule = configModule; // Passed by ButtonManager
         this.uiUpdater = uiUpdaterService;
         this.debugAmbient = false; 
+        this.cssIdleDriftClassName = 'css-idle-drifting'; // Class for CSS driven idle drift
 
         if (!this.gsap) {
             throw new Error(`[Button CONSTRUCTOR ${this.getIdentifier()}] GSAP instance is not available.`);
         }
         if (!this.configModule) {
+            // console.warn(`[Button CONSTRUCTOR ${this.getIdentifier()}] configModule not available at construction.`);
         }
 
         this.currentClasses = new Set();
@@ -28,7 +30,7 @@ class Button {
         this._isSelected = config.isSelectedByDefault || false;
 
         this._isResonating = false; // Internal flag, primarily for consistency if JS logic was still used
-        this.idleLightDriftTweens = [];
+        // REMOVED: this.idleLightDriftTweens = [];
         this.stateTransitionEchoTween = null;
 
         this._updateAriaAttributes();
@@ -178,19 +180,9 @@ class Button {
     }
 
     updateHarmonicResonanceVisuals(progress) {
-        // This method is now largely obsolete for the CSS-driven Harmonic Resonance.
-        // It's kept in case direct JS manipulation is needed for other effects or if the CSS approach is reverted.
-        // If enableHarmonicResonance is false in AAM, or if the CSS method is active, this won't have a direct visual effect.
-        if (!this.configModule || !this._isResonating) { // _isResonating is still set by start/stop
+        if (!this.configModule || !this._isResonating) { 
             return;
         }
-        // If direct JS control was still needed:
-        // const lights = Array.from(this.element.querySelectorAll('.light'));
-        // if (!lights.length) return;
-        // const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
-        // const dipAmount = progress * R_PARAMS.LIGHT_OPACITY_DIP_FACTOR; 
-        // const targetOpacity = R_PARAMS.BASE_LIGHT_OPACITY_SELECTED * (1 - dipAmount);
-        // this.gsap.to(lights, { opacity: targetOpacity, duration: R_PARAMS.TICK_UPDATE_DURATION, ease: "none" });
         if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()} updateHarmonicResonanceVisuals] Called. Progress: ${progress.toFixed(3)}. (CSS method should be active)`);
     }
 
@@ -199,7 +191,7 @@ class Button {
         if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Attempting to START Harmonic Resonance. Current _isResonating: ${this._isResonating}, Class active: ${this.element.classList.contains('is-resonating')}`);
         if (this.element.classList.contains('is-resonating')) return; 
 
-        this._isResonating = true; // Keep internal flag for consistency
+        this._isResonating = true; 
         this.element.classList.add('is-resonating'); 
         if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Harmonic Resonance STARTED. Added .is-resonating class.`);
     }
@@ -209,56 +201,57 @@ class Button {
         if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Attempting to STOP Harmonic Resonance. Current _isResonating: ${this._isResonating}, Class active: ${this.element.classList.contains('is-resonating')}`);
         if (!this.element.classList.contains('is-resonating')) return;
 
-        this._isResonating = false; // Keep internal flag for consistency
+        this._isResonating = false; 
         this.element.classList.remove('is-resonating');
         if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Harmonic Resonance STOPPED. Removed .is-resonating class.`);
-        // Lights will revert to their normal opacity via CSS, no need for GSAP.set here.
     }
 
-    startIdleLightDrift() {
-        if (!this.configModule) return;
-        this.stopIdleLightDrift(); 
-
-        const lights = Array.from(this.element.querySelectorAll('.light'));
-        if (!lights.length) return;
+    setCssIdleLightDriftActive(isActive) {
+        if (!this.configModule || !this.configModule.IDLE_LIGHT_DRIFT_PARAMS) {
+            if (this.debugAmbient) console.warn(`[Button ${this.getIdentifier()} setCssIdleLightDriftActive] configModule or IDLE_LIGHT_DRIFT_PARAMS not available.`);
+            return;
+        }
 
         const D_PARAMS = this.configModule.IDLE_LIGHT_DRIFT_PARAMS;
-        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Starting Idle Light Drift for ${lights.length} lights.`);
-
-        lights.forEach((light, index) => {
-            const baseOpacity = D_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED;
-            const variation = baseOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
-            const minOpacity = baseOpacity - variation;
-            const maxOpacity = baseOpacity + variation;
-
-            const tween = this.gsap.fromTo(light,
-                { opacity: this.gsap.utils.random(minOpacity, maxOpacity) }, 
-                {
-                    opacity: this.gsap.utils.random(minOpacity, maxOpacity),
-                    duration: this.gsap.utils.random(D_PARAMS.PERIOD_MIN, D_PARAMS.PERIOD_MAX) / 2, 
-                    yoyo: true,
-                    repeat: -1,
-                    delay: this.gsap.utils.random(0, D_PARAMS.PERIOD_MAX / 4) + (index * D_PARAMS.STAGGER_PER_LIGHT), 
-                    ease: "sine.inOut",
-                    overwrite: "auto"
-                }
-            );
-            this.idleLightDriftTweens.push(tween);
-        });
-    }
-
-    stopIdleLightDrift() {
-        if (!this.configModule) return;
-        if (this.idleLightDriftTweens.length === 0) return;
-        if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] Stopping Idle Light Drift (${this.idleLightDriftTweens.length} tweens).`);
-        this.idleLightDriftTweens.forEach(tween => tween.kill());
-        this.idleLightDriftTweens = [];
-
         const lights = Array.from(this.element.querySelectorAll('.light'));
-        if (lights.length > 0) {
-            this.gsap.set(lights, { 
-                opacity: this.configModule.IDLE_LIGHT_DRIFT_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED,
+
+        if (isActive) {
+            if (this.element.classList.contains(this.cssIdleDriftClassName)) return; // Already active
+            this.element.classList.add(this.cssIdleDriftClassName);
+            if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] CSS Idle Light Drift ACTIVATED. Added class '${this.cssIdleDriftClassName}'.`);
+
+            lights.forEach((light, index) => {
+                const randomDuration = this.gsap.utils.random(D_PARAMS.PERIOD_MIN, D_PARAMS.PERIOD_MAX);
+                const randomDelay = this.gsap.utils.random(0, D_PARAMS.PERIOD_MAX / 4) + (index * D_PARAMS.STAGGER_PER_LIGHT);
+                
+                const baseOpacity = D_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED;
+                const variation = baseOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
+                
+                // Ensure opacities are within valid range [0, 1]
+                const opacityStart = Math.max(0, Math.min(1, baseOpacity - variation));
+                const opacityEnd = Math.max(0, Math.min(1, baseOpacity + variation));
+
+                light.style.setProperty('--light-idle-duration', `${randomDuration.toFixed(3)}s`);
+                light.style.setProperty('--light-idle-delay', `${randomDelay.toFixed(3)}s`);
+                light.style.setProperty('--light-idle-opacity-start', opacityStart.toFixed(3));
+                light.style.setProperty('--light-idle-opacity-end', opacityEnd.toFixed(3));
             });
+
+        } else {
+            if (!this.element.classList.contains(this.cssIdleDriftClassName)) return; // Already inactive
+            this.element.classList.remove(this.cssIdleDriftClassName);
+            if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] CSS Idle Light Drift DEACTIVATED. Removed class '${this.cssIdleDriftClassName}'.`);
+            
+            // Optionally clear CSS variables, though class removal should stop animation.
+            // Forcing lights back to a defined base opacity might be good here if CSS fallback isn't perfect.
+            // This depends on how _button-unit.css defines .is-energized .light opacity.
+            // For now, relying on CSS class removal.
+            // lights.forEach(light => {
+            //     light.style.removeProperty('--light-idle-duration');
+            //     light.style.removeProperty('--light-idle-delay');
+            //     light.style.removeProperty('--light-idle-opacity-start');
+            //     light.style.removeProperty('--light-idle-opacity-end');
+            // });
         }
     }
 
@@ -303,7 +296,7 @@ class Button {
         if (this._pressTimeoutId) clearTimeout(this._pressTimeoutId);
 
         this.stopHarmonicResonance();
-        this.stopIdleLightDrift();
+        this.setCssIdleLightDriftActive(false); // Use new method
         if (this.stateTransitionEchoTween && this.stateTransitionEchoTween.isActive()) this.stateTransitionEchoTween.kill();
     }
 }

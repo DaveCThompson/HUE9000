@@ -86,7 +86,7 @@ class AmbientAnimationManager {
             if (this.debug && buttons.length > 0) console.log(`[AAM _handleAppStatusChange] App no longer interactive. Stopping ambient animations for ${buttons.length} buttons.`);
             for (const button of buttons) {
                 button.stopHarmonicResonance(); // This will remove .is-resonating class
-                button.stopIdleLightDrift();
+                button.setCssIdleLightDriftActive(false); // MODIFIED: Use new CSS-based method
             }
         }
     }
@@ -95,7 +95,7 @@ class AmbientAnimationManager {
         if (!this.isActive) return;
         if (this.debug) console.log(`[AAM _handleBeforeButtonTransition] Button: ${buttonInstance.getIdentifier()}. Stopping its ambient animations.`);
         buttonInstance.stopHarmonicResonance();
-        buttonInstance.stopIdleLightDrift();
+        buttonInstance.setCssIdleLightDriftActive(false); // MODIFIED: Use new CSS-based method
     }
 
     _handleAfterButtonTransition(buttonInstance) {
@@ -111,7 +111,7 @@ class AmbientAnimationManager {
         }
 
         buttonInstance.stopHarmonicResonance(); // Ensure clean state (removes .is-resonating)
-        buttonInstance.stopIdleLightDrift();   // Ensure clean state
+        buttonInstance.setCssIdleLightDriftActive(false);   // MODIFIED: Ensure clean state for CSS drift
 
         const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
         const D_PARAMS = this.configModule.IDLE_LIGHT_DRIFT_PARAMS;
@@ -132,17 +132,18 @@ class AmbientAnimationManager {
                 if (this.enableHarmonicResonance) { 
                     if (this.debug) console.log(`[AAM _applyAmbientAnimation] Starting HARMONIC RESONANCE for selected button: ${buttonInstance.getIdentifier()}`);
                     buttonInstance.startHarmonicResonance(); // This will add .is-resonating class
-                    // No need to call updateHarmonicResonanceVisuals here, CSS var handles it.
                 } else {
                     if (this.debug) console.log(`[AAM _applyAmbientAnimation] Harmonic Resonance DISABLED. Not starting for ${buttonInstance.getIdentifier()}`);
                     buttonInstance.stopHarmonicResonance(); 
                 }
+                buttonInstance.setCssIdleLightDriftActive(false); // Ensure CSS drift is off for selected buttons
             } else { 
-                if (this.debug) console.log(`[AAM _applyAmbientAnimation] Starting IDLE LIGHT DRIFT for unselected, energized button: ${buttonInstance.getIdentifier()}`);
-                buttonInstance.startIdleLightDrift();
+                if (this.debug) console.log(`[AAM _applyAmbientAnimation] Starting CSS IDLE LIGHT DRIFT for unselected, energized button: ${buttonInstance.getIdentifier()}`);
+                buttonInstance.setCssIdleLightDriftActive(true); // MODIFIED: Use new CSS-based method
             }
         } else {
             if (this.debug) console.log(`[AAM _applyAmbientAnimation] Button ${buttonInstance.getIdentifier()} is NOT eligible for ambient animation (not energized).`);
+            buttonInstance.setCssIdleLightDriftActive(false); // Ensure CSS drift is off
         }
     }
 
@@ -152,6 +153,7 @@ class AmbientAnimationManager {
             this.resonanceTicker.remove(this._updateResonance);
         }
         document.documentElement.style.removeProperty('--harmonic-resonance-opacity-target');
+        // No specific cleanup needed for CSS Idle Light Drift here, Button instances handle their classes.
     }
 }
 
