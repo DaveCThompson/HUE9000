@@ -4,34 +4,35 @@
 .actual-lcd-screen-element,
 .hue-lcd-display {
     width: 100%;
-    position: relative; /* MODIFIED: Added for mood-matrix-row positioning */
-    overflow: hidden; /* MODIFIED: Added to clip mood-matrix-rows */
-    /* MODIFIED: Added background-color as a fallback for the gradient */
+    position: relative; 
+    overflow: hidden; 
     background-color: oklch(
-        var(--lcd-active-grad-end-l) /* Use the L value of the darkest part of the gradient */
+        var(--lcd-active-grad-end-l) 
         calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) 
         var(--dynamic-lcd-hue)
     );
-    /* Background: Uses dynamic LCD hue, L values are theme-defined, NOT L-reduced by startup factor */
     background-image: radial-gradient(80.98% 80.98% at 50% 50%,
         oklch(var(--lcd-active-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
         oklch(calc(var(--lcd-active-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 100%
     );
-    /* Text color: Uses theme-defined L value, NOT L-reduced by startup factor */
     color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
-    /* Border color: Uses theme-defined L value, NOT L-reduced by startup factor */
     border: 1px solid oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
     border-radius: var(--space-xs);
     padding: var(--space-md); 
     box-shadow: var(--lcd-active-shadow-inner-glow); 
     font-family: 'IBM Plex Mono', monospace;
     box-sizing: border-box;
-    opacity: var(--theme-component-opacity); /* Housing opacity is stable in theme-dim */
-    /* Text shadow alpha IS attenuated by startup-opacity-factor */
+    opacity: var(--theme-component-opacity); 
     text-shadow: 0 0 5px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0)));
 
+    display: flex;
+    flex-direction: column;
+    /* justify-content: center; -- Default, overridden by specific LCD types */
+    /* align-items: stretch; -- Default, overridden by specific LCD types */
+
+
     transition:
-        background-color var(--transition-duration-medium) ease, /* MODIFIED: Added background-color to transition */
+        background-color var(--transition-duration-medium) ease, 
         background-image var(--transition-duration-medium) ease,
         border-color var(--transition-duration-medium) ease,
         color var(--transition-duration-medium) ease,
@@ -53,66 +54,67 @@
     mix-blend-mode: var(--lcd-crt-overlay-blend-mode, multiply);
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * var(--startup-opacity-factor, 0)); 
     pointer-events: none;
-    z-index: 1; /* Ensure overlay is above background but below text/mood-matrix */
+    z-index: 1; 
     border-radius: inherit;
     transition: opacity var(--transition-duration-medium) ease;
 }
 
 /* Terminal LCD Specifics */
-.actual-lcd-screen-element { 
+.actual-lcd-screen-element.terminal-block { /* More specific selector for terminal */
     flex-grow: 1;
     min-height: 50px;
-    font-size: 0.95em;
+    font-size: var(--lcd-content-font-size, 0.95em); 
     font-weight: 500; 
     line-height: 1.4; 
     white-space: pre-wrap;
     word-break: break-all;
-    justify-content: flex-start;
-    align-items: flex-start;
+    justify-content: flex-start; /* MODIFIED: For top alignment of terminal content */
+    align-items: stretch; 
     text-align: left;
 }
-.actual-lcd-screen-element > #terminal-lcd-content {
-    /* opacity: 1; -- Already set in _terminal.css */
+.actual-lcd-screen-element.terminal-block > #terminal-lcd-content {
+    /* #terminal-lcd-content will naturally fill due to align-items:stretch */
 }
+
 /* Dial LCD Specifics */
-.hue-lcd-display {
-   height: var(--hue-lcd-display-height);
-   display: flex; /* MODIFIED: Changed to flex for mood matrix content if needed, or can be block */
-   flex-direction: column; /* MODIFIED: For mood matrix rows if they are direct children */
-   align-items: stretch; /* MODIFIED: For mood matrix rows */
-   justify-content: center; /* MODIFIED: For mood matrix rows */
+.hue-lcd-display { /* This is the main container for Dial A (Mood Matrix) and Dial B (Numeric) */
+   height: var(--hue-lcd-display-height); 
    flex-shrink: 0;
-   /* MODIFIED: Padding might be adjusted if mood-matrix rows handle their own internal padding */
-   /* padding: var(--space-sm);  Ensure this padding works with mood-matrix rows */
+   /* Default flex properties for .hue-lcd-display (can be overridden by more specific selectors) */
+   justify-content: center; 
+   align-items: center;   
 }
+
+/* Specific override for Dial A (Mood Matrix) container */
+.hue-lcd-display#hue-lcd-A {
+    justify-content: center; /* Vertically centers the mood-matrix-rows-wrapper */
+    align-items: stretch; /* Allows mood-matrix-rows-wrapper to take full width */
+}
+
 
 /* Numeric value span, now only for Dial B LCD */
 .hue-lcd-display#hue-lcd-B .lcd-value { 
-    position: relative;
-    z-index: 2; /* Above CRT overlay */
-    font-size: 1em;
+    /* Parent #hue-lcd-B uses justify/align:center, so this will be centered */
+    z-index: 2; 
+    font-size: var(--lcd-content-font-size, 1em); 
     font-weight: 600;
-    line-height: 1;
-    transition: color var(--transition-duration-medium) ease;
+    line-height: 1; 
+    transition: color var(--transition-duration-medium) ease, opacity var(--transition-duration-medium) ease;
     text-shadow: 0 0 5px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0)));
 }
 
 /* --- LCD State Classes --- */
 .lcd--unlit {
-    background-image: none !important; /* Important to override the base gradient */
+    background-image: none !important; 
     background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
-    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a)); /* Uses specific unlit text color */
+    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a)); 
     border-color: oklch(var(--lcd-unlit-border-l) var(--lcd-unlit-border-c) var(--lcd-unlit-border-h) / var(--lcd-unlit-border-a));
     box-shadow: var(--lcd-unlit-shadow);
-    text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0); /* No shadow when unlit */
+    text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0); 
 }
-/* For Dial B LCD numeric value when unlit */
 .lcd--unlit#hue-lcd-B .lcd-value { 
-    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
-    text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0);
-    opacity: 0; /* Ensure dial LCD text is hidden when screen is unlit */
+    opacity: 0; 
 }
-/* For Terminal content area when its parent screen is unlit */
 .lcd--unlit#terminal-lcd-content { 
      color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
 }
@@ -122,14 +124,13 @@
 
 
 .js-active-dim-lcd { 
-    background-image: none !important; /* Important to override the base gradient */
+    background-image: none !important; 
     background-color: oklch(var(--lcd-active-dim-bg-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-bg-a));
     color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
     border-color: oklch(var(--lcd-active-dim-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-border-a));
     box-shadow: var(--lcd-active-dim-shadow);
     text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5)); 
 }
-/* For Dial B LCD numeric value when active-dim */
 .js-active-dim-lcd#hue-lcd-B .lcd-value {
     color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
     text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5));
@@ -158,7 +159,6 @@
     border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
     text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7)); 
 }
-/* For Dial B LCD numeric value when dimly-lit */
 .lcd--dimly-lit#hue-lcd-B .lcd-value {
      color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
      text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7));
@@ -168,11 +168,4 @@
 }
 .lcd--dimly-lit::after { 
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 
-}
-
-/* Ensure Mood Matrix text within #hue-lcd-A inherits general LCD text color if not overridden by specific state */
-#hue-lcd-A .mood-matrix-row .mood-value,
-#hue-lcd-A .mood-matrix-row .mood-label {
-    /* Default color is set by .mood-matrix-row .mood-value/label in _mood-matrix-display.css */
-    /* This ensures they participate in the overall LCD text color transitions */
 }

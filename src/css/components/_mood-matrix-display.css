@@ -2,115 +2,103 @@
 /* Styles for the Mood Matrix Display, intended to be used within an LCD container like #hue-lcd-A */
 
 /*
-  The main container for these rows will be an existing LCD element, e.g., #hue-lcd-A.
-  That parent LCD element should have:
-  position: relative;
+  The parent LCD element (e.g., #hue-lcd-A) should have:
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch; 
+  position: relative; 
   overflow: hidden;
-  display: flex; // Optional, if rows need flex behavior from parent
-  flex-direction: column; // Optional
-  height: calc(2 * var(--mood-matrix-row-height)); // To clip to two rows
+  height: var(--hue-lcd-display-height);
+  padding-left: var(--space-md);
+  padding-right: var(--space-md);
+  box-sizing: border-box;
 */
 
+.mood-matrix-rows-wrapper {
+    position: relative; 
+    width: 100%;
+    /* Height is set by JS to 2 * var(--mood-matrix-row-height) */
+    /* This wrapper is centered by the parent LCD's flex properties */
+    overflow: hidden; 
+}
+
 .mood-matrix-row {
-    position: absolute; /* For GSAP y-translation and stacking */
-    left: 0; /* Aligns with parent LCD's padding */
-    width: 100%; /* Takes full width of parent LCD's content box */
+    position: absolute; 
+    left: 0; 
+    width: 100%; 
     height: var(--mood-matrix-row-height);
     display: flex;
-    align-items: baseline; /* Important for text alignment */
-    line-height: var(--mood-matrix-row-height); /* Vertically centers single-line text */
+    align-items: center; 
     font-family: 'IBM Plex Mono', monospace;
-    font-size: var(--lcd-content-font-size, 0.9em); /* Inherit or use specific size */
-    white-space: nowrap; /* Prevent wrapping */
+    font-size: var(--lcd-content-font-size, 0.9em); 
+    white-space: nowrap; 
+    box-sizing: border-box; 
     /* GSAP controls y and opacity */
 }
 
 .mood-matrix-row .mood-value,
 .mood-matrix-row .mood-label {
-    /* Base transition for color/opacity changes due to parent LCD state */
-    transition: color var(--transition-duration-medium) ease, opacity var(--transition-duration-medium) ease;
+    transition: color var(--transition-duration-fast) ease, opacity var(--transition-duration-fast) ease;
+    /* Default 'active' state color, L-reduction handled by oklch calc */
+    /* Specific hue is applied via CSS custom properties by JS */
+    opacity: 1;
 }
 
 .mood-matrix-row .mood-value {
-    width: var(--mood-matrix-value-width); /* e.g., 5ch from _variables-structural.css */
+    width: var(--mood-matrix-value-width); 
     text-align: right;
-    font-variant-numeric: tabular-nums; /* Ensures digits align */
-    padding-right: var(--space-xs); /* Space between value and label */
-    /* Base color from theme contract, L-reduction applied */
+    font-variant-numeric: tabular-nums;
     color: oklch(
         calc(var(--mood-matrix-value-text-l, var(--lcd-active-text-l)) * (1 - var(--startup-L-reduction-factor, 0)))
-        var(--mood-matrix-value-text-c, calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor))) /* Example fallback */
-        var(--mood-matrix-value-text-h, var(--dynamic-lcd-hue)) /* Example fallback */
+        var(--mood-matrix-value-base-chroma, var(--mood-matrix-label-base-chroma, 0.08)) 
+        var(--mood-value-specific-hue, var(--dynamic-lcd-hue)) 
         / var(--mood-matrix-value-text-a, var(--lcd-active-text-a))
     );
-    opacity: 1; /* Default opacity, can be overridden by states below */
+}
+
+.mood-matrix-row .mood-spacer {
+    width: var(--space-xs); 
+    display: inline-block; 
+    flex-shrink: 0;
 }
 
 .mood-matrix-row .mood-label {
     text-align: left;
     flex-grow: 1;
-    overflow: hidden; /* Prevent long labels from breaking layout */
-    text-overflow: ellipsis; /* Show ... for very long labels if they somehow occur */
-    /* Base color from theme contract, L-reduction applied */
+    overflow: hidden; 
+    text-overflow: ellipsis;
     color: oklch(
         calc(var(--mood-matrix-label-text-l, var(--lcd-active-text-l)) * (1 - var(--startup-L-reduction-factor, 0)))
-        var(--mood-matrix-label-text-c, calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor))) /* Example fallback */
-        var(--mood-matrix-label-text-h, var(--dynamic-lcd-hue)) /* Example fallback */
+        var(--mood-matrix-label-base-chroma, 0.08) 
+        var(--mood-label-specific-hue, var(--dynamic-lcd-hue)) 
         / var(--mood-matrix-label-text-a, var(--lcd-active-text-a))
     );
-    opacity: 1; /* Default opacity */
 }
 
-/* Styling for text when parent LCD is in a specific state */
-/* These classes are added by moodMatrixDisplayManager.js to the text spans */
-
+/* Text styling based on classes applied by JS (reflecting parent LCD state) */
 .mood-matrix-row .text-is-unlit {
-    opacity: 0 !important; /* Effectively invisible */
+    opacity: 0 !important;
+    color: transparent !important; 
 }
 
 .mood-matrix-row .text-is-dimly-lit.mood-value {
     color: oklch(
         calc(var(--lcd-dimly-lit-text-l) * (1 - var(--startup-L-reduction-factor, 0)))
-        calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor, 0))
-        var(--dynamic-lcd-hue)
+        var(--mood-matrix-value-base-chroma, var(--mood-matrix-label-base-chroma, 0.08))
+        var(--mood-value-specific-hue, var(--dynamic-lcd-hue))
         / var(--lcd-dimly-lit-text-a)
     );
     opacity: 1;
 }
 .mood-matrix-row .text-is-dimly-lit.mood-label {
     color: oklch(
-        calc(var(--lcd-dimly-lit-text-l) * (1 - var(--startup-L-reduction-factor, 0)))
-        calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor, 0))
-        var(--dynamic-lcd-hue)
+        calc(var(--mood-matrix-label-text-l, var(--lcd-dimly-lit-text-l)) * (1 - var(--startup-L-reduction-factor, 0)))
+        var(--mood-matrix-label-base-chroma, 0.08)
+        var(--mood-label-specific-hue, var(--dynamic-lcd-hue))
         / var(--lcd-dimly-lit-text-a)
     );
     opacity: 1;
 }
 
-.mood-matrix-row .text-is-active.mood-value {
-    color: oklch(
-        calc(var(--lcd-active-text-l) * (1 - var(--startup-L-reduction-factor, 0)))
-        calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor))
-        var(--dynamic-lcd-hue)
-        / var(--lcd-active-text-a)
-    );
-    opacity: 1;
-}
-.mood-matrix-row .text-is-active.mood-label {
-    color: oklch(
-        calc(var(--lcd-active-text-l) * (1 - var(--startup-L-reduction-factor, 0)))
-        calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor))
-        var(--dynamic-lcd-hue)
-        / var(--lcd-active-text-a)
-    );
-    opacity: 1;
-}
-
-/*
-  The overall opacity of the mood matrix display (as a whole, if needed beyond text)
-  can be controlled by the parent LCD's opacity or by applying
-  `opacity: var(--startup-opacity-factor, 1);` to a wrapper if one were used.
-  Since it's embedded in the LCD, the LCD's own opacity handling during startup
-  (e.g. from uiUpdater.js setting autoAlpha on the LCD container) will affect it.
-  The text color L-reduction handles the dimming of text itself.
-*/
+/* .text-is-active uses the default styling for .mood-value and .mood-label defined above */

@@ -5,12 +5,12 @@
     /* --- Dynamic Color Inputs (Controlled by JS/HUE ASSN via uiUpdater.js) --- */
     --dynamic-env-hue: 246;
     --dynamic-env-chroma: 0.039;
-    --dynamic-lcd-hue: 0; /* Default for colorless LCD */
-    --dynamic-lcd-chroma: 0; /* Default for colorless LCD */
+    --dynamic-lcd-hue: 0; 
+    --dynamic-lcd-chroma: 0; 
     --dynamic-logo-hue: 246;
     --dynamic-logo-chroma: 0.099;
-    --dynamic-btn-hue: 0; /* Default for colorless buttons */
-    --dynamic-btn-chroma: 0; /* Default for colorless buttons */
+    --dynamic-btn-hue: 0; 
+    --dynamic-btn-chroma: 0; 
     --dynamic-ui-accent-hue: 246;
     --dynamic-ui-accent-chroma: 0.20;
     --dynamic-lens-super-glow-hue: 240;
@@ -24,8 +24,8 @@
     /* --- Body Background --- */
     --body-bg-top-l: 0.33;     --body-bg-top-c: var(--dynamic-env-chroma);    --body-bg-top-h: var(--dynamic-env-hue);    --body-bg-top-a: 1;
     --body-bg-bottom-l: 0.18;  --body-bg-bottom-c: var(--dynamic-env-chroma); --body-bg-bottom-h: var(--dynamic-env-hue); --body-bg-bottom-a: 1;
-    --noise-base-opacity: 0.1; /* Base opacity for noise texture on body */
-    --noise-blend-mode: multiply; /* Blend mode for noise texture on body */
+    --noise-base-opacity: 0.1; 
+    --noise-blend-mode: multiply; 
 
 
     /* --- Panel Bezel & Sections --- */
@@ -129,8 +129,8 @@
     --lcd-active-grad-start-l: 0.10;
     --lcd-active-grad-end-l: 0.06;
     --lcd-active-text-l: 0.92; 
-    --lcd-active-text-c: var(--dynamic-lcd-chroma); /* MODIFIED: Use dynamic LCD chroma for active text */
-    --lcd-active-text-h: var(--dynamic-lcd-hue);    /* MODIFIED: Use dynamic LCD hue for active text */
+    --lcd-active-text-c: var(--dynamic-lcd-chroma); 
+    --lcd-active-text-h: var(--dynamic-lcd-hue);    
     --lcd-active-text-a: 1;
     --lcd-active-border-l: 0.12;     --lcd-active-border-c: var(--dynamic-lcd-chroma);     --lcd-active-border-h: var(--dynamic-lcd-hue); --lcd-active-border-a: 0.6;
     --lcd-active-inner-glow-bottom-l: 0.95; --lcd-active-inner-glow-bottom-c: var(--dynamic-lcd-chroma); --lcd-active-inner-glow-bottom-h: var(--dynamic-lcd-hue); --lcd-active-inner-glow-bottom-a: 0.1;
@@ -138,7 +138,7 @@
     --lcd-active-shadow-inner-glow:
         inset 0px -3px 10px 0px oklch(var(--lcd-active-inner-glow-bottom-l) var(--lcd-active-inner-glow-bottom-c) var(--lcd-active-inner-glow-bottom-h) / var(--lcd-active-inner-glow-bottom-a)),
         inset 0px 0px 18px -8px oklch(var(--lcd-active-inner-glow-diffuse-l) var(--lcd-active-inner-glow-diffuse-c) var(--lcd-active-inner-glow-diffuse-h) / var(--lcd-active-inner-glow-diffuse-a));
-    --lcd-base-chroma-factor: 1.0; /* Factor to multiply dynamic chroma by for LCD elements */
+    --lcd-base-chroma-factor: 1.0; 
 
     --lcd-unlit-bg-l: 0.02; --lcd-unlit-bg-c: 0; --lcd-unlit-bg-h: 0; --lcd-unlit-bg-a: 0.4;
     --lcd-unlit-text-l: 0.90; 
@@ -151,7 +151,7 @@
     --lcd-active-dim-text-c: var(--dynamic-lcd-chroma); --lcd-active-dim-text-h: var(--dynamic-lcd-hue); --lcd-active-dim-text-a: 1;
     --lcd-active-dim-border-l: 0.10; --lcd-active-dim-border-c: var(--dynamic-lcd-chroma); --lcd-active-dim-border-h: var(--dynamic-lcd-hue); --lcd-active-dim-border-a: 0.3;
     --lcd-active-dim-shadow: none;
-    --lcd-active-dim-chroma-factor: 0.5; /* Chroma factor for active-dim state */
+    --lcd-active-dim-chroma-factor: 0.5; 
     --lcd-dim-active-text-l: var(--lcd-active-dim-text-l); --lcd-dim-active-text-c: var(--lcd-active-dim-text-c); --lcd-dim-active-text-h: var(--lcd-active-dim-text-h);
 
     --lcd-dimly-lit-grad-start-l: 0.32;
@@ -159,11 +159,11 @@
     --lcd-dimly-lit-text-l: 0.90; 
     --lcd-dimly-lit-text-c: var(--dynamic-lcd-chroma); --lcd-dimly-lit-text-h: var(--dynamic-lcd-hue); --lcd-dimly-lit-text-a: 1;
     --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.15);
-    --lcd-dimly-lit-chroma-factor: 0.3; /* Chroma factor for dimly-lit state */
+    --lcd-dimly-lit-chroma-factor: 0.3; 
 
     --lcd-text-shadow-base-alpha: 0.3; 
     --lcd-crt-overlay-opacity: 0.2; 
-    --lcd-content-font-size: 0.9em; /* Default font size for LCD content like Mood Matrix */
+    --lcd-content-font-size: 0.9em; 
 
 
     --lcd-glow-opacity: 0;
@@ -171,18 +171,18 @@
     --lcd-glow-spread: 2px;
     --lcd-glow-color: oklch(1 0 0 / var(--lcd-glow-opacity));
 
-    /* NEW: Mood Matrix Display Text Colors (can reuse LCD active/dimly-lit or define specifics) */
-    /* Option 1: Reuse existing LCD text vars (shown in _mood-matrix-display.css) */
-    /* Option 2: Define specific vars if different styling is needed */
+    /* Mood Matrix Display Text Colors */
     --mood-matrix-value-text-l: var(--lcd-active-text-l);
-    --mood-matrix-value-text-c: var(--lcd-active-text-c);
-    --mood-matrix-value-text-h: var(--lcd-active-text-h);
+    /* --mood-matrix-value-text-c: var(--lcd-active-text-c); -- Chroma will come from specific hue */
+    /* --mood-matrix-value-text-h: var(--lcd-active-text-h); -- Hue will come from specific hue */
     --mood-matrix-value-text-a: var(--lcd-active-text-a);
+    --mood-matrix-value-base-chroma: 0.08; /* Base chroma for the value's specific hue tint */
 
-    --mood-matrix-label-text-l: var(--lcd-active-text-l); /* Or use --theme-text-secondary-l for less emphasis */
-    --mood-matrix-label-text-c: var(--lcd-active-text-c);
-    --mood-matrix-label-text-h: var(--lcd-active-text-h);
+    --mood-matrix-label-text-l: var(--lcd-active-text-l); 
+    /* --mood-matrix-label-text-c: var(--lcd-active-text-c); -- Chroma will come from specific hue */
+    /* --mood-matrix-label-text-h: var(--lcd-active-text-h); -- Hue will come from specific hue */
     --mood-matrix-label-text-a: var(--lcd-active-text-a);
+    --mood-matrix-label-base-chroma: 0.08; /* Base chroma for the label's specific hue tint */
 
 
     /* --- Component: Dials --- */
