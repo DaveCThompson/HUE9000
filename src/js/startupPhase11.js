@@ -20,7 +20,6 @@ export async function createPhaseTimeline(dependencies) {
 
             // 1. Emit Terminal Message
             const messageKey = 'P11_SYSTEM_OPERATIONAL';
-            const messageTextForDurationCalc = startupMessages[messageKey] || ""; // Use imported
             appStateService.emit('requestTerminalMessage', {
                 type: 'startup',
                 source: messageKey,
@@ -63,8 +62,25 @@ export async function createPhaseTimeline(dependencies) {
 
             // 6. Ensure Minimum Duration
             let phaseDurationSeconds = configModule.SYSTEM_READY_PHASE_DURATION || 0.1;
-            if (messageTextForDurationCalc) {
-                const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
+
+            // Calculate duration for multi-line messages
+            const messageContent = startupMessages[messageKey];
+            let totalCharactersToType = 0;
+            let interLineDelayMs = 0;
+
+            if (Array.isArray(messageContent)) {
+                messageContent.forEach(line => {
+                    totalCharactersToType += (line || "").length;
+                });
+                if (messageContent.length > 1) {
+                    interLineDelayMs = (messageContent.length - 1) * (configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS / 2);
+                }
+            } else {
+                totalCharactersToType = (messageContent || "").length;
+            }
+
+            if (totalCharactersToType > 0) {
+                const typingDurationMs = (totalCharactersToType * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) + interLineDelayMs;
                 phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2);
             }
             phaseDurationSeconds = Math.max(phaseDurationSeconds, configModule.MIN_PHASE_DURATION_FOR_STEPPING);

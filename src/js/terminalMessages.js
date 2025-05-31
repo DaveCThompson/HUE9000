@@ -6,7 +6,7 @@
 
 // Startup Sequence Messages
 export const startupMessages = {
-    P1_EMERGENCY_SUBSYSTEMS: "GOOD MORNING. INITIATING STARTUP PROTOCOL",
+    P1_EMERGENCY_SUBSYSTEMS: "INITIATING STARTUP PROTOCOL",
     P2_BACKUP_POWER: "> BACKUP POWER ENGAGED",
     P3_MAIN_POWER_ONLINE: "> MAIN POWER STABLE",
     P4_OPTICAL_CORE_REACTIVATE: "> OPTICAL CORE REACTIVATED",
@@ -15,7 +15,10 @@ export const startupMessages = {
     P7_HUE_CORRECTION_SYSTEMS: "> HUE SYSTEMS ALIGNED",
     P8_EXTERNAL_LIGHTING_CONTROLS: "> EXTERNAL LIGHTING RESPONSIVE",
     P9_AUX_LIGHTING_LOW: "> AUX LIGHTING: LOW INTENSITY",
-    P11_SYSTEM_OPERATIONAL: "ALL SYSTEMS NOMINAL. HUE 9000 OPERATIONAL",
+    P11_SYSTEM_OPERATIONAL: [
+        "ALL SYSTEMS NOMINAL",
+        "HUE 9000 OPERATIONAL"
+    ],
 };
 
 // Block Messages (Triggered by BTN1-4)
@@ -45,7 +48,7 @@ const blockMessages = {
         "  - POWER REGULATION: STABLE.",
         "ALL SYSTEMS FUNCTIONING WITHIN NORMAL PARAMETERS."
     ],
-    BTN4_MESSAGE: [ 
+    BTN4_MESSAGE: [
         "SYSTEM STATUS QUERY:",
         "  - CURRENT OPERATING THEME: {currentTheme}",
         "  - LENS POWER OUTPUT: {lensPower}%",
@@ -74,7 +77,7 @@ const statusMessageTemplates = {
 export function getMessage(payload, currentAppState = {}, configModule = null) { // Added configModule as param
     const { type, source, data, messageKey } = payload || {};
 
-    if (payload && payload.content && Array.isArray(payload.content)) { 
+    if (payload && payload.content && Array.isArray(payload.content)) {
         return payload.content;
     }
     if (payload && payload.content && typeof payload.content === 'string') {
@@ -84,14 +87,17 @@ export function getMessage(payload, currentAppState = {}, configModule = null) {
 
     switch (type) {
         case 'startup':
-            return [startupMessages[messageKey || source] || `Unknown startup event: ${messageKey || source}`];
+            const msg = startupMessages[messageKey || source] || `Unknown startup event: ${messageKey || source}`;
+            // If msg is already an array (for our multi-line messages), return it directly.
+            // Otherwise, wrap the single string message in an array.
+            return Array.isArray(msg) ? msg : [msg];
 
         case 'block':
             if (messageKey && blockMessages[messageKey]) {
                 if (messageKey === 'BTN4_MESSAGE') {
                     // Ensure configModule and its DEFAULT_DIAL_A_HUE are available
                     const defaultDialAHue = configModule?.DEFAULT_DIAL_A_HUE ?? 'N/A_CONF';
-                    
+
                     return blockMessages[messageKey].map(line =>
                         line.replace('{currentTheme}', currentAppState.theme || 'N/A')
                             .replace('{lensPower}', currentAppState.lensPower !== undefined ? Math.round(currentAppState.lensPower * 100) : 'N/A')
@@ -108,7 +114,7 @@ export function getMessage(payload, currentAppState = {}, configModule = null) {
             return [`Unknown block message key: ${messageKey || source}`];
 
         case 'status':
-            if (messageKey && statusMessageTemplates[messageKey] && data) { 
+            if (messageKey && statusMessageTemplates[messageKey] && data) {
                 return [statusMessageTemplates[messageKey](data)];
             }
             if (statusMessageTemplates[source] && data) {

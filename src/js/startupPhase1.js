@@ -4,7 +4,7 @@
  * of the HUE 9000 startup sequence.
  * This module is an XState service, returning a Promise.
  */
-import { startupMessages } from './terminalMessages.js'; 
+import { startupMessages } from './terminalMessages.js';
 
 export async function createPhaseTimeline(dependencies) {
     const {
@@ -59,39 +59,55 @@ export async function createPhaseTimeline(dependencies) {
                 }, "start_P1_effects");
                 factorsTweened = true;
             }
-            
+
             // Check if 'isStepThroughMode' is correctly accessed from the full dependencies object
             const isStepThrough = dependencies.dependencies?.isStepThroughMode || dependencies.isStepThroughMode; // Adjust based on how it's nested
 
             const currentBodyOpacity = parseFloat(gsap.getProperty(domElementsRegistry.body, "opacity"));
-            if (currentBodyOpacity < 1 && !isStepThrough) { 
+            if (currentBodyOpacity < 1 && !isStepThrough) {
                 tl.to(domElementsRegistry.body, {
                     opacity: 1,
                     duration: configModule.BODY_FADE_IN_DURATION,
                     ease: "power1.inOut"
-                }, factorsTweened ? "<" : "start_P1_effects"); 
-            } else if (tl.getChildren(true,true,true,0).length === 0 && !factorsTweened) { 
-                tl.to({}, {duration: 0.01}, "start_P1_effects"); 
+                }, factorsTweened ? "<" : "start_P1_effects");
+            } else if (tl.getChildren(true,true,true,0).length === 0 && !factorsTweened) {
+                tl.to({}, {duration: 0.01}, "start_P1_effects");
             }
 
             // 3. Emit Terminal Message
             const messageKey = 'P1_EMERGENCY_SUBSYSTEMS'; // Corrected message key for P1
-            const messageTextForDurationCalc = startupMessages[messageKey] || "";
             appStateService.emit('requestTerminalMessage', {
                 type: 'startup',
-                source: messageKey, 
-                messageKey: messageKey, 
+                source: messageKey,
+                messageKey: messageKey,
             });
-            
+
             // Phase 1 does NOT interact with main power buttons. Removed that logic.
 
             // 4. Ensure Minimum Duration & Add Pause for Auto-Play
             let phaseDurationSeconds = Math.max(configModule.MIN_PHASE_DURATION_FOR_STEPPING, factorAnimationDuration, configModule.BODY_FADE_IN_DURATION);
-            if (messageTextForDurationCalc) {
-                const typingDurationMs = messageTextForDurationCalc.length * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
+
+            // Calculate duration for multi-line messages
+            const messageContent = startupMessages[messageKey];
+            let totalCharactersToType = 0;
+            let interLineDelayMs = 0;
+
+            if (Array.isArray(messageContent)) {
+                messageContent.forEach(line => {
+                    totalCharactersToType += (line || "").length;
+                });
+                if (messageContent.length > 1) {
+                    interLineDelayMs = (messageContent.length - 1) * (configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS / 2);
+                }
+            } else {
+                totalCharactersToType = (messageContent || "").length;
+            }
+
+            if (totalCharactersToType > 0) {
+                const typingDurationMs = (totalCharactersToType * configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) + interLineDelayMs;
                 phaseDurationSeconds = Math.max(phaseDurationSeconds, typingDurationMs / 1000 + 0.2);
             }
-            
+
             // Ensure the timeline runs at least as long as calculated phase-specific content
             if (tl.duration() < phaseDurationSeconds) {
                 tl.to({}, { duration: phaseDurationSeconds - tl.duration() });
@@ -101,7 +117,7 @@ export async function createPhaseTimeline(dependencies) {
             if (!isStepThrough) {
                 tl.to({}, { duration: 0.5 }); // Add the pause
             }
-            
+
             // Final safety net for empty timelines (should ideally not be hit if phases have content)
             // or if only pause was added.
             if (tl.duration() < configModule.MIN_PHASE_DURATION_FOR_STEPPING && isStepThrough) {
