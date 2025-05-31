@@ -4,8 +4,8 @@
 .actual-lcd-screen-element,
 .hue-lcd-display {
     width: 100%;
-    position: relative;
-    overflow: hidden;
+    position: relative; /* MODIFIED: Added for mood-matrix-row positioning */
+    overflow: hidden; /* MODIFIED: Added to clip mood-matrix-rows */
     /* MODIFIED: Added background-color as a fallback for the gradient */
     background-color: oklch(
         var(--lcd-active-grad-end-l) /* Use the L value of the darkest part of the gradient */
@@ -53,7 +53,7 @@
     mix-blend-mode: var(--lcd-crt-overlay-blend-mode, multiply);
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * var(--startup-opacity-factor, 0)); 
     pointer-events: none;
-    z-index: 1;
+    z-index: 1; /* Ensure overlay is above background but below text/mood-matrix */
     border-radius: inherit;
     transition: opacity var(--transition-duration-medium) ease;
 }
@@ -74,27 +74,27 @@
 .actual-lcd-screen-element > #terminal-lcd-content {
     /* opacity: 1; -- Already set in _terminal.css */
 }
-.hue-lcd-display > .lcd-value { 
-    position: relative;
-    z-index: 2;
-}
-
-
 /* Dial LCD Specifics */
 .hue-lcd-display {
    height: var(--hue-lcd-display-height);
-   display: flex;
-   align-items: center;
-   justify-content: center;
+   display: flex; /* MODIFIED: Changed to flex for mood matrix content if needed, or can be block */
+   flex-direction: column; /* MODIFIED: For mood matrix rows if they are direct children */
+   align-items: stretch; /* MODIFIED: For mood matrix rows */
+   justify-content: center; /* MODIFIED: For mood matrix rows */
    flex-shrink: 0;
+   /* MODIFIED: Padding might be adjusted if mood-matrix rows handle their own internal padding */
+   /* padding: var(--space-sm);  Ensure this padding works with mood-matrix rows */
 }
 
-.hue-lcd-display .lcd-value {
-   font-size: 1em;
-   font-weight: 600;
-   line-height: 1;
-   transition: color var(--transition-duration-medium) ease;
-   text-shadow: 0 0 5px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0)));
+/* Numeric value span, now only for Dial B LCD */
+.hue-lcd-display#hue-lcd-B .lcd-value { 
+    position: relative;
+    z-index: 2; /* Above CRT overlay */
+    font-size: 1em;
+    font-weight: 600;
+    line-height: 1;
+    transition: color var(--transition-duration-medium) ease;
+    text-shadow: 0 0 5px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0)));
 }
 
 /* --- LCD State Classes --- */
@@ -106,14 +106,15 @@
     box-shadow: var(--lcd-unlit-shadow);
     text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0); /* No shadow when unlit */
 }
-.lcd--unlit .lcd-value { /* For Dial LCDs when unlit */
+/* For Dial B LCD numeric value when unlit */
+.lcd--unlit#hue-lcd-B .lcd-value { 
     color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
     text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0);
     opacity: 0; /* Ensure dial LCD text is hidden when screen is unlit */
 }
-.lcd--unlit#terminal-lcd-content { /* For Terminal content area when its parent screen is unlit */
+/* For Terminal content area when its parent screen is unlit */
+.lcd--unlit#terminal-lcd-content { 
      color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
-     /* MODIFIED: Removed text-shadow rule from here. Glow is controlled by _terminal.css */
 }
 .lcd--unlit::after { 
     opacity: 0 !important; 
@@ -128,13 +129,13 @@
     box-shadow: var(--lcd-active-dim-shadow);
     text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5)); 
 }
-.js-active-dim-lcd .lcd-value {
+/* For Dial B LCD numeric value when active-dim */
+.js-active-dim-lcd#hue-lcd-B .lcd-value {
     color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
     text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5));
 }
 .js-active-dim-lcd#terminal-lcd-content { 
      color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
-     /* MODIFIED: Removed text-shadow rule from here. Glow is controlled by _terminal.css */
 }
 .js-active-dim-lcd::after { 
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 
@@ -142,12 +143,11 @@
 
 
 .lcd--dimly-lit { 
-    /* MODIFIED: Ensure background-color is also set for dimly-lit state */
     background-color: oklch(
-        var(--lcd-dimly-lit-grad-end-l) /* Use the L value of the darkest part of its gradient */
+        var(--lcd-dimly-lit-grad-end-l) 
         calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) 
         var(--dynamic-lcd-hue)
-    ) !important; /* Important to ensure it overrides the base background-color if needed */
+    ) !important; 
     background-image: radial-gradient(circle,
         oklch(var(--lcd-dimly-lit-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
         oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100%
@@ -158,14 +158,21 @@
     border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
     text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7)); 
 }
-.lcd--dimly-lit .lcd-value {
+/* For Dial B LCD numeric value when dimly-lit */
+.lcd--dimly-lit#hue-lcd-B .lcd-value {
      color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
      text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7));
 }
 .lcd--dimly-lit#terminal-lcd-content { 
      color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-     /* MODIFIED: Removed text-shadow rule from here. Glow is controlled by _terminal.css */
 }
 .lcd--dimly-lit::after { 
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 
+}
+
+/* Ensure Mood Matrix text within #hue-lcd-A inherits general LCD text color if not overridden by specific state */
+#hue-lcd-A .mood-matrix-row .mood-value,
+#hue-lcd-A .mood-matrix-row .mood-label {
+    /* Default color is set by .mood-matrix-row .mood-value/label in _mood-matrix-display.css */
+    /* This ensures they participate in the overall LCD text color transitions */
 }

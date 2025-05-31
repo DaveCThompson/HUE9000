@@ -26,6 +26,7 @@
 @import url('./components/_color-chips.css');
 @import url('./components/_grill.css');
 @import url('./components/_terminal.css'); 
+@import url('./components/_mood-matrix-display.css'); /* NEW: Import Mood Matrix Display styles */
 /* ... import other component stylesheets as they are created ... */
 
 /* --- Animations & Effects --- */

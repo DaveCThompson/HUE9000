@@ -7,7 +7,7 @@
  */
 import { HUE_ASSIGNMENT_ROW_HUES, DEFAULT_ASSIGNMENT_SELECTIONS, DEFAULT_DIAL_A_HUE } from './config.js';
 
-const DEBUG_APP_STATE = true; // Global debug flag for appState logging
+const DEBUG_APP_STATE = false; // Global debug flag for appState logging (set to false to reduce console noise)
 
 // --- Simple Event Emitter Implementation ---
 class EventEmitter {
@@ -29,8 +29,6 @@ class EventEmitter {
       listener => listener !== listenerToRemove
     );
   }
-  // Removed emit from here, will be a standalone exported function
-  // emit(eventName, payload) { ... }
 }
 
 const emitter = new EventEmitter();
@@ -42,7 +40,7 @@ export function emit(eventName, payload) {
         if (payload && typeof payload === 'object' && Object.keys(payload).length > 3) { 
             payloadSummary = `{ ${Object.keys(payload).join(', ')}, ... }`;
         }
-        console.log(`[AppState EMIT] Event: '${eventName}'. Payload:`, payloadSummary !== undefined ? payloadSummary : 'N/A', payload !== undefined && payloadSummary !== payload ? { fullPayload: payload } : '');
+        // console.log(`[AppState EMIT] Event: '${eventName}'. Payload:`, payloadSummary !== undefined ? payloadSummary : 'N/A', payload !== undefined && payloadSummary !== payload ? { fullPayload: payload } : '');
     }
     if (!emitter.events[eventName]) return;
     emitter.events[eventName].forEach(listener => {
@@ -82,7 +80,6 @@ export function getDialState(dialId) {
     if (DEBUG_APP_STATE) console.warn(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual: Undefined (not initialized).`);
     return undefined;
   }
-  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual:`, JSON.parse(JSON.stringify(dial)));
   return { ...dial }; // Return a clone
 }
 
@@ -92,28 +89,22 @@ export function getTargetColorProperties(targetKey) {
     if (DEBUG_APP_STATE) console.warn(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual: Undefined (invalid key).`);
     return undefined;
   }
-  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual:`, JSON.parse(JSON.stringify(props)));
   return { ...props };
 }
 
 export function getCurrentTheme() { 
-  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: currentTheme. Requested: Value. Actual: '${currentTheme}'`);
   return currentTheme; 
 }
 export function getTrueLensPower() { 
-  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: trueLensPower. Requested: Value. Actual: ${currentTrueLensPower.toFixed(3)}`);
   return currentTrueLensPower; 
 }
 export function getDialBInteractionState() { 
-  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: dialBInteractionState. Requested: Value. Actual: '${dialBInteractionState}'`);
   return dialBInteractionState; 
 }
 export function getAppStatus() { 
-  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: appStatus. Requested: Value. Actual: '${appStatus}'`);
   return appStatus; 
 }
 export function getCurrentStartupPhaseNumber() {
-  // if (DEBUG_APP_STATE) console.log(`[AppState GET] Target: currentStartupPhaseNumber. Requested: Value. Actual: ${currentStartupPhaseNumber}`);
   return currentStartupPhaseNumber;
 }
 
@@ -220,7 +211,7 @@ export function setCurrentStartupPhaseNumber(phaseNumber) {
 export function subscribe(eventName, listener) {
   if (typeof listener !== 'function') {
         if (DEBUG_APP_STATE) console.error(`[AppState Subscribe] Listener for event '${eventName}' is not a function.`);
-        return () => {};
+        return () => {}; // Return a no-op unsubscriber
     }
   return emitter.on(eventName, listener);
 }

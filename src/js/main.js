@@ -23,6 +23,7 @@ import * as debugManager from './debugManager.js';
 import * as startupSequenceManager from './startupSequenceManager.js';
 import * as uiUpdater from './uiUpdater.js';
 import AmbientAnimationManager from './AmbientAnimationManager.js'; 
+import MoodMatrixDisplayManager from './moodMatrixDisplayManager.js'; // NEW: Import MoodMatrixDisplayManager
 
 // DOM Element References
 const domElements = {
@@ -53,7 +54,7 @@ const domElements = {
     // Dials & Associated LCDs
     dialA: document.getElementById('dial-canvas-container-A'),
     dialB: document.getElementById('dial-canvas-container-B'),
-    lcdA: document.getElementById('hue-lcd-A'),
+    lcdA: document.getElementById('hue-lcd-A'), // This will be the container for MoodMatrix
     lcdB: document.getElementById('hue-lcd-B'),
 
     // Terminal
@@ -82,6 +83,7 @@ const domElements = {
     debugPhaseInfo: document.getElementById('debug-phase-info'),
 
     elementsAnimatedOnDimExit: []
+    // moodMatrixDisplay: document.getElementById('mood-matrix-display'), // Not needed if lcdA is the container
 };
 
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -92,14 +94,14 @@ function initializeApp() {
 
     const buttonManagerInstance = new ButtonManager(gsap, appState, configModule);
     const ambientAnimationManagerInstance = new AmbientAnimationManager(gsap, appState, buttonManagerInstance, configModule);
+    const moodMatrixDisplayManagerInstance = new MoodMatrixDisplayManager(domElements.lcdA, gsap, appState, configModule); // NEW
 
-    uiUpdater.init(domElements, configModule, gsap); // uiUpdater needs gsap for setLcdState flickers
+    uiUpdater.init(domElements, configModule, gsap); 
     dialManager.init([domElements.dialA, domElements.dialB], appState, configModule, gsap);
     const hueAssignmentColumnElements = Array.from(document.querySelectorAll('.hue-assignment-column[data-assignment-target]'));
     gridManager.init(hueAssignmentColumnElements, buttonManagerInstance);
     lensManager.init(domElements.root, domElements.colorLensGradient, configModule, gsap);
     
-    // Initialize TerminalManager instance
     terminalManagerInstance.init(domElements.terminalContainer, domElements.terminalLcdContentElement, appState, configModule, gsap);
 
     buttonManagerInstance.setUiUpdater(uiUpdater);
@@ -112,6 +114,7 @@ function initializeApp() {
     );
 
     ambientAnimationManagerInstance.init();
+    // MoodMatrixDisplayManager is already initialized above
 
     const managerReferencesForStartup = {
         buttonManager: buttonManagerInstance,
@@ -119,10 +122,11 @@ function initializeApp() {
         gridManager: gridManager,
         toggleManager: toggleManager,
         lensManager: lensManager,
-        terminalManager: terminalManagerInstance, // Pass the initialized instance
+        terminalManager: terminalManagerInstance, 
         uiUpdater: uiUpdater,
         debugManager: debugManager,
-        ambientAnimationManager: ambientAnimationManagerInstance
+        ambientAnimationManager: ambientAnimationManagerInstance,
+        moodMatrixDisplayManager: moodMatrixDisplayManagerInstance // NEW: Add to startup dependencies if needed by phases
     };
 
     startupSequenceManager.init({

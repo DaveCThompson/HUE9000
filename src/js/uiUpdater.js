@@ -1,6 +1,9 @@
 /**
  * @module uiUpdater (REFACTOR-V2.1)
- * ...
+ * @description Handles global UI updates such as theme changes, LCD content/state,
+ * dynamic CSS variable updates for HUE assignments, and logo injection/styling.
+ * Interacts with appState for data and emits events for other modules if needed.
+ * Includes console logging for key operations.
  */
 
 import {
@@ -9,7 +12,8 @@ import {
     getTargetColorProperties,
     getTrueLensPower,
     getAppStatus,
-    getCurrentStartupPhaseNumber 
+    getCurrentStartupPhaseNumber,
+    emit as emitAppStateEvent // Import emit from appState
 } from './appState.js';
 import { createAdvancedFlicker } from './animationUtils.js';
 
@@ -25,7 +29,7 @@ const uiElements = {
 let lastLcdValues = { A: null, B: null };
 let localConfigModule = null;
 let localGsap = null;
-let debugLcd = true; 
+let debugLcd = false; // Set to true for detailed LCD logging
 
 const MANAGED_LCD_CLASSES = ['lcd--unlit', 'js-active-dim-lcd', 'lcd--dimly-lit'];
 
@@ -47,7 +51,7 @@ export function init(elements, configModuleParam, gsapInstance) {
 
   try {
       subscribe('themeChanged', handleThemeChange);
-      subscribe('dialUpdated', handleDialUpdateForLcdA); 
+      // Removed: subscribe('dialUpdated', handleDialUpdateForLcdA); // MoodMatrixDisplayManager handles Dial A LCD content
       subscribe('dialUpdated', handleDialAUpdateForUIAccentAndLogoSwatch);
       subscribe('targetColorChanged', handleTargetColorChangeForDynamicCSSVars);
       subscribe('trueLensPowerChanged', handleTrueLensPowerChangeForLcdB); 
@@ -87,7 +91,10 @@ export function setLcdState(lcdElementOrContainer, stateName, options = {}) {
     let contentAreaElement = null; 
 
     if (lcdElementOrContainer.classList.contains('hue-lcd-display')) { 
-        textValueSpan = lcdElementOrContainer.querySelector('.lcd-value');
+        // For Dial LCDs (A and B), textValueSpan is for numeric display (Dial B only now)
+        if (lcdElementOrContainer.id === uiElements.lcdB?.id) { // Only get valueSpan for Dial B
+            textValueSpan = lcdElementOrContainer.querySelector('.lcd-value');
+        }
     } else if (lcdElementOrContainer.classList.contains('actual-lcd-screen-element')) { 
         contentAreaElement = uiElements.terminalLcdContentElement;
     } else if (lcdElementOrContainer.id === 'terminal-lcd-content') { 
@@ -95,7 +102,10 @@ export function setLcdState(lcdElementOrContainer, stateName, options = {}) {
         contentAreaElement = lcdElementOrContainer;
     } else {
         console.warn(`[UIUpdater setLcdState - ${targetIdForLog} - ${phaseContext}] Unknown LCD element structure.`);
-        textValueSpan = lcdElementOrContainer.querySelector('.lcd-value') || lcdElementOrContainer;
+        // Fallback for Dial B if structure is unexpected
+        if (lcdElementOrContainer.id === uiElements.lcdB?.id) {
+            textValueSpan = lcdElementOrContainer.querySelector('.lcd-value') || lcdElementOrContainer;
+        }
     }
 
     let flickerResult = { timeline: localGsap.timeline().to({}, {duration: 0.001}), completionPromise: Promise.resolve() };
@@ -118,7 +128,7 @@ export function setLcdState(lcdElementOrContainer, stateName, options = {}) {
     if (useFlicker && profileStartsFromUnlit) {
         if (debugLcd) console.log(`[UIUpdater setLcdState - ${targetIdForLog} - ${phaseContext}] Profile ${flickerProfileName} starts from unlit. Setting autoAlpha:0 and text opacity:0 PRE-FLICKER.`);
         localGsap.set(screenElement, { autoAlpha: 0, immediateRender: true });
-        if (textValueSpan) {
+        if (textValueSpan) { // Only for Dial B's numeric span
             localGsap.set(textValueSpan, { opacity: 0, immediateRender: true });
         }
     }
@@ -154,6 +164,7 @@ export function setLcdState(lcdElementOrContainer, stateName, options = {}) {
                          if (debugLcd) console.log(`[UIUpdater setLcdState Flicker - ${targetIdForLog} - ${phaseContext}] Screen classes post-flicker: '${screenElement.className}'`);
                     }
                     updateLcdTextAndVisibility(screenElement, textValueSpan, contentAreaElement, phaseContext, stateName, true); 
+                    emitAppStateEvent('lcdStateChanged', { lcdId: screenElement.id, newStateKey: stateName, context: `flickerComplete_${phaseContext}` });
                     if (onComplete) onComplete();
                 }
             }
@@ -172,6 +183,7 @@ export function setLcdState(lcdElementOrContainer, stateName, options = {}) {
 
         if (debugLcd) console.log(`[UIUpdater setLcdState - ${targetIdForLog} - ${phaseContext}] Not using flicker. State: ${stateName}`);
         updateLcdTextAndVisibility(screenElement, textValueSpan, contentAreaElement, phaseContext, stateName, true); 
+        emitAppStateEvent('lcdStateChanged', { lcdId: screenElement.id, newStateKey: stateName, context: `noFlicker_${phaseContext}` });
         if (onComplete) localGsap.delayedCall(0, onComplete);
     }
     return flickerResult;
@@ -206,25 +218,19 @@ function updateLcdTextAndVisibility(screenElement, textValueSpan, contentAreaEle
          shouldContentAreaBeVisible = true;
     }
 
-    if (textValueSpan) { // Dial LCDs
-        const dialId = screenElement === uiElements.lcdA ? 'A' : 'B';
+    if (textValueSpan && screenElement === uiElements.lcdB) { // Only update numeric text for Dial B LCD
         let textContent = "";
         if (shouldTextBeVisible) {
-            if (dialId === 'A') {
-                const dialAState = getDialState('A');
-                textContent = dialAState ? Math.round(((dialAState.hue % 360) + 360) % 360).toString() : String(Math.round(localConfigModule.DEFAULT_DIAL_A_HUE));
-            } else if (dialId === 'B') {
-                textContent = `${Math.round(getTrueLensPower() * 100)}%`;
-            }
+            textContent = `${Math.round(getTrueLensPower() * 100)}%`;
         }
-        if (debugLcd) console.log(`[UIUpdater updateLcdTextAndVisibility - DIAL ${dialId} - ${phaseContext}] shouldTextBeVisible: ${shouldTextBeVisible}, textContent: "${textContent}"`);
-        updateLcdDisplay(screenElement, textContent, dialId); 
+        if (debugLcd) console.log(`[UIUpdater updateLcdTextAndVisibility - DIAL B - ${phaseContext}] shouldTextBeVisible: ${shouldTextBeVisible}, textContent: "${textContent}"`);
+        updateLcdDisplay(screenElement, textContent, 'B'); 
 
         const targetOpacity = shouldTextBeVisible ? 1 : 0;
         const currentOpacity = parseFloat(localGsap.getProperty(textValueSpan, "opacity"));
 
         if (forceGsapSet || Math.abs(currentOpacity - targetOpacity) > 0.01) {
-            if (debugLcd) console.log(`[UIUpdater updateLcdTextAndVisibility - DIAL ${dialId} - ${phaseContext}] ${forceGsapSet ? 'Forcing GSAP set' : 'Animating'} .lcd-value opacity to: ${targetOpacity}`);
+            if (debugLcd) console.log(`[UIUpdater updateLcdTextAndVisibility - DIAL B - ${phaseContext}] ${forceGsapSet ? 'Forcing GSAP set' : 'Animating'} .lcd-value opacity to: ${targetOpacity}`);
             localGsap.set(textValueSpan, { 
                 opacity: targetOpacity,
             });
@@ -244,11 +250,19 @@ export function setDialLcdActiveDimState(isActive) {
     if (debugLcd) console.log(`[UIUpdater setDialLcdActiveDimState] Called with isActive: ${isActive}. PhaseContext: ${phaseCtx}`);
     const targetState = isActive ? 'js-active-dim-lcd' : 'lcd--unlit';
     
+    // Dial A LCD content is now MoodMatrix, its text visibility is handled by MoodMatrixDisplayManager
+    // We still manage the container's class for background/border styling
     if (uiElements.lcdA) {
-        updateLcdTextAndVisibility(uiElements.lcdA, uiElements.lcdA.querySelector('.lcd-value'), null, phaseCtx, targetState, true);
+        MANAGED_LCD_CLASSES.forEach(cls => uiElements.lcdA.classList.remove(cls));
+        if (targetState !== 'active') uiElements.lcdA.classList.add(targetState);
+        emitAppStateEvent('lcdStateChanged', { lcdId: 'hue-lcd-A', newStateKey: targetState, context: phaseCtx });
     }
-    if (uiElements.lcdB) {
+
+    if (uiElements.lcdB) { // Dial B LCD still uses numeric text
         updateLcdTextAndVisibility(uiElements.lcdB, uiElements.lcdB.querySelector('.lcd-value'), null, phaseCtx, targetState, true);
+        MANAGED_LCD_CLASSES.forEach(cls => uiElements.lcdB.classList.remove(cls));
+        if (targetState !== 'active') uiElements.lcdB.classList.add(targetState);
+        emitAppStateEvent('lcdStateChanged', { lcdId: 'hue-lcd-B', newStateKey: targetState, context: phaseCtx });
     }
 }
 
@@ -298,7 +312,8 @@ function updateLcdDisplay(lcdScreenElement, textContent, lcdId) {
         if (debugLcd) console.warn(`[UIUpdater updateLcdDisplay] Attempted to update null LCD screen element for ID: ${lcdId}`);
         return;
     }
-    if (lcdId === 'Terminal') return; 
+    // Terminal content is handled by terminalManager, Dial A content by MoodMatrixDisplayManager
+    if (lcdId === 'Terminal' || lcdId === 'A') return; 
 
     const valueSpan = lcdScreenElement.querySelector('.lcd-value');
     if (!valueSpan) {
@@ -312,13 +327,8 @@ function updateLcdDisplay(lcdScreenElement, textContent, lcdId) {
     }
 }
 
-function handleDialUpdateForLcdA(payload) {
-    if (!payload || payload.id !== 'A' || !payload.state) return;
-    if (uiElements.lcdA) {
-        const currentStateClass = getCurrentLcdStateClass(uiElements.lcdA);
-        updateLcdTextAndVisibility(uiElements.lcdA, uiElements.lcdA.querySelector('.lcd-value'), null, 'DialAUpdate', currentStateClass);
-    }
-}
+// Removed handleDialUpdateForLcdA as MoodMatrixDisplayManager handles Dial A LCD content
+
 function handleTargetColorChangeForDynamicCSSVars(payload) {
     if (!payload || !payload.targetKey || typeof payload.hue !== 'number' || typeof payload.isColorless !== 'boolean') return;
     updateDynamicCSSVar(payload.targetKey, payload.hue, payload.isColorless);
@@ -332,8 +342,6 @@ function handleThemeChange(newTheme) {
     uiElements.body.classList.remove('theme-dim', 'theme-dark', 'theme-light');
     uiElements.body.classList.add(`theme-${newTheme}`);
     
-    // MODIFIED: Only call applyInitialLcdStates if not in the middle of P10 theme transition
-    // and not when appStatus is 'loading' (initial setup).
     const isP10Transition = appStatus === 'starting-up' && currentPhase === 10 && uiElements.body.classList.contains('is-transitioning-from-dim');
     
     if (!isP10Transition && appStatus !== 'loading') {
@@ -367,7 +375,6 @@ function getCurrentLcdStateClass(screenElement) {
 
 function handleAppStatusChange(newStatus) {
     if (debugLcd) console.log(`[UIUpdater handleAppStatusChange] New status: ${newStatus}`);
-    // MODIFIED: Avoid calling applyInitialLcdStates if status is 'loading' as it's called at end of init.
     if (newStatus !== 'loading') {
         applyInitialLcdStates(); 
     }
@@ -390,7 +397,6 @@ function handleStartupPhaseNumberChange(newPhaseNumber) {
     }
 }
 
-// Exporting applyInitialLcdStates for explicit call in P10
 export function applyInitialLcdStates() {
     const currentPhase = getCurrentStartupPhaseNumber();
     const appStatus = getAppStatus();
@@ -414,21 +420,22 @@ export function applyInitialLcdStates() {
         if (appStatus === 'interactive' || (appStatus === 'starting-up' && currentPhase >= 10)) { 
             targetStateKey = 'active';
         } else if (appStatus === 'starting-up' && currentPhase >= 6) { 
-            // MODIFIED for P6 fix: Do not set Dial LCDs to 'lcd--dimly-lit' here if it's P6.
-            // Let startupPhase6.js handle their flicker initiation.
             if (currentPhase === 6 && (item.el === uiElements.lcdA || item.el === uiElements.lcdB)) {
                 if (debugLcd) console.log(`[UIUpdater applyInitialLcdStates - ${item.id}] Phase 6, deferring Dial LCD state. Current class: ${item.el.className}`);
-                // If it's already unlit or active-dim, leave it. If it's dimly-lit from a previous P6 run (e.g. reset), clear it.
                 if (item.el.classList.contains('lcd--dimly-lit')) {
                     item.el.classList.remove('lcd--dimly-lit');
                     if (debugLcd) console.log(`[UIUpdater applyInitialLcdStates - ${item.id}] Phase 6, removed lcd--dimly-lit for deferral.`);
                 }
-                // Ensure text is hidden if we are reverting to an unlit-like visual before P6 flicker
-                const textValueSpan = item.el.querySelector('.lcd-value');
-                if (textValueSpan && localGsap.getProperty(textValueSpan, "opacity") > 0) {
-                    localGsap.set(textValueSpan, {opacity: 0});
+                // For Dial B, ensure its numeric text is hidden if reverting before P6 flicker
+                if (item.el === uiElements.lcdB) {
+                    const textValueSpan = item.el.querySelector('.lcd-value');
+                    if (textValueSpan && localGsap.getProperty(textValueSpan, "opacity") > 0) {
+                        localGsap.set(textValueSpan, {opacity: 0});
+                    }
                 }
-                return; // Skip calling setLcdState for Dial LCDs in P6 from here
+                // For Dial A, MoodMatrixDisplayManager will handle its text visibility based on emitted LCD state
+                emitAppStateEvent('lcdStateChanged', { lcdId: item.el.id, newStateKey: 'unlit', context: `applyInitial_P6_defer_${item.id}` });
+                return; 
             }
             targetStateKey = 'lcd--dimly-lit';
         } else if (appStatus === 'starting-up' && currentPhase >=0 && currentPhase < 6) { 

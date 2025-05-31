@@ -299,3 +299,12 @@ export const STATE_TRANSITION_ECHO_PARAMS = {
     PERIOD_DECAY_FACTOR: 0.60,                  
     DELAY_AFTER_TRANSITION: 0.05 
 };
+
+// --- Mood Matrix Display Configuration (NEW) ---
+export const MOOD_MATRIX_DEFINITIONS = [
+    "Scanning", "Commanding", "Evaluative", "Curious",
+    "Advisory", "Analytical", "Focused", "Reserved", "Introspective"
+];
+export const MOOD_MATRIX_SEGMENT_DEGREES = 40;
+export const MOOD_MATRIX_SCROLL_DURATION = 0.4; // seconds
+export const MOOD_MATRIX_ROW_HEIGHT_EM_FALLBACK = 1.4; // Fallback if offsetHeight is 0
