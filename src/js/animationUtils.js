@@ -39,8 +39,10 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
 
 
     const profileNameForLog = typeof profileOrParams === 'string' ? profileOrParams : 'CustomProfile';
-    const targetIdForLog = targets && targets.length > 0 && targets[0] ? (targets[0].id || targets[0].className.split(' ')[0] || targets[0].tagName) : 'unknownTarget';
-    // console.log(`[CAF START - ${profileNameForLog} for ${targetIdForLog}] Options:`, JSON.parse(JSON.stringify(options)));
+    const targetIdForLog = targets && targets.length > 0 && targets[0] ? (targets[0].id || targets[0].ariaLabel || targets[0].className.split(' ')[0] || targets[0].tagName) : 'unknownTarget';
+    const debugFlicker = false; // Set to true to enable detailed logging for this function
+
+    if (debugFlicker) console.log(`[CAF START - ${profileNameForLog} for ${targetIdForLog}]`);
 
 
     const defaults = {
@@ -58,7 +60,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
 
     const completionPromise = new Promise(resolve => {
         config.gsapInternalOnComplete = () => {
-            // console.log(`[CAF INTERNAL PROMISE RESOLVED - ${profileNameForLog} for ${targetIdForLog}]`);
+            if (debugFlicker) console.log(`[CAF INTERNAL PROMISE RESOLVED - ${profileNameForLog} for ${targetIdForLog}]`);
             resolve();
         };
     });
@@ -78,10 +80,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     if (config.overrideGlowParams.hasOwnProperty('isButtonSelected')) {
         profile.glow.isButtonSelected = config.overrideGlowParams.isButtonSelected;
     }
-    // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Effective profile.glow.isButtonSelected: ${profile.glow.isButtonSelected}`);
-    // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Profile ampStart: ${profile.amplitudeStart}, Profile initialGlowOpacity: ${profile.glow?.initialOpacity}`);
-
-
+    
     const elementsToAnimate = Array.isArray(targets) ? targets.filter(t => t) : (targets ? [targets] : []);
     if (elementsToAnimate.length === 0) {
         console.warn(`[CAF - ${profileNameForLog}] No valid target elements. Returning empty, resolved flicker.`);
@@ -93,11 +92,11 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
 
     const tl = gsap.timeline({
         onStart: () => {
-            // console.log(`[CAF GSAP TL START - ${profileNameForLog} for ${targetIdForLog}]`);
+            if (debugFlicker) console.log(`[CAF GSAP TL START - ${profileNameForLog} for ${targetIdForLog}]`);
             if (config.onStart) config.onStart();
         },
         onComplete: () => {
-            // console.log(`[CAF GSAP TL COMPLETE - ${profileNameForLog} for ${targetIdForLog}]. Calling user's onTimelineComplete and resolving promise.`);
+            if (debugFlicker) console.log(`[CAF GSAP TL COMPLETE - ${profileNameForLog} for ${targetIdForLog}]. Calling user's onTimelineComplete and resolving promise.`);
             if (config.onTimelineComplete) config.onTimelineComplete();
             config.gsapInternalOnComplete();
         },
@@ -123,10 +122,9 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     }
 
     const isTransitioningFromEffectivelyUnlit = (profile.amplitudeStart !== undefined && profile.amplitudeStart <= 0.01) &&
-                                             (!profile.glow || profile.glow.initialOpacity === undefined || profile.glow.initialOpacity <= 0.01);
+                                             (!profile.glow || getGlowParam(profile.glow, 'initialOpacity', 0) <= 0.01);
 
     if (isTransitioningFromEffectivelyUnlit) {
-        // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Profile indicates transition FROM UNLIT. Setting initial autoAlpha to 0 for baseTargetsForOpacity.`);
         if (baseTargetsForOpacity.length > 0) {
             tl.set(baseTargetsForOpacity, { autoAlpha: 0, immediateRender: true });
         }
@@ -143,14 +141,12 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     } else {
         if (baseTargetsForOpacity.length > 0) {
             const initialAutoAlpha = profile.amplitudeStart !== undefined ? profile.amplitudeStart : 0;
-            // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Profile starts from PARTIALLY LIT. Setting initial autoAlpha to: ${initialAutoAlpha}`);
             tl.set(baseTargetsForOpacity, { autoAlpha: initialAutoAlpha, immediateRender: true });
         }
         if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
             const initialGlowCSS = {};
             const initialGlowOpacity = getGlowParam(profile.glow, 'initialOpacity', 0);
             const initialGlowSize = getGlowParam(profile.glow, 'initialSize', '0px');
-            // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Initial Glow (from partially lit) - Opacity: ${initialGlowOpacity}, Size: ${initialGlowSize}`);
 
             if (profile.glow.opacityVar) initialGlowCSS[profile.glow.opacityVar] = initialGlowOpacity;
             if (profile.glow.sizeVar) initialGlowCSS[profile.glow.sizeVar] = typeof initialGlowSize === 'number' ? `${initialGlowSize}px` : initialGlowSize;
@@ -158,7 +154,6 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             if (profile.glow.animatedProperties?.blur) initialGlowCSS[profile.glow.animatedProperties.blur] = typeof initialGlowSize === 'number' ? `${initialGlowSize}px` : initialGlowSize;
 
             if (Object.keys(initialGlowCSS).length > 0) {
-                // console.log(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Setting initialGlowCSS (from partially lit):`, initialGlowCSS);
                 tl.set(elementsToAnimate, { css: initialGlowCSS, immediateRender: true });
             }
         }

@@ -1,156 +1,135 @@
 /**
  * @module resistiveShutdownController
  * @description Orchestrates the resistive shutdown sequence by reacting to appState changes.
+ * (Project Decouple Refactor)
  */
-import * as appState from './appState.js';
-import * as config from './config.js';
+import { serviceLocator } from './serviceLocator.js';
 import { clamp } from './utils.js';
-
-const DEBUG_RSC = true; // Resistive Shutdown Controller Debug
 
 class ResistiveShutdownController {
     constructor() {
-        this.unsubscribeAppState = null;
+        this.appState = null;
+        this.config = null;
         this.buttonManager = null;
-        this.originalDialAHueForSequence = undefined;
-        this.originalDialBPowerForSequence = undefined;
+        this.debug = true;
     }
 
-    init(buttonManagerInstance) {
-        if (DEBUG_RSC) console.log('[RSC INIT] Initializing Resistive Shutdown Controller.');
-        this.buttonManager = buttonManagerInstance;
-        this.unsubscribeAppState = appState.subscribe('resistiveShutdownStageChanged', this.handleStageChange.bind(this));
+    init() {
+        this.appState = serviceLocator.get('appState');
+        this.config = serviceLocator.get('config');
+        this.buttonManager = serviceLocator.get('buttonManager');
+
+        this.appState.subscribe('resistiveShutdownStageChanged', (payload) => this.handleStageChange(payload));
+        if (this.debug) console.log('[RSC INIT]');
     }
 
-    handleStageChange({ oldStage, newStage }) {
-        if (DEBUG_RSC) console.log(`[RSC handleStageChange] Stage changed from ${oldStage} to ${newStage}`);
+    /**
+     * This method is called from the main.js event listener when the power off button is clicked.
+     */
+    handlePowerOffClick() {
+        if (this.appState.getIsMainPowerOffButtonDisabled()) {
+            if (this.debug) console.log(`[RSC] MAIN PWR OFF is disabled. Interaction blocked.`);
+            return;
+        }
+        const currentStage = this.appState.getResistiveShutdownStage();
+        if (currentStage < this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
+            const newStage = currentStage + 1;
+            if (this.debug) console.log(`[RSC] Advancing resistive shutdown to stage ${newStage}.`);
+            this.appState.setResistiveShutdownStage(newStage);
+        }
+    }
 
-        if (newStage === 0) { // Reset or initial state
-            delete this.originalDialAHueForSequence;
-            delete this.originalDialBPowerForSequence;
-            if (appState.getIsMainPowerOffButtonDisabled()) {
-                appState.setIsMainPowerOffButtonDisabled(false);
+    handleStageChange({ newStage }) {
+        if (this.debug) console.log(`[RSC] Stage changed to ${newStage}`);
+
+        if (newStage === 0) {
+            if (this.appState.getIsMainPowerOffButtonDisabled()) {
+                this.appState.setIsMainPowerOffButtonDisabled(false);
             }
-            if (this.buttonManager) {
-                this.buttonManager.setGroupDisabled('system-power', false);
-            }
-            if (DEBUG_RSC) console.log('[RSC] Resistive shutdown sequence reset to stage 0.');
             return;
         }
 
         const stageKey = `STAGE_${newStage}`;
-        const stageParams = config.RESISTIVE_SHUTDOWN_PARAMS[stageKey];
-
-        if (!stageParams) {
-            console.error(`[RSC handleStageChange] No parameters found for stage: ${newStage}`);
-            return;
-        }
+        const stageParams = this.config.RESISTIVE_SHUTDOWN_PARAMS[stageKey];
+        if (!stageParams) return;
 
         if (stageParams.TERMINAL_MESSAGE_KEY) {
-            appState.emit('requestTerminalMessage', {
+            this.appState.emit('requestTerminalMessage', {
                 type: 'status',
-                source: stageParams.TERMINAL_MESSAGE_KEY,
                 messageKey: stageParams.TERMINAL_MESSAGE_KEY,
             });
-            if (DEBUG_RSC) console.log(`[RSC handleStageChange] Emitted terminal message for key: ${stageParams.TERMINAL_MESSAGE_KEY}`);
         }
 
-        this.updateLensTargets(stageParams);
-        this.updateHueAssignmentButtons(stageParams);
+        this._updateLensTargets(stageParams);
+        this._updateHueAssignmentButtons(stageParams);
 
-        if (newStage === config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
-            appState.setIsMainPowerOffButtonDisabled(true);
-            if (this.buttonManager) {
-                this.buttonManager.setGroupDisabled('system-power', true);
-            }
-            if (DEBUG_RSC) console.log(`[RSC handleStageChange] Main Power buttons disabled.`);
+        if (newStage === this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
+            this.appState.setIsMainPowerOffButtonDisabled(true);
         }
     }
 
-    updateLensTargets(stageParams) {
-        const currentDialAState = appState.getDialState('A');
-        const currentDialBPower01 = appState.getTrueLensPower();
+    _updateLensTargets(stageParams) {
+        const currentDialA = this.appState.getDialState('A');
+        const currentPower = this.appState.getTrueLensPower();
+        let targetHue = currentDialA.hue;
+        let targetPower = currentPower;
 
-        let targetDialAHue = currentDialAState.hue;
         if (stageParams.DIAL_A_HUE_TARGET_MODE === 'absolute') {
-            targetDialAHue = stageParams.DIAL_A_HUE_VALUE;
+            targetHue = stageParams.DIAL_A_HUE_VALUE;
         }
 
-        let targetDialBPower01 = currentDialBPower01;
         if (stageParams.DIAL_B_POWER_TARGET_MODE === 'increase_absolute_0_1') {
-            targetDialBPower01 = currentDialBPower01 + stageParams.DIAL_B_POWER_VALUE;
+            targetPower += stageParams.DIAL_B_POWER_VALUE;
         } else if (stageParams.DIAL_B_POWER_TARGET_MODE === 'absolute_100') {
-            targetDialBPower01 = 1.0;
+            targetPower = 1.0;
         }
-        
-        targetDialBPower01 = clamp(targetDialBPower01, 0, 1);
 
-        if (DEBUG_RSC) {
-            console.log(`[RSC updateLensTargets] Current Power: ${currentDialBPower01.toFixed(3)}, Target Power: ${targetDialBPower01.toFixed(3)}`);
-            console.log(`[RSC updateLensTargets] Target Hue: ${targetDialAHue.toFixed(1)}`);
-        }
+        targetPower = clamp(targetPower, 0, 1);
+
+        // Update Dial A state
+        this.appState.updateDialState('A', { hue: targetHue, targetHue: targetHue });
         
-        appState.updateDialState('A', {
-            hue: targetDialAHue, 
-            targetHue: targetDialAHue, 
+        // Update the authoritative lens power state
+        this.appState.setTrueLensPower(targetPower * 100);
+
+        // --- FIX START: Synchronize Dial B's state with the new power value ---
+        const dialBHue = targetPower * 359.999; // Convert power (0-1) to hue (0-360)
+        const dialBRotation = dialBHue * this.config.DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG;
+
+        this.appState.updateDialState('B', {
+            hue: dialBHue,
+            targetHue: dialBHue,
+            rotation: dialBRotation,
+            targetRotation: dialBRotation,
         });
-        appState.setTrueLensPower(targetDialBPower01 * 100); 
+
+        if (this.debug) {
+            console.log(`[RSC _updateLensTargets] Synced state. New Lens Power: ${targetPower.toFixed(3)}. New Dial B Hue: ${dialBHue.toFixed(2)}`);
+        }
+        // --- FIX END ---
     }
 
-    updateHueAssignmentButtons(stageParams) {
-        if (!this.buttonManager || !stageParams.HUE_ASSIGN_TARGET_HUE) return;
+    _updateHueAssignmentButtons(stageParams) {
+        if (!stageParams.HUE_ASSIGN_TARGET_HUE) return;
 
         const targetHue = stageParams.HUE_ASSIGN_TARGET_HUE;
-        let closestHueIndex = -1;
+        let closestIndex = -1;
         let smallestDiff = 360;
 
-        config.HUE_ASSIGNMENT_ROW_HUES.forEach((hue, index) => {
+        this.config.HUE_ASSIGNMENT_ROW_HUES.forEach((hue, index) => {
             const diff = Math.abs(hue - targetHue);
             if (diff < smallestDiff) {
                 smallestDiff = diff;
-                closestHueIndex = index;
+                closestIndex = index;
             }
         });
 
-        if (closestHueIndex !== -1) {
-            const targetGroups = ['btn', 'logo', 'lcd', 'env'];
-            const targetHueValue = config.HUE_ASSIGNMENT_ROW_HUES[closestHueIndex];
-
-            targetGroups.forEach(groupId => {
-                // Directly update the app state for the color property
-                appState.setTargetColorProperties(groupId, targetHueValue);
-
-                // Find and flicker the corresponding button in the grid
-                const btnGroup = this.buttonManager._buttonGroups.get(groupId);
-                if (btnGroup) {
-                    btnGroup.forEach(buttonInstance => {
-                        if (parseInt(buttonInstance.getValue(), 10) === closestHueIndex) {
-                            this.buttonManager.playFlickerToState(
-                                buttonInstance.getElement(),
-                                'is-energized is-selected',
-                                {
-                                    profileName: 'buttonFlickerFromUnlitToFullyLitSelected',
-                                    phaseContext: `ResistiveShutdown_HueBtn_${groupId}_S${appState.getResistiveShutdownStage()}`
-                                }
-                            );
-                        } else if (buttonInstance.isSelected()) {
-                            // Deselect any previously selected button in the group instantly
-                            buttonInstance.setSelected(false, { skipAnimation: true });
-                        }
-                    });
-                }
+        if (closestIndex !== -1) {
+            ['btn', 'logo', 'lcd', 'env'].forEach(groupId => {
+                this.appState.setTargetColorProperties(groupId, this.config.HUE_ASSIGNMENT_ROW_HUES[closestIndex]);
+                this.buttonManager.setGroupSelected(groupId, closestIndex.toString());
             });
         }
-    }
-
-    destroy() {
-        if (this.unsubscribeAppState) {
-            this.unsubscribeAppState();
-            this.unsubscribeAppState = null;
-        }
-        delete this.originalDialAHueForSequence;
-        delete this.originalDialBPowerForSequence;
-        if (DEBUG_RSC) console.log('[RSC DESTROY] Resistive Shutdown Controller destroyed.');
     }
 }
 

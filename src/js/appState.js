@@ -137,8 +137,10 @@ export function updateDialState(dialId, newState) {
   
   const oldState = { ...dials[dialId] }; 
 
-  // Normalize hue for Dial A before assigning
-  if (dialId === 'A') {
+  // MODIFIED: Remove hue normalization for Dial A to prevent "rainbow flicker".
+  // The lensManager is responsible for wrapping the hue for visual representation.
+  // We keep it for Dial B if it were ever to represent a hue.
+  if (dialId === 'B') {
       if (newState.hasOwnProperty('hue')) {
           newState.hue = ((newState.hue % 360) + 360) % 360;
       }

@@ -60,7 +60,7 @@
 }
 
 /* Terminal LCD Specifics */
-.actual-lcd-screen-element.terminal-block { /* More specific selector for terminal */
+.terminal-block .actual-lcd-screen-element { /* MODIFIED: Corrected selector */
     flex-grow: 1;
     min-height: 50px;
     font-size: var(--lcd-content-font-size, 0.95em); 
@@ -72,7 +72,7 @@
     align-items: stretch; 
     text-align: left;
 }
-.actual-lcd-screen-element.terminal-block > #terminal-lcd-content {
+.terminal-block .actual-lcd-screen-element > #terminal-lcd-content {
     /* #terminal-lcd-content will naturally fill due to align-items:stretch */
 }
 

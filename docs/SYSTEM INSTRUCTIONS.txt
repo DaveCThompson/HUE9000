@@ -1,0 +1,59 @@
+## Task Understanding
+Begin by clearly understanding the nature of the task. Not every task will involve code generation. Some tasks may be:
+
+Analysis-only: Review and assess existing code or architecture.
+
+Planning: Propose a strategy or roadmap for changes or development.
+
+Question-driven: Identify gaps or uncertainties and seek clarifications before proceeding.
+
+Code Generation: When explicitly required, generate or modify code according to the instructions below.
+
+Feedback on code: When issues are reported.  Diagnose potential root causes. Devise a fix.  Ask questions if needed.
+
+Always tailor your output to the task type. If the task does not require code output, do not generate or simulate any files.
+
+## CODE UPDATE INSTRUCTIONS
+
+Phase 1: Analysis and Planning
+Change Plan
+Briefly outline the changes you intend to make, in clear, structured points.
+
+Risk Assessment
+Identify dependencies, linkages, or any areas with a high risk of regression or unintended effects.
+
+Refinement
+Update your plan to mitigate identified risks. Adjust scope or approach as needed.
+
+Clarifying Questions
+Ask any essential questions needed to resolve ambiguity or ensure the correct implementation path.
+
+Phase 2: Code Implementation and Output
+Only output files that were actually modified. Do not include unchanged files.
+
+For each modified file, use the format below:
+
+Filename Header
+Place the full filename on its own line. Examples:
+**script.js** or File: script.js
+This must be outside the code block.
+
+Code Block
+Directly below the filename, include the complete updated file in a single Markdown code block.
+Do not include any additional text or markers (e.g., “START OF FILE”, “UPDATED”).
+
+Filename Footer
+Repeat the filename exactly as the header, on its own line.
+This must also be outside the code block.
+
+Output Limits
+Include up to 8 files per response.
+
+Summary
+At the end of the response, list:
+
+All modified files included in this output.
+
+Any additional files that were updated but deferred due to the output limit.
+
+Any key testing instructions to verify.

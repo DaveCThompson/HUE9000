@@ -216,6 +216,23 @@
     opacity: var(--btn-energized-pressing-light-a);
 }
 
+/* More specific rule for pressing a SELECTED button */
+.button-unit.is-energized.is-selected.is-pressing {
+    box-shadow:
+        inset 0 0 3px 1px var(--btn-pressed-innershadow-color), /* Keep the physical press effect */
+        0 0 calc(var(--btn-selected-glow-base-size) * 1.2) var(--btn-glow-spread) oklch(var(--btn-energized-selected-glow-l) var(--btn-energized-selected-glow-c) var(--btn-energized-selected-glow-h) / calc(var(--btn-selected-glow-base-opacity) * 1.15));
+}
+.button-unit.is-energized.is-selected.is-pressing .light {
+    opacity: calc(var(--btn-energized-selected-light-a) * 1.2);
+    transform: scale(1.05);
+}
+
+/* FIX: Even more specific rule for small buttons to prevent position jump */
+.button-unit.is-energized.is-selected.is-pressing.button-unit--s .light {
+    transform: translate(-50%, -50%) scale(var(--button-unit-light-responsive-scale-factor)) scale(1.05);
+}
+
+
 .button-unit:not(.is-energized).is-pressing {
      background-color: oklch(
         calc(var(--btn-unlit-bg-l) + var(--btn-pressed-bg-l-offset))
@@ -281,37 +298,36 @@
 
 /* --- State: Permanently Disabled (Resistive Shutdown) --- */
 .button-unit.is-permanently-disabled {
-    background-color: oklch(0.45 calc(0.18 * 0.5) 25 / 0.9); 
-    border-color: oklch(0.35 calc(0.15 * 0.5) 25 / 1);
-    color: oklch(var(--btn-energized-unselected-text-l) var(--btn-energized-unselected-text-c) var(--btn-energized-unselected-text-h) / var(--btn-energized-unselected-text-a));
+    /* MODIFIED: Use dedicated theme-aware variables */
+    background-color: oklch(var(--btn-disabled-bg-l) 0 0 / 1);
+    border-color: oklch(var(--btn-disabled-border-l) 0 0 / 1);
+    box-shadow: none;
     cursor: not-allowed;
-    box-shadow: 
-        inset 0 0 3px 1px oklch(0 0 0 / 0.25),
-        0 0 5px 1px oklch(0.5 calc(0.20 * 0.5) 25 / 0.4);
-    opacity: 0.9; 
+    opacity: 1;
 }
 .button-unit.is-permanently-disabled .light {
-    background-color: oklch(0.5 calc(0.2 * 0.5) 25 / 1); 
-    opacity: 1;
-    filter: blur(calc(var(--button-unit-light-object-base-blur) * 0.5));
+    background-color: oklch(var(--btn-disabled-light-l) 0 0);
+    opacity: var(--btn-disabled-light-a);
+    filter: blur(var(--button-unit-light-object-base-blur));
 }
 .button-unit.is-permanently-disabled .button-text {
+    /* MODIFIED: Restore original text color and shadow */
     color: oklch(var(--btn-energized-unselected-text-l) var(--btn-energized-unselected-text-c) var(--btn-energized-unselected-text-h) / var(--btn-energized-unselected-text-a));
     text-shadow: var(--btn-energized-unselected-shadow);
 }
 .button-unit.is-permanently-disabled:hover {
-    box-shadow: 
-        inset 0 0 3px 1px oklch(0 0 0 / 0.25),
-        0 0 5px 1px oklch(0.5 calc(0.20 * 0.5) 25 / 0.4);
+    /* Ensure no visual change on hover for disabled state */
+    box-shadow: none;
     transform: none; 
 }
 .button-unit.is-permanently-disabled:hover .light {
-    opacity: 1;
+    opacity: var(--btn-disabled-light-a);
     transform: none; 
 }
 .button-unit.is-permanently-disabled.button-unit--s:hover .light {
     transform: translate(-50%, -50%) scale(var(--button-unit-light-responsive-scale-factor));
 }
+
 
 /* --- Temporary Tint Classes for Resistive Shutdown Flashes --- */
 .button-unit.is-flashing-tint-yellow {

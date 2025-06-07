@@ -1,182 +1,214 @@
 /**
- * @module main (REFACTOR-V2.3 - Ambient Animations Update & All Import Fixes)
+ * @module main
  * @description Entry point for the HUE 9000 application.
- * Initializes all core modules, managers, and sets up the UI.
+ * Initializes all managers, registers them with the service locator,
+ * and sets up top-level application logic and event listeners.
+ * (Project Decouple Refactor)
  */
 import { gsap } from "gsap";
 import { Draggable } from "gsap/Draggable";
 import { InertiaPlugin } from "gsap/InertiaPlugin";
-import { TextPlugin } from "gsap/TextPlugin"; // ADDED: Import TextPlugin
+import { TextPlugin } from "gsap/TextPlugin";
 
-// Core Modules
+// Core Modules & Services
 import * as appState from './appState.js';
-import * as configModule from './config.js';
+import * as config from './config.js';
+import { serviceLocator } from './serviceLocator.js';
+import { phaseConfigs } from './startupMachine.js';
 
-// UI Component Managers & Other Modules (Corrected Imports)
-import { ButtonManager } from './buttonManager.js'; 
-import * as dialManager from './dialManager.js';
-import * as gridManager from './gridManager.js';
-import * as toggleManager from './toggleManager.js';
-import * as lensManager from './lensManager.js';
-import terminalManagerInstance from './terminalManager.js'; // Import the instance
+// Manager Classes
+import { ButtonManager } from './buttonManager.js';
+import { DialManager } from './dialManager.js';
+import { LensManager } from './lensManager.js';
+import { ThemeManager } from './ThemeManager.js';
+import { LcdUpdater } from './LcdUpdater.js';
+import { DynamicStyleManager } from './DynamicStyleManager.js';
+import { PhaseRunner } from './PhaseRunner.js';
+import AmbientAnimationManager from './AmbientAnimationManager.js';
+import MoodMatrixDisplayManager from './moodMatrixDisplayManager.js';
+import resistiveShutdownControllerInstance from './resistiveShutdownController.js';
+import terminalManagerInstance from './terminalManager.js';
+import { StartupSequenceManager } from './startupSequenceManager.js';
 import * as debugManager from './debugManager.js';
-import * as startupSequenceManager from './startupSequenceManager.js';
-import * as uiUpdater from './uiUpdater.js';
-import AmbientAnimationManager from './AmbientAnimationManager.js'; 
-import MoodMatrixDisplayManager from './moodMatrixDisplayManager.js'; // NEW: Import MoodMatrixDisplayManager
-import resistiveShutdownControllerInstance from './resistiveShutdownController.js'; // NEW: Import Resistive Shutdown Controller
 
-// DOM Element References
+// Register GSAP and its plugins
+gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
+
+// --- DOM Element Collection ---
 const domElements = {
-    // Body & Core Structure
     root: document.documentElement,
     body: document.body,
-    appWrapper: document.querySelector('.app-wrapper'),
-
-    // Panels
-    leftPanel: document.querySelector('.left-panel'),
-    centerPanel: document.querySelector('.center-panel'),
-    rightPanel: document.querySelector('.right-panel'),
-
-    // Buttons (Collected by type/group)
     allButtons: Array.from(document.querySelectorAll('.button-unit')),
-    mainPowerToggleButtons: Array.from(document.querySelectorAll('[data-group-id="system-power"] .button-unit--toggle')),
-    mainPwrOnButton: document.querySelector('[data-group-id="system-power"] .button-unit--toggle[data-toggle-value="on"]'),
-    mainPwrOffButton: document.querySelector('[data-group-id="system-power"] .button-unit--toggle[data-toggle-value="off"]'), 
-    auxLightToggleButtons: Array.from(document.querySelectorAll('[data-group-id="light"] .button-unit--toggle')),
-    auxLightLowButton: document.querySelector('[data-group-id="light"] .button-unit--toggle[data-toggle-value="off"]'),
-    auxLightHighButton: document.querySelector('[data-group-id="light"] .button-unit--toggle[data-toggle-value="on"]'),
-    scanButton1Element: document.querySelector('[data-group-id="skill-scan-group"] .button-unit--action[aria-label="Scan Button 1"]'),
-    scanButton2Element: document.querySelector('[data-group-id="skill-scan-group"] .button-unit--action[aria-label="Scan Button 2"]'),
-    scanButton3Element: document.querySelector('[data-group-id="fit-eval-group"] .button-unit--action[aria-label="Scan Button 3"]'),
-    scanButton4Element: document.querySelector('[data-group-id="fit-eval-group"] .button-unit--action[aria-label="Scan Button 4"]'),
-    hueAssignmentRadioButtons: Array.from(document.querySelectorAll('.hue-assignment-column .button-unit--radio')),
-
-    // Dials & Associated LCDs
     dialA: document.getElementById('dial-canvas-container-A'),
     dialB: document.getElementById('dial-canvas-container-B'),
-    lcdA: document.getElementById('hue-lcd-A'), // This will be the container for MoodMatrix
+    lcdA: document.getElementById('hue-lcd-A'),
     lcdB: document.getElementById('hue-lcd-B'),
-
-    // Terminal
     terminalContainer: document.querySelector('.terminal-block .actual-lcd-screen-element'),
     terminalLcdContentElement: document.getElementById('terminal-lcd-content'),
-
-    // Lens & Logo
-    lensContainer: document.getElementById('lens-container'),
-    colorLens: document.getElementById('color-lens'),
     colorLensGradient: document.getElementById('color-lens-gradient'),
-    lensOuterGlow: document.getElementById('outer-glow'),
     lensSuperGlow: document.getElementById('lens-super-glow'),
     logoContainer: document.getElementById('logo-container'),
-
-    // Color Chips & Grill
-    colorChipsContainer: document.querySelector('.color-chips-column'),
-    colorChips: Array.from(document.querySelectorAll('.color-chip')),
-    grillPlaceholder: document.querySelector('.grill-placeholder'),
-
-    // Debug Controls
+    hueAssignmentColumns: Array.from(document.querySelectorAll('.hue-assignment-column[data-assignment-target]')),
+    // Buttons for startup sequence
+    mainPowerOnBtn: document.getElementById('main-power-on-btn'),
+    auxLightLowBtn: document.getElementById('aux-light-low-btn'),
+    // Debug controls
     debugControls: document.getElementById('debug-controls'),
     btnNextPhase: document.getElementById('btn-next-phase'),
     btnPlayAll: document.getElementById('btn-play-all'),
     btnResetStartup: document.getElementById('btn-reset-startup-debug'),
     debugPhaseStatus: document.getElementById('debug-phase-status'),
     debugPhaseInfo: document.getElementById('debug-phase-info'),
-
-    elementsAnimatedOnDimExit: []
-    // moodMatrixDisplay: document.getElementById('mood-matrix-display'), // Not needed if lcdA is the container
 };
 
-gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
+/**
+ * Creates the buttons for the Hue Assignment Grid.
+ * @param {ButtonManager} buttonManager - The button manager instance.
+ */
+function createGridButtons(buttonManager) {
+    domElements.hueAssignmentColumns.forEach(columnEl => {
+        const groupId = columnEl.dataset.assignmentTarget;
+        const labelEl = columnEl.querySelector('.control-group-label.label-top');
+        columnEl.innerHTML = '';
+        if (labelEl) columnEl.appendChild(labelEl);
 
-function initializeApp() {
-    console.log('[Main INIT] HUE 9000 REFACTOR-V2.3 Initializing...');
-    appState.setAppStatus('loading');
-
-    const buttonManagerInstance = new ButtonManager(gsap, appState, configModule);
-    const ambientAnimationManagerInstance = new AmbientAnimationManager(gsap, appState, buttonManagerInstance, configModule);
-    const moodMatrixDisplayManagerInstance = new MoodMatrixDisplayManager(domElements.lcdA, gsap, appState, configModule); // NEW
-
-    uiUpdater.init(domElements, configModule, gsap); 
-    dialManager.init([domElements.dialA, domElements.dialB], appState, configModule, gsap);
-    const hueAssignmentColumnElements = Array.from(document.querySelectorAll('.hue-assignment-column[data-assignment-target]'));
-    gridManager.init(hueAssignmentColumnElements, buttonManagerInstance);
-    lensManager.init(domElements.root, domElements.colorLensGradient, configModule, gsap);
-    
-    terminalManagerInstance.init(domElements.terminalContainer, domElements.terminalLcdContentElement, appState, configModule, gsap);
-
-    buttonManagerInstance.setUiUpdater(uiUpdater);
-    buttonManagerInstance.setAAM(ambientAnimationManagerInstance);
-    buttonManagerInstance.init(domElements.allButtons);
-
-    toggleManager.init(
-        [...domElements.mainPowerToggleButtons, ...domElements.auxLightToggleButtons],
-        buttonManagerInstance
-    );
-
-    // --- Add Click Listeners for Action Buttons (BTN 1-4) ---
-    const actionButtonMap = {
-        'BTN1_MESSAGE': domElements.scanButton1Element,
-        'BTN2_MESSAGE': domElements.scanButton2Element,
-        'BTN3_MESSAGE': domElements.scanButton3Element,
-        'BTN4_MESSAGE': domElements.scanButton4Element,
-    };
-
-    for (const [messageKey, element] of Object.entries(actionButtonMap)) {
-        if (element) {
-            element.addEventListener('click', () => {
-                if (appState.getAppStatus() === 'interactive') {
-                    appState.emit('requestTerminalMessage', {
-                        type: 'block',
-                        source: 'ActionButtons',
-                        messageKey: messageKey,
-                    });
-                }
-            });
+        for (let i = 0; i < 12; i++) {
+            const button = document.createElement('div');
+            button.className = 'button-unit button-unit--toggle button-unit--s';
+            button.dataset.toggleValue = i.toString();
+            button.setAttribute('role', 'radio');
+            button.setAttribute('aria-label', `Assign ${groupId.toUpperCase()} to Hue from Row ${i + 1}`);
+            button.innerHTML = `<div class="light-container" aria-hidden="true"><div class="light"></div></div><div class="button-bg-frame"></div>`;
+            columnEl.appendChild(button);
+            buttonManager.addButton(button, groupId);
         }
-    }
+    });
+}
 
-    ambientAnimationManagerInstance.init();
-    resistiveShutdownControllerInstance.init(buttonManagerInstance); // Pass buttonManager to controller
-    // MoodMatrixDisplayManager is already initialized above
+/**
+ * Sets up top-level event listeners for application side-effects.
+ */
+function setupEventListeners() {
+    // Listener for all button interactions
+    appState.subscribe('buttonInteracted', ({ button }) => {
+        const groupId = button.getGroupId();
+        const value = button.getValue();
 
-    const managerReferencesForStartup = {
-        buttonManager: buttonManagerInstance,
-        dialManager: dialManager,
-        gridManager: gridManager,
-        toggleManager: toggleManager,
-        lensManager: lensManager,
-        terminalManager: terminalManagerInstance, 
-        uiUpdater: uiUpdater,
-        debugManager: debugManager,
-        ambientAnimationManager: ambientAnimationManagerInstance,
-        moodMatrixDisplayManager: moodMatrixDisplayManagerInstance,
-        resistiveShutdownController: resistiveShutdownControllerInstance
-    };
-
-    startupSequenceManager.init({
-        gsap,
-        appState,
-        configModule,
-        domElements,
-        managers: managerReferencesForStartup
+        // --- Logic from old toggleManager ---
+        if (groupId === 'light') {
+            const newTheme = value === 'on' ? 'light' : 'dark';
+            if (appState.getCurrentTheme() !== newTheme) {
+                appState.setTheme(newTheme);
+            }
+        } else if (groupId === 'system-power') {
+            if (value === 'off') {
+                resistiveShutdownControllerInstance.handlePowerOffClick();
+            } else if (value === 'on' && appState.getResistiveShutdownStage() > 0) {
+                appState.setResistiveShutdownStage(0);
+            }
+        }
+        // --- Logic from old gridManager ---
+        else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
+            const hue = config.HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
+            appState.setTargetColorProperties(groupId, hue);
+        }
+        // --- Logic for action buttons ---
+        else if (groupId === 'skill-scan-group' || groupId === 'fit-eval-group') {
+            const messageKeyMap = {
+                'Scan Button 1': 'BTN1_MESSAGE',
+                'Scan Button 2': 'BTN2_MESSAGE',
+                'Scan Button 3': 'BTN3_MESSAGE',
+                'Scan Button 4': 'BTN4_MESSAGE',
+            };
+            const messageKey = messageKeyMap[button.getElement().ariaLabel];
+            if (messageKey) {
+                appState.emit('requestTerminalMessage', { type: 'block', messageKey });
+            }
+        }
     });
 
-    const debugDomElementsForManager = {
+    // Listener for all physical button clicks to delegate to buttonManager
+    document.body.addEventListener('click', (event) => {
+        const buttonElement = event.target.closest('.button-unit');
+        if (buttonElement) {
+            serviceLocator.get('buttonManager').handleInteraction(buttonElement);
+        }
+    });
+}
+
+/**
+ * Main application initialization function.
+ */
+function initializeApp() {
+    // Use a global guard to prevent re-initialization from HMR or other sources
+    if (window.HUE9000_INITIALIZED) {
+        return;
+    }
+    window.HUE9000_INITIALIZED = true;
+
+    console.log('[Main INIT] HUE 9000 Project Decouple Initializing...');
+    appState.setAppStatus('loading');
+
+    // --- Instantiate all managers ---
+    const themeManager = new ThemeManager();
+    const lcdUpdater = new LcdUpdater();
+    const dynamicStyleManager = new DynamicStyleManager();
+    const buttonManager = new ButtonManager();
+    const dialManager = new DialManager();
+    const lensManager = new LensManager();
+    const ambientAnimationManager = new AmbientAnimationManager();
+    const moodMatrixDisplayManager = new MoodMatrixDisplayManager(domElements.lcdA);
+    const phaseRunner = new PhaseRunner();
+    const startupSequenceManager = new StartupSequenceManager();
+
+    // --- Register all services and managers ---
+    serviceLocator.register('gsap', gsap);
+    serviceLocator.register('appState', appState);
+    // Augment the imported config with phaseConfigs before registering
+    serviceLocator.register('config', { ...config, phaseConfigs });
+    serviceLocator.register('domElements', domElements);
+    serviceLocator.register('themeManager', themeManager);
+    serviceLocator.register('lcdUpdater', lcdUpdater);
+    serviceLocator.register('dynamicStyleManager', dynamicStyleManager);
+    serviceLocator.register('buttonManager', buttonManager);
+    serviceLocator.register('dialManager', dialManager);
+    serviceLocator.register('lensManager', lensManager);
+    serviceLocator.register('ambientAnimationManager', ambientAnimationManager);
+    serviceLocator.register('moodMatrixDisplayManager', moodMatrixDisplayManager);
+    serviceLocator.register('terminalManager', terminalManagerInstance);
+    serviceLocator.register('resistiveShutdownController', resistiveShutdownControllerInstance);
+    serviceLocator.register('phaseRunner', phaseRunner);
+    serviceLocator.register('startupSequenceManager', startupSequenceManager);
+    serviceLocator.register('debugManager', debugManager);
+
+    // --- Initialize managers (they will get dependencies from the locator) ---
+    // Initialize StartupSequenceManager first so it can register its proxies before PhaseRunner needs them.
+    startupSequenceManager.init();
+
+    const managersToInit = [
+        themeManager, lcdUpdater, dynamicStyleManager, buttonManager, dialManager,
+        lensManager, ambientAnimationManager, moodMatrixDisplayManager,
+        terminalManagerInstance, resistiveShutdownControllerInstance, phaseRunner
+    ];
+    managersToInit.forEach(manager => manager.init());
+
+    debugManager.init({
+        debugStatusDiv: domElements.debugPhaseStatus,
+        debugPhaseInfo: domElements.debugPhaseInfo,
         nextPhaseButton: domElements.btnNextPhase,
         playAllButton: domElements.btnPlayAll,
         resetButton: domElements.btnResetStartup,
-        debugStatusDiv: domElements.debugPhaseStatus,
-        debugPhaseInfo: domElements.debugPhaseInfo
-    };
-    debugManager.init({
-        startupSequenceManager: startupSequenceManager,
-        appState: appState,
-        domElements: debugDomElementsForManager
     });
 
-    startupSequenceManager.start(true);
+    // --- Dynamic UI Generation & Event Listener Setup ---
+    createGridButtons(buttonManager);
+    buttonManager.discoverButtons(domElements.allButtons);
+    setupEventListeners();
+
+    // --- Start the application ---
+    startupSequenceManager.start(true); // Start in step-through mode
     console.log('[Main INIT] HUE 9000 Initialization Complete.');
 }
 
+// --- App Entry Point ---
 document.addEventListener('DOMContentLoaded', initializeApp);

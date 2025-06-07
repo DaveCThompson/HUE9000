@@ -65,6 +65,12 @@ body.theme-light {
     --btn-pressed-bg-a-offset: 0.05;
     --btn-pressed-innershadow-color: oklch(0% 0 0 / 0.1);
     
+    /* NEW: Variables for the permanently disabled state */
+    --btn-disabled-bg-l: 0.45;
+    --btn-disabled-border-l: 0.50;
+    --btn-disabled-light-l: 0.6;
+    --btn-disabled-light-a: 0.5;
+
     /* --btn-energized-pressing-bg-l: calc(0.80 + 0.92) / 2; */ /* Approx 0.86 */
     /* --btn-energized-pressing-bg-a: calc(0.7 + 0.85) / 2; */ /* Approx 0.775 */
     /* --btn-energized-pressing-border-l: calc(0.70 + 0.85) / 2; */ /* Approx 0.775 */

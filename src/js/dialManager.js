@@ -1,67 +1,46 @@
 /**
- * @module dialManager (REFACTOR-V2.3 - Componentized)
+ * @module dialManager
  * @description Manages rotary dial controls: initialization and global operations.
  * Delegates individual dial logic, interaction, and rendering to Dial component instances.
+ * (Project Decouple Refactor)
  */
-import Dial from './Dial.js'; 
+import Dial from './Dial.js';
+import { serviceLocator } from './serviceLocator.js';
 
-const dialInstances = {}; 
-
-// Dependencies to be injected from main.js
-let appStateService = null;
-let configServiceModule = null; // Will store the configModule namespace object
-let gsapService = null;
-
-
-export function init(dialContainerElements, appState, configModule, gsap) { // configModule is the namespace
-  if (!dialContainerElements || dialContainerElements.length === 0) {
-    console.error("[DialManager INIT] No dial container elements provided.");
-    return;
-  }
-  if (!appState || !configModule || !gsap) { // Check configModule
-    console.error("[DialManager INIT] CRITICAL: Missing appState, configModule, or gsap dependencies.");
-    return;
+export class DialManager {
+  constructor() {
+    this.dialInstances = {};
+    this.appState = null;
+    this.config = null;
+    this.gsap = null;
+    this.dom = {};
+    this.debug = false;
   }
 
-  appStateService = appState;
-  configServiceModule = configModule; // Store the namespace object
-  gsapService = gsap;
+  init() {
+    this.appState = serviceLocator.get('appState');
+    this.config = serviceLocator.get('config');
+    this.gsap = serviceLocator.get('gsap');
+    this.dom = serviceLocator.get('domElements');
 
-  for (const dialId in dialInstances) {
-    if (dialInstances[dialId] && typeof dialInstances[dialId].destroy === 'function') {
-      dialInstances[dialId].destroy();
-    }
-    delete dialInstances[dialId];
+    if (this.debug) console.log('[DialManager INIT]');
+
+    const dialContainers = [this.dom.dialA, this.dom.dialB];
+    dialContainers.forEach(container => {
+      if (!container) return;
+      const dialId = container.dataset.dialId;
+      if (dialId) {
+        if (this.dialInstances[dialId]) this.dialInstances[dialId].destroy();
+        this.dialInstances[dialId] = new Dial(container, dialId, this.appState, this.config, this.gsap);
+      }
+    });
   }
-  
-  dialContainerElements.forEach(container => {
-    const dialId = container.dataset.dialId;
-    if (!dialId) {
-      console.error(`[DialManager INIT] Could not find dialId for container:`, container);
-      return;
-    }
-    if (dialInstances[dialId]) { 
-        dialInstances[dialId].destroy();
-    }
-    // Pass the entire configServiceModule to the Dial constructor
-    dialInstances[dialId] = new Dial(container, dialId, appStateService, configServiceModule, gsapService);
-  });
 
-  console.log("[DialManager INIT] Initialization complete. Dial instances created:", Object.keys(dialInstances));
-}
+  setDialsActiveState(isActive) {
+    Object.values(this.dialInstances).forEach(dial => dial.setActiveDimState(isActive));
+  }
 
-export function setDialsActiveState(isActive) {
-    for (const dialId in dialInstances) {
-        if (dialInstances.hasOwnProperty(dialId) && dialInstances[dialId]) {
-            dialInstances[dialId].setActiveDimState(isActive);
-        }
-    }
-}
-
-export function resizeAllCanvases(forceDraw = false) {
-    for (const dialId in dialInstances) {
-        if (dialInstances.hasOwnProperty(dialId) && dialInstances[dialId]) {
-            dialInstances[dialId].resizeCanvas(forceDraw);
-        }
-    }
+  resizeAllCanvases(forceDraw = false) {
+    Object.values(this.dialInstances).forEach(dial => dial.resizeCanvas(forceDraw));
+  }
 }
