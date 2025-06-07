@@ -13,7 +13,7 @@ export const phase1Config = {
       type: 'tween',
       target: 'dimmingFactors',
       vars: {
-        value: 0.39,
+        value: 0.35,
         duration: 1.0,
         ease: 'power1.inOut'
       },

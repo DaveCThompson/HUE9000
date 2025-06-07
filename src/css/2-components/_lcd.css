@@ -11,7 +11,7 @@
         calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) 
         var(--dynamic-lcd-hue)
     );
-    background-image: radial-gradient(80.98% 80.98% at 50% 50%,
+    background-image: radial-gradient(ellipse at center,
         oklch(var(--lcd-active-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
         oklch(calc(var(--lcd-active-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 100%
     );
@@ -23,7 +23,7 @@
     font-family: 'IBM Plex Mono', monospace;
     box-sizing: border-box;
     opacity: var(--theme-component-opacity); 
-    text-shadow: 0 0 5px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0)));
+    /* REMOVED: text-shadow property moved to more specific selectors */
 
     display: flex;
     flex-direction: column;
@@ -100,7 +100,8 @@
     font-weight: 600;
     line-height: 1; 
     transition: color var(--transition-duration-medium) ease, opacity var(--transition-duration-medium) ease;
-    text-shadow: 0 0 5px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0)));
+    /* ADDED: text-shadow to restore glow effect specifically for dial LCDs */
+    text-shadow: 0 0 8px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-text-shadow-base-alpha, 0.3));
 }
 
 /* --- LCD State Classes --- */
@@ -114,6 +115,7 @@
 }
 .lcd--unlit#hue-lcd-B .lcd-value { 
     opacity: 0; 
+    text-shadow: none; /* ADDED: Ensure no shadow when unlit */
 }
 .lcd--unlit#terminal-lcd-content { 
      color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
@@ -123,20 +125,27 @@
 }
 
 
+/* MODIFIED: Harmonized .js-active-dim-lcd to match .lcd--dimly-lit */
 .js-active-dim-lcd { 
-    background-image: none !important; 
-    background-color: oklch(var(--lcd-active-dim-bg-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-bg-a));
-    color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
-    border-color: oklch(var(--lcd-active-dim-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-border-a));
-    box-shadow: var(--lcd-active-dim-shadow);
-    text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5)); 
+    background-color: oklch(
+        var(--lcd-dimly-lit-grad-end-l) 
+        calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) 
+        var(--dynamic-lcd-hue)
+    ); 
+    background-image: radial-gradient(ellipse at center,
+        oklch(var(--lcd-dimly-lit-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
+        oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100%
+    );
+    color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
+    border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
+    box-shadow: var(--lcd-dimly-lit-shadow);
 }
 .js-active-dim-lcd#hue-lcd-B .lcd-value {
-    color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
-    text-shadow: 0 0 5px oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.5));
+    color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
+    text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7));
 }
 .js-active-dim-lcd#terminal-lcd-content { 
-     color: oklch(var(--lcd-active-dim-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-active-dim-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-dim-text-a));
+     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
 }
 .js-active-dim-lcd::after { 
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 
@@ -148,16 +157,15 @@
         var(--lcd-dimly-lit-grad-end-l) 
         calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) 
         var(--dynamic-lcd-hue)
-    ) !important; 
-    background-image: radial-gradient(circle,
+    ); 
+    background-image: radial-gradient(ellipse at center,
         oklch(var(--lcd-dimly-lit-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
         oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100%
-    ) !important;
+    );
     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
     box-shadow: var(--lcd-dimly-lit-shadow);
-    border-radius: 8px; 
     border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
-    text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7)); 
+    /* text-shadow removed from container */
 }
 .lcd--dimly-lit#hue-lcd-B .lcd-value {
      color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));

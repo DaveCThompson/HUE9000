@@ -154,5 +154,39 @@ This section details issues addressed during and immediately after the V2.3 refa
     *   Carefully consider the responsibilities of different functions that might affect the same element's state (e.g., `applyInitialLcdStates` vs. phase-specific logic) to avoid conflicting or redundant operations that can cause flashes.
     *   When an element's container (like the terminal screen) is animated, ensure its content's visibility is managed independently if the content should persist (e.g., terminal text should not disappear if only its screen background is flickering on).
 
+### C.8. Startup Sequence Race Condition and State Management
+*   **Symptom:** Dials and LCDs would appear in Phase 5 instead of Phase 6. Attempts to hide them with GSAP `set` or `tween` commands in `startupPhase5.js` were unreliable.
+*   **Root Cause Analysis:** A race condition existed between the procedural, timeline-based logic of `PhaseRunner` and the reactive, event-driven logic of `LcdUpdater`.
+    1.  `LcdUpdater` was subscribed to `startupPhaseNumberChanged`.
+    2.  When the FSM transitioned from P5 to P6, `LcdUpdater` would immediately see `phase >= 6` and call `setLcdState(..., 'dimly-lit')`, making the LCDs visible.
+    3.  This happened *before* the `PhaseRunner` began executing the `startupPhase6.js` animation timeline, which was *also* supposed to handle making the LCDs visible via a flicker effect. The reactive update pre-empted the procedural animation.
+*   **Solution Implemented:**
+    1.  **Decoupled `LcdUpdater` from Startup:** In `LcdUpdater.js`, removed the subscription to `startupPhaseNumberChanged`. Its `applyCurrentStateToAllLcds` method was modified to *only* run when the application is *not* in the `'starting-up'` state. This makes `PhaseRunner` the single source of truth for all state changes during the startup sequence.
+    2.  **Explicit State Cleanup in P10:** In `startupPhase10.js`, added a `call` function at the beginning of the phase. This function explicitly calls `lcdUpdater.setLcdState(..., 'active')` for all LCDs. This removes the temporary `.lcd--dimly-lit` class and prepares the elements for the theme transition, fixing a related bug where backgrounds would not transition correctly.
+*   **Files Affected:** `src/js/LcdUpdater.js`, `src/js/startupPhase10.js`.
+*   **Key Learning:** In a hybrid system with both procedural animations (like a startup sequence) and reactive state management, clear boundaries of responsibility are essential. For a fixed sequence, the procedural controller (`PhaseRunner`) must have ultimate authority. Reactive systems (`LcdUpdater`) should be disabled or made passive during the sequence to prevent race conditions and ensure animations play as designed.
+
+### C.9. Ambient "Harmonic Resonance" Animation Invisible, Choppy, or Missing Glow
+*   **Symptom (Iterative):**
+    1.  **Initial:** The "breathing" ambient animation on selected buttons was completely invisible.
+    2.  **After JS Fixes:** The animation was visible but extremely choppy and stuttered.
+    3.  **After Performance Fix:** The animation was smooth, but the button's glow disappeared entirely.
+*   **Root Cause Analysis (Iterative):**
+    1.  **Invisible Effect:** Debugging logs confirmed the JavaScript logic was correct (`AmbientAnimationManager` was calling `startHarmonicResonance` on the correct `Button` instances). The root cause was identified as a faulty guard clause (`if (!this.configModule) return;`) in the `Button.js` `startHarmonicResonance` method, which prevented the `.is-resonating` class from ever being added to the DOM element.
+    2.  **Choppy Animation:** After fixing the JS, the animation became visible but performed poorly. The cause was animating the `box-shadow` property on every frame. Repainting a large, blurry `box-shadow` is computationally expensive and blocks the browser's main thread, causing jank.
+    3.  **Missing Glow:** The `box-shadow` was replaced with a high-performance `::after` pseudo-element animated via `transform: scale()` and `opacity`. However, this new glow element was hidden due to a combination of `z-index: -1` (placing it behind the button's opaque background) and `overflow: hidden` on the main `.button-unit` (clipping any part of the glow that extended beyond the button's border).
+*   **Solution Implemented (Final):**
+    1.  **High-Performance Layering (CSS):** The button's structure in `_button-unit.css` was refactored:
+        *   The main `.button-unit` element was made transparent.
+        *   A `::before` pseudo-element was added to serve as the opaque background layer with `z-index: 1`.
+        *   The `::after` pseudo-element (the glow) was given `z-index: 0`, placing it correctly *behind* the background but still visible.
+        *   `overflow: hidden` was removed from `.button-unit` to ensure the glow was not clipped.
+    2.  **Hybrid Glow Strategy:**
+        *   For selected, resonating buttons, the performant `::after` pseudo-element is used for the animated glow.
+        *   For unselected, energized buttons, the standard `box-shadow` was restored to provide their necessary static glow without performance cost.
+    3.  **JavaScript Logic:** The `AmbientAnimationManager` and `config.js` were updated to drive the `opacity` and `transform: scale()` of the new pseudo-element glow via CSS custom variables (`--harmonic-resonance-glow-opacity`, `--harmonic-resonance-glow-scale`).
+*   **Files Affected:** `src/js/config.js`, `src/js/AmbientAnimationManager.js`, `src/js/Button.js`, `src/css/2-components/_button-unit.css`.
+*   **Key Learning:** For smooth, continuous animations, avoid animating expensive CSS properties like `box-shadow` or `filter` on a per-frame basis. Favor animating `transform` and `opacity` on dedicated elements or pseudo-elements. Correct CSS stacking context (`z-index`) and overflow properties are critical for the visibility of layered effects.
+
 ## Section D: XState Refactor & Key Considerations (Post V2.3 - SSR-V1.0)
 ... (rest of the file remains unchanged) ...

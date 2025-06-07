@@ -16,19 +16,19 @@
         opacity var(--transition-duration-medium) ease;
 }
 
-/* Static background colors for the 12 color chips */
+/* Static background colors for the 12 color chips - REORDERED */
 .color-chip-0 { background-color: oklch(0.705 0 0); } /* Colorless/Grey */
-.color-chip-1 { background-color: oklch(0.705 0.15 246); }
-.color-chip-2 { background-color: oklch(0.705 0.15 278.727); }
-.color-chip-3 { background-color: oklch(0.705 0.15 311.455); }
-.color-chip-4 { background-color: oklch(0.705 0.15 344.182); }
-.color-chip-5 { background-color: oklch(0.705 0.15 16.909); }
-.color-chip-6 { background-color: oklch(0.705 0.15 49.636); }
-.color-chip-7 { background-color: oklch(0.705 0.15 82.364); }
-.color-chip-8 { background-color: oklch(0.705 0.15 115.091); }
-.color-chip-9 { background-color: oklch(0.705 0.15 147.818); }
-.color-chip-10 { background-color: oklch(0.705 0.15 180.545); }
-.color-chip-11 { background-color: oklch(0.705 0.15 213.273); }
+.color-chip-1 { background-color: oklch(0.705 0.15 344.182); } /* Pink-Red */
+.color-chip-2 { background-color: oklch(0.705 0.15 311.455); } /* Magenta */
+.color-chip-3 { background-color: oklch(0.705 0.15 278.727); } /* Purple */
+.color-chip-4 { background-color: oklch(0.705 0.15 246); }     /* Blue */
+.color-chip-5 { background-color: oklch(0.705 0.15 213.273); } /* Sky Blue */
+.color-chip-6 { background-color: oklch(0.705 0.15 180.545); } /* Cyan */
+.color-chip-7 { background-color: oklch(0.705 0.15 147.818); } /* Teal */
+.color-chip-8 { background-color: oklch(0.705 0.15 115.091); } /* Green */
+.color-chip-9 { background-color: oklch(0.705 0.15 82.364); }  /* Yellow */
+.color-chip-10 { background-color: oklch(0.705 0.15 49.636); }  /* Orange */
+.color-chip-11 { background-color: oklch(0.705 0.15 16.909); }   /* Red */
 
 /* Dim mode specific appearance for color chips is handled in theme-dim.css for their bg/border
    and the --color-chip-base-opacity variable. */

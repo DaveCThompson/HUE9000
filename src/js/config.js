@@ -29,24 +29,24 @@ export const GSAP_BUTTON_IDLE_EASE = "sine.inOut";
 
 // --- Hue Assignment Grid Configuration ---
 export const HUE_ASSIGNMENT_ROW_HUES = [
-  0,       // 0: Colorless
-  246,     // 1: Blue
-  278.727, // 2: Purple
-  311.455, // 3: Magenta
-  344.182, // 4: Pink-Red
-  16.909,  // 5: Red
-  49.636,  // 6: Orange
-  82.364,  // 7: Yellow
+  0,       // 0: Colorless (Gray)
+  344.182, // 1: Pink-Red
+  311.455, // 2: Magenta
+  278.727, // 3: Purple
+  246,     // 4: Blue
+  213.273, // 5: Sky Blue
+  180.545, // 6: Cyan
+  147.818, // 7: Teal
   115.091, // 8: Green
-  147.818, // 9: Teal
-  180.545, // 10: Cyan
-  213.273  // 11: Sky Blue
+  82.364,  // 9: Yellow
+  49.636,  // 10: Orange
+  16.909   // 11: Red
 ];
 
 export const DEFAULT_ASSIGNMENT_SELECTIONS = {
-    env: 1,
+    env: 0,
     lcd: 0,
-    logo: 1,
+    logo: 0,
     btn: 0
 };
 
@@ -317,11 +317,14 @@ export function estimateFlickerDuration(profileName) {
 
 // --- Ambient Animation Parameters ---
 export const HARMONIC_RESONANCE_PARAMS = {
-    PERIOD: 5, 
-    BASE_LIGHT_OPACITY_SELECTED: 1, 
-    LIGHT_OPACITY_DIP_FACTOR: 0.3, 
-    TICK_UPDATE_DURATION: 0.1, 
-    ELIGIBILITY_CLASS: 'is-energized' 
+    ENABLED: true,
+    PERIOD: 2.5,
+    ELIGIBILITY_CLASS: 'is-energized',
+
+    // Define min/max animation ranges for a smooth, performant animation.
+    LIGHT_OPACITY_RANGE: [0.85, 1.0],   // Range for the button's inner light opacity
+    GLOW_OPACITY_RANGE:  [0.65, 0.90],  // Range for the pseudo-element glow's opacity
+    GLOW_SCALE_RANGE:    [0.95, 1.05],  // Range for the pseudo-element glow's scale
 };
 
 export const IDLE_LIGHT_DRIFT_PARAMS = {

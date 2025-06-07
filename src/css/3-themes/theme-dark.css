@@ -74,14 +74,14 @@ body.theme-dark {
     --lcd-active-grad-end-l: 0.22;   
     --lcd-active-text-l: 0.92; /* MODIFIED: Text lightness for active LCDs in dark theme */
     --lcd-active-text-a: 0.95;
-    --lcd-active-border-l: 0.55;     
+    --lcd-active-border-l: 0.45;     
     --lcd-active-border-a: 0.5;      
     --lcd-active-inner-glow-bottom-l: 0.20; 
     --lcd-active-inner-glow-bottom-a: 0.06;
     --lcd-active-inner-glow-diffuse-l: 0.20; 
     --lcd-active-inner-glow-diffuse-a: 0.04;
     --lcd-base-chroma-factor: 0.6; 
-    --lcd-text-shadow: 0 0 8px oklch(1 0 0 / 0.5); 
+    --lcd-text-shadow-base-alpha: 0.3; 
 
     --lcd-dimly-lit-grad-start-l: 0.40; 
     --lcd-dimly-lit-grad-end-l: 0.35;   

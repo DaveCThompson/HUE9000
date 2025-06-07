@@ -41,4 +41,4 @@ The interface "powers on" with a choreographed, multi-phase sequence (P0-P11), o
 *   **Modularity & Decoupling:** Each part of the system should be as independent as possible.
 *   **State-Driven UI:** The UI should always be a reflection of the data in `appState.js`.
 *   **Dynamic Lens Gradient:** The lens's appearance is a core feature, driven by a complex, multi-stop gradient calculation.
-*   **Button Visuals & States:** Clear distinction between states: `is-unlit`, `is-dimly-lit`, `.is-energized` (selected/unselected), `is-pressing`, and flickering effects.
+*   **Button Visuals & States:** Clear distinction between states: `is-unlit`, `is-dimly-lit`, `.is-energized` (selected/unselected), `is-pressing`, flickering effects, and continuous ambient effects like the "breathing" glow (`is-resonating`) on selected buttons.

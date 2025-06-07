@@ -44,8 +44,8 @@ This document outlines the principles and conventions for theming the HUE 9000 i
     *   Dial LCD screens flicker to `.lcd--dimly-lit`. Their text/content becomes visible.
     *   In `theme-dim`, all `dimly-lit` and `unlit` LCD states are achromatic (grayscale), with text lightness defined in `theme-dim.css`.
 *   **Theme Transition (Phase P10):**
-    *   All LCDs are set to an 'active' state (no `lcd--*` state class) by `uiUpdater.js` *before* the theme change.
-    *   Their `background-image` and `color` transition smoothly to the `theme-dark` values as the underlying CSS variables change.
+    *   All LCDs are explicitly set to an 'active' state (i.e., the `.lcd--dimly-lit` class is removed) by a `call` function in `startupPhase10.js`.
+    *   This cleanup is critical. It allows their `background-image` and `color` properties to transition smoothly to the `theme-dark` values as the underlying CSS variables change.
 
 ### 2. Dials
 *   **DIM Mode:** Dials are unlit until Phase P6. In P6, `dialManager.js` calls `DialInstance.setActiveDimState(true)`, causing them to be redrawn in an "active dim" state using variables from `theme-dim.css` (attenuated by startup factors).
@@ -60,6 +60,11 @@ This document outlines the principles and conventions for theming the HUE 9000 i
     *   For `.is-energized` buttons in `theme-dim` (like MAIN PWR, AUX), text color matches the dark theme energized style for consistency.
 *   **Transition from DIM (Phase P10):**
     *   SCAN, HUE ASSN, and FIT EVAL buttons flicker from `is-dimly-lit` to their final `.is-energized` states. This animation runs concurrently with the global 1s CSS transition.
+*   **High-Performance Glow Mechanism (IMPORTANT):**
+    *   The glow effect on buttons is implemented differently based on their state to ensure performance.
+    *   **Selected Buttons (`.is-selected.is-resonating`):** The "breathing" glow is achieved using a `::after` pseudo-element. Its `transform: scale()` and `opacity` are animated by JavaScript. This is highly performant. The main `.button-unit` element has its `box-shadow` set to `none`.
+    *   **Unselected Energized Buttons (`.is-energized:not(.is-selected)`):** These buttons use a standard, static `box-shadow` for their glow, as they do not have a continuous animation.
+    *   **Theming Implication:** To theme the selected button glow, you must target the `background-color` and `filter: blur()` of the `.button-unit::after` pseudo-element. To theme the unselected glow, you target the `box-shadow` property on the `.button-unit` itself.
 
 ### 4. Lens Display & Glows
 *   **Bezel:** The lens bezel rings (`#lens-container::before/::after`) have their L-values attenuated by `--startup-L-reduction-factor` during startup. Their base opacity is set by `--lens-bezel-opacity` in `theme-dim.css`. They transition to their full metallic conic gradient in P10.

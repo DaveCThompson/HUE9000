@@ -5,6 +5,7 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 ## Core Principles During Startup
 
 *   **Initial Theme:** `body.theme-dim` is active. `body` also starts with `pre-boot` class (removed by `startupSequenceManager.js` during P0).
+*   **Procedural Control:** During the startup sequence (Phases P0-P10), the declarative `startupPhaseX.js` configurations, executed by `PhaseRunner`, are the **single source of truth** for all component state changes and animations. Reactive managers (like `LcdUpdater`) are intentionally passive to prevent race conditions.
 *   **Progressive Reveal & Dimming Factors:**
     *   Elements activate in stages. Their visual appearance during startup is heavily influenced by two CSS custom properties animated by GSAP within each phase module:
         *   `--startup-L-reduction-factor`: Ranges from a high value (e.g., 0.40) down to 0.0 (no lightness reduction). Affects `oklch()` L-values.
@@ -136,14 +137,12 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Key Actions:**
     1.  **Dimming Factors:** Remain at L=0.0, O=1.0.
     2.  **UI Preparation:**
-        *   `uiUpdater.prepareLogoForFullTheme()` called.
+        *   **LCD State Cleanup:** All LCDs (`.actual-lcd-screen-element`, `.hue-lcd-display`) are explicitly set to their 'active' state by `LcdUpdater`. This removes the temporary `.lcd--dimly-lit` class, preparing them for a smooth CSS transition.
         *   Elements matching `config.selectorsForDimExitAnimation` get `.animate-on-dim-exit` class.
         *   `body` gets `is-transitioning-from-dim` class.
-        *   Dial LCDs and Terminal screen set to `active` state by `uiUpdater` (no flicker, class change only). This removes `.lcd--dimly-lit` and prepares them for `theme-dark` styles.
     3.  **Theme Change:** `appStateService.setTheme('dark')` called. This triggers CSS transitions for elements with `.animate-on-dim-exit` (1s duration). MAIN PWR and AUX buttons (already `.is-energized`) visually adapt. LCD backgrounds transition.
     4.  **Button Energizing (Concurrent):**
-        *   SCAN, FIT EVAL, and HUE ASSN buttons (which were `is-dimly-lit`) execute flicker animations to their final `.is-energized` states (HUE ASSN defaults applied for selection), now styled by `theme-dark.css`. Uses profiles `buttonFlickerFromDimlyLitToFullyLitUnselected` or `buttonFlickerFromDimlyLitToFullyLitSelected`. This is orchestrated by `buttonManager.flickerDimlyLitToEnergizedStartup`.
-    5.  **LCD State Re-assertion (Delayed):** `uiUpdater.applyInitialLcdStates()` is called after a short delay post-theme-set to ensure LCDs correctly reflect their 'active' state under `theme-dark` after CSS transitions.
+        *   SCAN, FIT EVAL, and HUE ASSN buttons (which were `is-dimly-lit`) execute flicker animations to their final `.is-energized` states (HUE ASSN defaults applied for selection), now styled by `theme-dark.css`. Uses profiles `buttonFlickerFromDimlyLitToFullyLitUnselected` or `buttonFlickerFromDimlyLitToFullyLitSelected`.
 *   **Visual Outcome:** Global theme transitions from dim to dark. SCAN, FIT EVAL, HUE ASSN buttons flicker to full power.
 
 ### Phase 11: HUE 9000 Operational (`startupPhase11.js`)

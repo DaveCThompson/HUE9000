@@ -31,7 +31,8 @@ export class LcdUpdater {
 
     // Subscribe to events that affect all LCDs' general state
     this.appState.subscribe('appStatusChanged', () => this.applyCurrentStateToAllLcds());
-    this.appState.subscribe('startupPhaseNumberChanged', () => this.applyCurrentStateToAllLcds());
+    // REMOVED: No longer reacting to phase changes, as it causes race conditions with PhaseRunner.
+    // this.appState.subscribe('startupPhaseNumberChanged', () => this.applyCurrentStateToAllLcds());
 
     // Subscribe to specific data changes for individual LCDs
     this.appState.subscribe('trueLensPowerChanged', (newPower) => this.updateLcdBContent(newPower));
@@ -93,26 +94,25 @@ export class LcdUpdater {
   }
 
   /**
-   * Applies the correct visual state to all registered LCDs based on the current app status and startup phase.
+   * Applies the correct visual state to all registered LCDs based on the current app status.
+   * This method should NOT be used for managing state during the startup sequence, as that
+   * is handled procedurally by the PhaseRunner.
    */
   applyCurrentStateToAllLcds() {
     const status = this.appState.getAppStatus();
-    const phase = this.appState.getCurrentStartupPhaseNumber();
-    if (this.debug) console.log(`[LcdUpdater applyCurrentStateToAllLcds] AppStatus: ${status}, Phase: ${phase}`);
+    if (this.debug) console.log(`[LcdUpdater applyCurrentStateToAllLcds] AppStatus: ${status}`);
 
-    let targetState = 'unlit';
-    if (status === 'interactive' || (status === 'starting-up' && phase >= 10)) {
-      targetState = 'active';
-    } else if (status === 'starting-up' && phase >= 6) {
-      targetState = 'dimly-lit';
+    // Only apply state if the app is NOT in the middle of the startup sequence.
+    // This prevents race conditions with the PhaseRunner's animations.
+    if (status !== 'starting-up') {
+        const targetState = (status === 'interactive') ? 'active' : 'unlit';
+        const lcds = [this.dom.lcdA, this.dom.lcdB, this.dom.terminalContainer];
+        lcds.forEach(lcd => {
+            if (lcd && !lcd.classList.contains('is-flickering')) {
+                this.setLcdState(lcd, targetState, { phaseContext: `ApplyAll_S:${status}` });
+            }
+        });
     }
-
-    const lcds = [this.dom.lcdA, this.dom.lcdB, this.dom.terminalContainer];
-    lcds.forEach(lcd => {
-      if (lcd && !lcd.classList.contains('is-flickering')) {
-        this.setLcdState(lcd, targetState, { phaseContext: `ApplyAll_S:${status}_P:${phase}` });
-      }
-    });
   }
 
   /**

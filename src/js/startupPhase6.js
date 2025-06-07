@@ -29,7 +29,7 @@ export const phase6Config = {
       type: 'tween',
       target: ['dialA', 'dialB'],
       vars: {
-        opacity: 1,
+        autoAlpha: 1, // MODIFIED: Changed from 'opacity' to 'autoAlpha' to ensure visibility is set to 'visible'
         duration: 0.5,
         ease: 'power1.out',
         stagger: 0.05

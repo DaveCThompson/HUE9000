@@ -15,7 +15,7 @@ class Button {
         this.configModule = configModule;
 
         this.debugAmbient = false;
-        this.debugResistive = true;
+        this.debugResistive = false;
         this.cssIdleDriftClassName = 'css-idle-drifting';
 
         if (!this.gsap) throw new Error(`[Button CONSTRUCTOR ${this.getIdentifier()}] GSAP instance is not available.`);
@@ -218,14 +218,12 @@ class Button {
     }
 
     startHarmonicResonance() {
-        if (!this.configModule) return;
         if (this.element.classList.contains('is-resonating')) return;
         this._isResonating = true;
         this.element.classList.add('is-resonating');
     }
 
     stopHarmonicResonance() {
-        if (!this.configModule) return;
         if (!this.element.classList.contains('is-resonating')) return;
         this._isResonating = false;
         this.element.classList.remove('is-resonating');

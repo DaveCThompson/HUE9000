@@ -82,15 +82,16 @@ body.theme-dim {
     --lcd-unlit-border-a: 0.15;
     --lcd-unlit-shadow: none;
 
-    --lcd-active-dim-bg-l: 0.06;
-    --lcd-active-dim-bg-a: 0.65;
-    --lcd-active-dim-text-l: 0.85; 
+    /* MODIFIED: Harmonized active-dim and dimly-lit variables */
+    --lcd-active-dim-bg-l: 0.18; /* Match dimly-lit end gradient */
+    --lcd-active-dim-bg-a: 1.0;
+    --lcd-active-dim-text-l: 0.90; 
     --lcd-active-dim-text-c: 0;    
     --lcd-active-dim-text-h: 0;
-    --lcd-active-dim-text-a: 0.95; 
+    --lcd-active-dim-text-a: 1; 
     --lcd-active-dim-border-l: 0.09;
     --lcd-active-dim-border-a: 0.25;
-    --lcd-active-dim-shadow: none;
+    --lcd-active-dim-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.1);
     --lcd-active-dim-chroma-factor: 0; 
 
     --lcd-dimly-lit-grad-start-l: 0.22;

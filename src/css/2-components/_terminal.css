@@ -8,21 +8,8 @@
     display: flex;
     flex-direction: column;
     padding: 0; 
-    /* Default text color, overridden by state classes below */
-    color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
+    /* Color is now inherited from _lcd.css for harmonization */
 }
-
-/* Specific text color for terminal when its screen is .lcd--dimly-lit */
-.terminal-block > .actual-lcd-screen-element.lcd--dimly-lit {
-    color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor, 0)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-}
-
-/* Specific text color for terminal when its screen is .lcd--unlit */
-/* This ensures text has a visible base color even if its content area opacity is managed by JS */
-.terminal-block > .actual-lcd-screen-element.lcd--unlit {
-    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a)); 
-}
-
 
 #terminal-lcd-content {
     /* MODIFIED: Only the drop shadow remains here */
@@ -44,7 +31,8 @@
     display: flex;
     align-items: baseline;
     line-height: 1.7;
-    color: inherit; 
+    /* MODIFIED: Replaced 'inherit' with direct color construction for consistency. */
+    color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
     /* MODIFIED: Glow text-shadow moved here */
     text-shadow:
         0 0 calc(var(--terminal-text-bloom-size, 0px) * var(--theme-terminal-glow-size-factor, 1))
@@ -56,6 +44,16 @@
        If a distinct drop shadow per line is ever needed, it would also be added here. */
 }
 
+/* ADDED: Specific color rules for terminal lines in different states */
+.lcd--unlit .terminal-line {
+    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
+}
+.js-active-dim-lcd .terminal-line,
+.lcd--dimly-lit .terminal-line {
+    color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
+}
+
+
 .terminal-line--initial-boot {
     /* No specific color override needed here. Color is inherited.
        Glow is from its own text-shadow rule now. Line opacity (autoAlpha) is from flicker.
@@ -65,10 +63,18 @@
 
 .terminal-cursor {
     display: inline-block;
+    width: 0.6em;
+    height: 1.1em;
     background-color: currentColor; 
-    animation: terminalCursorBlink var(--terminal-cursor-blink-on-duration) steps(1, end) 0s infinite alternate;
-    margin-left: 1px;
+    margin-left: 2px;
     user-select: none;
+    opacity: 1; /* Solid by default */
+    vertical-align: text-bottom;
+    transform: translateY(2px); /* Vertically align cursor */
+}
+
+.terminal-cursor.is-blinking {
+    animation: terminalCursorBlink 1s steps(1, end) infinite;
 }
 
 @keyframes terminalCursorBlink {
@@ -78,9 +84,6 @@
     50% {
         opacity: 0;
     }
-}
-.terminal-cursor {
-    animation-duration: calc(var(--terminal-cursor-blink-on-duration) + var(--terminal-cursor-blink-off-duration));
 }
 
 
@@ -105,6 +108,4 @@
     border-radius: inherit;
 }
 
-.terminal-block > .actual-lcd-screen-element::after {
-    display: none !important;
-}
+/* REMOVED rule that hid the CRT overlay */

@@ -63,7 +63,10 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `LcdUpdater.js`
 *   **@module LcdUpdater:** Manages the visual state of all LCD screens.
-*   **Core Responsibilities:** Handles `unlit`, `dimly-lit`, and `active` states for LCD containers, including flicker effects during startup.
+*   **Core Responsibilities:**
+    *   Handles `unlit`, `dimly-lit`, and `active` states for LCD containers.
+    *   During the startup sequence, its state-setting methods are called **procedurally** by `PhaseRunner`. It remains passive and does not react to global state changes during this time to prevent race conditions.
+    *   When the application is interactive, it applies the correct final state based on `appStatus`.
 
 #### `DynamicStyleManager.js`
 *   **@module DynamicStyleManager:** Manages dynamic CSS custom properties.
@@ -103,7 +106,10 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `PhaseRunner.js`
 *   **@module PhaseRunner:** A generic executor for declarative startup phase configurations.
-*   **Core Responsibilities:** Parses a phase config object, builds a GSAP timeline dynamically from it, and returns a promise that resolves on completion.
+*   **Core Responsibilities:**
+    *   Parses a phase config object and builds a GSAP timeline dynamically from it.
+    *   Orchestrates all procedural state changes for components during the startup sequence, acting as the **single source of truth** for animations and state until the sequence completes.
+    *   Returns a promise that resolves on completion of the phase timeline.
 
 #### `startupPhase[0-11].js`
 *   **@module startupPhaseX:** A series of modules, each exporting a single, declarative configuration object that defines all animations and actions for that phase.

@@ -50,8 +50,6 @@ class TerminalManager {
     _setupDOM() {
         this._cursorElement = document.createElement('span');
         this._cursorElement.className = 'terminal-cursor';
-        this._cursorElement.textContent = '▋';
-        this._cursorElement.style.visibility = 'hidden';
         this.reset();
     }
 
@@ -80,6 +78,8 @@ class TerminalManager {
     async _processQueue() {
         if (this._messageQueue.length === 0) {
             this._isTyping = false;
+            this._addNewLineAndPrepareForTyping();
+            this._setCursorState('idle');
             return;
         }
         this._isTyping = true;
@@ -89,6 +89,12 @@ class TerminalManager {
             this._gsap.set(this._terminalContentElement, { opacity: 1, visibility: 'visible' });
         }
 
+        // Remove cursor from previous line before starting new message
+        if (this._cursorElement.parentNode) {
+            this._cursorElement.parentNode.removeChild(this._cursorElement);
+        }
+        this._setCursorState('typing');
+
         const delay = Math.random() * (this._configModule.TERMINAL_NEW_LINE_DELAY_MAX_MS - this._configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS) + this._configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS;
         await new Promise(resolve => setTimeout(resolve, delay));
 
@@ -97,8 +103,7 @@ class TerminalManager {
             this._addNewLineAndPrepareForTyping();
 
             if (messageObject.source === 'EMERGENCY_SUBSYSTEMS' && !this._initialMessageFlickered) {
-                this._currentLineElement.appendChild(this._cursorElement);
-                this._showCursor();
+                this._setCursorState('typing');
                 const flickerResult = createAdvancedFlicker(this._currentLineElement, 'textFlickerToDimlyLit', { gsapInstance: this._gsap });
                 if (flickerResult.timeline) {
                     const textAnim = {
@@ -113,7 +118,7 @@ class TerminalManager {
                 }
                 this._initialMessageFlickered = true;
             } else {
-                this._showCursor();
+                this._setCursorState('typing');
                 await this._typeLine(lineText, messageObject.type);
             }
             if (i < messageObject.content.length - 1) {
@@ -121,7 +126,6 @@ class TerminalManager {
             }
         }
 
-        this._hideCursor();
         this._isTyping = false;
         this._processQueue();
     }
@@ -171,16 +175,19 @@ class TerminalManager {
         }
     }
 
-    _showCursor() {
-        if (this._cursorElement && this._currentLineElement) {
-            this._currentLineElement.appendChild(this._cursorElement);
-            this._cursorElement.style.visibility = 'visible';
-        }
-    }
+    _setCursorState(state) {
+        if (!this._cursorElement) return;
 
-    _hideCursor() {
-        if (this._cursorElement) {
-            this._cursorElement.style.visibility = 'hidden';
+        if (state === 'typing') {
+            this._cursorElement.classList.remove('is-blinking');
+            if (this._currentLineElement) {
+                this._currentLineElement.appendChild(this._cursorElement);
+            }
+        } else if (state === 'idle') {
+            this._cursorElement.classList.add('is-blinking');
+            if (this._currentLineElement) {
+                this._currentLineElement.appendChild(this._cursorElement);
+            }
         }
     }
 }

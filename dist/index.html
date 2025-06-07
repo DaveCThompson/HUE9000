@@ -14,7 +14,7 @@
     <!-- GSAP will be imported and registered via JS modules (main.js) -->
     <style>
         /* Initial body opacity for fade-in, managed by JS/CSS */
-        body {
+        .pre-boot {
             opacity: 0;
         }
         /* Debug Controls Styling (can be moved to a separate debug.css if preferred) */
@@ -49,8 +49,8 @@
         #debug-phase-info { font-size: 11px; margin-top: 4px; color: #ccc; max-width: 300px;}
 
     </style>
-  <script type="module" crossorigin src="/HUE9000/assets/index-BZMROuFB.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-CqaeUXLE.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-DubyGgsP.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-C0lLNHLT.css">
 </head>
 <body class="theme-dim pre-boot">
     <div id="debug-controls">
@@ -74,7 +74,7 @@
                                     <div class="button-bg-frame"></div>
                                     <div class="button-text">OFF</div>
                                 </div>
-                                <div class="button-unit button-unit--toggle button-unit--l is-selected" data-toggle-value="on" aria-pressed="true" role="button" tabindex="0" aria-label="Main Power On">
+                                <div id="main-power-on-btn" class="button-unit button-unit--toggle button-unit--l is-selected" data-toggle-value="on" aria-pressed="true" role="button" tabindex="0" aria-label="Main Power On">
                                      <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div>
                                     <div class="button-bg-frame"></div>
                                     <div class="button-text">ON</div>
@@ -84,7 +84,9 @@
                         </div>
                        </div>
                      <div class="control-block terminal-block">
-                         <div class="actual-lcd-screen-element" id="terminal-lcd-content" aria-live="polite">INITIALIZING...</div>
+                         <div class="actual-lcd-screen-element">
+                            <div id="terminal-lcd-content" aria-live="polite"></div>
+                         </div>
                          <div class="block-label-bottom block-label-bottom--descriptor">TERMINAL</div>
                       </div>
                   </div>
@@ -121,7 +123,7 @@
                     <div class="top-toggle-bar">
                         <div class="control-block light-mode-group-container" data-group-id="light">
                              <div class="control-group toggle-button-group">
-                                <div class="button-unit button-unit--toggle button-unit--l" data-toggle-value="off" role="button" tabindex="-1" aria-label="Auxiliary Light Low" aria-checked="false"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">LOW</div></div>
+                                <div id="aux-light-low-btn" class="button-unit button-unit--toggle button-unit--l" data-toggle-value="off" role="button" tabindex="-1" aria-label="Auxiliary Light Low" aria-checked="false"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">LOW</div></div>
                                 <div class="button-unit button-unit--toggle button-unit--l" data-toggle-value="on" role="button" tabindex="-1" aria-label="Auxiliary Light High" aria-checked="false"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">HIGH</div></div>
                             </div>
                            <div class="block-label-bottom block-label-bottom--descriptor">AUX LIGHT</div>
