@@ -29,18 +29,18 @@ export const GSAP_BUTTON_IDLE_EASE = "sine.inOut";
 
 // --- Hue Assignment Grid Configuration ---
 export const HUE_ASSIGNMENT_ROW_HUES = [
-  0,
-  246,
-  278.727,
-  311.455,
-  344.182,
-  16.909,
-  49.636,
-  82.364,
-  115.091,
-  147.818,
-  180.545,
-  213.273
+  0,       // 0: Colorless
+  246,     // 1: Blue
+  278.727, // 2: Purple
+  311.455, // 3: Magenta
+  344.182, // 4: Pink-Red
+  16.909,  // 5: Red
+  49.636,  // 6: Orange
+  82.364,  // 7: Yellow
+  115.091, // 8: Green
+  147.818, // 9: Teal
+  180.545, // 10: Cyan
+  213.273  // 11: Sky Blue
 ];
 
 export const DEFAULT_ASSIGNMENT_SELECTIONS = {
@@ -87,7 +87,8 @@ export const selectorsForDimExitAnimation = [
 
 // --- Lens Visuals & Oscillation Configuration ---
 export const LENS_OSCILLATION_THRESHOLD = 0.7;
-export const LENS_OSCILLATION_SMOOTHING_DURATION = 0.2;
+export const LENS_OSCILLATION_SMOOTHING_DURATION = 0.2; // Default smoothing for lens power
+export const LENS_OSCILLATION_HUE_SMOOTHING_DURATION = 0.2; // Default smoothing for lens hue
 export const LENS_OSCILLATION_RESTART_DELAY = 250;
 export const LENS_OSCILLATION_AMPLITUDE_MIN = 0.005;
 export const LENS_OSCILLATION_AMPLITUDE_MAX_ADDITION = 0.045;
@@ -161,14 +162,14 @@ export const ADVANCED_FLICKER_PROFILES = {
         amplitudeStart: 0.0, 
         amplitudeEnd: 1.0, 
         glow: { 
-            initialOpacity: 0.0, peakOpacity: 1.0, finalOpacity: 1.0, // MODIFIED: Target new baseline
-            initialSize: '0px', peakSize: '18px', finalSize: '16px', // MODIFIED: Target new baseline
+            initialOpacity: 0.0, peakOpacity: 1.0, finalOpacity: 1.0, 
+            initialSize: '0px', peakSize: '18px', finalSize: '16px', 
             colorVar: '--terminal-text-glow-color', scaleWithAmplitude: false, 
             animatedProperties: { opacity: '--terminal-text-glow-opacity', blur: '--terminal-text-bloom-size' }
         }, 
         targetProperty: 'text-shadow-opacity-and-blur' 
     },
-    lcdScreenFlickerToDimlyLit: { // For Dial LCDs
+    lcdScreenFlickerToDimlyLit: { 
         numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
         amplitudeStart: 0.0, amplitudeEnd: VISUAL_STATES.DIMLY_LIT.amplitudeEnd,
         glow: {
@@ -252,6 +253,51 @@ export const ADVANCED_FLICKER_PROFILES = {
             initialSize: '0px', peakSize: '20px', finalSize: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalSize,
             colorVar: '--btn-glow-color', sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity', scaleWithAmplitude: false
         }, targetProperty: 'button-lights-and-frame'
+    },
+    buttonFlickerResistYellow: { 
+        numCycles: 2, periodStart: 0.15, periodEnd: 0.12, onDurationRatio: 0.5,
+        amplitudeStart: 1.0, amplitudeEnd: 1.0, 
+        glow: { 
+            initialOpacity: { selected: 0.6, unselected: 0.4 }, 
+            peakOpacity: { selected: 0.9, unselected: 0.7 },    
+            finalOpacity: { selected: 0.6, unselected: 0.4 },   
+            initialSize: { selected: '8px', unselected: '5px' },
+            peakSize: { selected: '12px', unselected: '8px' },
+            finalSize: { selected: '8px', unselected: '5px' },
+            colorVar: '--btn-glow-color', 
+            sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity',
+            scaleWithAmplitude: false
+        }, targetProperty: 'button-lights-and-frame'
+    },
+    buttonFlickerResistOrange: {
+        numCycles: 2, periodStart: 0.18, periodEnd: 0.15, onDurationRatio: 0.5,
+        amplitudeStart: 1.0, amplitudeEnd: 1.0,
+        glow: {
+            initialOpacity: { selected: 0.65, unselected: 0.45 },
+            peakOpacity: { selected: 1.0, unselected: 0.8 },
+            finalOpacity: { selected: 0.65, unselected: 0.45 },
+            initialSize: { selected: '9px', unselected: '6px' },
+            peakSize: { selected: '14px', unselected: '10px' },
+            finalSize: { selected: '9px', unselected: '6px' },
+            colorVar: '--btn-glow-color', 
+            sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity',
+            scaleWithAmplitude: false
+        }, targetProperty: 'button-lights-and-frame'
+    },
+    buttonFlickerResistRedThenSolid: { 
+        numCycles: 1, periodStart: 0.4, periodEnd: 0.4, onDurationRatio: 0.6,
+        amplitudeStart: 1.0, amplitudeEnd: 1.0, 
+        glow: {
+            initialOpacity: { selected: 0.7, unselected: 0.7 }, 
+            peakOpacity: { selected: 1.0, unselected: 1.0 },    
+            finalOpacity: { selected: 0.8, unselected: 0.8 },   // Final solid red glow opacity
+            initialSize: { selected: '10px', unselected: '10px' },
+            peakSize: { selected: '16px', unselected: '16px' },
+            finalSize: { selected: '10px', unselected: '10px' }, // Final solid red glow size
+            colorVar: '--btn-glow-color', 
+            sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity',
+            scaleWithAmplitude: false
+        }, targetProperty: 'button-lights-and-frame'
     }
 };
 
@@ -308,3 +354,43 @@ export const MOOD_MATRIX_DEFINITIONS = [
 export const MOOD_MATRIX_SEGMENT_DEGREES = 40;
 export const MOOD_MATRIX_SCROLL_DURATION = 0.4; // seconds
 export const MOOD_MATRIX_ROW_HEIGHT_EM_FALLBACK = 1.4; // Fallback if offsetHeight is 0
+
+// --- Resistive Shutdown Configuration ---
+export const RESISTIVE_SHUTDOWN_PARAMS = {
+    MAX_STAGE: 3,
+    LENS_ANIMATION_EASING_DEFAULT: "power2.inOut",
+
+    STAGE_1: {
+        BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistYellow',
+        BUTTON_FLASH_GLOW_COLOR: 'oklch(0.85 0.15 85)', // Soft Yellow
+        TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S1',
+        LENS_ANIM_DURATION_S: 0.75,
+        DIAL_A_HUE_TARGET_MODE: 'absolute',
+        DIAL_A_HUE_VALUE: 82.364, // Yellow
+        DIAL_B_POWER_TARGET_MODE: 'increase_absolute_0_1',
+        DIAL_B_POWER_VALUE: 0.20,
+        HUE_ASSIGN_TARGET_HUE: 82.364, // Yellow
+    },
+    STAGE_2: {
+        BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistOrange',
+        BUTTON_FLASH_GLOW_COLOR: 'oklch(0.75 0.16 50)', // Deeper Orange
+        TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S2',
+        LENS_ANIM_DURATION_S: 0.75,
+        DIAL_A_HUE_TARGET_MODE: 'absolute',
+        DIAL_A_HUE_VALUE: 49.636, // Orange
+        DIAL_B_POWER_TARGET_MODE: 'increase_absolute_0_1',
+        DIAL_B_POWER_VALUE: 0.20,
+        HUE_ASSIGN_TARGET_HUE: 49.636, // Orange
+    },
+    STAGE_3: {
+        BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistRedThenSolid',
+        BUTTON_FLASH_GLOW_COLOR: 'oklch(0.65 0.22 25)', // Red
+        TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S3',
+        LENS_ANIM_DURATION_S: 1.0,
+        DIAL_A_HUE_TARGET_MODE: 'absolute',
+        DIAL_A_HUE_VALUE: 16.909, // Red
+        DIAL_B_POWER_TARGET_MODE: 'absolute_100',
+        DIAL_B_POWER_VALUE: 1.0, // Not used, but for clarity
+        HUE_ASSIGN_TARGET_HUE: 16.909, // Red
+    }
+};

@@ -4,7 +4,7 @@
  * appearance (CSS classes, ARIA attributes), and specific animations.
  * (REFACTOR-V2.3 - Ambient Animations Update - CSS Idle Drift)
  */
-import { ButtonStates }  from './buttonManager.js';
+import { ButtonStates }  from './buttonManager.js'; // ButtonStates now includes PERMANENTLY_DISABLED
 
 class Button {
     constructor(domElement, config, gsapInstance, appStateService, configModule, uiUpdaterService) {
@@ -15,6 +15,7 @@ class Button {
         this.configModule = configModule; // Passed by ButtonManager
         this.uiUpdater = uiUpdaterService;
         this.debugAmbient = false; 
+        this.debugResistive = true; // For resistive shutdown specific logs
         this.cssIdleDriftClassName = 'css-idle-drifting'; // Class for CSS driven idle drift
 
         if (!this.gsap) {
@@ -28,9 +29,9 @@ class Button {
         this.currentFlickerAnim = null;
         this._pressTimeoutId = null;
         this._isSelected = config.isSelectedByDefault || false;
+        this._isPermanentlyDisabled = false; // New state for resistive shutdown
 
         this._isResonating = false; // Internal flag, primarily for consistency if JS logic was still used
-        // REMOVED: this.idleLightDriftTweens = [];
         this.stateTransitionEchoTween = null;
 
         this._updateAriaAttributes();
@@ -60,6 +61,8 @@ class Button {
             });
             const targetManagedClasses = new Set(newClassesArray);
             if (this._isSelected) targetManagedClasses.add('is-selected'); else targetManagedClasses.delete('is-selected');
+            if (this._isPermanentlyDisabled) targetManagedClasses.add(ButtonStates.PERMANENTLY_DISABLED); else targetManagedClasses.delete(ButtonStates.PERMANENTLY_DISABLED);
+
 
             if (currentManagedClassesOnElement.size !== targetManagedClasses.size) stateChanged = true;
             else {
@@ -68,6 +71,11 @@ class Button {
                 }
             }
         }
+        
+        if (this.debugResistive && this.getIdentifier().includes("MAIN PWR OFF") && newStateClassesStr === ButtonStates.PERMANENTLY_DISABLED) {
+            console.log(`[Button ${buttonId} setState - ${effectivePhaseContext}] Setting to PERMANENTLY_DISABLED. stateChanged: ${stateChanged}, forceState: ${forceState}`);
+        }
+
 
         if (!stateChanged && !forceState) {
             if (!skipAria) this._updateAriaAttributes();
@@ -85,14 +93,18 @@ class Button {
             this.gsap.set(this.element, { clearProps: "css" }); 
         }
 
-        const allPossibleStateClasses = Object.values(ButtonStates).flatMap(s => s.split(' ')).filter(c => c && c !== 'is-selected');
+        const allPossibleStateClasses = Object.values(ButtonStates).flatMap(s => s.split(' ')).filter(c => c && c !== 'is-selected' && c !== ButtonStates.PERMANENTLY_DISABLED);
         [...new Set(allPossibleStateClasses)].forEach(cls => {
             if (this.element.classList.contains(cls)) this.element.classList.remove(cls);
         });
-        newClassesSet.forEach(cls => { if (cls !== 'is-selected') this.element.classList.add(cls); });
+        newClassesSet.forEach(cls => { if (cls !== 'is-selected' && cls !== ButtonStates.PERMANENTLY_DISABLED) this.element.classList.add(cls); });
 
         if (this._isSelected) this.element.classList.add('is-selected');
         else this.element.classList.remove('is-selected');
+
+        if (this._isPermanentlyDisabled) this.element.classList.add(ButtonStates.PERMANENTLY_DISABLED);
+        else this.element.classList.remove(ButtonStates.PERMANENTLY_DISABLED);
+
 
         this.currentClasses.clear();
         this.element.classList.forEach(cls => this.currentClasses.add(cls));
@@ -104,11 +116,17 @@ class Button {
         if (this.config.type === 'toggle') this.element.setAttribute('aria-pressed', isEffectivelySelected.toString());
         else if (this.config.type === 'radio') this.element.setAttribute('aria-checked', isEffectivelySelected.toString());
 
-        const isVisuallyInteractive = Array.from(this.element.classList).some(cls =>
-            cls === ButtonStates.ENERGIZED_UNSELECTED.split(' ')[0] ||
-            cls === ButtonStates.DIMLY_LIT.split(' ')[0]
-        );
-        this.element.setAttribute('tabindex', isVisuallyInteractive ? '0' : '-1');
+        if (this._isPermanentlyDisabled) {
+            this.element.setAttribute('aria-disabled', 'true');
+            this.element.setAttribute('tabindex', '-1');
+        } else {
+            this.element.removeAttribute('aria-disabled');
+            const isVisuallyInteractive = Array.from(this.element.classList).some(cls =>
+                cls === ButtonStates.ENERGIZED_UNSELECTED.split(' ')[0] ||
+                cls === ButtonStates.DIMLY_LIT.split(' ')[0]
+            );
+            this.element.setAttribute('tabindex', isVisuallyInteractive ? '0' : '-1');
+        }
     }
 
     getElement() { return this.element; }
@@ -117,10 +135,20 @@ class Button {
     getCurrentClasses() { return new Set(this.element.classList); }
     getCurrentStateClasses() { return Array.from(this.element.classList).join(' '); }
     isSelected() { return this._isSelected; }
+    isPermanentlyDisabled() { return this._isPermanentlyDisabled; } // New getter
 
     setSelected(selected, options = {}) {
         const { skipAnimation = false, themeContext = 'theme-dark', phaseContext = 'ButtonSetSelected' } = options;
         const buttonId = this.getIdentifier();
+
+        if (this._isPermanentlyDisabled && selected === false && this.getIdentifier().includes("MAIN PWR OFF")) {
+            // Allow deselecting the OFF button if it's permanently disabled and being reset
+            if (this.debugResistive) console.log(`[Button ${buttonId} setSelected] Allowing deselect for permanently disabled OFF button during reset.`);
+        } else if (this._isPermanentlyDisabled) {
+            if (this.debugResistive) console.log(`[Button ${buttonId} setSelected] Blocked: Button is permanently disabled.`);
+            return;
+        }
+
 
         let domNeedsUpdateForSelectedClass = false;
         if (this._isSelected === selected) {
@@ -152,6 +180,11 @@ class Button {
 
     handleInteraction(eventType) {
         const buttonId = this.getIdentifier();
+        if (this._isPermanentlyDisabled) {
+            if (this.debugResistive) console.log(`[Button ${buttonId} handleInteraction] Blocked: Button is permanently disabled.`);
+            return;
+        }
+
         if (this.config.type === 'toggle') {
             this.setSelected(!this._isSelected, { themeContext: this.appState.getCurrentTheme(), phaseContext: `ToggleInteract_${buttonId}` });
         } else if (this.config.type === 'radio') {
@@ -159,11 +192,14 @@ class Button {
                 this.setSelected(true, { themeContext: this.appState.getCurrentTheme(), phaseContext: `RadioInteract_${buttonId}` });
             }
         } else if (this.config.type === 'action') {
+            // Action buttons don't change selection state on their own
         }
     }
 
     setPressedVisuals(isPressed) {
         const buttonId = this.getIdentifier();
+        if (this._isPermanentlyDisabled) return;
+
         if (this._pressTimeoutId && this.element.classList.contains(ButtonStates.PRESSING) && !isPressed) {
             clearTimeout(this._pressTimeoutId); this._pressTimeoutId = null;
         }
@@ -178,6 +214,26 @@ class Button {
             this.element.classList.remove(ButtonStates.PRESSING);
         }
     }
+
+    // New method for resistive shutdown
+    setPermanentlyDisabled(isDisabled) {
+        const buttonId = this.getIdentifier();
+        if (this._isPermanentlyDisabled === isDisabled) return;
+
+        this._isPermanentlyDisabled = isDisabled;
+        if (this.debugResistive) console.log(`[Button ${buttonId} setPermanentlyDisabled] Set to: ${isDisabled}`);
+
+        if (isDisabled) {
+            if (this._isSelected) {
+                this._isSelected = false;
+            }
+            this.setState(ButtonStates.PERMANENTLY_DISABLED, { phaseContext: `PermanentlyDisable_${buttonId}`, forceState: true });
+        } else {
+            this.setState(ButtonStates.ENERGIZED_UNSELECTED, { phaseContext: `ResetFromDisabled_${buttonId}`, forceState: true });
+        }
+        this._updateAriaAttributes();
+    }
+
 
     updateHarmonicResonanceVisuals(progress) {
         if (!this.configModule || !this._isResonating) { 
@@ -227,7 +283,6 @@ class Button {
                 const baseOpacity = D_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED;
                 const variation = baseOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
                 
-                // Ensure opacities are within valid range [0, 1]
                 const opacityStart = Math.max(0, Math.min(1, baseOpacity - variation));
                 const opacityEnd = Math.max(0, Math.min(1, baseOpacity + variation));
 
@@ -241,17 +296,6 @@ class Button {
             if (!this.element.classList.contains(this.cssIdleDriftClassName)) return; // Already inactive
             this.element.classList.remove(this.cssIdleDriftClassName);
             if (this.debugAmbient) console.log(`[Button ${this.getIdentifier()}] CSS Idle Light Drift DEACTIVATED. Removed class '${this.cssIdleDriftClassName}'.`);
-            
-            // Optionally clear CSS variables, though class removal should stop animation.
-            // Forcing lights back to a defined base opacity might be good here if CSS fallback isn't perfect.
-            // This depends on how _button-unit.css defines .is-energized .light opacity.
-            // For now, relying on CSS class removal.
-            // lights.forEach(light => {
-            //     light.style.removeProperty('--light-idle-duration');
-            //     light.style.removeProperty('--light-idle-delay');
-            //     light.style.removeProperty('--light-idle-opacity-start');
-            //     light.style.removeProperty('--light-idle-opacity-end');
-            // });
         }
     }
 

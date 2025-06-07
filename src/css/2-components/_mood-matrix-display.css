@@ -30,6 +30,7 @@
     height: var(--mood-matrix-row-height);
     display: flex;
     align-items: center; 
+    justify-content: center; /* MODIFIED: Horizontally center the content block */
     font-family: 'IBM Plex Mono', monospace;
     font-size: var(--lcd-content-font-size, 0.9em); 
     white-space: nowrap; 
@@ -40,8 +41,6 @@
 .mood-matrix-row .mood-value,
 .mood-matrix-row .mood-label {
     transition: color var(--transition-duration-fast) ease, opacity var(--transition-duration-fast) ease;
-    /* Default 'active' state color, L-reduction handled by oklch calc */
-    /* Specific hue is applied via CSS custom properties by JS */
     opacity: 1;
 }
 
@@ -65,7 +64,7 @@
 
 .mood-matrix-row .mood-label {
     text-align: left;
-    flex-grow: 1;
+    /* flex-grow: 1; -- REMOVED: No longer need to grow if centering the block */
     overflow: hidden; 
     text-overflow: ellipsis;
     color: oklch(
@@ -100,5 +99,3 @@
     );
     opacity: 1;
 }
-
-/* .text-is-active uses the default styling for .mood-value and .mood-label defined above */

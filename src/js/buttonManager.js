@@ -7,6 +7,8 @@ import Button from './Button.js';
 import { createAdvancedFlicker } from './animationUtils.js';
 import { shuffleArray } from './utils.js';
 import { gsap } from "gsap";
+import * as appState from './appState.js'; // For resistive shutdown stage check
+import * as config from './config.js'; // For RESISTIVE_SHUTDOWN_PARAMS
 
 export const ButtonStates = {
     UNLIT: 'is-unlit',
@@ -16,33 +18,37 @@ export const ButtonStates = {
     DIMLY_LIT_UNSELECTED: 'is-dimly-lit',
     DIMLY_LIT_SELECTED: 'is-dimly-lit is-selected',
     PRESSING: 'is-pressing',
-    FLICKERING: 'is-flickering'
+    FLICKERING: 'is-flickering',
+    PERMANENTLY_DISABLED: 'is-permanently-disabled' 
 };
 
 export class ButtonManager {
-    constructor(gsapInstance, appState, configModule) {
+    constructor(gsapInstance, appStateService, configModule) {
         this.gsap = gsapInstance;
-        this.appState = appState;
+        this.appState = appStateService; // appStateService is the appState module itself
         this.config = configModule; // Stored for passing to Button instances
         this.uiUpdater = null; // To be set via setter if needed by Button
         this._buttons = new Map();
         this._buttonGroups = new Map();
-        this.debug = false; // console.log for key events
+        this.debug = false; 
+        this.debugResistive = true; 
 
-        // Event Emitter
         this._eventListeners = {};
-        this.aam = null; // Reference to AmbientAnimationManager
+        this.aam = null; 
+        this.mainPowerOffButtonInstance = null;
+
+        this.appState.subscribe('resistiveShutdownStageChanged', this.handleResistiveShutdownStageChange.bind(this));
+        this.appState.subscribe('mainPowerOffButtonDisabledChanged', this.handleMainPowerOffButtonDisabledChange.bind(this));
     }
 
     setAAM(aamInstance) {
         this.aam = aamInstance;
     }
 
-    setUiUpdater(uiUpdaterInstance) { // If Button needs it
+    setUiUpdater(uiUpdaterInstance) { 
         this.uiUpdater = uiUpdaterInstance;
     }
 
-    // Basic Event Emitter Implementation
     on(eventName, callback) {
         if (typeof callback !== 'function') {
             console.error(`[ButtonManager] Invalid callback for event "${eventName}"`);
@@ -81,9 +87,7 @@ export class ButtonManager {
         if (!element || this._buttons.has(element)) return;
 
         const buttonConfig = this._generateButtonConfig(element, explicitGroupId);
-        // Pass configModule to Button constructor
         const buttonInstance = new Button(element, buttonConfig, this.gsap, this.appState, this.config, this.uiUpdater);
-        // buttonInstance.setConfigModule(this.config); // Already passed in constructor
 
         this._buttons.set(element, buttonInstance);
 
@@ -93,6 +97,11 @@ export class ButtonManager {
                 this._buttonGroups.set(finalGroupId, new Set());
             }
             this._buttonGroups.get(finalGroupId).add(buttonInstance);
+        }
+
+        if (finalGroupId === 'system-power' && buttonConfig.value === 'off') {
+            this.mainPowerOffButtonInstance = buttonInstance;
+            if (this.debugResistive) console.log('[BM addButton] MAIN PWR OFF button instance stored.');
         }
     }
 
@@ -116,7 +125,7 @@ export class ButtonManager {
     }
 
     getAllButtonInstances() {
-        return this._buttons.values();
+        return Array.from(this._buttons.values());
     }
 
     getButtonInstance(element) {
@@ -140,30 +149,41 @@ export class ButtonManager {
         const buttonId = buttonInstance.getIdentifier();
 
         if (this.debug) console.log(`[BM INTERACTION] Event: ${eventType} on ${buttonId}, AppStatus: ${this.appState.getAppStatus()}`);
-        if (this.appState.getAppStatus() !== 'interactive' && buttonInstance.getGroupId() !== 'system-power') {
-            if (this.debug) console.log(`[BM INTERACTION] Blocked, app not interactive for ${buttonId}`);
+        
+        if (buttonInstance === this.mainPowerOffButtonInstance && this.appState.getIsMainPowerOffButtonDisabled()) {
+            if (this.debugResistive) console.log(`[BM INTERACTION] MAIN PWR OFF button is disabled by resistive shutdown. Interaction blocked.`);
             return;
         }
 
-        this.emit('beforeButtonTransition', buttonInstance); // Emit before potential state change
+        if (this.appState.getAppStatus() !== 'interactive') {
+            if (this.debug) console.log(`[BM INTERACTION] Blocked, app not interactive for ${buttonId}`);
+            return;
+        }
+        
+        const currentShutdownStage = this.appState.getResistiveShutdownStage();
+        if (currentShutdownStage > 0 && buttonInstance.getGroupId() !== 'system-power') {
+            if (this.debugResistive) console.log(`[BM INTERACTION] Interaction with ${buttonId} blocked during resistive shutdown sequence.`);
+            return;
+        }
 
-        buttonInstance.handleInteraction(eventType); // This might change selection state
-
+        this.emit('beforeButtonTransition', buttonInstance); 
+        buttonInstance.handleInteraction(eventType); 
         const groupId = buttonInstance.getGroupId();
+
         if (groupId && (buttonInstance.config.type === 'toggle' || buttonInstance.config.type === 'radio')) {
             if (buttonInstance.isSelected()) {
                 this._buttonGroups.get(groupId).forEach(member => {
                     if (member !== buttonInstance && member.isSelected()) {
                         if (this.debug) console.log(`[BM INTERACTION] Deselecting other member ${member.getIdentifier()} in group ${groupId}`);
-                        this.emit('beforeButtonTransition', member); // Emit for the implicitly changed button
+                        this.emit('beforeButtonTransition', member); 
                         member.setSelected(false, { themeContext: this.appState.getCurrentTheme(), phaseContext: `GroupAutoDeselect_${member.getIdentifier()}` });
-                        this.emit('afterButtonTransition', member); // Emit for the implicitly changed button
+                        this.emit('afterButtonTransition', member); 
                     }
                 });
             }
         }
         this.appState.emit('buttonInteracted', { buttonIdentifier: buttonId, newState: buttonInstance.getCurrentStateClasses() });
-        this.emit('afterButtonTransition', buttonInstance); // Emit after potential state change
+        this.emit('afterButtonTransition', buttonInstance); 
     }
 
     setGroupSelected(groupId, selectedButtonValueOrElement) {
@@ -172,27 +192,25 @@ export class ButtonManager {
             console.warn(`[BM setGroupSelected] Group not found: ${groupId}`);
             return;
         }
-        if (this.debug) console.log(`[BM setGroupSelected] Group: ${groupId}, Target: ${typeof selectedButtonValueOrElement === 'string' ? selectedButtonValueOrElement : selectedButtonValueOrElement.ariaLabel}`);
+        if (this.debug) console.log(`[BM setGroupSelected] Group: ${groupId}, Target: ${typeof selectedButtonValueOrElement === 'string' ? selectedButtonValueOrElement : selectedButtonValueOrElement?.ariaLabel}`);
 
         group.forEach(buttonInstance => {
             let shouldBeSelected = false;
             if (typeof selectedButtonValueOrElement === 'string') {
                 shouldBeSelected = buttonInstance.config.value === selectedButtonValueOrElement;
-            } else {
+            } else if (selectedButtonValueOrElement) { 
                 shouldBeSelected = buttonInstance.element === selectedButtonValueOrElement;
             }
 
             if (buttonInstance.isSelected() !== shouldBeSelected) {
                 this.emit('beforeButtonTransition', buttonInstance);
                 buttonInstance.setSelected(shouldBeSelected, { skipAnimation: true, themeContext: this.appState.getCurrentTheme(), phaseContext: `setGroupSelected_${groupId}_${buttonInstance.getIdentifier()}`, forceState: true });
-                buttonInstance.playStateTransitionEcho(); // Play echo for programmatic changes too
+                buttonInstance.playStateTransitionEcho(); 
                 this.emit('afterButtonTransition', buttonInstance);
-            } else if (shouldBeSelected && !buttonInstance.element.classList.contains('is-selected') ||
-                       !shouldBeSelected && buttonInstance.element.classList.contains('is-selected')) {
-                // If internal _isSelected matches, but DOM doesn't, still need to update visuals
+            } else if (selectedButtonValueOrElement && ( (shouldBeSelected && !buttonInstance.element.classList.contains('is-selected')) ||
+                       (!shouldBeSelected && buttonInstance.element.classList.contains('is-selected')) ) ) {
                 this.emit('beforeButtonTransition', buttonInstance);
                 buttonInstance.setSelected(shouldBeSelected, { skipAnimation: true, themeContext: this.appState.getCurrentTheme(), phaseContext: `setGroupSelected_DOM_Sync_${groupId}_${buttonInstance.getIdentifier()}`, forceState: true });
-                // No echo here as it's likely a sync, not a user/system driven change that needs emphasis
                 this.emit('afterButtonTransition', buttonInstance);
             }
         });
@@ -207,43 +225,71 @@ export class ButtonManager {
 
         this.emit('beforeButtonTransition', buttonInstance);
 
-        const { profileName, phaseContext = "UnknownPhase", isButtonSelectedOverride = null } = options;
+        const { profileName, phaseContext = "UnknownPhase", isButtonSelectedOverride = null, onFlickerComplete, tempGlowColor, tempTintColorClass } = options;
         const buttonId = buttonInstance.getIdentifier();
         let expectedBaseStartState = ButtonStates.UNLIT;
+
         if (profileName.toLowerCase().includes('fromdimlylit')) expectedBaseStartState = ButtonStates.DIMLY_LIT;
+        else if (profileName.toLowerCase().includes('resist')) { 
+            expectedBaseStartState = buttonInstance.isSelected() ? ButtonStates.ENERGIZED_SELECTED : ButtonStates.ENERGIZED_UNSELECTED;
+        }
 
         let baseStateToSet = expectedBaseStartState;
         if (expectedBaseStartState === ButtonStates.DIMLY_LIT) baseStateToSet = ButtonStates.DIMLY_LIT_UNSELECTED;
         else if (expectedBaseStartState === ButtonStates.ENERGIZED_UNSELECTED) baseStateToSet = ButtonStates.ENERGIZED_UNSELECTED;
+        else if (expectedBaseStartState === ButtonStates.ENERGIZED_SELECTED) baseStateToSet = ButtonStates.ENERGIZED_SELECTED;
 
         if (baseStateToSet === ButtonStates.DIMLY_LIT_UNSELECTED || baseStateToSet === ButtonStates.UNLIT) {
             if (buttonInstance.isSelected()) {
                  buttonInstance.setSelected(false, { skipAnimation: true, phaseContext: `PreFlickerTempUnselect_${phaseContext}_${buttonId}`, forceState: true });
             }
         }
-        buttonInstance.setState(baseStateToSet, { skipAnimation: true, phaseContext: `PreFlickerForceBaseState_${phaseContext}_${buttonId}`, forceState: true });
+        if (!profileName.toLowerCase().includes('resist')) {
+            buttonInstance.setState(baseStateToSet, { skipAnimation: true, phaseContext: `PreFlickerForceBaseState_${phaseContext}_${buttonId}`, forceState: true });
+        }
 
         const impliesSelectionInTargetState = targetState.includes('is-selected');
         let isSelectedForGlowAnimation = impliesSelectionInTargetState;
-        if (buttonInstance.isSelected() !== impliesSelectionInTargetState) {
+        if (buttonInstance.isSelected() !== impliesSelectionInTargetState && !profileName.toLowerCase().includes('resist')) {
             buttonInstance.setSelected(impliesSelectionInTargetState, { skipAnimation: true, phaseContext: `PreFlickerSetFinalSelected_${phaseContext}_${buttonId}`, forceState: true });
         }
         if (typeof isButtonSelectedOverride === 'boolean') isSelectedForGlowAnimation = isButtonSelectedOverride;
+
+        // Temporarily set glow color and tint class for resistive shutdown flashes
+        if (tempGlowColor) {
+            buttonElement.style.setProperty('--btn-glow-color', tempGlowColor);
+        }
+        if (tempTintColorClass) {
+            buttonElement.classList.add(tempTintColorClass);
+        }
 
         const flickerOptions = {
             ...options,
             overrideGlowParams: { ...(options.overrideGlowParams || {}), isButtonSelected: isSelectedForGlowAnimation },
             onTimelineComplete: () => {
-                buttonInstance.setState(targetState, {
-                    skipAnimation: true, themeContext: this.appState.getCurrentTheme(),
-                    phaseContext: `FlickerEnd_${phaseContext}_${buttonId}`, forceState: true
-                });
-                buttonInstance.playStateTransitionEcho(); // Play echo after flicker
-                this.emit('afterButtonTransition', buttonInstance); // Emit after echo starts (or immediately after setState)
-                if (options.onComplete) options.onComplete();
+                if (tempGlowColor) buttonElement.style.removeProperty('--btn-glow-color');
+                if (tempTintColorClass) buttonElement.classList.remove(tempTintColorClass);
+
+                if (targetState === ButtonStates.PERMANENTLY_DISABLED) {
+                    buttonInstance.setState(ButtonStates.PERMANENTLY_DISABLED, {
+                        skipAnimation: true, themeContext: this.appState.getCurrentTheme(),
+                        phaseContext: `FlickerEnd_Disabled_${phaseContext}_${buttonId}`, forceState: true
+                    });
+                } else {
+                    buttonInstance.setState(targetState, {
+                        skipAnimation: true, themeContext: this.appState.getCurrentTheme(),
+                        phaseContext: `FlickerEnd_${phaseContext}_${buttonId}`, forceState: true
+                    });
+                }
+                if (targetState !== ButtonStates.PERMANENTLY_DISABLED) { 
+                    buttonInstance.playStateTransitionEcho();
+                }
+                this.emit('afterButtonTransition', buttonInstance);
+                if (onFlickerComplete) onFlickerComplete(); 
+                if (options.onComplete && options.onComplete !== onFlickerComplete) options.onComplete(); 
             }
         };
-        delete flickerOptions.onComplete;
+        delete flickerOptions.onComplete; 
 
         const { timeline, completionPromise } = createAdvancedFlicker(buttonElement, profileName, flickerOptions);
         return { timeline, completionPromise };
@@ -256,8 +302,6 @@ export class ButtonManager {
             const currentClasses = buttonInstance.getCurrentClasses();
             const isDimlyLit = currentClasses.has(ButtonStates.DIMLY_LIT.split(' ')[0]);
             if (isDimlyLit) {
-                // Simplified: assuming all relevant buttons are processed.
-                // Original had specificGroups logic, can be re-added if needed.
                 buttonsToEnergize.push(buttonInstance);
             }
         });
@@ -285,7 +329,6 @@ export class ButtonManager {
                     isSelectedForFinalState = true;
                 }
             }
-            // Note: beforeButtonTransition and afterButtonTransition are handled *inside* playFlickerToState
             const { timeline: flickerTl, completionPromise } = this.playFlickerToState(
                 buttonInstance.element, targetState, {
                     profileName: effectiveProfileName,
@@ -330,5 +373,77 @@ export class ButtonManager {
     setPressedVisuals(buttonElement, isPressed) {
         const buttonInstance = this._buttons.get(buttonElement);
         if (buttonInstance) buttonInstance.setPressedVisuals(isPressed);
+    }
+
+    setGroupDisabled(groupId, isDisabled) {
+        const group = this._buttonGroups.get(groupId);
+        if (!group) {
+            if (this.debugResistive) console.warn(`[BM setGroupDisabled] Group not found: ${groupId}`);
+            return;
+        }
+        if (this.debugResistive) console.log(`[BM setGroupDisabled] Setting group '${groupId}' disabled state to: ${isDisabled}`);
+        group.forEach(buttonInstance => {
+            buttonInstance.setPermanentlyDisabled(isDisabled);
+        });
+    }
+
+    handleResistiveShutdownStageChange({ oldStage, newStage }) {
+        if (!this.mainPowerOffButtonInstance) {
+            if (this.debugResistive) console.warn('[BM handleResistiveShutdownStageChange] Main Power OFF button instance not found.');
+            return;
+        }
+        if (newStage === 0) { 
+            if (this.debugResistive) console.log('[BM handleResistiveShutdownStageChange] Resistive shutdown reset to stage 0.');
+            if (this.mainPowerOffButtonInstance.isPermanentlyDisabled()) {
+                 this.mainPowerOffButtonInstance.setPermanentlyDisabled(false);
+            }
+            const onButton = Array.from(this._buttonGroups.get('system-power') || []).find(b => b.getValue() === 'on');
+            if (onButton) {
+                this.setGroupSelected('system-power', 'on');
+            }
+            return;
+        }
+
+        const stageKey = `STAGE_${newStage}`;
+        const stageParams = this.config.RESISTIVE_SHUTDOWN_PARAMS[stageKey];
+
+        if (stageParams && stageParams.BUTTON_FLASH_PROFILE_NAME) {
+            if (this.debugResistive) console.log(`[BM handleResistiveShutdownStageChange] Stage ${newStage}: Triggering flicker profile '${stageParams.BUTTON_FLASH_PROFILE_NAME}' for MAIN PWR OFF.`);
+
+            let targetStateAfterFlicker = ButtonStates.ENERGIZED_UNSELECTED; 
+            if (newStage === this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
+                targetStateAfterFlicker = ButtonStates.PERMANENTLY_DISABLED;
+            }
+            
+            let tintClass = null;
+            if (newStage === 1) tintClass = 'is-flashing-tint-yellow';
+            if (newStage === 2) tintClass = 'is-flashing-tint-orange';
+
+            this.playFlickerToState(
+                this.mainPowerOffButtonInstance.element,
+                targetStateAfterFlicker,
+                {
+                    profileName: stageParams.BUTTON_FLASH_PROFILE_NAME,
+                    phaseContext: `ResistiveShutdown_S${newStage}_OFF_Button`,
+                    tempGlowColor: stageParams.BUTTON_FLASH_GLOW_COLOR,
+                    tempTintColorClass: tintClass,
+                    onFlickerComplete: () => {
+                        if (this.debugResistive) console.log(`[BM handleResistiveShutdownStageChange] Flicker for Stage ${newStage} complete. OFF button state: ${this.mainPowerOffButtonInstance.getCurrentStateClasses()}`);
+                    }
+                }
+            );
+        }
+    }
+
+    handleMainPowerOffButtonDisabledChange({ isDisabled }) {
+        if (!this.mainPowerOffButtonInstance) {
+            if (this.debugResistive) console.warn('[BM handleMainPowerOffButtonDisabledChange] Main Power OFF button instance not found.');
+            return;
+        }
+        if (this.debugResistive) console.log(`[BM handleMainPowerOffButtonDisabledChange] MAIN PWR OFF button disabled state in appState changed to: ${isDisabled}. Button internal disabled: ${this.mainPowerOffButtonInstance.isPermanentlyDisabled()}`);
+        
+        if (this.mainPowerOffButtonInstance.isPermanentlyDisabled() !== isDisabled) {
+            this.mainPowerOffButtonInstance.setPermanentlyDisabled(isDisabled);
+        }
     }
 }

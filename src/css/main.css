@@ -1,93 +1,76 @@
-/* src/css/main.css - Main CSS Import Hub (REFACTOR-V2.1) */
+# HUE 9000 Theming Guidelines (REVISED for XState Startup)
 
-/* --- Core Foundational Styles --- */
-@import url('./core/_variables-structural.css');   /* Non-themeable structural variables */
-@import url('./core/_variables-theme-contract.css');/* Central API for all themeable variables */
-@import url('./core/_layout.css');                 /* Main page structure, panel layout */
-@import url('./core/_typography.css');             /* Base font settings, global text styles */
+This document outlines the principles and conventions for theming the HUE 9000 interface, reflecting the XState-orchestrated startup sequence and component-based architecture.
 
-/* --- Theme Overrides --- */
-/* These override variables from _variables-theme-contract.css */
-@import url('./themes/theme-dim.css');
-@import url('./themes/theme-dark.css');
-@import url('./themes/theme-light.css');
+## Core Theming Principles
 
-/* --- Component Styles --- */
-/* Components use variables defined in the theme contract and overridden by themes */
-@import url('./components/_panel-bezel.css');
-@import url('./components/_button-unit.css');
-@import url('./components/_dial.css');
-@import url('./components/_lcd.css');
-@import url('./components/_logo.css');
-@import url('./components/_lens-container.css');
-@import url('./components/_lens-core.css');
-@import url('./components/_lens-outer-glow.css');
-@import url('./components/_lens-super-glow.css');
-@import url('./components/_color-chips.css');
-@import url('./components/_grill.css');
-@import url('./components/_terminal.css'); 
-@import url('./components/_mood-matrix-display.css'); /* NEW: Import Mood Matrix Display styles */
-/* ... import other component stylesheets as they are created ... */
+1.  **"Low" (Dark) vs. "High" (Light) Intensity:** (As before) The primary themes are `theme-dark` and `theme-light`.
+    *   **CRITICAL WARNING NOTE:** The `theme-light.css` (referred to as "High Intensity" or "Light Theme") is **NOT** a traditional light mode (e.g., white backgrounds, dark text). It is designed as a *brighter, higher contrast variant of the dark theme aesthetic*. All design and variable choices for `theme-light.css` should reflect this intent, maintaining the overall retro-futuristic, control panel feel, rather than attempting to invert it into a standard "day mode."
 
-/* --- Animations & Effects --- */
-@import url('./animations/_effects.css');            /* Reusable keyframes, etc. */
-@import url('./animations/_startup-transition.css'); /* Styles for .is-transitioning-from-dim */
+2.  **Dynamic Theming via CSS Variables and JavaScript:** (As before)
+    *   **Critical for Theme Overrides:** Selectors like `body.theme-dark` or `body.theme-light` are essential for overriding variables defined in `_variables-theme-contract.css`.
 
-/* --- Utility Classes --- */
-@import url('./utilities/_utilities.css');           /* General helper classes */
+3.  **DIM Mode Theming (`theme-dim.css`) & Startup Factors:**
+    *   `theme-dim.css` defines the *base* visual characteristics for the startup/dim state.
+    *   During the startup sequence (Phases P0-P8), these base visuals are further attenuated by three CSS custom properties animated by GSAP in each `startupPhaseX.js` module:
+        *   `--startup-L-reduction-factor`: Reduces the Lightness (L) channel of OKLCH colors. Used for backgrounds, bezels, and labels.
+        *   `--startup-opacity-factor`: Reduces the opacity of various visual effects (textures, glows, text shadows).
+        *   `--startup-opacity-factor-boosted`: A clamped, faster-ramping version of the opacity factor used for components that should appear more quickly or prominently (e.g., logo, dials, color chips, grill).
+    *   **Button States in DIM Mode (Phases P0-P9 of startup):**
+        *   `is-unlit`: Default state for most buttons after P0. Extremely faint.
+        *   `is-dimly-lit`: Applied via flicker profiles. Buttons in this state are achromatic (grayscale) and faintly lit.
+        *   `.is-energized` (with `theme-dim.css` overrides): Used for MAIN PWR and AUX buttons. These buttons adopt a "dark theme energized" appearance even while the rest of the UI is dim. They flicker *from* `is-dimly-lit` *to this state*.
 
-/* --- Base HTML/Body Styles (formerly in base-styles.css) --- */
-html {
-    font-size: 16px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
+4.  **Transition from DIM Mode & Energizing (Startup Phase P10):**
+    *   A 1-second visual transition for key global elements is orchestrated by `startupSequenceManager.js` and CSS.
+        *   JavaScript (`startupPhase10.js`) adds the `.animate-on-dim-exit` class to elements defined in `config.selectorsForDimExitAnimation`.
+        *   The `body.is-transitioning-from-dim` class is added to `<body>`.
+        *   `appStateService.setTheme('dark')` is called, which removes `body.theme-dim` and adds `body.theme-dark`.
+        *   A CSS rule in `_startup-transition.css` (targeting `body.is-transitioning-from-dim .animate-on-dim-exit`) applies the 1-second transition to a specific list of properties.
+        *   Cleanup of these classes is handled by an FSM action (`performThemeTransitionCleanupIfNeeded`) upon entry to Phase P11.
+    *   **Button Energizing Flicker (SCAN, HUE ASSN, FIT EVAL):**
+        *   Concurrently, `buttonManager.flickerDimlyLitToEnergizedStartup()` orchestrates flicker animations for buttons that were in the `is-dimly-lit` state.
+        *   These buttons flicker from their `is-dimly-lit` appearance directly *to* their final `is-energized` state, as defined by `theme-dark.css`.
+        *   MAIN PWR and AUX buttons, already `.is-energized`, visually adapt due to the global theme change without needing to re-flicker.
 
-html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+## Specific Component Guidelines
 
-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+### 1. LCD Displays (Mood, Intensity, Terminal)
+*   **DIM Mode (Phases P0-P5):**
+    *   Terminal LCD (`.actual-lcd-screen-element`) is styled with `.lcd--unlit`. Its text is visible but the background is nearly black.
+    *   Dial LCDs (A & B) are styled with `.lcd--unlit`. Their text/content is opacity 0.
+*   **DIM Mode (Phases P6-P9):**
+    *   Terminal screen flickers to `.lcd--dimly-lit`.
+    *   Dial LCD screens flicker to `.lcd--dimly-lit`. Their text/content becomes visible.
+    *   In `theme-dim`, all `dimly-lit` and `unlit` LCD states are achromatic (grayscale), with text lightness defined in `theme-dim.css`.
+*   **Theme Transition (Phase P10):**
+    *   All LCDs are set to an 'active' state (no `lcd--*` state class) by `uiUpdater.js` *before* the theme change.
+    *   Their `background-image` and `color` transition smoothly to the `theme-dark` values as the underlying CSS variables change.
 
-    /* Background L values are modified by --startup-L-reduction-factor. Alphas are from theme. */
-    background-color: oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
-    /* MODIFIED: Reverted to direct background-image for noise, with multiply for noise layer */
-    background-image:
-        url('/public/noise.svg'), /* Noise texture overlay */
-        linear-gradient(180deg,
-            oklch(calc(var(--body-bg-top-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
-            oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%
-        );
-    background-repeat: repeat, no-repeat; /* repeat for noise, no-repeat for gradient */
-    background-size: 150px 150px, cover; /* size for noise, cover for gradient */
-    background-position: 0 0, 0 0;
-    background-blend-mode: multiply, normal; /* Multiply for noise, normal for gradient */
+### 2. Dials
+*   **DIM Mode:** Dials are unlit until Phase P6. In P6, `dialManager.js` calls `DialInstance.setActiveDimState(true)`, causing them to be redrawn in an "active dim" state using variables from `theme-dim.css` (attenuated by startup factors).
+*   **Theme Transition (Phase P10):** Dials are redrawn in their full-color state as defined by `theme-dark.css` variables.
 
+### 3. Buttons (`button-unit` System)
+*   **Color Source:**
+    *   In DIM mode, button appearance is defined by `is-unlit`, `is-dimly-lit`, or special `.is-energized` styles in `theme-dim.css`, all attenuated by startup factors.
+    *   In Full Theme (P10+), `is-energized` buttons use themed variables from `theme-dark.css` or `theme-light.css`.
+*   **Text Color:**
+    *   Button text is explicitly black or very dark in `theme-dim` for `is-unlit` and `is-dimly-lit` states.
+    *   For `.is-energized` buttons in `theme-dim` (like MAIN PWR, AUX), text color matches the dark theme energized style for consistency.
+*   **Transition from DIM (Phase P10):**
+    *   SCAN, HUE ASSN, and FIT EVAL buttons flicker from `is-dimly-lit` to their final `.is-energized` states. This animation runs concurrently with the global 1s CSS transition.
 
-    color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
-    font-family: 'IBM Plex Mono', 'Inter', sans-serif;
-    padding: var(--space-3xl); 
-    touch-action: none;
-    overflow: hidden;
-    /* position: relative; -- Not strictly needed if pseudo-element is removed */
-    /* z-index: 0; */
+### 4. Lens Display & Glows
+*   **Bezel:** The lens bezel rings (`#lens-container::before/::after`) have their L-values attenuated by `--startup-L-reduction-factor` during startup. Their base opacity is set by `--lens-bezel-opacity` in `theme-dim.css`. They transition to their full metallic conic gradient in P10.
+*   **Glow System (`outer-glow`, `super-glow`):**
+    *   This is a complex system driven by the `--lens-power` CSS variable (updated by JS).
+    *   **DIM Mode Overrides:** `theme-dim.css` significantly alters the glow appearance. It uses variables like `--lens-outer-glow-dim-scale-multiplier` and `--base-outer-glow-blur` to make the glows larger, more diffuse, and more prominent during the dim state, creating a signature "standby" effect.
+    *   **Full Theme:** In `theme-dark` or `theme-light`, these overrides are removed, and the glows become tighter and more responsive to the raw `--lens-power` value.
 
-    transition:
-        color var(--transition-duration-medium) ease, 
-        background-color var(--transition-duration-medium) ease,
-        background-image var(--transition-duration-medium) ease;
-}
-
-/* REMOVED: body::before noise overlay */
-
-*, *:before, *:after {
-    box-sizing: inherit;
-}
+### 5. Terminal Text Glow
+*   The terminal has a themeable text glow effect. The base color and bloom size are defined in `_variables-theme-contract.css`.
+*   Each theme (`theme-dim`, `theme-dark`, `theme-light`) can adjust the glow's final appearance by overriding two scaling factors:
+    *   `--theme-terminal-glow-opacity-factor`
+    *   `--theme-terminal-glow-size-factor`
+*   This allows `theme-dim` to have a bright, full-sized glow while `theme-light` can have a more subtle, smaller glow, without duplicating the `text-shadow` rule.

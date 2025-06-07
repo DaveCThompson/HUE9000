@@ -1,6 +1,3 @@
----
-file: STARTUP_SEQUENCE.md
----
 # HUE 9000 Startup Sequence Detailed Breakdown (XState Orchestrated - P0-P11)
 
 This document details the phased startup sequence for the HUE 9000 interface, orchestrated by an XState Finite State Machine (FSM) as of the XState Refactor. Each FSM phase invokes a corresponding `startupPhaseX.js` module.
@@ -10,8 +7,8 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Initial Theme:** `body.theme-dim` is active. `body` also starts with `pre-boot` class (removed by `startupSequenceManager.js` during P0).
 *   **Progressive Reveal & Dimming Factors:**
     *   Elements activate in stages. Their visual appearance during startup is heavily influenced by two CSS custom properties animated by GSAP within each phase module:
-        *   `--startup-L-reduction-factor`: Ranges from a high value (e.g., 0.85, making elements very dark) down to 0.0 (no lightness reduction). Affects `oklch()` L-values.
-        *   `--startup-opacity-factor`: Ranges from a low value (e.g., 0.15, making effects very transparent) up to 1.0 (full base opacity). Affects opacity of textures, glows, text shadows.
+        *   `--startup-L-reduction-factor`: Ranges from a high value (e.g., 0.40) down to 0.0 (no lightness reduction). Affects `oklch()` L-values.
+        *   `--startup-opacity-factor`: Ranges from a low value (e.g., 0.60) up to 1.0 (full base opacity). Affects opacity of textures, glows, text shadows.
     *   The `config.js` file (`STARTUP_L_REDUCTION_FACTORS`) defines the target L-reduction factor for each phase. The opacity factor is typically `1.0 - L-reduction-factor`.
 *   **Button States (CSS Classes applied by `Button.js` components, managed by `buttonManager.js`):**
     *   **Initial (P0):** All buttons are set to `is-unlit` by `buttonManager.setInitialDimStates()`.
@@ -23,10 +20,10 @@ This document details the phased startup sequence for the HUE 9000 interface, or
     *   **During Theme Transition & `theme-dark` (Phases P10-P11):**
         *   `.is-energized` (and `.is-selected` where appropriate): Full power, styled by `theme-dark.css` variables. SCAN, HUE ASSN, FIT EVAL buttons flicker from `is-dimly-lit` to this state in P10. MAIN PWR and AUX buttons visually adapt due to CSS variable changes.
 *   **LCD/Terminal Visuals During Startup:**
-    *   **Text Persistence:** Terminal text, once typed (e.g., P1 message), should remain visible through subsequent phases (P2-P5) even if its parent screen container (`.actual-lcd-screen-element`) is styled as `lcd--unlit`. `uiUpdater.js` has logic to preserve `#terminal-lcd-content` opacity if it has children.
+    *   **Text Persistence:** Terminal text, once typed (e.g., P1 message), should remain visible through subsequent phases (P2-P5) even if its parent screen container (`.actual-lcd-screen-element`) is styled as `lcd--unlit`. `terminalManager.js` has logic to ensure its content area is visible before typing.
     *   **Screen Background Flicker (P6):**
         *   Dial LCDs (A & B) use the `lcdScreenFlickerToDimlyLit` profile. Their containers are set to `autoAlpha:0` by GSAP *before* the `.lcd--dimly-lit` class (which defines a visible background) is applied by the flicker animation logic. This prevents a "flash-on" from the class before the flicker's `autoAlpha:0` takes effect.
-        *   The Terminal screen uses `terminalScreenFlickerToDimlyLit` profile, which starts with `amplitudeStart:1.0` (container `autoAlpha` remains 1), so only its glow/background effect animates in, while existing text remains visible.
+        *   The Terminal screen uses the `terminalScreenFlickerToDimlyLit` profile, which starts with `amplitudeStart:1.0` (container `autoAlpha` remains 1), so only its glow/background effect animates in, while existing text remains visible.
     *   **Theme Transition (P10):** LCD backgrounds transition via CSS. A `background-color` fallback is used in `_lcd.css` to minimize visual glitches if the `background-image` gradient transition isn't perfectly smooth.
 
 ## Startup Phases (FSM States & Corresponding `startupPhaseX.js` modules)
@@ -37,8 +34,8 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Key Actions:**
     1.  `startupSequenceManager.resetVisualsAndState()` is called:
         *   `body.pre-boot` class removed.
-        *   `--startup-L-reduction-factor` set to `STARTUP_L_REDUCTION_FACTORS.P0` (e.g., 0.85).
-        *   `--startup-opacity-factor` set to `1.0 - L-reduction-factor_P0` (e.g., 0.15).
+        *   `--startup-L-reduction-factor` set to `STARTUP_L_REDUCTION_FACTORS.P0` (e.g., 0.40).
+        *   `--startup-opacity-factor` set to `1.0 - L-reduction-factor_P0` (e.g., 0.60).
         *   `--startup-opacity-factor-boosted` calculated.
         *   `appState` set to `starting-up`, theme to `dim`.
         *   All buttons set to `is-unlit`. Lens power to 0. LCDs to `lcd--unlit`. Logo SVG injected.
@@ -99,8 +96,8 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Key Actions:**
     1.  **Dimming Factors:** Animate to `STARTUP_L_REDUCTION_FACTORS.P6`.
     2.  **Terminal:** Emits "P6_MOOD_INTENSITY_CONTROLS" message.
-    3.  **Dials (MOOD, INTENSITY):** `dialManager.setDialsActiveState(true)` called. Dials show ridges.
-    4.  **Dial LCDs (A, B):** Flicker to `lcd--dimly-lit` state using `lcdScreenFlickerToDimlyLit` profile. Dial LCDs display initial values.
+    3.  **Dials (MOOD, INTENSITY):** `dialManager.setDialsActiveState(true)` called. Dials show ridges and fade in.
+    4.  **Dial LCDs (A, B):** Flicker to `lcd--dimly-lit` state using `lcdScreenFlickerToDimlyLit` profile. Dial LCDs display initial values (Mood Matrix for A, % for B).
     5.  **Terminal Screen:** Background flickers to `lcd--dimly-lit` state using `terminalScreenFlickerToDimlyLit` profile (text persists).
 *   **Visual Outcome:** Dials and their LCDs become "active dim." Terminal screen background also dimly lit.
 

@@ -71,6 +71,10 @@ let dialBInteractionState = 'idle'; // 'idle', 'dragging', 'settling'
 let appStatus = 'loading'; // 'loading', 'starting-up', 'interactive', 'error'
 let currentStartupPhaseNumber = -1; // -1: Idle/Pre-P0, 0-11 for phases, 99: Complete
 
+// NEW: Resistive Shutdown State
+let resistiveShutdownStage = 0; // 0: normal, 1: inquiry, 2: analysis, 3: refusal
+let isMainPowerOffButtonDisabled = false;
+
 
 // --- State Getter Functions (Exported) ---
 
@@ -107,6 +111,12 @@ export function getAppStatus() {
 export function getCurrentStartupPhaseNumber() {
   return currentStartupPhaseNumber;
 }
+export function getResistiveShutdownStage() {
+    return resistiveShutdownStage;
+}
+export function getIsMainPowerOffButtonDisabled() {
+    return isMainPowerOffButtonDisabled;
+}
 
 
 // --- State Setter Functions (Exported) ---
@@ -127,6 +137,16 @@ export function updateDialState(dialId, newState) {
   
   const oldState = { ...dials[dialId] }; 
 
+  // Normalize hue for Dial A before assigning
+  if (dialId === 'A') {
+      if (newState.hasOwnProperty('hue')) {
+          newState.hue = ((newState.hue % 360) + 360) % 360;
+      }
+      if (newState.hasOwnProperty('targetHue')) {
+          newState.targetHue = ((newState.targetHue % 360) + 360) % 360;
+      }
+  }
+
   Object.assign(dials[dialId], newState);
 
   const hasRelevantChange = isInitialization ||
@@ -137,7 +157,9 @@ export function updateDialState(dialId, newState) {
                             oldState.targetRotation !== dials[dialId].targetRotation;
   
   if (hasRelevantChange) {
-    if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: Dial '${dialId}'. Requested (Changes):`, JSON.parse(JSON.stringify(newState)), `Old State:`, JSON.parse(JSON.stringify(oldState)), "Actual (New State):", JSON.parse(JSON.stringify(dials[dialId])));
+    if (DEBUG_APP_STATE || (dialId === 'A' && Math.abs(oldState.hue - dials[dialId].hue) > 0.01) ) { // Log Dial A changes more often for debugging discontinuity
+        console.log(`[AppState SET] Target: Dial '${dialId}'. Requested (Changes):`, JSON.parse(JSON.stringify(newState)), `Old State:`, JSON.parse(JSON.stringify(oldState)), "Actual (New State):", JSON.parse(JSON.stringify(dials[dialId])));
+    }
     emit('dialUpdated', { id: dialId, state: { ...dials[dialId] } });
   }
 }
@@ -203,6 +225,23 @@ export function setCurrentStartupPhaseNumber(phaseNumber) {
         currentStartupPhaseNumber = phaseNumber;
         if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: CurrentStartupPhaseNumber. Requested: ${phaseNumber}. Old: ${oldPhaseNumber}, Actual (New): ${currentStartupPhaseNumber}`);
         emit('startupPhaseNumberChanged', currentStartupPhaseNumber);
+    }
+}
+
+export function setResistiveShutdownStage(newStage) {
+    if (typeof newStage === 'number' && resistiveShutdownStage !== newStage) {
+        const oldStage = resistiveShutdownStage;
+        resistiveShutdownStage = newStage;
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: ResistiveShutdownStage. Requested: ${newStage}. Old: ${oldStage}, Actual (New): ${resistiveShutdownStage}`);
+        emit('resistiveShutdownStageChanged', { oldStage, newStage });
+    }
+}
+
+export function setIsMainPowerOffButtonDisabled(isDisabled) {
+    if (typeof isDisabled === 'boolean' && isMainPowerOffButtonDisabled !== isDisabled) {
+        isMainPowerOffButtonDisabled = isDisabled;
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: IsMainPowerOffButtonDisabled. Requested: ${isDisabled}. Actual (New): ${isMainPowerOffButtonDisabled}`);
+        emit('mainPowerOffButtonDisabledChanged', { isDisabled });
     }
 }
 

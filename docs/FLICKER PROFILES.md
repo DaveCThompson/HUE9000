@@ -57,21 +57,20 @@ For profiles named `...From[InitialState]To...`, these starting parameters are d
    *(Primarily for terminal messages)*
 
 *   **1. `textFlickerToDimlyLit`**
-    *   **Transition:** Unlit -> "Dimly Lit" (which is now a brighter baseline for terminal text)
+    *   **Transition:** Unlit -> Dimly Lit
     *   **`targetProperty`**: `text-shadow-opacity-and-blur`
     *   **Starting State:**
         *   `amplitudeStart`: 0.0
         *   `glow.initialOpacity`: 0.0
         *   `glow.initialSize`: '0px'
-    *   **Ending State (matches new "Dimly Lit" target for terminal text, before theme scaling):**
-        *   `amplitudeEnd`: 1.0 <!-- MODIFIED: Text itself is fully opaque -->
-        *   `glow.finalOpacity`: 0.8 <!-- MODIFIED: Brighter baseline glow opacity -->
-        *   `glow.finalSize`: '13px' <!-- MODIFIED: Larger baseline glow size -->
+    *   **Ending State (matches "Dimly Lit" target for terminal text):**
+        *   `amplitudeEnd`: 1.0
+        *   `glow.finalOpacity`: 1.0
+        *   `glow.finalSize`: '16px'
     *   **Glow Variables:**
         *   `glow.colorVar`: `--terminal-text-glow-color`
         *   `glow.animatedProperties`: `{ opacity: '--terminal-text-glow-opacity', blur: '--terminal-text-bloom-size' }`
     *   *(Other dynamic parameters like `numCycles`, `period`, `peakOpacity` are defined in `config.js`)*
-    *   *Note: Theme-specific CSS variables (`--theme-terminal-glow-opacity-factor`, `--theme-terminal-glow-size-factor`) further scale this baseline glow.*
 
 ---
 ### B. LCD Screen Element Profiles
@@ -82,6 +81,24 @@ For profiles named `...From[InitialState]To...`, these starting parameters are d
     *   **`targetProperty`**: `element-opacity-and-box-shadow`
     *   **Starting State:**
         *   `amplitudeStart`: 0.0
+        *   `glow.initialOpacity`: 0.0
+        *   `glow.initialSize`: '0px'
+    *   **Ending State (matches "Dimly Lit" target):**
+        *   `amplitudeEnd`: 0.8
+        *   `glow.finalOpacity`: 0.2
+        *   `glow.finalSize`: '2px'
+    *   **Glow Variables:**
+        *   `glow.colorVar`: `--lcd-glow-color`
+        *   `glow.sizeVar`: `--lcd-glow-size`
+        *   `glow.opacityVar`: `--lcd-glow-opacity`
+    *   *(Other dynamic parameters defined in `config.js`)*
+
+*   **2. `terminalScreenFlickerToDimlyLit`**
+    *   **Transition:** Unlit -> Dimly Lit (for the screen background/glow only)
+    *   **Purpose:** Animates the terminal screen's background glow without affecting the opacity of the text content inside it.
+    *   **`targetProperty`**: `element-opacity-and-box-shadow`
+    *   **Starting State:**
+        *   `amplitudeStart`: 1.0 (Crucially, this keeps the container element itself opaque, preserving text visibility)
         *   `glow.initialOpacity`: 0.0
         *   `glow.initialSize`: '0px'
     *   **Ending State (matches "Dimly Lit" target):**
@@ -184,6 +201,31 @@ For profiles named `...From[InitialState]To...`, these starting parameters are d
         *   `glow.finalOpacity`: 0.8
         *   `glow.finalSize`: '13px'
     *   *(Other dynamic parameters defined in `config.js`)*
+
+---
+### D. Resistive Shutdown Button Profiles
+   *(For the Main Power OFF button during the shutdown sequence)*
+
+*   **1. `buttonFlickerResistYellow`**
+    *   **Purpose:** A short, sharp flicker with a yellow tint to indicate the first stage of resistance.
+    *   **`targetProperty`**: `button-lights-and-frame`
+    *   **Starting/Ending State:** Designed to start from and return to the button's current energized state. `amplitudeStart` and `amplitudeEnd` are 1.0.
+    *   **Glow:** Uses a temporary yellow glow color. Glow parameters are conditional on whether the button is selected or not.
+    *   *(Dynamic parameters defined in `config.js`)*
+
+*   **2. `buttonFlickerResistOrange`**
+    *   **Purpose:** A slightly more intense flicker with an orange tint for the second stage.
+    *   **`targetProperty`**: `button-lights-and-frame`
+    *   **Starting/Ending State:** Starts from and returns to the button's current energized state.
+    *   **Glow:** Uses a temporary orange glow color.
+    *   *(Dynamic parameters defined in `config.js`)*
+
+*   **3. `buttonFlickerResistRedThenSolid`**
+    *   **Purpose:** A final, dramatic red flash that resolves to a solid, disabled state.
+    *   **`targetProperty`**: `button-lights-and-frame`
+    *   **Starting/Ending State:** Starts from energized, ends in a permanently disabled visual state.
+    *   **Glow:** Uses a temporary red glow color.
+    *   *(Dynamic parameters defined in `config.js`)*
 
 ---
 

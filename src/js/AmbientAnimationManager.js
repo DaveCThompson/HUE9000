@@ -18,7 +18,7 @@ class AmbientAnimationManager {
         this.resonanceTicker = null;
 
         this.debug = false; 
-        this.enableHarmonicResonance = false; // Flag to disable Harmonic Resonance
+        this.enableHarmonicResonance = true; // Flag to disable Harmonic Resonance
 
         this._updateResonance = this._updateResonance.bind(this); // Bind this context
     }

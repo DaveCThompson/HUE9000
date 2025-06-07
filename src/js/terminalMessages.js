@@ -70,7 +70,11 @@ const statusMessageTemplates = {
     lcdHue: (data) => `LCD HUE ASSIGNED: ${data.hue}°`,
     logoHue: (data) => `LOGO HUE ASSIGNED: ${data.hue}°`,
     btnHue: (data) => `BUTTON HUE ASSIGNED: ${data.hue}°`,
-    FSM_ERROR: (data) => `CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}`
+    FSM_ERROR: (data) => `CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}`,
+    // NEW: Resistive Shutdown Messages
+    RESIST_SHUTDOWN_S1: "WARNING",
+    RESIST_SHUTDOWN_S2: "ERROR",
+    RESIST_SHUTDOWN_S3: "CRITICAL ERROR"
 };
 
 
@@ -87,17 +91,13 @@ export function getMessage(payload, currentAppState = {}, configModule = null) {
 
     switch (type) {
         case 'startup':
-            const msg = startupMessages[messageKey || source] || `Unknown startup event: ${messageKey || source}`;
-            // If msg is already an array (for our multi-line messages), return it directly.
-            // Otherwise, wrap the single string message in an array.
-            return Array.isArray(msg) ? msg : [msg];
+            const startupMsg = startupMessages[messageKey || source] || `Unknown startup event: ${messageKey || source}`;
+            return Array.isArray(startupMsg) ? startupMsg : [startupMsg];
 
         case 'block':
             if (messageKey && blockMessages[messageKey]) {
                 if (messageKey === 'BTN4_MESSAGE') {
-                    // Ensure configModule and its DEFAULT_DIAL_A_HUE are available
                     const defaultDialAHue = configModule?.DEFAULT_DIAL_A_HUE ?? 'N/A_CONF';
-
                     return blockMessages[messageKey].map(line =>
                         line.replace('{currentTheme}', currentAppState.theme || 'N/A')
                             .replace('{lensPower}', currentAppState.lensPower !== undefined ? Math.round(currentAppState.lensPower * 100) : 'N/A')
@@ -114,13 +114,13 @@ export function getMessage(payload, currentAppState = {}, configModule = null) {
             return [`Unknown block message key: ${messageKey || source}`];
 
         case 'status':
-            if (messageKey && statusMessageTemplates[messageKey] && data) {
-                return [statusMessageTemplates[messageKey](data)];
+            const template = statusMessageTemplates[messageKey] || statusMessageTemplates[source];
+            if (template) {
+                const msg = typeof template === 'function' ? template(data) : template;
+                return Array.isArray(msg) ? msg : [msg];
             }
-            if (statusMessageTemplates[source] && data) {
-                return [statusMessageTemplates[source](data)];
-            }
-            return [`Status update from ${source}: ${JSON.stringify(data)}`];
+            return [`Status update from ${source || messageKey}: ${data ? JSON.stringify(data) : 'No data'}`];
+
 
         default:
             return [`Unknown message type: ${type} from ${source}`];

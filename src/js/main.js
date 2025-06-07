@@ -24,6 +24,7 @@ import * as startupSequenceManager from './startupSequenceManager.js';
 import * as uiUpdater from './uiUpdater.js';
 import AmbientAnimationManager from './AmbientAnimationManager.js'; 
 import MoodMatrixDisplayManager from './moodMatrixDisplayManager.js'; // NEW: Import MoodMatrixDisplayManager
+import resistiveShutdownControllerInstance from './resistiveShutdownController.js'; // NEW: Import Resistive Shutdown Controller
 
 // DOM Element References
 const domElements = {
@@ -113,7 +114,30 @@ function initializeApp() {
         buttonManagerInstance
     );
 
+    // --- Add Click Listeners for Action Buttons (BTN 1-4) ---
+    const actionButtonMap = {
+        'BTN1_MESSAGE': domElements.scanButton1Element,
+        'BTN2_MESSAGE': domElements.scanButton2Element,
+        'BTN3_MESSAGE': domElements.scanButton3Element,
+        'BTN4_MESSAGE': domElements.scanButton4Element,
+    };
+
+    for (const [messageKey, element] of Object.entries(actionButtonMap)) {
+        if (element) {
+            element.addEventListener('click', () => {
+                if (appState.getAppStatus() === 'interactive') {
+                    appState.emit('requestTerminalMessage', {
+                        type: 'block',
+                        source: 'ActionButtons',
+                        messageKey: messageKey,
+                    });
+                }
+            });
+        }
+    }
+
     ambientAnimationManagerInstance.init();
+    resistiveShutdownControllerInstance.init(buttonManagerInstance); // Pass buttonManager to controller
     // MoodMatrixDisplayManager is already initialized above
 
     const managerReferencesForStartup = {
@@ -126,7 +150,8 @@ function initializeApp() {
         uiUpdater: uiUpdater,
         debugManager: debugManager,
         ambientAnimationManager: ambientAnimationManagerInstance,
-        moodMatrixDisplayManager: moodMatrixDisplayManagerInstance // NEW: Add to startup dependencies if needed by phases
+        moodMatrixDisplayManager: moodMatrixDisplayManagerInstance,
+        resistiveShutdownController: resistiveShutdownControllerInstance
     };
 
     startupSequenceManager.init({
@@ -142,7 +167,7 @@ function initializeApp() {
         playAllButton: domElements.btnPlayAll,
         resetButton: domElements.btnResetStartup,
         debugStatusDiv: domElements.debugPhaseStatus,
-        debugPhaseInfoDiv: domElements.debugPhaseInfo
+        debugPhaseInfo: domElements.debugPhaseInfo
     };
     debugManager.init({
         startupSequenceManager: startupSequenceManager,

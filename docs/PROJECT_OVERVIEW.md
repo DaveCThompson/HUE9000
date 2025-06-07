@@ -1,6 +1,3 @@
----
-file: PROJECT_OVERVIEW.md
----
 # HUE 9000 Project Overview (REFACTOR-V2.3 - XState Update)
 
 ## 1. Project Intent & Core Concept
@@ -31,10 +28,10 @@ The interface "powers on" with a choreographed, multi-phase sequence (P0-P11), o
 
 **JavaScript Modules (all in `src/js/`):**
 *   **Core State & Config:** `appState.js`, `config.js`.
-*   **UI Components (New in V2.3):**
+*   **UI Component Classes (New in V2.3):**
     *   `Button.js`: Manages individual button state, appearance, and animations.
     *   `Dial.js`: Manages individual dial state, rendering, and interactions.
-*   **Managers (Orchestration):**
+*   **Managers & Controllers (Orchestration):**
     *   `buttonManager.js`: Discovers and orchestrates `Button.js` instances. Manages group behaviors.
     *   `dialManager.js`: Discovers and orchestrates `Dial.js` instances. Handles global dial operations.
     *   `gridManager.js`: Manages Hue Assignment Grid buttons.
@@ -44,16 +41,19 @@ The interface "powers on" with a choreographed, multi-phase sequence (P0-P11), o
     *   `startupSequenceManager.js`: Orchestrates the XState-driven startup sequence.
     *   `debugManager.js`: Manages the debug panel UI and logic.
     *   `terminalManager.js`: Manages terminal display.
+    *   `AmbientAnimationManager.js`: Manages continuous, ambient animations for buttons.
+    *   `moodMatrixDisplayManager.js`: Manages the dynamic "Mood Matrix" display in Dial A's LCD.
+    *   `resistiveShutdownController.js`: Orchestrates the "Resistive Shutdown" sequence.
 *   **Startup Sequence Phase Modules (XState Refactor):**
     *   `startupPhase0.js` ... `startupPhase11.js`: Logic for each distinct startup phase.
     *   `startupMachine.js`: XState machine definition for the startup sequence.
-*   **Utilities:** `utils.js`, `terminalMessages.js`.
+*   **Utilities:** `utils.js`, `terminalMessages.js`, `animationUtils.js`.
 (All modules include console logging for key operations).
 
 **Animation & Interaction:**
 *   **XState:** Orchestrates the multi-phase startup sequence.
 *   **GSAP:** Core to startup phase animations, dial dragging, lens smoothing, button light flickers.
-*   **CSS Transitions:** Used for smooth visual changes when theme variables update and for specific state changes (e.g., global theme transition from `theme-dim` to `theme-dark`).
+*   **CSS Transitions & Animations:** Used for smooth visual changes when theme variables update, for the main theme transition, and for ambient button animations (`Idle Light Drift`, `Harmonic Resonance`).
 
 ## 3. Core Principles & Design Intentions (Preservation Areas)
 

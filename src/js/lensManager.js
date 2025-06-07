@@ -14,7 +14,8 @@ import {
     getDialState, 
     getAppStatus, 
     setTrueLensPower as setTrueLensPowerInAppState,
-    updateDialState as updateDialBStateInAppState 
+    updateDialState as updateDialBStateInAppState,
+    getResistiveShutdownStage
 } from './appState.js';
 // Config constants will be accessed via configModule
 import { debounce, mapRange } from './utils.js'; 
@@ -40,13 +41,15 @@ let debouncedSetLegacyLensPowerVar = null;
 let localGsap = null; // Store passed GSAP instance
 let debugLensManager = false; // Control detailed logging for this module
 
+let currentLensHueProxy = { value: -1 };
+
 
 export function init(documentElement, colorLensGradientEl, cfgModule, gsapInstance) { 
     if (!documentElement || !colorLensGradientEl) {
         console.error("[LensManager INIT] CRITICAL ERROR: Missing documentElement or colorLensGradientEl.");
         return;
     }
-    if (!cfgModule) { // Corrected check for cfgModule
+    if (!cfgModule) {
         console.error("[LensManager INIT] CRITICAL ERROR: Missing configModule.");
         return;
     }
@@ -57,7 +60,7 @@ export function init(documentElement, colorLensGradientEl, cfgModule, gsapInstan
     rootDocElement = documentElement;
     lensGradientElement = colorLensGradientEl;
     lensSuperGlowElement = document.getElementById('lens-super-glow'); 
-    configModule = cfgModule; // Use cfgModule to avoid conflict with outer scope 'configModule'
+    configModule = cfgModule;
     localGsap = gsapInstance;
 
     debouncedSetLegacyLensPowerVar = debounce((visualPower) => {
@@ -74,6 +77,7 @@ export function init(documentElement, colorLensGradientEl, cfgModule, gsapInstan
     const initialPower01 = getTrueLensPower(); 
     const initialDialAState = getDialState('A');
     currentMasterHue = initialDialAState ? ((initialDialAState.hue % 360) + 360) % 360 : configModule.DEFAULT_DIAL_A_HUE;
+    currentLensHueProxy.value = currentMasterHue;
     lastHueForGradientRender = currentMasterHue; 
     _updateSuperGlowHue(currentMasterHue); 
 
@@ -150,7 +154,6 @@ function _setLegacyLensPowerVar(visualPower01, forceImmediate = false) {
         } else { 
             const clampedPower = Math.max(0.0, Math.min(visualPower01, 1.05));
             rootDocElement.style.setProperty('--lens-power', clampedPower.toFixed(3));
-            // console.warn("[LensManager _setLegacyLensPowerVar] debouncedSetLegacyLensPowerVar not initialized, applying immediately."); // Reduced verbosity
         }
     }
 }
@@ -165,22 +168,76 @@ function _updateSuperGlowHue(hue) {
 }
 
 function _handleDialAUpdateForLensHue(payload) {
-    if (getAppStatus() === 'loading' || getAppStatus() === 'error' || !configModule) return; 
+    if (getAppStatus() === 'loading' || getAppStatus() === 'error' || !configModule) return;
 
     if (payload && payload.id === 'A' && payload.state) {
-        const newMasterHue = ((payload.state.hue % 360) + 360) % 360;
-        const hueDiff = Math.abs(newMasterHue - currentMasterHue);
-        const effectiveHueDiff = Math.min(hueDiff, 360 - hueDiff); 
+        const dialAState = payload.state;
+        const newMasterHueTarget = ((dialAState.hue % 360) + 360) % 360;
 
-        if (effectiveHueDiff >= configModule.HUE_UPDATE_THRESHOLD) {
-            if (debugLensManager) console.log(`[LensManager _handleDialAUpdateForLensHue] Master hue changed to ${newMasterHue.toFixed(1)}`);
-            currentMasterHue = newMasterHue;
-            _updateSuperGlowHue(currentMasterHue); 
+        if (localGsap.isTweening(currentLensHueProxy)) {
+            localGsap.killTweensOf(currentLensHueProxy);
+        }
+
+        if (dialAState.isDragging) {
+            // Live update during drag, no tween
+            currentMasterHue = newMasterHueTarget;
+            currentLensHueProxy.value = newMasterHueTarget;
+            _updateSuperGlowHue(currentMasterHue);
             const currentVisualPower = smoothedTrueLensPower.value + (isOscillating ? calculateOscillationOffset(performance.now()) : 0);
-            directUpdateLensVisuals(currentVisualPower); 
+            directUpdateLensVisuals(currentVisualPower);
+            return;
+        }
+
+        // Not dragging, so use a smooth tween
+        const hueDiff = Math.abs(newMasterHueTarget - currentMasterHue);
+        const effectiveHueDiff = Math.min(hueDiff, 360 - hueDiff);
+
+        if (effectiveHueDiff >= configModule.HUE_UPDATE_THRESHOLD || currentMasterHue === -1) {
+            if (debugLensManager) console.log(`[LensManager _handleDialAUpdateForLensHue] Dial A target hue changed to ${newMasterHueTarget.toFixed(1)}`);
+
+            let duration = configModule.LENS_OSCILLATION_HUE_SMOOTHING_DURATION;
+            let ease = "power1.out";
+
+            const shutdownStage = getResistiveShutdownStage();
+            if (shutdownStage > 0) {
+                const stageKey = `STAGE_${shutdownStage}`;
+                const stageParams = configModule.RESISTIVE_SHUTDOWN_PARAMS[stageKey];
+                if (stageParams) {
+                    duration = stageParams.LENS_ANIM_DURATION_S;
+                    ease = stageParams.LENS_ANIM_EASING || configModule.RESISTIVE_SHUTDOWN_PARAMS.LENS_ANIMATION_EASING_DEFAULT;
+                }
+            }
+            
+            // Calculate shortest path for tweening
+            let targetForTween = newMasterHueTarget;
+            const currentVal = currentLensHueProxy.value;
+            const diff = targetForTween - currentVal;
+            if (Math.abs(diff) > 180) {
+                if (diff > 0) {
+                    targetForTween -= 360;
+                } else {
+                    targetForTween += 360;
+                }
+            }
+
+            localGsap.to(currentLensHueProxy, {
+                value: targetForTween,
+                duration: duration,
+                ease: ease,
+                onUpdate: () => {
+                    currentMasterHue = localGsap.utils.wrap(0, 360)(currentLensHueProxy.value);
+                    _updateSuperGlowHue(currentMasterHue);
+                    const currentVisualPower = smoothedTrueLensPower.value + (isOscillating ? calculateOscillationOffset(performance.now()) : 0);
+                    directUpdateLensVisuals(currentVisualPower);
+                },
+                onComplete: () => {
+                    currentMasterHue = localGsap.utils.wrap(0, 360)(currentLensHueProxy.value);
+                }
+            });
         }
     }
 }
+
 
 function _updateLensVisualsWithCurrentState(forceLegacyUpdate = false) {
     const currentVisualPower01 = smoothedTrueLensPower.value + (isOscillating ? calculateOscillationOffset(performance.now()) : 0);
@@ -226,13 +283,9 @@ function _updateLensGradientVisuals(currentVisualPower01) {
     }
     
     if (!needsGradientStringUpdate && lastAppliedGradientString !== "" && lastAppliedGradientString !== "none") {
-        lastVisualPowerForGradientRender = currentVisualPower01; // Still update this for next comparison
+        lastVisualPowerForGradientRender = currentVisualPower01; 
         return;
     }
-
-    // Reduced verbosity for gradient string generation
-    // if (debugLensManager && needsGradientStringUpdate) console.log(`[LensManager _updateLensGradientVisuals] Updating gradient. Power: ${currentVisualPower01.toFixed(3)}, Hue: ${currentMasterHue.toFixed(1)}`);
-
 
     const powerForBreakpointSelection = Math.max(configModule.LENS_GRADIENT_BREAKPOINTS[0].power, currentVisualPower01);
     let prevBreakpoint = configModule.LENS_GRADIENT_BREAKPOINTS[0]; 
@@ -302,36 +355,52 @@ function _updateLensGradientVisuals(currentVisualPower01) {
 
 function _handleTrueLensPowerChange(newTruePower01Value) {
     if (!configModule || !localGsap) return;
-    if (debugLensManager) console.log(`[LensManager _handleTrueLensPowerChange] New true power: ${newTruePower01Value.toFixed(3)}`);
-    trueLensPowerTarget = newTruePower01Value; 
-    if (powerSmoothingTween) powerSmoothingTween.kill(); 
+    if (debugLensManager) console.log(`[LensManager _handleTrueLensPowerChange] New true power target: ${newTruePower01Value.toFixed(3)}`);
+    trueLensPowerTarget = newTruePower01Value;
+    if (powerSmoothingTween) powerSmoothingTween.kill();
 
     const appIsStartingUp = getAppStatus() === 'starting-up';
     const dialBIsIdle = getDialBInteractionState() === 'idle';
 
-    if (appIsStartingUp || !dialBIsIdle) { 
+    let duration = configModule.LENS_OSCILLATION_SMOOTHING_DURATION;
+    let ease = "power1.out";
+
+    const shutdownStage = getResistiveShutdownStage();
+    if (shutdownStage > 0) {
+        const stageKey = `STAGE_${shutdownStage}`;
+        const stageParams = configModule.RESISTIVE_SHUTDOWN_PARAMS[stageKey];
+        if (stageParams) {
+            duration = stageParams.LENS_ANIM_DURATION_S;
+            ease = stageParams.LENS_ANIM_EASING || configModule.RESISTIVE_SHUTDOWN_PARAMS.LENS_ANIMATION_EASING_DEFAULT;
+            if (debugLensManager) console.log(`  [LM _handleTrueLensPowerChange] Using Resistive Shutdown anim params: D=${duration}s, E=${ease}`);
+        }
+    }
+
+
+    if (appIsStartingUp || !dialBIsIdle) {
         smoothedTrueLensPower.value = trueLensPowerTarget;
-        if (!isOscillating) _updateLensVisualsWithCurrentState(true); 
-    } else { 
-        powerSmoothingTween = localGsap.to(smoothedTrueLensPower, { 
-            value: trueLensPowerTarget, duration: configModule.LENS_OSCILLATION_SMOOTHING_DURATION, ease: "power1.out",
-            onUpdate: () => { if (!isOscillating) _updateLensVisualsWithCurrentState(); },
+        if (!isOscillating) _updateLensVisualsWithCurrentState(true);
+    } else {
+        powerSmoothingTween = localGsap.to(smoothedTrueLensPower, {
+            value: trueLensPowerTarget, duration: duration, ease: ease,
+            onUpdate: _updateLensVisualsWithCurrentState,
             onComplete: () => {
                 powerSmoothingTween = null;
-                if (!isOscillating) _updateLensVisualsWithCurrentState(true); 
-                if (getAppStatus() === 'interactive' && smoothedTrueLensPower.value >= configModule.LENS_OSCILLATION_THRESHOLD && !isOscillating) {
+                if (!isOscillating) _updateLensVisualsWithCurrentState(true);
+                if (getAppStatus() === 'interactive' && smoothedTrueLensPower.value >= configModule.LENS_OSCILLATION_THRESHOLD && !isOscillating && shutdownStage === 0) {
                     _startOscillation();
                 }
             }
         });
     }
-    if ((trueLensPowerTarget < configModule.LENS_OSCILLATION_THRESHOLD || !dialBIsIdle || appIsStartingUp) && isOscillating) {
+    if ((trueLensPowerTarget < configModule.LENS_OSCILLATION_THRESHOLD || !dialBIsIdle || appIsStartingUp || shutdownStage > 0) && isOscillating) {
         _stopOscillation();
     }
-    if (getAppStatus() === 'interactive' && dialBIsIdle && smoothedTrueLensPower.value >= configModule.LENS_OSCILLATION_THRESHOLD && !isOscillating) {
+    if (getAppStatus() === 'interactive' && dialBIsIdle && smoothedTrueLensPower.value >= configModule.LENS_OSCILLATION_THRESHOLD && !isOscillating && shutdownStage === 0) {
         _startOscillation();
     }
 }
+
 
 function _handleDialBInteractionChange(newState) {
     if (!configModule) return;
@@ -342,7 +411,12 @@ function _handleDialBInteractionChange(newState) {
         smoothedTrueLensPower.value = getTrueLensPower(); 
         _updateLensVisualsWithCurrentState(true); 
     } else if (newState === 'idle') { 
-        _handleTrueLensPowerChange(getTrueLensPower()); 
+        if (getResistiveShutdownStage() === 0) {
+            _handleTrueLensPowerChange(getTrueLensPower());
+        } else {
+            smoothedTrueLensPower.value = getTrueLensPower();
+             _updateLensVisualsWithCurrentState(true);
+        }
     }
 }
 
@@ -364,7 +438,7 @@ function _handleAppStatusChangeForLens(newStatus) {
     _updateSuperGlowHue(currentMasterHue); 
 
     if (newStatus === 'interactive') {
-        if (getDialBInteractionState() === 'idle' && smoothedTrueLensPower.value >= configModule.LENS_OSCILLATION_THRESHOLD && !isOscillating) {
+        if (getDialBInteractionState() === 'idle' && smoothedTrueLensPower.value >= configModule.LENS_OSCILLATION_THRESHOLD && !isOscillating && getResistiveShutdownStage() === 0) {
             _startOscillation();
         }
     } else { 
@@ -377,7 +451,7 @@ function _handleAppStatusChangeForLens(newStatus) {
 
 function _startOscillation() { 
     if (!configModule) return;
-    if (isOscillating || getAppStatus() !== 'interactive' || getDialBInteractionState() !== 'idle') return;
+    if (isOscillating || getAppStatus() !== 'interactive' || getDialBInteractionState() !== 'idle' || getResistiveShutdownStage() > 0) return;
     if (debugLensManager) console.log("[LensManager _startOscillation] Starting lens oscillation.");
     isOscillating = true; oscillationStartTime = performance.now();
     _oscillationLoop(performance.now()); 
