@@ -25,7 +25,7 @@
     --grid-color-chip-width: 0.375rem;
     --hue-assignment-column-gap: var(--space-md);
     --hue-assignment-row-gap: var(--space-sm);
-    --hue-lcd-display-height: 3rem; /* This also defines height for Mood Matrix container */
+    --hue-lcd-display-height: 3.5rem; /* This also defines height for Mood Matrix container */
     --button-l-fixed-height: 3rem;
 
     /* NEW: Mood Matrix Display Structural Variables */
