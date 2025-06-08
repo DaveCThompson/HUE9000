@@ -161,11 +161,20 @@ export class PhaseRunner {
 
   _handleSimpleFlicker(tl, anim, position) {
     let elements = [];
+    let isButtonFlicker = false;
+
     if (anim.target === 'buttonGroup') {
       elements = this.managers.buttonManager.getButtonsByGroupIds(anim.groups);
+      isButtonFlicker = true;
     } else if (typeof anim.target === 'string') {
         const buttonInstance = this.managers.buttonManager.getButtonByAriaLabel(anim.target);
-        if (buttonInstance) elements.push(buttonInstance.getElement());
+        if (buttonInstance) {
+            elements.push(buttonInstance.getElement());
+            isButtonFlicker = true;
+        }
+    } else if (Array.isArray(anim.target)) {
+        // FIX: Handle generic element IDs (like for LCDs)
+        elements = anim.target.map(id => this.dom[id]).filter(Boolean);
     }
 
     if (elements.length === 0) {
@@ -175,27 +184,36 @@ export class PhaseRunner {
 
     const stagger = anim.stagger || 0;
     elements.forEach((el, index) => {
-        const buttonInstance = this.managers.buttonManager.getButtonInstance(el);
-        if (!buttonInstance) return;
+        if (isButtonFlicker) {
+            const buttonInstance = this.managers.buttonManager.getButtonInstance(el);
+            if (!buttonInstance) return;
 
-        let effectiveProfile = anim.profile;
-        if (anim.profile.startsWith('buttonFlickerFromDimlyLitToFullyLit')) {
-            const shouldBeSelected = (anim.target === 'buttonGroup')
-                ? this.config.DEFAULT_ASSIGNMENT_SELECTIONS[buttonInstance.getGroupId()]?.toString() === buttonInstance.getValue()
-                : anim.state.includes('is-selected');
-            const isFast = anim.profile.includes('Fast');
-            effectiveProfile = shouldBeSelected
-                ? (isFast ? 'buttonFlickerFromDimlyLitToFullyLitSelectedFast' : 'buttonFlickerFromDimlyLitToFullyLitSelected')
-                : (isFast ? 'buttonFlickerFromDimlyLitToFullyLitUnselectedFast' : 'buttonFlickerFromDimlyLitToFullyLitUnselected');
-        }
-        
-        const flickerResult = this.managers.buttonManager.playFlickerToState(el, anim.state, {
-          profileName: effectiveProfile,
-          phaseContext: `PhaseRunner_${effectiveProfile}`
-        });
+            let effectiveProfile = anim.profile;
+            if (anim.profile.startsWith('buttonFlickerFromDimlyLitToFullyLit')) {
+                const shouldBeSelected = (anim.target === 'buttonGroup')
+                    ? this.config.DEFAULT_ASSIGNMENT_SELECTIONS[buttonInstance.getGroupId()]?.toString() === buttonInstance.getValue()
+                    : anim.state.includes('is-selected');
+                const isFast = anim.profile.includes('Fast');
+                effectiveProfile = shouldBeSelected
+                    ? (isFast ? 'buttonFlickerFromDimlyLitToFullyLitSelectedFast' : 'buttonFlickerFromDimlyLitToFullyLitSelected')
+                    : (isFast ? 'buttonFlickerFromDimlyLitToFullyLitUnselectedFast' : 'buttonFlickerFromDimlyLitToFullyLitUnselected');
+            }
+            
+            const flickerResult = this.managers.buttonManager.playFlickerToState(el, anim.state, {
+              profileName: effectiveProfile,
+              phaseContext: `PhaseRunner_${effectiveProfile}`
+            });
 
-        if (flickerResult && flickerResult.timeline) {
-            tl.add(flickerResult.timeline, `${position}+=${index * stagger}`);
+            if (flickerResult && flickerResult.timeline) {
+                tl.add(flickerResult.timeline, `${position}+=${index * stagger}`);
+            }
+        } else {
+            // FIX: Handle non-button flickers (like LCDs)
+            const flickerTl = this.managers.lcdUpdater.getLcdPowerOnTimeline(el, {
+                profileName: anim.profile,
+                state: anim.state
+            });
+            tl.add(flickerTl, `${position}+=${index * stagger}`);
         }
     });
   }

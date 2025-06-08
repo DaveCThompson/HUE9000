@@ -59,7 +59,7 @@ export const LENS_STARTUP_RAMP_DURATION = 1500; // ms
 export const P3_LENS_RAMP_DURATION_S = LENS_STARTUP_RAMP_DURATION / 1000;
 export const THEME_TRANSITION_DURATION = 1.0;
 export const SYSTEM_READY_PHASE_DURATION = 0.1;
-export const MIN_PHASE_DURATION_FOR_STEPPING = 0.05;
+export const MIN_PHASE_DURATION_for_STEPPING = 0.05;
 export const LCD_TEXT_FADE_IN_DURATION = 0.3; 
 
 export const STARTUP_L_REDUCTION_FACTORS = {
@@ -325,6 +325,7 @@ export const HARMONIC_RESONANCE_PARAMS = {
     LIGHT_OPACITY_RANGE: [0.85, 1.0],   // Range for the button's inner light opacity
     GLOW_OPACITY_RANGE:  [0.65, 0.90],  // Range for the pseudo-element glow's opacity
     GLOW_SCALE_RANGE:    [0.95, 1.05],  // Range for the pseudo-element glow's scale
+    DISPLAY_LIGHTNESS_FACTOR_RANGE: [0.85, 1.0], // [NEW] Range for V2 Display pulsation
 };
 
 export const IDLE_LIGHT_DRIFT_PARAMS = {
@@ -349,14 +350,21 @@ export const STATE_TRANSITION_ECHO_PARAMS = {
     DELAY_AFTER_TRANSITION: 0.05 
 };
 
-// --- Mood Matrix Display Configuration (NEW) ---
+// --- Mood Matrix Display Configuration ---
 export const MOOD_MATRIX_DEFINITIONS = [
     "Scanning", "Commanding", "Evaluative", "Curious",
     "Advisory", "Analytical", "Focused", "Reserved", "Introspective"
 ];
-export const MOOD_MATRIX_SEGMENT_DEGREES = 40;
-export const MOOD_MATRIX_SCROLL_DURATION = 0.4; // seconds
-export const MOOD_MATRIX_ROW_HEIGHT_EM_FALLBACK = 1.4; // Fallback if offsetHeight is 0
+
+// [NEW] V2 Display Parameters
+export const V2_DISPLAY_PARAMS = {
+    INTENSITY_BARS: 36,
+    INTENSITY_DOTS: 36,
+    MOOD_MAJOR_BLOCKS: 6,
+    MOOD_FINE_DOTS: 36,
+    RESONANCE_IDLE_DELAY_MS: 250
+};
+
 
 // --- Resistive Shutdown Configuration ---
 export const RESISTIVE_SHUTDOWN_PARAMS = {

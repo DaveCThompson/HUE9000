@@ -25,11 +25,13 @@ import { LcdUpdater } from './LcdUpdater.js';
 import { DynamicStyleManager } from './DynamicStyleManager.js';
 import { PhaseRunner } from './PhaseRunner.js';
 import AmbientAnimationManager from './AmbientAnimationManager.js';
-import MoodMatrixDisplayManager from './moodMatrixDisplayManager.js';
 import resistiveShutdownControllerInstance from './resistiveShutdownController.js';
 import terminalManagerInstance from './terminalManager.js';
 import { StartupSequenceManager } from './startupSequenceManager.js';
 import * as debugManager from './debugManager.js';
+// [NEW] Import V2 Display Managers
+import { MoodMatrixManager } from './MoodMatrixManager.js';
+import { IntensityDisplayManager } from './IntensityDisplayManager.js';
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -157,9 +159,12 @@ function initializeApp() {
     const dialManager = new DialManager();
     const lensManager = new LensManager();
     const ambientAnimationManager = new AmbientAnimationManager();
-    const moodMatrixDisplayManager = new MoodMatrixDisplayManager(domElements.lcdA);
     const phaseRunner = new PhaseRunner();
     const startupSequenceManager = new StartupSequenceManager();
+    // [NEW] Instantiate V2 Display Managers
+    const moodMatrixManager = new MoodMatrixManager();
+    const intensityDisplayManager = new IntensityDisplayManager();
+
 
     // --- Register all services and managers ---
     serviceLocator.register('gsap', gsap);
@@ -174,12 +179,17 @@ function initializeApp() {
     serviceLocator.register('dialManager', dialManager);
     serviceLocator.register('lensManager', lensManager);
     serviceLocator.register('ambientAnimationManager', ambientAnimationManager);
-    serviceLocator.register('moodMatrixDisplayManager', moodMatrixDisplayManager);
     serviceLocator.register('terminalManager', terminalManagerInstance);
     serviceLocator.register('resistiveShutdownController', resistiveShutdownControllerInstance);
     serviceLocator.register('phaseRunner', phaseRunner);
     serviceLocator.register('startupSequenceManager', startupSequenceManager);
     serviceLocator.register('debugManager', debugManager);
+    // [NEW] Register V2 Display Managers
+    serviceLocator.register('moodMatrixManager', moodMatrixManager);
+    serviceLocator.register('intensityDisplayManager', intensityDisplayManager);
+    // [DEPRECATED] Remove old manager registration if it existed
+    // serviceLocator.remove('moodMatrixDisplayManager');
+
 
     // --- Initialize managers (they will get dependencies from the locator) ---
     // Initialize StartupSequenceManager first so it can register its proxies before PhaseRunner needs them.
@@ -187,10 +197,16 @@ function initializeApp() {
 
     const managersToInit = [
         themeManager, lcdUpdater, dynamicStyleManager, buttonManager, dialManager,
-        lensManager, ambientAnimationManager, moodMatrixDisplayManager,
-        terminalManagerInstance, resistiveShutdownControllerInstance, phaseRunner
+        lensManager, ambientAnimationManager,
+        terminalManagerInstance, resistiveShutdownControllerInstance, phaseRunner,
+        // [NEW] Add new managers to the init list
+        moodMatrixManager, intensityDisplayManager
     ];
-    managersToInit.forEach(manager => manager.init());
+    managersToInit.forEach(manager => {
+        if (typeof manager.init === 'function') {
+            manager.init();
+        }
+    });
 
     debugManager.init({
         debugStatusDiv: domElements.debugPhaseStatus,

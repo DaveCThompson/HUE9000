@@ -26,7 +26,6 @@ export class LcdUpdater {
 
     if (this.debug) console.log('[LcdUpdater INIT]');
     this.appState.subscribe('appStatusChanged', () => this.applyCurrentStateToAllLcds());
-    this.appState.subscribe('trueLensPowerChanged', (newPower) => this.updateLcdBContent(newPower));
     this.applyCurrentStateToAllLcds();
   }
 
@@ -100,11 +99,6 @@ export class LcdUpdater {
             if (lcd) this.setLcdState(lcd, targetState);
         });
     }
-  }
-
-  updateLcdBContent(newPower01) {
-    const valueSpan = this.dom.lcdB.querySelector('.lcd-value');
-    if (valueSpan) valueSpan.textContent = `${Math.round(newPower01 * 100)}%`;
   }
 
   _updateLcdVisibility(lcdContainer, stateName) {

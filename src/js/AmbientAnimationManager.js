@@ -1,7 +1,7 @@
 /**
  * @module AmbientAnimationManager
  * @description Manages continuous ambient animations for UI elements,
- * particularly buttons (Harmonic Resonance, Idle Light Drift).
+ * particularly buttons (Harmonic Resonance, Idle Light Drift) and now V2 Displays.
  * Works in conjunction with ButtonManager and appState.
  */
 import { serviceLocator } from './serviceLocator.js';
@@ -60,12 +60,17 @@ class AmbientAnimationManager {
         const lightOpacity = this.gsap.utils.interpolate(R_PARAMS.LIGHT_OPACITY_RANGE[0], R_PARAMS.LIGHT_OPACITY_RANGE[1], progress);
         const glowOpacity = this.gsap.utils.interpolate(R_PARAMS.GLOW_OPACITY_RANGE[0], R_PARAMS.GLOW_OPACITY_RANGE[1], progress);
         const glowScale = this.gsap.utils.interpolate(R_PARAMS.GLOW_SCALE_RANGE[0], R_PARAMS.GLOW_SCALE_RANGE[1], progress);
+        
+        // [NEW] Interpolate the lightness factor for V2 Displays
+        const lightnessFactor = this.gsap.utils.interpolate(R_PARAMS.DISPLAY_LIGHTNESS_FACTOR_RANGE[0], R_PARAMS.DISPLAY_LIGHTNESS_FACTOR_RANGE[1], progress);
 
         // Set the global CSS variables that the new CSS will consume
         const rootStyle = document.documentElement.style;
         rootStyle.setProperty('--harmonic-resonance-light-opacity', lightOpacity.toFixed(3));
         rootStyle.setProperty('--harmonic-resonance-glow-opacity', glowOpacity.toFixed(3));
         rootStyle.setProperty('--harmonic-resonance-glow-scale', glowScale.toFixed(3));
+        // [NEW] Set the new variable for V2 Displays
+        rootStyle.setProperty('--harmonic-resonance-lightness-factor', lightnessFactor.toFixed(3));
     }
 
     _handleAppStatusChange(newStatus) {
@@ -81,6 +86,7 @@ class AmbientAnimationManager {
                 rootStyle.removeProperty('--harmonic-resonance-light-opacity');
                 rootStyle.removeProperty('--harmonic-resonance-glow-opacity');
                 rootStyle.removeProperty('--harmonic-resonance-glow-scale');
+                rootStyle.removeProperty('--harmonic-resonance-lightness-factor'); // [NEW] Cleanup
             }
         }
 
@@ -139,6 +145,7 @@ class AmbientAnimationManager {
         rootStyle.removeProperty('--harmonic-resonance-light-opacity');
         rootStyle.removeProperty('--harmonic-resonance-glow-opacity');
         rootStyle.removeProperty('--harmonic-resonance-glow-scale');
+        rootStyle.removeProperty('--harmonic-resonance-lightness-factor'); // [NEW] Cleanup
     }
 }
 
