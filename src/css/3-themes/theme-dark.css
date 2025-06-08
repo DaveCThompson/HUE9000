@@ -93,6 +93,11 @@ body.theme-dark {
     --lcd-active-dim-text-l: 0.70; 
     --lcd-active-dim-chroma-factor: 0.45;
 
+    /* Mood Matrix Display Text Colors */
+    --mood-matrix-value-text-l: 0.92;
+    --mood-matrix-value-base-chroma: 0.12;
+
+
     /* --- Component: Dials --- */
     --dial-housing-bg-l: 0.01; 
     --dial-housing-bg-c: 0;    

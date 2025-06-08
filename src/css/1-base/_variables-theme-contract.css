@@ -172,17 +172,10 @@
     --lcd-glow-color: oklch(1 0 0 / var(--lcd-glow-opacity));
 
     /* Mood Matrix Display Text Colors */
-    --mood-matrix-value-text-l: var(--lcd-active-text-l);
-    /* --mood-matrix-value-text-c: var(--lcd-active-text-c); -- Chroma will come from specific hue */
-    /* --mood-matrix-value-text-h: var(--lcd-active-text-h); -- Hue will come from specific hue */
-    --mood-matrix-value-text-a: var(--lcd-active-text-a);
-    --mood-matrix-value-base-chroma: 0.08; /* Base chroma for the value's specific hue tint */
-
-    --mood-matrix-label-text-l: var(--lcd-active-text-l); 
-    /* --mood-matrix-label-text-c: var(--lcd-active-text-c); -- Chroma will come from specific hue */
-    /* --mood-matrix-label-text-h: var(--lcd-active-text-h); -- Hue will come from specific hue */
-    --mood-matrix-label-text-a: var(--lcd-active-text-a);
-    --mood-matrix-label-base-chroma: 0.08; /* Base chroma for the label's specific hue tint */
+    --mood-matrix-value-text-l: 0.9;
+    --mood-matrix-value-base-chroma: 0.1;
+    --mood-matrix-label-text-l: 0.9;
+    --mood-matrix-label-base-chroma: 0.1;
 
 
     /* --- Component: Dials --- */

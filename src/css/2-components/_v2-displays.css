@@ -46,10 +46,10 @@ KEY ARCHITECTURAL DECISIONS:
     height: 100%;
     padding: 4px; /* Reduced padding */
 
-    /* --- THEME DEFINITIONS --- */
-    /* Deconstructed color parts for robust calculations */
-    --display-color-on-l: 0.9;
-    --display-color-on-c: 0.1;
+    /* --- THEME DEFINITIONS (NOW USES THEME VARIABLES) --- */
+    /* Deconstructed color parts for robust calculations. Values from theme-contract.css */
+    --display-color-on-l: var(--mood-matrix-value-text-l);
+    --display-color-on-c: var(--mood-matrix-value-base-chroma);
     --display-color-on-h: var(--dynamic-ui-accent-hue);
     
     /* Derived colors */
@@ -58,10 +58,10 @@ KEY ARCHITECTURAL DECISIONS:
     --display-color-off-bg: oklch(30% 0.01 var(--display-color-on-h) / 0.5);
     --display-color-off-dot: oklch(40% 0.01 var(--display-color-on-h) / 0.4);
     
-    --display-glow-color-1: oklch(85% 0.12 var(--display-color-on-h) / var(--harmonic-resonance-glow-opacity));
-    --display-glow-color-2: oklch(90% 0.1 var(--display-color-on-h) / calc(var(--harmonic-resonance-glow-opacity) * 0.625));
-    --display-glow-blur-1: calc(var(--harmonic-resonance-glow-blur) * 1px);
-    --display-glow-blur-2: calc(var(--harmonic-resonance-glow-blur) * 3px);
+    --display-glow-color-1: oklch(85% 0.12 var(--display-color-on-h) / var(--harmonic-resonance-glow-opacity, 0.8));
+    --display-glow-color-2: oklch(90% 0.1 var(--display-color-on-h) / calc(var(--harmonic-resonance-glow-opacity, 0.8) * 0.625));
+    --display-glow-blur-1: calc(var(--harmonic-resonance-glow-blur, 4) * 1px);
+    --display-glow-blur-2: calc(var(--harmonic-resonance-glow-blur, 4) * 3px);
 }
 
 /* --- SHARED COMPONENT STYLES --- */
@@ -96,34 +96,7 @@ HARMONIC RESONANCE STYLES
 .is-resonating .major-block--on,
 .is-resonating .major-block--in-progress,
 .is-resonating .intensity-bar--selected,
-.is-resonating .fine-dot--on,
-.is-resonating .fine-dot--in-progress-1,
-.is-resonating .fine-dot--in-progress-2,
-.is-resonating .fine-dot--in-progress-3 {
-    /* Remove transitions so the pulsation is instant and driven by GSAP */
-    transition: none;
-}
-
-/* Robust color calculation that avoids `oklch(from...)` */
-.is-resonating .major-block--on,
-.is-resonating .intensity-bar--selected,
 .is-resonating .fine-dot--on {
-    background-color: oklch(
-        calc(var(--display-color-on-l) * var(--harmonic-resonance-lightness-factor))
-        var(--display-color-on-c)
-        var(--display-color-on-h)
-    );
+    /* The base elements already have transitions, which will now apply,
+       creating a gentle fade into the animated state. */
 }
-
-.is-resonating .display-container__row--name,
-.is-resonating .major-block--in-progress {
-     color: oklch(
-        calc(var(--display-color-on-l) * var(--harmonic-resonance-lightness-factor))
-        var(--display-color-on-c)
-        var(--display-color-on-h)
-    );
-}
-
-.is-resonating .fine-dot--in-progress-1 { background-color: oklch(calc(var(--display-color-on-l) * var(--harmonic-resonance-lightness-factor)) var(--display-color-on-c) var(--display-color-on-h) / 0.65); }
-.is-resonating .fine-dot--in-progress-2 { background-color: oklch(calc(var(--display-color-on-l) * var(--harmonic-resonance-lightness-factor)) var(--display-color-on-c) var(--display-color-on-h) / 0.40); }
-.is-resonating .fine-dot--in-progress-3 { background-color: oklch(calc(var(--display-color-on-l) * var(--harmonic-resonance-lightness-factor)) var(--display-color-on-c) var(--display-color-on-h) / 0.20); }

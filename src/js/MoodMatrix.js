@@ -19,13 +19,13 @@ export class MoodMatrix {
         this.config = config;
         this.container = containerElement;
         
-        // [DEBUG]
+        this.isContinuouslyScrambling = false;
+        this.currentScrambleTween = null;
+
         console.log('[MoodMatrix] Constructor called. Config:', config);
 
-        // Clear any existing content
         this.container.innerHTML = '';
         
-        // Create the component's DOM structure
         this.nameEl = this.container.appendChild(document.createElement('div'));
         this.nameEl.className = 'display-container__row--name';
         this.nameEl.textContent = 'INITIALIZING';
@@ -38,7 +38,6 @@ export class MoodMatrix {
         
         this.majorBlockEls = [];
         this.fineDotEls = [];
-        this.currentScrambleTween = null;
 
         this._setupDOM();
     }
@@ -47,7 +46,7 @@ export class MoodMatrix {
         for (let i = 0; i < this.config.majorBlocks; i++) {
             const blockEl = document.createElement('div');
             blockEl.className = 'major-block major-block--off';
-            blockEl.textContent = '--';
+            blockEl.textContent = '00';
             this.majorBlockEls.push(this.majorBlocksContainer.appendChild(blockEl));
         }
         for (let i = 0; i < this.config.fineDots; i++) {
@@ -61,19 +60,64 @@ export class MoodMatrix {
      * Updates the display based on new data.
      * @param {object} data
      * @param {number} data.hue - The current hue value (0-360).
+     * @param {boolean} data.isDragging - Whether the dial is being dragged.
      */
-    update({ hue }) {
-        // [DEBUG]
-        // console.log(`[MoodMatrix] update() called with hue: ${hue.toFixed(2)}`);
+    update({ hue, isDragging }) {
+        const wrappedHue = ((hue % 360) + 360) % 360;
+        
+        if (!this.isContinuouslyScrambling) {
+            const moodIndex = Math.floor(wrappedHue / (360 / this.config.moods.length)) % this.config.moods.length;
+            this._updateMoodName(this.config.moods[moodIndex]);
+        }
+        
+        this._updateMajorBlocks(wrappedHue);
+        this._updateFineProgress(Math.floor(wrappedHue / (360 / this.config.fineDots)));
+    }
 
-        const moodIndex = Math.floor(hue / (360 / this.config.moods.length)) % this.config.moods.length;
-        this._updateMoodName(this.config.moods[moodIndex]);
-        this._updateMajorBlocks(hue);
-        this._updateFineProgress(Math.floor(hue / (360 / this.config.fineDots)));
+    startContinuousScramble(currentHue) {
+        if (this.isContinuouslyScrambling) return;
+        this.isContinuouslyScrambling = true;
+
+        const wrappedHue = ((currentHue % 360) + 360) % 360;
+        const moodIndex = Math.floor(wrappedHue / (360 / this.config.moods.length)) % this.config.moods.length;
+        const initialText = this.config.moods[moodIndex];
+
+        if (this.currentScrambleTween) this.currentScrambleTween.kill();
+        
+        const placeholder = 'X'.repeat(initialText.length);
+        this.nameEl.textContent = placeholder;
+
+        this.currentScrambleTween = this.gsap.to(this.nameEl, {
+            duration: 10, 
+            text: {
+                value: placeholder,
+                scrambleText: { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ*#_1234567890", speed: 1.0, tweenLength: false }
+            },
+            ease: "none",
+            repeat: -1
+        });
+    }
+
+    stopContinuousScramble(finalHue) {
+        if (!this.isContinuouslyScrambling) return;
+        this.isContinuouslyScrambling = false;
+
+        const wrappedHue = ((finalHue % 360) + 360) % 360;
+        const moodIndex = Math.floor(wrappedHue / (360 / this.config.moods.length)) % this.config.moods.length;
+        const finalText = this.config.moods[moodIndex];
+        
+        if (this.currentScrambleTween) this.currentScrambleTween.kill();
+        
+        // FIX: Proactively trigger the final text resolution animation.
+        this.currentScrambleTween = this.gsap.to(this.nameEl, {
+            duration: 0.4,
+            text: { value: finalText, scrambleText: { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ*#_1234567890", speed: 0.8, tweenLength: true } },
+            ease: "none",
+        });
     }
 
     _updateMoodName(name) {
-        if (this.nameEl.textContent !== name) {
+        if (this.nameEl.textContent !== name && !this.isContinuouslyScrambling) {
             if (this.currentScrambleTween) this.currentScrambleTween.kill();
             this.currentScrambleTween = this.gsap.to(this.nameEl, {
                 duration: 0.4,
@@ -99,13 +143,12 @@ export class MoodMatrix {
 
         this.majorBlockEls.forEach((block, i) => {
             let stateClass = 'major-block--off';
-            let textContent = '--';
+            let textContent = '00';
 
             if (i === primaryBlockIndex) {
                 stateClass = 'major-block--on';
                 textContent = String(Math.min(99, Math.round(primaryValue))).padStart(2, '0');
             } else if (i === secondaryBlockIndex) {
-                // FIX: Removed the threshold to ensure the secondary block is always rendered.
                 stateClass = 'major-block--in-progress';
                 textContent = String(Math.min(99, Math.round(secondaryValue))).padStart(2, '0');
             }

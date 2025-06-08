@@ -39,7 +39,7 @@ export class LcdUpdater {
    */
   getLcdPowerOnTimeline(lcdContainer, options) {
     const { profileName, state } = options;
-    const targetIdForLog = lcdContainer ? (lcdContainer.id || 'UnknownLCD') : 'NullElement';
+    const targetIdForLog = lcdContainer ? (lcdContainer.id || lcdContainer.className.split(' ')[0]) : 'NullElement';
     if (this.debug) console.groupCollapsed(`[LcdUpdater] getLcdPowerOnTimeline for ${targetIdForLog}`);
 
     const masterTimeline = this.gsap.timeline();
@@ -63,7 +63,9 @@ export class LcdUpdater {
     masterTimeline.add(containerFlicker.timeline, 0);
 
     // 3. Create and add a generic, smooth content fade-in animation.
-    if (contentWrapper) {
+    // MODIFIED: Do not apply this generic fade-in to the main terminal, as its content
+    // is animated separately (e.g., by typing).
+    if (contentWrapper && !lcdContainer.classList.contains('actual-lcd-screen-element')) {
         const contentElements = Array.from(contentWrapper.children);
         if (contentElements.length > 0) {
             if (this.debug) console.log(`[LcdUpdater] Creating generic content fade-in for ${contentElements.length} elements.`);

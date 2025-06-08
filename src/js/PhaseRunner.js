@@ -5,6 +5,7 @@
  */
 import { serviceLocator } from './serviceLocator.js';
 import { getMessage } from './terminalMessages.js';
+import { createAdvancedFlicker } from './animationUtils.js';
 
 export class PhaseRunner {
   constructor() {
@@ -60,21 +61,44 @@ export class PhaseRunner {
         // Handle terminal message typing as a special, composed animation
         if (phaseConfig.terminalMessageKey) {
             if (this.debug) console.log(`[PhaseRunner] Phase has terminalMessageKey: ${phaseConfig.terminalMessageKey}`);
-            const messageContent = getMessage({ messageKey: phaseConfig.terminalMessageKey }, {}, this.config);
             
-            // For P1, we do a special coordinated flicker + type
+            // FIX: Only perform the complex flicker for Phase 1.
             if (phaseConfig.phase === 1) {
-                const powerOnTl = this.managers.lcdUpdater.getLcdPowerOnTimeline(this.dom.terminalContainer, {
+                const composedTl = this.gsap.timeline();
+                const messageContent = getMessage({ type: 'startup', messageKey: phaseConfig.terminalMessageKey }, {}, this.config);
+
+                const containerFlicker = this.managers.lcdUpdater.getLcdPowerOnTimeline(this.dom.terminalContainer, {
                     profileName: 'terminalScreenFlickerToDimlyLit',
                     state: 'dimly-lit'
                 });
-                masterTl.add(powerOnTl, 0);
+                composedTl.add(containerFlicker, 0);
 
-                const typingTl = this.managers.terminalManager.getTypingTimeline(messageContent);
-                // Add the typing animation partway through the flicker
-                masterTl.add(typingTl, powerOnTl.duration() * 0.3);
+                const textFlickerTl = this.gsap.timeline();
+                const lineElements = [];
+                
+                messageContent.forEach(lineText => {
+                    const lineEl = document.createElement('div');
+                    lineEl.className = 'terminal-line';
+                    lineEl.textContent = lineText;
+                    lineElements.push(lineEl);
+                });
+
+                textFlickerTl.call(() => {
+                    this.managers.terminalManager.reset();
+                    this.dom.terminalLcdContentElement.append(...lineElements);
+                    this.gsap.set(lineElements, { autoAlpha: 0 });
+                }, [], 0);
+
+                const textFlicker = createAdvancedFlicker(lineElements, 'textFlickerToDimlyLit', {
+                    gsapInstance: this.gsap,
+                    stagger: 0.1
+                });
+                textFlickerTl.add(textFlicker.timeline, '>');
+
+                composedTl.add(textFlickerTl, containerFlicker.duration() * 0.2);
+                masterTl.add(composedTl, 0);
             } else {
-                // For other phases, just type the message.
+                // For all other phases, just type the message normally.
                 this.appState.emit('requestTerminalMessage', {
                     type: 'startup',
                     source: phaseConfig.name,

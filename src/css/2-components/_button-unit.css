@@ -344,22 +344,19 @@
 
 
 /* --- [FINAL FIX] HIGH-PERFORMANCE HARMONIC RESONANCE --- */
-
 .button-unit.is-resonating.is-selected {
     /* No changes needed here, as the ::after element will be targeted directly */
-    transition: none !important;
 }
 
 .button-unit.is-resonating.is-selected::after {
-    /* Animate the pseudo-element's transform and opacity instead of the box-shadow */
-    transition: none !important;
+    /* FIX: Add a transition property so the changes are animated */
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
     opacity: var(--harmonic-resonance-glow-opacity, var(--btn-selected-glow-base-opacity));
     transform: scale(var(--harmonic-resonance-glow-scale, 1));
 }
 
 .button-unit.is-resonating.is-selected .light {
-    transition: none !important;
-    opacity: var(--harmonic-resonance-light-opacity, var(--btn-energized-selected-light-a));
+    /* No longer animated by resonance */
 }
 
 

@@ -322,11 +322,12 @@ export const HARMONIC_RESONANCE_PARAMS = {
     ELIGIBILITY_CLASS: 'is-resonating',
 
     // Define min/max animation ranges for a smooth, performant animation.
-    LIGHT_OPACITY_RANGE: [0.85, 1.0],   // Range for the button's inner light opacity
-    GLOW_OPACITY_RANGE:  [0.65, 0.90],  // Range for the pseudo-element glow's opacity
-    GLOW_SCALE_RANGE:    [0.95, 1.05],  // Range for the pseudo-element glow's scale
-    DISPLAY_LIGHTNESS_FACTOR_RANGE: [0.85, 1.0], // Range for V2 Display pulsation
-    GLOW_BLUR_RANGE: [4, 6], // New: Range for V2 Display glow blur
+    // MODIFIED: Widened ranges for more visible effect
+    LIGHT_OPACITY_RANGE: [0.85, 1.0],   // Range for the button's inner light opacity (NO LONGER USED)
+    GLOW_OPACITY_RANGE:  [0.6, 1.0],  // Range for the pseudo-element glow's opacity
+    GLOW_SCALE_RANGE:    [0.9, 1.1],  // Range for the pseudo-element glow's scale
+    DISPLAY_LIGHTNESS_FACTOR_RANGE: [0.85, 1.0], // Range for V2 Display pulsation (NO LONGER USED)
+    GLOW_BLUR_RANGE: [4, 8], // New: Range for V2 Display glow blur
 };
 
 export const IDLE_LIGHT_DRIFT_PARAMS = {

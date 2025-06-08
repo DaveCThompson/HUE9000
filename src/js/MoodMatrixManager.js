@@ -38,40 +38,41 @@ export class MoodMatrixManager {
 
         this.appState.subscribe('dialUpdated', ({ id, state }) => {
             if (id === 'A') {
-                this.handleDialUpdate(state.hue);
-
+                // If the dragging state has changed, notify the interaction handler first.
                 if (state.isDragging !== this.lastIsDragging) {
+                    this.handleInteractionChange(state.isDragging, state.hue);
                     this.lastIsDragging = state.isDragging;
-                    this.handleInteractionChange(state.isDragging);
                 }
+                
+                // Always update the display visuals.
+                this.handleDialUpdate(state.hue, state.isDragging);
             }
         });
 
         // Initial render
-        this.handleDialUpdate(this.appState.getDialState('A').hue);
+        this.handleDialUpdate(this.appState.getDialState('A').hue, false);
     }
 
-    handleDialUpdate(hue) {
-        // [DEBUG]
-        // console.log(`[MoodMatrixManager] handleDialUpdate() called with hue: ${hue}`);
-        this.moodMatrix.update({ hue });
+    handleDialUpdate(hue, isDragging) {
+        // Pass the dragging state to the component's update method.
+        this.moodMatrix.update({ hue, isDragging });
     }
 
-    handleInteractionChange(isInteracting) {
-        // [DEBUG]
-        console.log(`[MoodMatrixManager] handleInteractionChange() called. isInteracting: ${isInteracting}`);
-
+    handleInteractionChange(isInteracting, currentHue) {
         const idleDelay = this.config.V2_DISPLAY_PARAMS.RESONANCE_IDLE_DELAY_MS;
-
+        
         clearTimeout(this.resonanceTimer);
         this.dom.lcdA.classList.remove('is-resonating');
 
-        if (!isInteracting) {
+        if (isInteracting) {
+            // When interaction starts, begin the continuous scramble.
+            this.moodMatrix.startContinuousScramble(currentHue);
+        } else {
+            // When interaction ends, stop the scramble and handle resonance.
+            this.moodMatrix.stopContinuousScramble(currentHue);
             this.resonanceTimer = setTimeout(() => {
                 const dialState = this.appState.getDialState('A');
                 if (dialState && dialState.hue > 0) {
-                    // [DEBUG]
-                    console.log('[MoodMatrixManager] Starting resonance for Dial A.');
                     this.dom.lcdA.classList.add('is-resonating');
                 }
             }, idleDelay);

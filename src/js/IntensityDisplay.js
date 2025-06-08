@@ -67,7 +67,8 @@ export class IntensityDisplay {
     }
 
     _updatePercentageText(percentage) {
-        const text = `${Math.floor(percentage)}%`;
+        // FIX: Use Math.round() to correctly display 100%
+        const text = `${Math.round(percentage)}%`;
         if (this.percentEl.textContent !== text) {
             this.percentEl.textContent = text;
         }

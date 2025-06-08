@@ -56,21 +56,16 @@ class AmbientAnimationManager {
         const time = this.gsap.ticker.time;
         const progress = (Math.sin((time * Math.PI * 2) / R_PARAMS.PERIOD) + 1) / 2;
 
-        // Interpolate all animated properties based on the new config
-        const lightOpacity = this.gsap.utils.interpolate(R_PARAMS.LIGHT_OPACITY_RANGE[0], R_PARAMS.LIGHT_OPACITY_RANGE[1], progress);
+        // MODIFIED: Only interpolate properties related to GLOW, not base brightness/opacity.
         const glowOpacity = this.gsap.utils.interpolate(R_PARAMS.GLOW_OPACITY_RANGE[0], R_PARAMS.GLOW_OPACITY_RANGE[1], progress);
         const glowScale = this.gsap.utils.interpolate(R_PARAMS.GLOW_SCALE_RANGE[0], R_PARAMS.GLOW_SCALE_RANGE[1], progress);
-        
-        // [NEW] Interpolate the lightness factor for V2 Displays
-        const lightnessFactor = this.gsap.utils.interpolate(R_PARAMS.DISPLAY_LIGHTNESS_FACTOR_RANGE[0], R_PARAMS.DISPLAY_LIGHTNESS_FACTOR_RANGE[1], progress);
+        const glowBlur = this.gsap.utils.interpolate(R_PARAMS.GLOW_BLUR_RANGE[0], R_PARAMS.GLOW_BLUR_RANGE[1], progress);
 
         // Set the global CSS variables that the new CSS will consume
         const rootStyle = document.documentElement.style;
-        rootStyle.setProperty('--harmonic-resonance-light-opacity', lightOpacity.toFixed(3));
         rootStyle.setProperty('--harmonic-resonance-glow-opacity', glowOpacity.toFixed(3));
         rootStyle.setProperty('--harmonic-resonance-glow-scale', glowScale.toFixed(3));
-        // [NEW] Set the new variable for V2 Displays
-        rootStyle.setProperty('--harmonic-resonance-lightness-factor', lightnessFactor.toFixed(3));
+        rootStyle.setProperty('--harmonic-resonance-glow-blur', glowBlur.toFixed(3));
     }
 
     _handleAppStatusChange(newStatus) {
@@ -83,10 +78,10 @@ class AmbientAnimationManager {
             if (this.enableHarmonicResonance) {
                 this.resonanceTicker.remove(this._updateResonance);
                 const rootStyle = document.documentElement.style;
-                rootStyle.removeProperty('--harmonic-resonance-light-opacity');
+                // MODIFIED: Cleanup all managed variables
                 rootStyle.removeProperty('--harmonic-resonance-glow-opacity');
                 rootStyle.removeProperty('--harmonic-resonance-glow-scale');
-                rootStyle.removeProperty('--harmonic-resonance-lightness-factor'); // [NEW] Cleanup
+                rootStyle.removeProperty('--harmonic-resonance-glow-blur');
             }
         }
 
@@ -142,10 +137,9 @@ class AmbientAnimationManager {
             this.resonanceTicker.remove(this._updateResonance);
         }
         const rootStyle = document.documentElement.style;
-        rootStyle.removeProperty('--harmonic-resonance-light-opacity');
         rootStyle.removeProperty('--harmonic-resonance-glow-opacity');
         rootStyle.removeProperty('--harmonic-resonance-glow-scale');
-        rootStyle.removeProperty('--harmonic-resonance-lightness-factor'); // [NEW] Cleanup
+        rootStyle.removeProperty('--harmonic-resonance-glow-blur');
     }
 }
 
