@@ -319,13 +319,14 @@ export function estimateFlickerDuration(profileName) {
 export const HARMONIC_RESONANCE_PARAMS = {
     ENABLED: true,
     PERIOD: 2.5,
-    ELIGIBILITY_CLASS: 'is-energized',
+    ELIGIBILITY_CLASS: 'is-resonating',
 
     // Define min/max animation ranges for a smooth, performant animation.
     LIGHT_OPACITY_RANGE: [0.85, 1.0],   // Range for the button's inner light opacity
     GLOW_OPACITY_RANGE:  [0.65, 0.90],  // Range for the pseudo-element glow's opacity
     GLOW_SCALE_RANGE:    [0.95, 1.05],  // Range for the pseudo-element glow's scale
-    DISPLAY_LIGHTNESS_FACTOR_RANGE: [0.85, 1.0], // [NEW] Range for V2 Display pulsation
+    DISPLAY_LIGHTNESS_FACTOR_RANGE: [0.85, 1.0], // Range for V2 Display pulsation
+    GLOW_BLUR_RANGE: [4, 6], // New: Range for V2 Display glow blur
 };
 
 export const IDLE_LIGHT_DRIFT_PARAMS = {

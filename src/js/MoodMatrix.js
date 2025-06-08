@@ -86,21 +86,28 @@ export class MoodMatrix {
     _updateMajorBlocks(hue) {
         const { majorBlocks } = this.config;
         const degreesPerBlock = 360 / majorBlocks;
-        const halfBlock = degreesPerBlock / 2;
+        
+        const primaryBlockIndex = Math.floor(hue / degreesPerBlock);
+        const progressInSegment = (hue % degreesPerBlock) / degreesPerBlock;
+
+        const primaryValue = 100 - (Math.abs(progressInSegment - 0.5) * 100);
+        const secondaryValue = 100 - primaryValue;
+
+        const secondaryBlockIndex = progressInSegment < 0.5 
+            ? (primaryBlockIndex - 1 + majorBlocks) % majorBlocks 
+            : (primaryBlockIndex + 1) % majorBlocks;
 
         this.majorBlockEls.forEach((block, i) => {
-            const blockCenter = (i * degreesPerBlock) + halfBlock;
-            const diff = Math.abs(hue - blockCenter);
-            const distance = Math.min(diff, 360 - diff);
-            const percentage = Math.max(0, 100 * (1 - (distance / halfBlock)));
-            
-            let stateClass = '', textContent = '';
-            if (percentage > 0.1) {
-                textContent = String(Math.min(99, Math.round(percentage))).padStart(2, '0');
-                stateClass = percentage >= 50 ? 'major-block--on' : 'major-block--in-progress';
-            } else {
-                textContent = '--';
-                stateClass = 'major-block--off';
+            let stateClass = 'major-block--off';
+            let textContent = '--';
+
+            if (i === primaryBlockIndex) {
+                stateClass = 'major-block--on';
+                textContent = String(Math.min(99, Math.round(primaryValue))).padStart(2, '0');
+            } else if (i === secondaryBlockIndex) {
+                // FIX: Removed the threshold to ensure the secondary block is always rendered.
+                stateClass = 'major-block--in-progress';
+                textContent = String(Math.min(99, Math.round(secondaryValue))).padStart(2, '0');
             }
             
             const fullClassName = `major-block ${stateClass}`;

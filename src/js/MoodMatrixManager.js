@@ -14,10 +14,7 @@ export class MoodMatrixManager {
         this.moodMatrix = null;
         this.resonanceTimer = null;
         this.lastIsDragging = false;
-
-        // [FIX] Cache the content wrapper elements
         this.moodLcdContent = null;
-        this.intensityLcdContent = null;
     }
 
     init() {
@@ -29,9 +26,7 @@ export class MoodMatrixManager {
         this.dom = serviceLocator.get('domElements');
         this.gsap = serviceLocator.get('gsap');
 
-        // [FIX] Get references to the actual content wrappers
         this.moodLcdContent = this.dom.lcdA.querySelector('.lcd-content-wrapper');
-        this.intensityLcdContent = this.dom.lcdB.querySelector('.lcd-content-wrapper');
 
         const displayConfig = {
             moods: this.config.MOOD_MATRIX_DEFINITIONS,
@@ -60,16 +55,6 @@ export class MoodMatrixManager {
         // [DEBUG]
         // console.log(`[MoodMatrixManager] handleDialUpdate() called with hue: ${hue}`);
         this.moodMatrix.update({ hue });
-        
-        const hueValue = Number(hue.toFixed(1));
-
-        // [FIX] Set the CSS variable on the correct content wrapper elements
-        if (this.moodLcdContent) {
-            this.moodLcdContent.style.setProperty('--display-active-hue', hueValue);
-        }
-        if (this.intensityLcdContent) {
-            this.intensityLcdContent.style.setProperty('--display-active-hue', hueValue);
-        }
     }
 
     handleInteractionChange(isInteracting) {

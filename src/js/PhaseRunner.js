@@ -109,10 +109,10 @@ export class PhaseRunner {
       case 'tween':
         this._handleTween(tl, anim, position);
         break;
-      case 'flicker': // This now handles buttons and other simple flickers
+      case 'flicker':
         this._handleSimpleFlicker(tl, anim, position);
         break;
-      case 'lcdPowerOn': // New type for the coordinated LCD power-on effect
+      case 'lcdPowerOn':
         this._handleLcdPowerOn(tl, anim, position);
         break;
       case 'call':
@@ -173,7 +173,6 @@ export class PhaseRunner {
             isButtonFlicker = true;
         }
     } else if (Array.isArray(anim.target)) {
-        // FIX: Handle generic element IDs (like for LCDs)
         elements = anim.target.map(id => this.dom[id]).filter(Boolean);
     }
 
@@ -208,7 +207,7 @@ export class PhaseRunner {
                 tl.add(flickerResult.timeline, `${position}+=${index * stagger}`);
             }
         } else {
-            // FIX: Handle non-button flickers (like LCDs)
+            // This path is now deprecated in favor of 'lcdPowerOn', but kept for compatibility.
             const flickerTl = this.managers.lcdUpdater.getLcdPowerOnTimeline(el, {
                 profileName: anim.profile,
                 state: anim.state

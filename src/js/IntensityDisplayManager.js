@@ -63,6 +63,7 @@ export class IntensityDisplayManager {
         if (!isInteracting) {
             this.resonanceTimer = setTimeout(() => {
                 const dialState = this.appState.getDialState('B');
+                // Only start resonance if the dial has a value greater than 0.
                 if (dialState && dialState.hue > 0) {
                     // [DEBUG]
                     console.log('[IntensityDisplayManager] Starting resonance for Dial B.');

@@ -62,11 +62,19 @@ export class LcdUpdater {
     const containerFlicker = createAdvancedFlicker(lcdContainer, profileName, { gsapInstance: this.gsap });
     masterTimeline.add(containerFlicker.timeline, 0);
 
-    // 3. Create and add the content flicker timeline.
+    // 3. Create and add a generic, smooth content fade-in animation.
     if (contentWrapper) {
-        if (this.debug) console.log(`[LcdUpdater] Creating content flicker with profile: textFlickerToDimlyLit`);
-        const contentFlicker = createAdvancedFlicker(contentWrapper, 'textFlickerToDimlyLit', { gsapInstance: this.gsap });
-        masterTimeline.add(contentFlicker.timeline, 0);
+        const contentElements = Array.from(contentWrapper.children);
+        if (contentElements.length > 0) {
+            if (this.debug) console.log(`[LcdUpdater] Creating generic content fade-in for ${contentElements.length} elements.`);
+            masterTimeline.from(contentElements, {
+                autoAlpha: 0,
+                y: '5px',
+                stagger: 0.04,
+                duration: 0.4,
+                ease: 'power1.out'
+            }, containerFlicker.timeline.duration() * 0.25); // Start content fade-in partway through the container flicker
+        }
     }
 
     // 4. After animation, set the final static CSS class on the container.

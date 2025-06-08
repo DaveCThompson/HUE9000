@@ -37,9 +37,9 @@ export const phase6Config = {
       position: 0.1
     },
     {
-      // This single declarative flicker triggers the coordinated animation
-      // in LcdUpdater.js for both the container and its content.
-      type: 'flicker',
+      // This single declarative action triggers the coordinated animation
+      // in LcdUpdater.js for both the container flicker and content fade-in.
+      type: 'lcdPowerOn',
       target: ['lcdA', 'lcdB'],
       state: 'dimly-lit',
       profile: 'lcdScreenFlickerToDimlyLit', // Profile for the containers
