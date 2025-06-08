@@ -6,8 +6,8 @@
 export const phase1Config = {
   phase: 1,
   name: "EMERGENCY_SUBSYSTEMS",
-  terminalMessageKey: "P1_EMERGENCY_SUBSYSTEMS",
-  duration: 1.2,
+  terminalMessageKey: "P1_EMERGENCY_SUBSYSTEMS", // This key now triggers the composed animation in PhaseRunner
+  duration: 2.0, // Increased duration to accommodate the full animation
   animations: [
     {
       type: 'tween',
@@ -20,8 +20,6 @@ export const phase1Config = {
       position: 0
     },
     {
-      // This tween is to ensure the body fades in when in auto-play mode,
-      // where it starts at opacity 0.
       type: 'tween',
       target: 'body',
       vars: {
@@ -30,15 +28,8 @@ export const phase1Config = {
         ease: 'power1.inOut'
       },
       position: 0
-    },
-    {
-      // This flicker provides the necessary duration/complexity to prevent
-      // the phase timeline from completing too early and hanging the FSM.
-      type: 'flicker',
-      target: 'terminalLcdContentElement',
-      state: 'dimly-lit', // Not used by text flicker, but for consistency
-      profile: 'textFlickerToDimlyLit',
-      position: 0.1
     }
+    // The complex flicker+typing animation is now handled by PhaseRunner
+    // when it sees the terminalMessageKey for this phase.
   ]
 };

@@ -83,8 +83,8 @@
                         </div>
                        </div>
                      <div class="control-block terminal-block">
-                         <div class="actual-lcd-screen-element">
-                            <div id="terminal-lcd-content" aria-live="polite"></div>
+                         <div class="actual-lcd-screen-element lcd-container">
+                            <div id="terminal-lcd-content" class="lcd-content-wrapper" aria-live="polite"></div>
                          </div>
                          <div class="block-label-bottom block-label-bottom--descriptor">TERMINAL</div>
                       </div>
@@ -156,14 +156,22 @@
                         <div id="dial-canvas-container-A" class="dial-canvas-container" data-dial-id="A" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="41" aria-labelledby="dial-A-label">
                             <canvas id="dial-canvas-A"></canvas>
                         </div>
-                        <div class="hue-lcd-display" id="hue-lcd-A" aria-live="polite"><span class="lcd-value">41</span></div>
+                        <div class="hue-lcd-display lcd-container" id="hue-lcd-A" aria-live="polite">
+                            <div class="lcd-content-wrapper">
+                                <!-- MoodMatrixDisplayManager will populate this -->
+                            </div>
+                        </div>
                         <div class="block-label-bottom block-label-bottom--descriptor">MOOD</div>
                     </div>
                     <div class="control-block hue-control-block joined-block-pair__item joined-block-pair__item--right">
                         <div id="dial-canvas-container-B" class="dial-canvas-container" data-dial-id="B" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="0" aria-labelledby="dial-B-label">
                             <canvas id="dial-canvas-B"></canvas>
                         </div>
-                        <div class="hue-lcd-display" id="hue-lcd-B" aria-live="polite"><span class="lcd-value">0</span></div>
+                        <div class="hue-lcd-display lcd-container" id="hue-lcd-B" aria-live="polite">
+                            <div class="lcd-content-wrapper">
+                                <span class="lcd-value">0%</span>
+                            </div>
+                        </div>
                         <div class="block-label-bottom block-label-bottom--descriptor">INTENSITY</div>
                     </div>
                 </div>

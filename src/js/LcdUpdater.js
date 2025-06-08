@@ -7,20 +7,17 @@
 import { serviceLocator } from './serviceLocator.js';
 import { createAdvancedFlicker } from './animationUtils.js';
 
-const MANAGED_LCD_CLASSES = ['lcd--unlit', 'js-active-dim-lcd', 'lcd--dimly-lit'];
+const MANAGED_LCD_CLASSES = ['lcd--unlit', 'lcd--dimly-lit'];
 
 export class LcdUpdater {
   constructor() {
     this.gsap = null;
     this.appState = null;
     this.config = null;
-    this.dom = {}; // To be populated with DOM elements from service locator
-    this.debug = false;
+    this.dom = {};
+    this.debug = true; // Enable detailed logging
   }
 
-  /**
-   * Initializes the LcdUpdater.
-   */
   init() {
     this.gsap = serviceLocator.get('gsap');
     this.appState = serviceLocator.get('appState');
@@ -28,125 +25,92 @@ export class LcdUpdater {
     this.dom = serviceLocator.get('domElements');
 
     if (this.debug) console.log('[LcdUpdater INIT]');
-
-    // Subscribe to events that affect all LCDs' general state
     this.appState.subscribe('appStatusChanged', () => this.applyCurrentStateToAllLcds());
-    // REMOVED: No longer reacting to phase changes, as it causes race conditions with PhaseRunner.
-    // this.appState.subscribe('startupPhaseNumberChanged', () => this.applyCurrentStateToAllLcds());
-
-    // Subscribe to specific data changes for individual LCDs
     this.appState.subscribe('trueLensPowerChanged', (newPower) => this.updateLcdBContent(newPower));
-
     this.applyCurrentStateToAllLcds();
   }
 
   /**
-   * Sets the visual state of a given LCD container.
+   * Creates and returns a GSAP timeline for a coordinated LCD power-on flicker effect.
    * @param {HTMLElement} lcdContainer - The main container element for the LCD.
-   * @param {string} stateName - The target state ('unlit', 'dimly-lit', 'active').
-   * @param {object} [options={}] - Animation options.
-   * @param {boolean} [options.useFlicker=false] - Whether to use a flicker effect.
-   * @param {string} [options.flickerProfileName] - The flicker profile to use from config.
-   * @param {string} [options.phaseContext=''] - A string for logging context.
-   * @returns {{timeline: object, completionPromise: Promise}} GSAP timeline and a completion promise.
+   * @param {object} options - Animation options.
+   * @param {string} options.profileName - The flicker profile for the container.
+   * @param {string} options.state - The target state ('unlit', 'dimly-lit', 'active').
+   * @returns {gsap.core.Timeline} A GSAP timeline for the full effect.
    */
-  setLcdState(lcdContainer, stateName, options = {}) {
-    const { useFlicker = false, flickerProfileName, phaseContext = 'UnknownPhase' } = options;
+  getLcdPowerOnTimeline(lcdContainer, options) {
+    const { profileName, state } = options;
     const targetIdForLog = lcdContainer ? (lcdContainer.id || 'UnknownLCD') : 'NullElement';
+    if (this.debug) console.groupCollapsed(`[LcdUpdater] getLcdPowerOnTimeline for ${targetIdForLog}`);
 
-    if (this.debug) console.log(`[LcdUpdater setLcdState - ${targetIdForLog} - ${phaseContext}] Called. Target: '${stateName}', Flicker: ${useFlicker}`);
-
+    const masterTimeline = this.gsap.timeline();
     if (!lcdContainer) {
-      console.warn(`[LcdUpdater] Attempted to set state on a null LCD container.`);
-      return { timeline: this.gsap.timeline(), completionPromise: Promise.resolve() };
+      console.warn(`[LcdUpdater] Attempted to get timeline for a null LCD container.`);
+      if (this.debug) console.groupEnd();
+      return masterTimeline;
     }
 
-    // Determine the correct class to apply from the state name
-    const targetClass = stateName === 'dimly-lit' ? 'lcd--dimly-lit' :
-                        stateName === 'unlit' ? 'lcd--unlit' : '';
+    const contentWrapper = lcdContainer.querySelector('.lcd-content-wrapper');
 
-    // Clear existing state classes
-    MANAGED_LCD_CLASSES.forEach(cls => lcdContainer.classList.remove(cls));
-    if (targetClass) {
-      lcdContainer.classList.add(targetClass);
+    // 1. Make the content wrapper visible so GSAP has an element to animate.
+    masterTimeline.call(() => {
+        if (this.debug) console.log(`[LcdUpdater] Making content wrapper visible for animation.`);
+        this._updateLcdVisibility(lcdContainer, state);
+    }, [], 0);
+
+    // 2. Create and add the container (background) flicker timeline.
+    if (this.debug) console.log(`[LcdUpdater] Creating container flicker with profile: ${profileName}`);
+    const containerFlicker = createAdvancedFlicker(lcdContainer, profileName, { gsapInstance: this.gsap });
+    masterTimeline.add(containerFlicker.timeline, 0);
+
+    // 3. Create and add the content flicker timeline.
+    if (contentWrapper) {
+        if (this.debug) console.log(`[LcdUpdater] Creating content flicker with profile: textFlickerToDimlyLit`);
+        const contentFlicker = createAdvancedFlicker(contentWrapper, 'textFlickerToDimlyLit', { gsapInstance: this.gsap });
+        masterTimeline.add(contentFlicker.timeline, 0);
     }
 
-    // Emit an event so other components (like MoodMatrixDisplayManager) can react to the state change
-    this.appState.emit('lcdStateChanged', { lcdId: lcdContainer.id, newStateKey: stateName, context: phaseContext });
+    // 4. After animation, set the final static CSS class on the container.
+    masterTimeline.eventCallback('onComplete', () => {
+        if (this.debug) console.log(`[LcdUpdater] Power-on complete. Setting final state: ${state}`);
+        const targetClass = state === 'dimly-lit' ? 'lcd--dimly-lit' : '';
+        MANAGED_LCD_CLASSES.forEach(cls => lcdContainer.classList.remove(cls));
+        if (targetClass) lcdContainer.classList.add(targetClass);
+        this.appState.emit('lcdStateChanged', { lcdId: lcdContainer.id, newStateKey: state });
+        if (this.debug) console.groupEnd();
+    });
 
-    if (useFlicker && flickerProfileName) {
-      lcdContainer.classList.add('is-flickering');
-      const flickerResult = createAdvancedFlicker(lcdContainer, flickerProfileName, {
-        gsapInstance: this.gsap,
-        onTimelineComplete: () => {
-          lcdContainer.classList.remove('is-flickering');
-          this._updateLcdVisibility(lcdContainer, stateName); // Final visibility update
-          if (this.debug) console.log(`[LcdUpdater] Flicker complete for ${targetIdForLog}. Final state: ${stateName}`);
-        }
-      });
-      return flickerResult;
-    } else {
-      this._updateLcdVisibility(lcdContainer, stateName);
-      const tl = this.gsap.timeline();
-      tl.to({}, { duration: 0.001 }); // Return a minimal timeline
-      return { timeline: tl, completionPromise: Promise.resolve() };
-    }
+    return masterTimeline;
   }
 
-  /**
-   * Applies the correct visual state to all registered LCDs based on the current app status.
-   * This method should NOT be used for managing state during the startup sequence, as that
-   * is handled procedurally by the PhaseRunner.
-   */
+  setLcdState(lcdContainer, stateName) {
+    if (this.debug) console.log(`[LcdUpdater] setLcdState (instant) for ${lcdContainer.id} to ${stateName}`);
+    const targetClass = stateName === 'dimly-lit' ? 'lcd--dimly-lit' : stateName === 'unlit' ? 'lcd--unlit' : '';
+    MANAGED_LCD_CLASSES.forEach(cls => lcdContainer.classList.remove(cls));
+    if (targetClass) lcdContainer.classList.add(targetClass);
+    this._updateLcdVisibility(lcdContainer, stateName);
+    this.appState.emit('lcdStateChanged', { lcdId: lcdContainer.id, newStateKey: stateName });
+  }
+
   applyCurrentStateToAllLcds() {
     const status = this.appState.getAppStatus();
-    if (this.debug) console.log(`[LcdUpdater applyCurrentStateToAllLcds] AppStatus: ${status}`);
-
-    // Only apply state if the app is NOT in the middle of the startup sequence.
-    // This prevents race conditions with the PhaseRunner's animations.
     if (status !== 'starting-up') {
         const targetState = (status === 'interactive') ? 'active' : 'unlit';
-        const lcds = [this.dom.lcdA, this.dom.lcdB, this.dom.terminalContainer];
-        lcds.forEach(lcd => {
-            if (lcd && !lcd.classList.contains('is-flickering')) {
-                this.setLcdState(lcd, targetState, { phaseContext: `ApplyAll_S:${status}` });
-            }
+        [this.dom.lcdA, this.dom.lcdB, this.dom.terminalContainer].forEach(lcd => {
+            if (lcd) this.setLcdState(lcd, targetState);
         });
     }
   }
 
-  /**
-   * Updates the text content of the Dial B LCD.
-   * @param {number} newPower01 - The new lens power on a 0-1 scale.
-   */
   updateLcdBContent(newPower01) {
-    if (this.dom.lcdB) {
-      const valueSpan = this.dom.lcdB.querySelector('.lcd-value');
-      if (valueSpan) {
-        const textContent = `${Math.round(newPower01 * 100)}%`;
-        if (valueSpan.textContent !== textContent) {
-          valueSpan.textContent = textContent;
-        }
-      }
-    }
+    const valueSpan = this.dom.lcdB.querySelector('.lcd-value');
+    if (valueSpan) valueSpan.textContent = `${Math.round(newPower01 * 100)}%`;
   }
 
-  /**
-   * Internal helper to set the final visibility of an LCD and its contents.
-   * @param {HTMLElement} lcdContainer - The LCD container element.
-   * @param {string} stateName - The target state name.
-   */
   _updateLcdVisibility(lcdContainer, stateName) {
+    const contentWrapper = lcdContainer.querySelector('.lcd-content-wrapper');
+    if (!contentWrapper) return;
     const isVisible = (stateName === 'active' || stateName === 'dimly-lit');
-    this.gsap.set(lcdContainer, { autoAlpha: 1 }); // The container itself is always visible, its class handles the look.
-
-    // Handle specific content visibility
-    if (lcdContainer === this.dom.lcdB) {
-      const valueSpan = lcdContainer.querySelector('.lcd-value');
-      if (valueSpan) this.gsap.set(valueSpan, { opacity: isVisible ? 1 : 0 });
-    } else if (lcdContainer === this.dom.terminalContainer) {
-      // Terminal content visibility is managed by terminalManager to prevent text from disappearing.
-      // This ensures the background/glow can be controlled here without affecting typed lines.
-    }
+    contentWrapper.classList.toggle('is-content-hidden', !isVisible);
   }
 }

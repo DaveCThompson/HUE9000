@@ -29,7 +29,7 @@ export const phase6Config = {
       type: 'tween',
       target: ['dialA', 'dialB'],
       vars: {
-        autoAlpha: 1, // MODIFIED: Changed from 'opacity' to 'autoAlpha' to ensure visibility is set to 'visible'
+        autoAlpha: 1,
         duration: 0.5,
         ease: 'power1.out',
         stagger: 0.05
@@ -37,18 +37,13 @@ export const phase6Config = {
       position: 0.1
     },
     {
+      // This single declarative flicker triggers the coordinated animation
+      // in LcdUpdater.js for both the container and its content.
       type: 'flicker',
       target: ['lcdA', 'lcdB'],
       state: 'dimly-lit',
-      profile: 'lcdScreenFlickerToDimlyLit',
+      profile: 'lcdScreenFlickerToDimlyLit', // Profile for the containers
       stagger: 0.05,
-      position: 0.2
-    },
-    {
-      type: 'flicker',
-      target: 'terminalContainer',
-      state: 'dimly-lit',
-      profile: 'terminalScreenFlickerToDimlyLit',
       position: 0.2
     }
   ]

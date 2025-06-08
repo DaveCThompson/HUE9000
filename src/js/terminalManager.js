@@ -5,7 +5,6 @@
  * (Project Decouple Refactor)
  */
 import { getMessage } from './terminalMessages.js';
-import { createAdvancedFlicker } from './animationUtils.js';
 import { serviceLocator } from './serviceLocator.js';
 
 class TerminalManager {
@@ -20,8 +19,7 @@ class TerminalManager {
         this._isTyping = false;
         this._currentLineElement = null;
         this._cursorElement = null;
-        this._initialMessageFlickered = false;
-        this.debug = false;
+        this.debug = true; // Enable detailed logging
     }
 
     init() {
@@ -38,13 +36,14 @@ class TerminalManager {
     }
 
     reset() {
+        if (this.debug) console.log('[TerminalManager] Resetting terminal.');
         this._messageQueue = [];
         this._isTyping = false;
-        this._initialMessageFlickered = false;
         if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
         if (this._cursorElement && this._cursorElement.parentNode) {
             this._cursorElement.parentNode.removeChild(this._cursorElement);
         }
+        this._setCursorState('idle');
     }
 
     _setupDOM() {
@@ -53,24 +52,37 @@ class TerminalManager {
         this.reset();
     }
 
+    /**
+     * Creates and returns a GSAP timeline for typing text.
+     * @param {string[]} messageLines - An array of strings to be typed.
+     * @returns {gsap.core.Timeline} A GSAP timeline for the typing animation.
+     */
+    getTypingTimeline(messageLines) {
+        if (this.debug) console.log(`[TerminalManager] getTypingTimeline called with:`, messageLines);
+        const typingTl = this._gsap.timeline();
+        
+        this._setCursorState('typing');
+        
+        messageLines.forEach((line, index) => {
+            typingTl.call(() => this._addNewLineAndPrepareForTyping());
+            
+            const duration = (line.length * this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) / 1000;
+            typingTl.to(this._currentLineElement, {
+                duration: Math.max(0.1, duration),
+                text: { value: line, delimiter: "" },
+                ease: "none",
+                onUpdate: () => this._currentLineElement.appendChild(this._cursorElement),
+                onComplete: () => this._currentLineElement.appendChild(this._cursorElement)
+            });
+        });
+
+        typingTl.call(() => this._setCursorState('idle'));
+        return typingTl;
+    }
+
     _handleRequestTerminalMessage(payload) {
-        if (!payload) return;
-
-        let snapshot = {};
-        if (payload.messageKey === 'BTN4_MESSAGE') {
-            snapshot = {
-                theme: this._appState.getCurrentTheme(),
-                lensPower: this._appState.getTrueLensPower(),
-                dialA: this._appState.getDialState('A'),
-                dialB: this._appState.getDialState('B'),
-                envHue: this._appState.getTargetColorProperties('env'),
-                lcdHue: this._appState.getTargetColorProperties('lcd'),
-                logoHue: this._appState.getTargetColorProperties('logo'),
-                btnHue: this._appState.getTargetColorProperties('btn'),
-            };
-        }
-
-        const content = getMessage(payload, snapshot, this._configModule);
+        if (this.debug) console.log(`[TerminalManager] Received message request:`, payload);
+        const content = getMessage(payload, {}, this._configModule);
         this._messageQueue.push({ ...payload, content });
         if (!this._isTyping) this._processQueue();
     }
@@ -78,52 +90,17 @@ class TerminalManager {
     async _processQueue() {
         if (this._messageQueue.length === 0) {
             this._isTyping = false;
-            this._addNewLineAndPrepareForTyping();
             this._setCursorState('idle');
             return;
         }
         this._isTyping = true;
         const messageObject = this._messageQueue.shift();
-
-        if (this._gsap.getProperty(this._terminalContentElement, "opacity") < 1) {
-            this._gsap.set(this._terminalContentElement, { opacity: 1, visibility: 'visible' });
-        }
-
-        // Remove cursor from previous line before starting new message
-        if (this._cursorElement.parentNode) {
-            this._cursorElement.parentNode.removeChild(this._cursorElement);
-        }
+        
         this._setCursorState('typing');
-
-        const delay = Math.random() * (this._configModule.TERMINAL_NEW_LINE_DELAY_MAX_MS - this._configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS) + this._configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS;
-        await new Promise(resolve => setTimeout(resolve, delay));
-
-        for (let i = 0; i < messageObject.content.length; i++) {
-            const lineText = messageObject.content[i];
+        
+        for (const lineText of messageObject.content) {
             this._addNewLineAndPrepareForTyping();
-
-            if (messageObject.source === 'EMERGENCY_SUBSYSTEMS' && !this._initialMessageFlickered) {
-                this._setCursorState('typing');
-                const flickerResult = createAdvancedFlicker(this._currentLineElement, 'textFlickerToDimlyLit', { gsapInstance: this._gsap });
-                if (flickerResult.timeline) {
-                    const textAnim = {
-                        duration: (lineText.length * this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) / 1000,
-                        text: { value: lineText, delimiter: "" },
-                        ease: "none",
-                        onUpdate: () => this._currentLineElement.appendChild(this._cursorElement),
-                        onComplete: () => this._currentLineElement.appendChild(this._cursorElement)
-                    };
-                    flickerResult.timeline.to(this._currentLineElement, textAnim, flickerResult.timeline.duration() * 0.25);
-                    await new Promise(res => flickerResult.timeline.eventCallback('onComplete', res).play());
-                }
-                this._initialMessageFlickered = true;
-            } else {
-                this._setCursorState('typing');
-                await this._typeLine(lineText, messageObject.type);
-            }
-            if (i < messageObject.content.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, this._configModule.TERMINAL_NEW_LINE_DELAY_MIN_MS / 2));
-            }
+            await this._typeLine(lineText, messageObject.type);
         }
 
         this._isTyping = false;
@@ -131,23 +108,24 @@ class TerminalManager {
     }
 
     _addNewLineAndPrepareForTyping() {
+        if (this._cursorElement && this._cursorElement.parentNode) {
+            this._cursorElement.parentNode.removeChild(this._cursorElement);
+        }
         this._currentLineElement = document.createElement('div');
         this._currentLineElement.className = 'terminal-line';
         this._terminalContentElement.appendChild(this._currentLineElement);
         this._scrollTerminal();
         this._limitMaxLines();
+        this._currentLineElement.appendChild(this._cursorElement);
     }
 
     _typeLine(text, messageType = 'status') {
         return new Promise(resolve => {
-            let speedPerChar;
-            switch (messageType) {
-                case 'block': speedPerChar = this._configModule.TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR; break;
-                case 'startup': speedPerChar = this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR; break;
-                default: speedPerChar = this._configModule.TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR; break;
-            }
+            const speedPerChar = messageType === 'block' 
+                ? this._configModule.TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR 
+                : this._configModule.TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
             const duration = (text.length * speedPerChar) / 1000;
-            this._currentLineElement.appendChild(this._cursorElement);
+
             this._gsap.to(this._currentLineElement, {
                 duration: Math.max(0.1, duration),
                 text: { value: text, delimiter: "" },
@@ -162,32 +140,24 @@ class TerminalManager {
     }
 
     _scrollTerminal() {
-        this._terminalContainerElement.scrollTop = this._terminalContainerElement.scrollHeight;
+        const scrollContainer = this._terminalContentElement.parentElement;
+        if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
     }
 
     _limitMaxLines() {
         while (this._terminalContentElement.childElementCount > this._configModule.TERMINAL_MAX_LINES_IN_DOM) {
             if (this._terminalContentElement.firstChild) {
                 this._terminalContentElement.removeChild(this._terminalContentElement.firstChild);
-            } else {
-                break;
             }
         }
     }
 
     _setCursorState(state) {
         if (!this._cursorElement) return;
-
-        if (state === 'typing') {
-            this._cursorElement.classList.remove('is-blinking');
-            if (this._currentLineElement) {
-                this._currentLineElement.appendChild(this._cursorElement);
-            }
-        } else if (state === 'idle') {
-            this._cursorElement.classList.add('is-blinking');
-            if (this._currentLineElement) {
-                this._currentLineElement.appendChild(this._cursorElement);
-            }
+        this._cursorElement.classList.toggle('is-blinking', state === 'idle');
+        this._gsap.set(this._cursorElement, { opacity: 1 });
+        if (state === 'idle' && !this._currentLineElement) {
+            this._addNewLineAndPrepareForTyping();
         }
     }
 }

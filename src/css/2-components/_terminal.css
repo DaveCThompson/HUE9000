@@ -1,93 +1,8 @@
-/* src/css/components/_terminal.css */
-/* Styles for the HUE 9000 Enhanced Terminal */
+/* src/css/components/_terminal.css (REFACTOR-V2.2 - Simplified) */
+/* Contains only styles unique to the terminal, not general LCD appearance. */
 
-.terminal-block > .actual-lcd-screen-element {
-    overflow-y: hidden !important; 
-    font-weight: var(--terminal-font-weight, 500);
-    position: relative; 
-    display: flex;
-    flex-direction: column;
-    padding: 0; 
-    /* Color is now inherited from _lcd.css for harmonization */
-}
-
-#terminal-lcd-content {
-    /* MODIFIED: Only the drop shadow remains here */
-    text-shadow:
-        var(--terminal-text-drop-shadow-offset-x) var(--terminal-text-drop-shadow-offset-y) var(--terminal-text-drop-shadow-blur) var(--terminal-text-drop-shadow-color);
-
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    flex-grow: 1;
-    padding: var(--space-3xl);
-    box-sizing: border-box;
-    /* Opacity of this content area is managed by JS (uiUpdater & terminalManager) */
-}
-
-.terminal-line {
-    white-space: pre-wrap;
-    word-break: break-all;
-    display: flex;
-    align-items: baseline;
-    line-height: 1.7;
-    /* MODIFIED: Replaced 'inherit' with direct color construction for consistency. */
-    color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
-    /* MODIFIED: Glow text-shadow moved here */
-    text-shadow:
-        0 0 calc(var(--terminal-text-bloom-size, 0px) * var(--theme-terminal-glow-size-factor, 1))
-           oklch(
-               from var(--terminal-text-glow-color, oklch(0.85 0.10 160)) /* Base color */
-               l c h / calc(var(--terminal-text-glow-opacity, 0) * var(--theme-terminal-glow-opacity-factor, 1)) /* Apply opacity factor */
-           );
-    /* Note: The drop shadow from #terminal-lcd-content will still apply to the text in .terminal-line due to inheritance.
-       If a distinct drop shadow per line is ever needed, it would also be added here. */
-}
-
-/* ADDED: Specific color rules for terminal lines in different states */
-.lcd--unlit .terminal-line {
-    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
-}
-.js-active-dim-lcd .terminal-line,
-.lcd--dimly-lit .terminal-line {
-    color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-}
-
-
-.terminal-line--initial-boot {
-    /* No specific color override needed here. Color is inherited.
-       Glow is from its own text-shadow rule now. Line opacity (autoAlpha) is from flicker.
-       Parent #terminal-lcd-content opacity is set to 1 by terminalManager for P1. */
-}
-
-
-.terminal-cursor {
-    display: inline-block;
-    width: 0.6em;
-    height: 1.1em;
-    background-color: currentColor; 
-    margin-left: 2px;
-    user-select: none;
-    opacity: 1; /* Solid by default */
-    vertical-align: text-bottom;
-    transform: translateY(2px); /* Vertically align cursor */
-}
-
-.terminal-cursor.is-blinking {
-    animation: terminalCursorBlink 1s steps(1, end) infinite;
-}
-
-@keyframes terminalCursorBlink {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0;
-    }
-}
-
-
-.terminal-block > .actual-lcd-screen-element::before {
+/* Scanline effect on the terminal's container */
+.lcd-container.actual-lcd-screen-element::before {
     content: '';
     position: absolute;
     top: 0;
@@ -103,9 +18,39 @@
         var(--terminal-scanline-color) calc(var(--terminal-scanline-thickness) * 4)
     );
     background-size: 100% calc(var(--terminal-scanline-thickness) * 8);
-    opacity: calc(0.3 * var(--startup-opacity-factor, 0)); 
+    opacity: calc(0.3 * var(--startup-opacity-factor, 0));
     animation: terminalScanlineMove var(--terminal-scanline-animation-duration) linear infinite;
     border-radius: inherit;
 }
 
-/* REMOVED rule that hid the CRT overlay */
+@keyframes terminalScanlineMove {
+    from { background-position: 0 0; }
+    to { background-position: 0 calc(var(--terminal-scanline-thickness) * -8); }
+}
+
+/* Terminal Cursor */
+.terminal-cursor {
+    display: inline-block;
+    width: 0.6em;
+    height: 1.1em;
+    background-color: currentColor;
+    margin-left: 2px;
+    user-select: none;
+    opacity: 1;
+    vertical-align: text-bottom;
+    transform: translateY(2px);
+}
+
+/* FIX: Restored simple, smooth CSS blink animation */
+.terminal-cursor.is-blinking {
+    animation: terminalCursorBlink 1s step-end infinite;
+}
+
+@keyframes terminalCursorBlink {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0;
+    }
+}

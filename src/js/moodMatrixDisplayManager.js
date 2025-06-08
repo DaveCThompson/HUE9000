@@ -14,6 +14,7 @@ class MoodMatrixDisplayManager {
         this.appState = null;
         this.config = null;
 
+        this.contentWrapper = null;
         this.rowsWrapper = null;
         this.rowElements = [];
         this.domCycleIndex = 0;
@@ -41,10 +42,16 @@ class MoodMatrixDisplayManager {
     }
 
     _initDOM() {
-        this.parentLcdElement.innerHTML = '';
+        this.contentWrapper = this.parentLcdElement.querySelector('.lcd-content-wrapper');
+        if (!this.contentWrapper) {
+            console.error("MoodMatrixDisplayManager: Could not find the .lcd-content-wrapper in the parent element.");
+            return;
+        }
+        this.contentWrapper.innerHTML = '';
+
         this.rowsWrapper = document.createElement('div');
         this.rowsWrapper.classList.add('mood-matrix-rows-wrapper');
-        this.parentLcdElement.appendChild(this.rowsWrapper);
+        this.contentWrapper.appendChild(this.rowsWrapper);
 
         for (let i = 0; i < 3; i++) {
             const row = document.createElement('div');
@@ -57,14 +64,29 @@ class MoodMatrixDisplayManager {
 
     _cacheLayoutMetrics() {
         if (this.rowElements.length > 0 && this.rowsWrapper) {
-            const tempVisible = this.rowsWrapper.offsetHeight === 0;
-            if (tempVisible) this.gsap.set(this.rowElements[0], { position: 'relative', display: 'flex', opacity: 1 });
+            // FIX: Temporarily make the wrapper visible to ensure accurate measurement.
+            const originalDisplay = this.contentWrapper.style.display;
+            const wasHidden = this.contentWrapper.classList.contains('is-content-hidden');
+            
+            if (wasHidden) {
+                this.contentWrapper.classList.remove('is-content-hidden');
+            } else {
+                this.gsap.set(this.contentWrapper, { display: 'flex' });
+            }
+            
             this.rowHeight = this.rowElements[0].offsetHeight;
-            if (tempVisible) this.gsap.set(this.rowElements[0], { position: 'absolute', display: 'flex', opacity: 0 });
+
+            // Restore original state
+            if (wasHidden) {
+                this.contentWrapper.classList.add('is-content-hidden');
+            } else {
+                this.gsap.set(this.contentWrapper, { display: originalDisplay });
+            }
 
             if (this.rowHeight === 0) {
                 const fontSize = parseFloat(getComputedStyle(this.parentLcdElement).fontSize) || 16;
                 this.rowHeight = fontSize * (this.config.MOOD_MATRIX_ROW_HEIGHT_EM_FALLBACK || 1.4);
+                 if (this.debug) console.log(`[MMDM] Row height was 0, used fallback: ${this.rowHeight}px`);
             }
             this.rowsWrapper.style.height = `${2 * this.rowHeight}px`;
         }

@@ -1,49 +1,49 @@
-/* src/css/components/_lcd.css (REFACTOR-V2.1) */
-/* Styles for LCD screens (Terminal, Dial LCDs). Uses theme variables. */
+/* src/css/components/_lcd.css (REFACTOR-V2.2 - Structural Harmonization) */
+/* Authoritative styles for all LCD screens. */
 
-.actual-lcd-screen-element,
-.hue-lcd-display {
+/* --- 1. LCD Container (The Outer Shell) --- */
+.lcd-container {
     width: 100%;
-    position: relative; 
-    overflow: hidden; 
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--space-xs);
+    box-sizing: border-box;
+    display: flex; /* Use flex to manage the inner wrapper */
+    flex-direction: column;
+    justify-content: stretch;
+    align-items: stretch;
+    opacity: var(--theme-component-opacity);
+
+    /* Default to ACTIVE state styles */
     background-color: oklch(
-        var(--lcd-active-grad-end-l) 
-        calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) 
+        var(--lcd-active-grad-end-l)
+        calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor))
         var(--dynamic-lcd-hue)
     );
     background-image: radial-gradient(ellipse at center,
         oklch(var(--lcd-active-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
         oklch(calc(var(--lcd-active-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 100%
     );
-    color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
     border: 1px solid oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
-    border-radius: var(--space-xs);
-    padding: var(--space-md); 
-    box-shadow: var(--lcd-active-shadow-inner-glow); 
-    font-family: 'IBM Plex Mono', monospace;
-    box-sizing: border-box;
-    opacity: var(--theme-component-opacity); 
-    /* REMOVED: text-shadow property moved to more specific selectors */
-
-    display: flex;
-    flex-direction: column;
-    /* justify-content: center; -- Default, overridden by specific LCD types */
-    /* align-items: stretch; -- Default, overridden by specific LCD types */
-
+    box-shadow: var(--lcd-active-shadow-inner-glow);
 
     transition:
-        background-color var(--transition-duration-medium) ease, 
+        background-color var(--transition-duration-medium) ease,
         background-image var(--transition-duration-medium) ease,
         border-color var(--transition-duration-medium) ease,
-        color var(--transition-duration-medium) ease,
         box-shadow var(--transition-duration-medium) ease,
-        opacity var(--transition-duration-medium) ease,
-        text-shadow var(--transition-duration-medium) ease;
+        opacity var(--transition-duration-medium) ease;
 }
 
-/* CRT Overlay using ::after pseudo-element */
-.actual-lcd-screen-element::after,
-.hue-lcd-display::after {
+/* FIX: Target the terminal's container specifically to make it grow. */
+.terminal-block .actual-lcd-screen-element {
+    flex-grow: 1;
+    min-height: 0; /* Required for flex-grow to work correctly in a flex column */
+}
+
+
+/* CRT Overlay on the container */
+.lcd-container::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -52,128 +52,109 @@
     background-repeat: repeat;
     background-position: 0 0;
     mix-blend-mode: var(--lcd-crt-overlay-blend-mode, multiply);
-    opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * var(--startup-opacity-factor, 0)); 
+    opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * var(--startup-opacity-factor, 0));
     pointer-events: none;
-    z-index: 1; 
+    z-index: 1;
     border-radius: inherit;
     transition: opacity var(--transition-duration-medium) ease;
 }
 
-/* Terminal LCD Specifics */
-.terminal-block .actual-lcd-screen-element { /* MODIFIED: Corrected selector */
+
+/* --- 2. LCD Content Wrapper (The Inner, Padded Area) --- */
+.lcd-content-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 100%;
     flex-grow: 1;
-    min-height: 50px;
-    font-size: var(--lcd-content-font-size, 0.95em); 
-    font-weight: 500; 
-    line-height: 1.4; 
+    box-sizing: border-box;
+
+    /* Unified content styles */
+    padding: var(--space-md);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: var(--lcd-content-font-size, 0.9em);
+    font-weight: 500;
+    line-height: 1.4;
+    color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
+    text-shadow: 0 0 8px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-text-shadow-base-alpha, 0.3));
+
+    transition: color var(--transition-duration-medium) ease, text-shadow var(--transition-duration-medium) ease;
+}
+
+/* FIX: Add class-based visibility rule */
+.lcd-content-wrapper.is-content-hidden {
+    display: none !important;
+}
+
+/* Specific layout needs for content wrappers */
+#hue-lcd-A .lcd-content-wrapper,
+#hue-lcd-B .lcd-content-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#terminal-lcd-content.lcd-content-wrapper {
+    padding: var(--space-3xl);
     white-space: pre-wrap;
     word-break: break-all;
-    justify-content: flex-start; /* MODIFIED: For top alignment of terminal content */
-    align-items: stretch; 
     text-align: left;
-}
-.terminal-block .actual-lcd-screen-element > #terminal-lcd-content {
-    /* #terminal-lcd-content will naturally fill due to align-items:stretch */
-}
-
-/* Dial LCD Specifics */
-.hue-lcd-display { /* This is the main container for Dial A (Mood Matrix) and Dial B (Numeric) */
-   height: var(--hue-lcd-display-height); 
-   flex-shrink: 0;
-   /* Default flex properties for .hue-lcd-display (can be overridden by more specific selectors) */
-   justify-content: center; 
-   align-items: center;   
-}
-
-/* Specific override for Dial A (Mood Matrix) container */
-.hue-lcd-display#hue-lcd-A {
-    justify-content: center; /* Vertically centers the mood-matrix-rows-wrapper */
-    align-items: stretch; /* Allows mood-matrix-rows-wrapper to take full width */
+    display: block;
 }
 
 
-/* Numeric value span, now only for Dial B LCD */
-.hue-lcd-display#hue-lcd-B .lcd-value { 
-    /* Parent #hue-lcd-B uses justify/align:center, so this will be centered */
-    z-index: 2; 
-    font-size: var(--lcd-content-font-size, 1em); 
-    font-weight: 600;
-    line-height: 1; 
-    transition: color var(--transition-duration-medium) ease, opacity var(--transition-duration-medium) ease;
-    /* ADDED: text-shadow to restore glow effect specifically for dial LCDs */
-    text-shadow: 0 0 8px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-text-shadow-base-alpha, 0.3));
-}
+/* --- 3. State Modifications --- */
 
-/* --- LCD State Classes --- */
-.lcd--unlit {
-    background-image: none !important; 
+/* State: Unlit */
+.lcd-container.lcd--unlit {
+    background-image: none !important;
     background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
-    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a)); 
     border-color: oklch(var(--lcd-unlit-border-l) var(--lcd-unlit-border-c) var(--lcd-unlit-border-h) / var(--lcd-unlit-border-a));
     box-shadow: var(--lcd-unlit-shadow);
-    text-shadow: 0 0 5px oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / 0); 
 }
-.lcd--unlit#hue-lcd-B .lcd-value { 
-    opacity: 0; 
-    text-shadow: none; /* ADDED: Ensure no shadow when unlit */
+.lcd-container.lcd--unlit .lcd-content-wrapper {
+    color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
+    text-shadow: none;
 }
-.lcd--unlit#terminal-lcd-content { 
-     color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
-}
-.lcd--unlit::after { 
-    opacity: 0 !important; 
+.lcd-container.lcd--unlit::after {
+    opacity: 0 !important;
 }
 
-
-/* MODIFIED: Harmonized .js-active-dim-lcd to match .lcd--dimly-lit */
-.js-active-dim-lcd { 
+/* State: Dimly Lit */
+.lcd-container.lcd--dimly-lit {
     background-color: oklch(
-        var(--lcd-dimly-lit-grad-end-l) 
-        calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) 
+        var(--lcd-dimly-lit-grad-end-l)
+        calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor))
         var(--dynamic-lcd-hue)
-    ); 
+    );
     background-image: radial-gradient(ellipse at center,
         oklch(var(--lcd-dimly-lit-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
         oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100%
     );
-    color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
     border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
     box-shadow: var(--lcd-dimly-lit-shadow);
 }
-.js-active-dim-lcd#hue-lcd-B .lcd-value {
+.lcd-container.lcd--dimly-lit .lcd-content-wrapper {
     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-    text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7));
+    text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * 0.7));
 }
-.js-active-dim-lcd#terminal-lcd-content { 
-     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-}
-.js-active-dim-lcd::after { 
-    opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 
+.lcd-container.lcd--dimly-lit::after {
+    opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0));
 }
 
 
-.lcd--dimly-lit { 
-    background-color: oklch(
-        var(--lcd-dimly-lit-grad-end-l) 
-        calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) 
-        var(--dynamic-lcd-hue)
-    ); 
-    background-image: radial-gradient(ellipse at center,
-        oklch(var(--lcd-dimly-lit-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
-        oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100%
-    );
-    color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-    box-shadow: var(--lcd-dimly-lit-shadow);
-    border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
-    /* text-shadow removed from container */
+/* --- 4. Component-Specific Content Styles --- */
+
+/* Dial B's numeric value */
+.lcd-value {
+    font-weight: 600;
+    line-height: 1;
 }
-.lcd--dimly-lit#hue-lcd-B .lcd-value {
-     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-     text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * var(--startup-opacity-factor, 0) * 0.7));
-}
-.lcd--dimly-lit#terminal-lcd-content { 
-     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-}
-.lcd--dimly-lit::after { 
-    opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0)); 
+
+/* Terminal lines inherit from the wrapper, but need their own glow for flicker effects */
+.terminal-line {
+    display: flex;
+    align-items: baseline;
+    line-height: 1.7;
+    color: inherit; /* Inherit color from the content wrapper */
+    /* The flicker effect will apply its own text-shadow. This is for the static state. */
+    text-shadow: inherit;
 }

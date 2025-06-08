@@ -79,6 +79,7 @@ export class StartupSequenceManager {
     const gsap = serviceLocator.get('gsap');
     const config = serviceLocator.get('config');
     const appState = serviceLocator.get('appState');
+    const lcdUpdater = serviceLocator.get('lcdUpdater'); // Get the LcdUpdater
 
     if (dom.body.classList.contains('pre-boot')) {
       dom.body.classList.remove('pre-boot');
@@ -103,8 +104,17 @@ export class StartupSequenceManager {
 
     serviceLocator.get('buttonManager').setInitialDimStates();
     serviceLocator.get('lensManager').directUpdateLensVisuals(0);
-    serviceLocator.get('lcdUpdater').applyCurrentStateToAllLcds();
     serviceLocator.get('terminalManager').reset();
+
+    // --- THE FIX ---
+    // Explicitly set all LCDs to the 'unlit' state at the very beginning.
+    // This ensures their content wrappers are hidden before any animations start.
+    const allLcds = [dom.terminalContainer, dom.lcdA, dom.lcdB];
+    allLcds.forEach(lcd => {
+        if (lcd) {
+            lcdUpdater.setLcdState(lcd, 'unlit', { phaseContext: 'Reset' });
+        }
+    });
 
     // Set body opacity based on mode. Step-through starts visible, auto-play fades in.
     gsap.set(dom.body, { opacity: forStepping ? 1 : 0 });

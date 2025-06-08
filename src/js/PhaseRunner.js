@@ -4,6 +4,7 @@
  * It parses a phase config, builds a GSAP timeline dynamically, and returns a promise.
  */
 import { serviceLocator } from './serviceLocator.js';
+import { getMessage } from './terminalMessages.js';
 
 export class PhaseRunner {
   constructor() {
@@ -28,42 +29,73 @@ export class PhaseRunner {
       dialManager: serviceLocator.get('dialManager'),
       lensManager: serviceLocator.get('lensManager'),
       lcdUpdater: serviceLocator.get('lcdUpdater'),
+      terminalManager: serviceLocator.get('terminalManager'), // Add terminalManager
     };
     if (this.debug) console.log('[PhaseRunner INIT]');
   }
 
   run(phaseConfig) {
     return new Promise((resolve, reject) => {
+      if (this.debug) {
+        console.group(`[PhaseRunner] Executing Phase ${phaseConfig.phase}: ${phaseConfig.name}`);
+      }
       try {
-        if (this.debug) console.log(`[PhaseRunner RUN] Executing Phase ${phaseConfig.phase}: ${phaseConfig.name}`);
-        const tl = this.gsap.timeline({
+        const masterTl = this.gsap.timeline({
           onComplete: () => {
-            if (this.debug) console.log(`[PhaseRunner RUN] <<<< COMPLETED >>>> Phase ${phaseConfig.phase}`);
+            if (this.debug) {
+              console.log(`[PhaseRunner] <<<< COMPLETED >>>> Phase ${phaseConfig.phase}: ${phaseConfig.name}`);
+              console.groupEnd();
+            }
             resolve();
           },
-          onError: (error) => reject(error)
+          onError: (error) => {
+            if (this.debug) {
+                console.error(`[PhaseRunner] <<<< FAILED >>>> Phase ${phaseConfig.phase}: ${phaseConfig.name}`, error);
+                console.groupEnd();
+            }
+            reject(error);
+          }
         });
 
+        // Handle terminal message typing as a special, composed animation
         if (phaseConfig.terminalMessageKey) {
-          this.appState.emit('requestTerminalMessage', {
-            type: 'startup',
-            source: phaseConfig.name,
-            messageKey: phaseConfig.terminalMessageKey,
-          });
+            if (this.debug) console.log(`[PhaseRunner] Phase has terminalMessageKey: ${phaseConfig.terminalMessageKey}`);
+            const messageContent = getMessage({ messageKey: phaseConfig.terminalMessageKey }, {}, this.config);
+            
+            // For P1, we do a special coordinated flicker + type
+            if (phaseConfig.phase === 1) {
+                const powerOnTl = this.managers.lcdUpdater.getLcdPowerOnTimeline(this.dom.terminalContainer, {
+                    profileName: 'terminalScreenFlickerToDimlyLit',
+                    state: 'dimly-lit'
+                });
+                masterTl.add(powerOnTl, 0);
+
+                const typingTl = this.managers.terminalManager.getTypingTimeline(messageContent);
+                // Add the typing animation partway through the flicker
+                masterTl.add(typingTl, powerOnTl.duration() * 0.3);
+            } else {
+                // For other phases, just type the message.
+                this.appState.emit('requestTerminalMessage', {
+                    type: 'startup',
+                    source: phaseConfig.name,
+                    messageKey: phaseConfig.terminalMessageKey,
+                });
+            }
         }
 
         if (phaseConfig.animations && Array.isArray(phaseConfig.animations)) {
-          phaseConfig.animations.forEach(anim => this._buildAnimation(tl, anim));
+          phaseConfig.animations.forEach(anim => this._buildAnimation(masterTl, anim));
         }
 
         let minDuration = phaseConfig.duration || this.config.MIN_PHASE_DURATION_FOR_STEPPING;
-        if (tl.duration() < minDuration) {
-          tl.to({}, { duration: minDuration - tl.duration() });
+        if (masterTl.duration() < minDuration) {
+          masterTl.to({}, { duration: minDuration - masterTl.duration() });
         }
 
-        tl.play();
+        masterTl.play();
       } catch (error) {
         console.error(`[PhaseRunner RUN] Error setting up Phase ${phaseConfig.phase}:`, error);
+        if (this.debug) console.groupEnd();
         reject(error);
       }
     });
@@ -71,13 +103,17 @@ export class PhaseRunner {
 
   _buildAnimation(tl, anim) {
     const position = anim.position || '>';
+    if (this.debug) console.log(`[PhaseRunner] Building animation:`, anim);
 
     switch (anim.type) {
       case 'tween':
         this._handleTween(tl, anim, position);
         break;
-      case 'flicker':
-        this._handleFlicker(tl, anim, position);
+      case 'flicker': // This now handles buttons and other simple flickers
+        this._handleSimpleFlicker(tl, anim, position);
+        break;
+      case 'lcdPowerOn': // New type for the coordinated LCD power-on effect
+        this._handleLcdPowerOn(tl, anim, position);
         break;
       case 'call':
         const deps = anim.deps ? anim.deps.map(dep => serviceLocator.get(dep)) : [];
@@ -92,21 +128,30 @@ export class PhaseRunner {
     }
   }
 
+  _handleLcdPowerOn(tl, anim, position) {
+    const elements = Array.isArray(anim.target) ? anim.target.map(t => this.dom[t]) : [this.dom[anim.target]];
+    const stagger = anim.stagger || 0;
+
+    elements.forEach((el, index) => {
+        if (el) {
+            const powerOnTl = this.managers.lcdUpdater.getLcdPowerOnTimeline(el, {
+                profileName: anim.profile,
+                state: anim.state
+            });
+            tl.add(powerOnTl, `${position}+=${index * stagger}`);
+        }
+    });
+  }
+
   _handleTween(tl, anim, position) {
     let targets = [];
     if (anim.target === 'dimmingFactors') {
       targets.push(this.proxies.LReductionProxy);
-      const originalOnUpdate = anim.vars.onUpdate;
       anim.vars.onUpdate = () => {
         this.dom.root.style.setProperty('--startup-L-reduction-factor', this.proxies.LReductionProxy.value.toFixed(3));
-        if (originalOnUpdate) {
-          originalOnUpdate();
-        }
       };
-    } else if (Array.isArray(anim.target)) {
-      targets = anim.target.map(t => this.dom[t]).filter(Boolean);
-    } else if (this.dom[anim.target]) {
-      targets.push(this.dom[anim.target]);
+    } else {
+      targets = Array.isArray(anim.target) ? anim.target.map(t => this.dom[t]).filter(Boolean) : [this.dom[anim.target]];
     }
 
     if (targets.length > 0) {
@@ -114,82 +159,44 @@ export class PhaseRunner {
     }
   }
 
-  _handleFlicker(tl, anim, position) {
+  _handleSimpleFlicker(tl, anim, position) {
     let elements = [];
     if (anim.target === 'buttonGroup') {
       elements = this.managers.buttonManager.getButtonsByGroupIds(anim.groups);
-    } else if (anim.target === 'button' && anim.selector) {
-      elements = Array.from(document.querySelectorAll(anim.selector));
-    } else if (Array.isArray(anim.target)) {
-      elements = anim.target.map(t => this.dom[t]).filter(Boolean);
-    } else if (this.dom[anim.target]) {
-      elements.push(this.dom[anim.target]);
     } else if (typeof anim.target === 'string') {
-        // New: Handle targeting by aria-label
         const buttonInstance = this.managers.buttonManager.getButtonByAriaLabel(anim.target);
-        if (buttonInstance) {
-            elements.push(buttonInstance.getElement());
-        }
+        if (buttonInstance) elements.push(buttonInstance.getElement());
     }
 
     if (elements.length === 0) {
-        if(this.debug) console.warn(`[PhaseRunner _handleFlicker] No elements found for animation target:`, anim.target);
+        if(this.debug) console.warn(`[PhaseRunner _handleSimpleFlicker] No elements found for:`, anim.target);
         return;
     }
 
     const stagger = anim.stagger || 0;
     elements.forEach((el, index) => {
-      const isButton = el.classList.contains('button-unit');
-      let flickerResult;
-
-      if (isButton) {
         const buttonInstance = this.managers.buttonManager.getButtonInstance(el);
-        if (!buttonInstance) {
-            if (this.debug) console.warn(`[PhaseRunner _handleFlicker] Could not get button instance for element:`, el);
-            return;
-        }
+        if (!buttonInstance) return;
 
-        let effectiveState = anim.state;
         let effectiveProfile = anim.profile;
-
-        // Generalize flicker logic for all buttons transitioning from dimly lit to fully lit.
-        if (anim.profile && anim.profile.startsWith('buttonFlickerFromDimlyLitToFullyLit')) {
-            let shouldBeSelected;
-            
-            if (anim.target === 'buttonGroup') {
-                shouldBeSelected = this.config.DEFAULT_ASSIGNMENT_SELECTIONS[buttonInstance.getGroupId()]?.toString() === buttonInstance.getValue();
-            } else {
-                // For single-button animations (Phases 3, 9), trust the state in the config.
-                shouldBeSelected = anim.state.includes('is-selected');
-            }
-
+        if (anim.profile.startsWith('buttonFlickerFromDimlyLitToFullyLit')) {
+            const shouldBeSelected = (anim.target === 'buttonGroup')
+                ? this.config.DEFAULT_ASSIGNMENT_SELECTIONS[buttonInstance.getGroupId()]?.toString() === buttonInstance.getValue()
+                : anim.state.includes('is-selected');
             const isFast = anim.profile.includes('Fast');
-            
-            if (shouldBeSelected) {
-                effectiveProfile = isFast ? 'buttonFlickerFromDimlyLitToFullyLitSelectedFast' : 'buttonFlickerFromDimlyLitToFullyLitSelected';
-                effectiveState = 'is-energized is-selected';
-            } else {
-                effectiveProfile = isFast ? 'buttonFlickerFromDimlyLitToFullyLitUnselectedFast' : 'buttonFlickerFromDimlyLitToFullyLitUnselected';
-                effectiveState = 'is-energized';
-            }
+            effectiveProfile = shouldBeSelected
+                ? (isFast ? 'buttonFlickerFromDimlyLitToFullyLitSelectedFast' : 'buttonFlickerFromDimlyLitToFullyLitSelected')
+                : (isFast ? 'buttonFlickerFromDimlyLitToFullyLitUnselectedFast' : 'buttonFlickerFromDimlyLitToFullyLitUnselected');
         }
         
-        flickerResult = this.managers.buttonManager.playFlickerToState(el, effectiveState, {
+        const flickerResult = this.managers.buttonManager.playFlickerToState(el, anim.state, {
           profileName: effectiveProfile,
           phaseContext: `PhaseRunner_${effectiveProfile}`
         });
 
-      } else { // Assume LCD
-        flickerResult = this.managers.lcdUpdater.setLcdState(el, anim.state, {
-          useFlicker: true,
-          flickerProfileName: anim.profile,
-          phaseContext: `PhaseRunner_${anim.profile}`
-        });
-      }
-
-      if (flickerResult && flickerResult.timeline) {
-        tl.add(flickerResult.timeline, `${position}+=${index * stagger}`);
-      }
+        if (flickerResult && flickerResult.timeline) {
+            tl.add(flickerResult.timeline, `${position}+=${index * stagger}`);
+        }
     });
   }
 }
