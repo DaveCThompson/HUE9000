@@ -162,7 +162,7 @@ body.pre-boot #terminal-lcd-content { /* Target the inner content div for termin
 }
 .right-panel .hue-assignment-block {
     display: grid;
-    grid-template-columns: var(--grid-color-chip-width) 1fr 1fr 1fr 1fr;
+    grid-template-columns: var(--grid-color-chip-width) 1fr 1fr 1fr 1fr var(--grid-color-chip-width);
     column-gap: var(--hue-assignment-column-gap);
     row-gap: var(--hue-assignment-row-gap);
     align-items: stretch;

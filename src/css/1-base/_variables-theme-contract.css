@@ -199,6 +199,12 @@
     --dial-dim-active-ridge-highlight-l: 0.4; --dial-dim-active-ridge-highlight-a: 0.4;
     --dial-dim-active-shading-start-color: oklch(0% 0 0 / 0.1); 
     --dial-dim-active-shading-end-color: oklch(0% 0 0 / 0.15); 
+    /* NEW: Variables for the unlit dim state, making it controllable via CSS */
+    --dial-dim-unlit-face-bg-l: 0.01; --dial-dim-unlit-face-bg-c: 0; --dial-dim-unlit-face-bg-h: 0;
+    --dial-dim-unlit-ridge-l: 0.01; --dial-dim-unlit-ridge-c: 0; --dial-dim-unlit-ridge-h: 0;
+    --dial-dim-unlit-ridge-highlight-l: 0; --dial-dim-unlit-ridge-highlight-a: 0;
+    --dial-dim-unlit-shading-start-color: oklch(0 0 0 / 0);
+    --dial-dim-unlit-shading-end-color: oklch(0 0 0 / 0);
 
 
     /* --- Component: Logo --- */

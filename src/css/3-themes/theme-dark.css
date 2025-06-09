@@ -90,16 +90,14 @@ body.theme-dark {
 
 
     /* --- Component: Dials --- */
-    --dial-housing-bg-l: 0.01; --dial-housing-bg-c: calc(var(--dynamic-env-chroma) * 0.3); --dial-housing-bg-h: var(--dynamic-env-hue);
-    --dial-housing-border-l: 0.06; --dial-housing-border-a: 0.2;
-    --dial-face-bg-l: 0.20; --dial-face-bg-c: calc(var(--dynamic-env-chroma) * 0.3); --dial-face-bg-h: var(--dynamic-env-hue);
-    --dial-ridge-l: 0.45; --dial-ridge-c: calc(var(--dynamic-env-chroma) * 0.3); --dial-ridge-h: var(--dynamic-env-hue);
-    --dial-ridge-highlight-l: 0.75; --dial-ridge-highlight-c: calc(var(--dynamic-env-chroma) * 0.3); --dial-ridge-highlight-h: var(--dynamic-env-hue); --dial-ridge-highlight-a: 0.85;
-    --dial-shading-start-color: oklch(0% 0 0 / 0.35);
-    --dial-shading-end-color: oklch(0% 0 0 / 0.4);
-    --dial-dim-active-face-bg-l: 0.18;
-    --dial-dim-active-ridge-l: 0.35;
-    --dial-dim-active-ridge-highlight-a: 0.6;
+    --dial-housing-bg-l: var(--panel-section-bg-l);
+    --dial-housing-bg-c: var(--panel-section-bg-c);
+    --dial-housing-bg-h: var(--panel-section-bg-h);
+    /* Canvas colors are inherited from _variables-theme-contract.css, which is correct for dark theme */
+    --dial-face-bg-c: calc(var(--dynamic-env-chroma) * 0.9);
+    --dial-ridge-c: calc(var(--dynamic-env-chroma) * 0.9);
+    --dial-ridge-highlight-c: calc(var(--dynamic-env-chroma) * 0.9);
+
 
     /* --- Component: Logo --- */
     --logo-dynamic-fill: oklch(var(--logo-dynamic-fill-l) var(--dynamic-logo-chroma) var(--dynamic-logo-hue));

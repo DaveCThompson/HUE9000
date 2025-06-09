@@ -100,17 +100,18 @@ body.theme-light {
 
 
     /* --- Component: Dials --- */
-    --dial-container-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.1); /* Override for light theme */
-    --dial-housing-bg-l: 0.85; --dial-housing-bg-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-housing-bg-h: var(--dynamic-env-hue);
-    --dial-housing-border-a: 0; /* Make border transparent, rely on shadow */
-    --dial-face-bg-l: 0.90; --dial-face-bg-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-face-bg-h: var(--dynamic-env-hue);
-    --dial-ridge-l: 0.75; --dial-ridge-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-ridge-h: var(--dynamic-env-hue);
-    --dial-ridge-highlight-l: 0.98; --dial-ridge-highlight-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-ridge-highlight-h: var(--dynamic-env-hue); --dial-ridge-highlight-a: 0.9;
-    --dial-shading-start-color: oklch(60% 0 0 / 0.04);
-    --dial-shading-end-color: oklch(60% 0 0 / 0.05);
-    --dial-dim-active-face-bg-l: 0.22;
-    --dial-dim-active-ridge-l: 0.65;
-    --dial-dim-active-ridge-highlight-l: 0.92; --dial-dim-active-ridge-highlight-a: 0.7;
+    /* Housing */
+    --dial-container-shadow: inset 0 1px 3px oklch(0% 0 0 / 0.25); /* Dark recessed shadow */
+    --dial-housing-bg-l: var(--panel-section-bg-l); /* Match panel section for seamless look */
+    --dial-housing-bg-c: var(--panel-section-bg-c);
+    --dial-housing-bg-h: var(--panel-section-bg-h);
+    
+    /* Canvas Drawing (Dark dial in a bright environment) */
+    --dial-face-bg-l: 0.30; --dial-face-bg-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-face-bg-h: var(--dynamic-env-hue);
+    --dial-ridge-l: 0.55; --dial-ridge-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-ridge-h: var(--dynamic-env-hue);
+    --dial-ridge-highlight-l: 0.95; --dial-ridge-highlight-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-ridge-highlight-h: var(--dynamic-env-hue); --dial-ridge-highlight-a: 0.9;
+    --dial-shading-start-color: oklch(0% 0 0 / 0.08);
+    --dial-shading-end-color: oklch(0% 0 0 / 0.1);
 
     /* --- Component: Logo --- */
     --logo-bg-l: 0.705; 

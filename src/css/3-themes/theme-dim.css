@@ -99,10 +99,11 @@ body.theme-dim {
 
 
     /* --- Component: Dials --- */
-    /* Reducing brightness during startup fade-in */
-    --dial-ridge-l: 0.25;
-    --dial-ridge-highlight-l: 0.35;
-
+    /* Dim Theme Active Dial State (used during startup) */
+    --dial-dim-active-face-bg-l: 0.03; /* Slightly darker face */
+    --dial-dim-active-ridge-l: 0.05; /* Was 0.08, now significantly darker */
+    --dial-dim-active-ridge-highlight-l: 0.09; /* Was 0.15, now much more subtle */
+    --dial-dim-active-ridge-highlight-a: 0.4; /* Slightly increase alpha to compensate for lower L */
 
     /* --- Component: Logo --- */
 

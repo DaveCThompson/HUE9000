@@ -280,14 +280,16 @@ class Dial {
             };
         } else if (isDimTheme && !this.isActiveDim) { 
             this.computedStyleVars = {
-                faceBgL: rootStyle.getPropertyValue('--dial-face-bg-l').trim() || '0.01', 
-                faceBgC: rootStyle.getPropertyValue('--dial-face-bg-c').trim() || '0',
-                faceBgH: rootStyle.getPropertyValue('--dial-face-bg-h').trim() || '0',
-                ridgeL: rootStyle.getPropertyValue('--dial-ridge-l').trim() || '0.01', 
-                ridgeC: rootStyle.getPropertyValue('--dial-ridge-c').trim() || '0',
-                ridgeH: rootStyle.getPropertyValue('--dial-ridge-h').trim() || '0',
-                ridgeHighlightL: "0", ridgeHighlightA: "0", 
-                shadingStart: "oklch(0 0 0 / 0)", shadingEnd: "oklch(0 0 0 / 0)" 
+                faceBgL: rootStyle.getPropertyValue('--dial-dim-unlit-face-bg-l').trim() || '0',
+                faceBgC: rootStyle.getPropertyValue('--dial-dim-unlit-face-bg-c').trim() || '0',
+                faceBgH: rootStyle.getPropertyValue('--dial-dim-unlit-face-bg-h').trim() || '0',
+                ridgeL: rootStyle.getPropertyValue('--dial-dim-unlit-ridge-l').trim() || '0',
+                ridgeC: rootStyle.getPropertyValue('--dial-dim-unlit-ridge-c').trim() || '0',
+                ridgeH: rootStyle.getPropertyValue('--dial-dim-unlit-ridge-h').trim() || '0',
+                ridgeHighlightL: rootStyle.getPropertyValue('--dial-dim-unlit-ridge-highlight-l').trim() || '0',
+                ridgeHighlightA: rootStyle.getPropertyValue('--dial-dim-unlit-ridge-highlight-a').trim() || '0',
+                shadingStart: rootStyle.getPropertyValue('--dial-dim-unlit-shading-start-color').trim() || 'oklch(0 0 0 / 0)',
+                shadingEnd: rootStyle.getPropertyValue('--dial-dim-unlit-shading-end-color').trim() || 'oklch(0 0 0 / 0)'
             };
         } else { 
             this.computedStyleVars = {
@@ -328,32 +330,23 @@ class Dial {
         this.ctx.clearRect(0, 0, logicalWidth, logicalHeight); 
 
         const appStatus = this.appState.getAppStatus();
-        const currentPhaseNum = this.appState.getCurrentStartupPhaseNumber();
         const isDimTheme = document.body.classList.contains('theme-dim');
         const isDuringThemeTransition = document.body.classList.contains('is-transitioning-from-dim');
 
-        const isEarlyStartupUnlitState = isDimTheme && 
-                                         !this.isActiveDim && 
-                                         appStatus === 'starting-up' && 
-                                         (currentPhaseNum === -1 || (currentPhaseNum >= 0 && currentPhaseNum < 6));
-
-        if (isEarlyStartupUnlitState) {
-            this.ctx.fillStyle = 'oklch(0 0 0)'; 
-        } else {
-            this.ctx.fillStyle = `oklch(${this.computedStyleVars.faceBgL} ${this.computedStyleVars.faceBgC} ${this.computedStyleVars.faceBgH})`;
-        }
+        // THE FIX: This single line now correctly handles all states by reading from the cached CSS variables.
+        // The faulty if/else block that hardcoded 'oklch(0 0 0)' has been removed.
+        this.ctx.fillStyle = `oklch(${this.computedStyleVars.faceBgL} ${this.computedStyleVars.faceBgC} ${this.computedStyleVars.faceBgH})`;
         this.ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
 
         let drawDetailedContent;
         if (isDimTheme && !isDuringThemeTransition) {
-            drawDetailedContent = this.isActiveDim; 
+            // In dim theme, draw details if the dial is explicitly activated OR if it's in the unlit state.
+            // The unlit state will use the very dark CSS variables, achieving the "off" look.
+            drawDetailedContent = true; 
         } else { 
+            // In other themes, draw details if the dial is active OR the app is interactive.
             drawDetailedContent = this.isActiveDim || appStatus === 'interactive';
-        }
-        
-        if (isEarlyStartupUnlitState) { 
-            drawDetailedContent = false;
         }
 
         if (drawDetailedContent) {
