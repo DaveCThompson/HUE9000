@@ -350,8 +350,12 @@ export const STATE_TRANSITION_ECHO_PARAMS = {
 
 // --- Mood Matrix Display Configuration ---
 export const MOOD_MATRIX_DEFINITIONS = [
-    "Scanning", "Commanding", "Evaluative", "Curious",
-    "Advisory", "Analytical", "Focused", "Reserved", "Introspective"
+    "Commanding",    // 0-60° (Red/Orange) - The ultimate state of control.
+    "Analytical",    // 60-120° (Yellow/Green) - The state of data processing.
+    "Focused",       // 120-180° (Green/Cyan) - The state of neutral concentration.
+    "Advisory",      // 180-240° (Cyan/Blue) - The state of providing output/guidance.
+    "Introspective", // 240-300° (Blue/Purple) - The state of internal processing.
+    "Evaluative"     // 300-360° (Magenta/Pink) - The state of judgment and decision-making.
 ];
 
 // [NEW] V2 Display Parameters

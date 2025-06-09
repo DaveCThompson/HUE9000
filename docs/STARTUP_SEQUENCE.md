@@ -100,7 +100,7 @@ This document details the phased startup sequence for the HUE 9000 interface, or
     2.  **Terminal:** Emits "P6_MOOD_INTENSITY_CONTROLS" message (typed).
     3.  **Dials (MOOD, INTENSITY):** `dialManager.setDialsActiveState(true)` called. Dials show ridges and fade in.
     4.  **Dial LCDs (A, B):** Flicker to `lcd--dimly-lit` state using `lcdScreenFlickerToDimlyLit` profile. Dial LCDs display initial values (V2 displays are now visible).
-*   **Visual Outcome:** Dials and their LCDs become "active dim."
+*   **Visual Outcome:** Dials and their LCDs become "active dim", with the Mood display showing the initial "Commanding" state corresponding to the default red hue.
 
 ### Phase 7: Initializing Hue Correction Systems (`startupPhase7.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 7)

@@ -16,13 +16,15 @@ body.theme-dark {
     --body-bg-bottom-c: calc(var(--dynamic-env-chroma) * 0.67);
 
     /* --- Panel Bezel & Sections --- */
-    --panel-section-bg-l: 0.18; 
+    --panel-section-bg-l: 0.18; --panel-section-bg-c: calc(var(--dynamic-env-chroma) * 0.30);
     --panel-section-border-l: 0.6; --panel-section-border-c: 0; --panel-section-border-h: 0; --panel-section-border-a: 0.35;
     
     --panel-bezel-grad-1-l: 0.75; --panel-bezel-grad-2-l: 0.70; --panel-bezel-grad-3-l: 0.55;
     --panel-bezel-grad-4-l: 0.72; --panel-bezel-grad-5-l: 0.78; --panel-bezel-grad-6-l: 0.45;
     --panel-bezel-grad-7-l: 0.48; --panel-bezel-grad-8-l: 0.52; --panel-bezel-grad-9-l: 0.50;
     --panel-bezel-texture-opacity: 0.15;
+    --panel-bezel-grad-c: calc(var(--dynamic-env-chroma) * 0.1);
+    --panel-bezel-grad-h: var(--dynamic-env-hue);
 
     --panel-shadow-outer: 
         0 3px 5px oklch(0% 0 0 / 0.25),
@@ -88,13 +90,11 @@ body.theme-dark {
 
 
     /* --- Component: Dials --- */
-    --dial-housing-bg-l: 0.01; 
-    --dial-housing-bg-c: 0;    
-    --dial-housing-bg-h: 240;
+    --dial-housing-bg-l: 0.01; --dial-housing-bg-c: calc(var(--dynamic-env-chroma) * 0.3); --dial-housing-bg-h: var(--dynamic-env-hue);
     --dial-housing-border-l: 0.06; --dial-housing-border-a: 0.2;
-    --dial-face-bg-l: 0.20;
-    --dial-ridge-l: 0.45;
-    --dial-ridge-highlight-l: 0.75; --dial-ridge-highlight-a: 0.85;
+    --dial-face-bg-l: 0.20; --dial-face-bg-c: calc(var(--dynamic-env-chroma) * 0.3); --dial-face-bg-h: var(--dynamic-env-hue);
+    --dial-ridge-l: 0.45; --dial-ridge-c: calc(var(--dynamic-env-chroma) * 0.3); --dial-ridge-h: var(--dynamic-env-hue);
+    --dial-ridge-highlight-l: 0.75; --dial-ridge-highlight-c: calc(var(--dynamic-env-chroma) * 0.3); --dial-ridge-highlight-h: var(--dynamic-env-hue); --dial-ridge-highlight-a: 0.85;
     --dial-shading-start-color: oklch(0% 0 0 / 0.35);
     --dial-shading-end-color: oklch(0% 0 0 / 0.4);
     --dial-dim-active-face-bg-l: 0.18;
@@ -115,7 +115,7 @@ body.theme-dark {
     --color-chip-border-a: 0.2;
 
     /* --- Component: Grill --- */
-    --grill-bg-l: 0.1; 
+    --grill-bg-l: 0.1; --grill-bg-c: calc(var(--dynamic-env-chroma) * 0.05); --grill-bg-h: var(--dynamic-env-hue);
     --grill-bg-a: 0.2;  
     --grill-placeholder-text-l:0.55;
 

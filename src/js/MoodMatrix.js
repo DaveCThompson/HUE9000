@@ -66,8 +66,11 @@ export class MoodMatrix {
         const wrappedHue = ((hue % 360) + 360) % 360;
         
         if (!this.isContinuouslyScrambling) {
-            // --- THE FIX ---
-            // The mood index for the main label MUST use the same scale as the blocks.
+            // --- FIX ---
+            // The displayed mood is determined by the hue's position within N segments of the
+            // 360-degree circle, where N is the number of major blocks. The thematic correctness
+            // of the label is therefore entirely dependent on the order of strings in the
+            // config.MOOD_MATRIX_DEFINITIONS array.
             const moodIndex = Math.floor(wrappedHue / (360 / this.config.majorBlocks)) % this.config.majorBlocks;
             this._updateMoodName(this.config.moods[moodIndex]);
         }
@@ -81,7 +84,9 @@ export class MoodMatrix {
         this.isContinuouslyScrambling = true;
 
         const wrappedHue = ((currentHue % 360) + 360) % 360;
-        // --- THE FIX ---
+        // --- FIX ---
+        // Ensure the initial text length for the scramble effect matches the text
+        // that *would* be displayed at the current hue.
         const moodIndex = Math.floor(wrappedHue / (360 / this.config.majorBlocks)) % this.config.majorBlocks;
         const initialText = this.config.moods[moodIndex];
         const textLength = initialText.length;
@@ -120,7 +125,8 @@ export class MoodMatrix {
         this.isContinuouslyScrambling = false;
 
         const wrappedHue = ((finalHue % 360) + 360) % 360;
-        // --- THE FIX ---
+        // --- FIX ---
+        // Ensure the final resolved text corresponds to the final hue value.
         const moodIndex = Math.floor(wrappedHue / (360 / this.config.majorBlocks)) % this.config.majorBlocks;
         const finalText = this.config.moods[moodIndex];
         

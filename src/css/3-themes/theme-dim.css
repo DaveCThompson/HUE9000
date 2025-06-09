@@ -98,6 +98,12 @@ body.theme-dim {
     --mood-matrix-value-base-chroma: 0;
 
 
+    /* --- Component: Dials --- */
+    /* Reducing brightness during startup fade-in */
+    --dial-ridge-l: 0.25;
+    --dial-ridge-highlight-l: 0.35;
+
+
     /* --- Component: Logo --- */
 
     /* --- Component: Lens Container & Core --- */

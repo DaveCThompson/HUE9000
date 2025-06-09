@@ -14,7 +14,7 @@ body.theme-light {
     --body-bg-bottom-l: 0.25;  --body-bg-bottom-c: calc(var(--dynamic-env-chroma) * 0.7);
 
     /* --- Panel Bezel & Sections --- */
-    --panel-section-bg-l: 0.28; --panel-section-bg-c: calc(var(--dynamic-env-chroma) * 0.15); 
+    --panel-section-bg-l: 0.28; --panel-section-bg-c: calc(var(--dynamic-env-chroma) * 0.20); 
     --panel-section-border-l: 0.65; --panel-section-border-c: 0.0; --panel-section-border-a: 0.35;
     
     --panel-bezel-grad-1-l: 0.99875; --panel-bezel-grad-2-l: 0.99725; --panel-bezel-grad-3-l: 0.9035;
@@ -100,13 +100,14 @@ body.theme-light {
 
 
     /* --- Component: Dials --- */
-    --dial-housing-bg-l: 0.08; --dial-housing-bg-c: 0.005; --dial-housing-bg-h: 240; 
-    --dial-housing-border-l: 0.15; --dial-housing-border-a: 0.2;
-    --dial-face-bg-l: 0.25; 
-    --dial-ridge-l: 0.55;
-    --dial-ridge-highlight-l: 0.80; --dial-ridge-highlight-a: 0.9; 
-    --dial-shading-start-color: oklch(0% 0 0 / 0.04);
-    --dial-shading-end-color: oklch(0% 0 0 / 0.05);
+    --dial-container-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.1); /* Override for light theme */
+    --dial-housing-bg-l: 0.85; --dial-housing-bg-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-housing-bg-h: var(--dynamic-env-hue);
+    --dial-housing-border-a: 0; /* Make border transparent, rely on shadow */
+    --dial-face-bg-l: 0.90; --dial-face-bg-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-face-bg-h: var(--dynamic-env-hue);
+    --dial-ridge-l: 0.75; --dial-ridge-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-ridge-h: var(--dynamic-env-hue);
+    --dial-ridge-highlight-l: 0.98; --dial-ridge-highlight-c: calc(var(--dynamic-env-chroma) * 0.4); --dial-ridge-highlight-h: var(--dynamic-env-hue); --dial-ridge-highlight-a: 0.9;
+    --dial-shading-start-color: oklch(60% 0 0 / 0.04);
+    --dial-shading-end-color: oklch(60% 0 0 / 0.05);
     --dial-dim-active-face-bg-l: 0.22;
     --dial-dim-active-ridge-l: 0.65;
     --dial-dim-active-ridge-highlight-l: 0.92; --dial-dim-active-ridge-highlight-a: 0.7;
@@ -150,7 +151,7 @@ body.theme-light {
     --color-chip-border-a: 0.4; 
 
     /* --- Component: Grill --- */
-    --grill-bg-l: 0.98; --grill-bg-c:0; --grill-bg-h:0; 
+    --grill-bg-l: 0.98; --grill-bg-c: calc(var(--dynamic-env-chroma) * 0.1); --grill-bg-h: var(--dynamic-env-hue);
     --grill-bg-a: 0.9; 
     --grill-placeholder-text-l:0.60;
     --grill-opacity: 1;
