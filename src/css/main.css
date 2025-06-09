@@ -1,4 +1,4 @@
-/* src/css/main.css - Main CSS Import Hub (REFACTOR-V2.3 - XState Update) */
+/* src/css/main.css - Main CSS Import Hub */
 
 /*
  * IMPORT ORDER:
@@ -69,7 +69,7 @@ body {
 
     /* Background L values are modified by --startup-L-reduction-factor. Alphas are from theme. */
     background-color: oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
-    /* MODIFIED: Reverted to direct background-image for noise, with multiply for noise layer */
+    /* Noise texture is applied via background-image with a multiply blend mode. */
     background-image:
         url('/public/noise.svg'), /* Noise texture overlay */
         linear-gradient(180deg,
@@ -87,16 +87,12 @@ body {
     padding: var(--space-3xl);
     touch-action: none;
     overflow: hidden;
-    /* position: relative; -- Not strictly needed if pseudo-element is removed */
-    /* z-index: 0; */
 
     transition:
         color var(--transition-duration-medium) ease,
         background-color var(--transition-duration-medium) ease,
         background-image var(--transition-duration-medium) ease;
 }
-
-/* REMOVED: body::before noise overlay */
 
 *, *:before, *:after {
     box-sizing: inherit;

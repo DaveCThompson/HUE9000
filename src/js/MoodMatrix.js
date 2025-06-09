@@ -81,20 +81,34 @@ export class MoodMatrix {
         const wrappedHue = ((currentHue % 360) + 360) % 360;
         const moodIndex = Math.floor(wrappedHue / (360 / this.config.moods.length)) % this.config.moods.length;
         const initialText = this.config.moods[moodIndex];
+        const textLength = initialText.length;
 
         if (this.currentScrambleTween) this.currentScrambleTween.kill();
         
-        const placeholder = 'X'.repeat(initialText.length);
-        this.nameEl.textContent = placeholder;
+        const scrambleChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ*#_1234567890";
 
+        // This tween creates a true continuous scramble effect.
         this.currentScrambleTween = this.gsap.to(this.nameEl, {
-            duration: 10, 
+            duration: 0.15, // How long each random scramble cycle lasts (FASTER)
             text: {
-                value: placeholder,
-                scrambleText: { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ*#_1234567890", speed: 1.0, tweenLength: false }
+                // On each repeat, generate a new random string for the value to scramble towards.
+                value: () => {
+                    let text = '';
+                    for (let i = 0; i < textLength; i++) {
+                        text += scrambleChars.charAt(Math.floor(Math.random() * scrambleChars.length));
+                    }
+                    return text;
+                },
+                scrambleText: { 
+                    chars: scrambleChars, 
+                    speed: 1.8, // How fast individual characters change (FASTER)
+                    tweenLength: false 
+                }
             },
             ease: "none",
-            repeat: -1
+            repeat: -1,
+            // This crucial property makes the function-based value re-evaluate on each repeat cycle.
+            repeatRefresh: true
         });
     }
 
@@ -108,7 +122,7 @@ export class MoodMatrix {
         
         if (this.currentScrambleTween) this.currentScrambleTween.kill();
         
-        // FIX: Proactively trigger the final text resolution animation.
+        // Proactively trigger the final text resolution animation.
         this.currentScrambleTween = this.gsap.to(this.nameEl, {
             duration: 0.4,
             text: { value: finalText, scrambleText: { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ*#_1234567890", speed: 0.8, tweenLength: true } },

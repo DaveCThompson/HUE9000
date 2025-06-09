@@ -37,12 +37,11 @@ This document outlines the principles and conventions for theming the HUE 9000 i
 
 ### 1. LCD Displays (Mood, Intensity, Terminal)
 *   **DIM Mode (Phases P0-P5):**
-    *   Terminal LCD (`.actual-lcd-screen-element`) is styled with `.lcd--unlit`. Its text is visible but the background is nearly black.
-    *   Dial LCDs (A & B) are styled with `.lcd--unlit`. Their text/content is opacity 0.
+    *   Terminal LCD (`.actual-lcd-screen-element`) is initially styled with `.lcd--unlit`. Its content area is empty.
+    *   Dial LCDs (A & B) are styled with `.lcd--unlit`. Their content (V2 Displays) is hidden.
 *   **DIM Mode (Phases P6-P9):**
-    *   Terminal screen flickers to `.lcd--dimly-lit`.
-    *   Dial LCD screens flicker to `.lcd--dimly-lit`. Their text/content becomes visible.
-    *   In `theme-dim`, all `dimly-lit` and `unlit` LCD states are achromatic (grayscale), with text lightness defined in `theme-dim.css`.
+    *   In P6, the Dial LCD screens flicker to `.lcd--dimly-lit`, and their V2 Display content becomes visible.
+    *   In `theme-dim`, all `dimly-lit` and `unlit` LCD states are achromatic (grayscale), with text lightness defined in `theme-dim.css`. The V2 Displays use `--mood-matrix-value-text-l` and `--mood-matrix-value-base-chroma: 0` from `theme-dim.css` to appear grayscale.
 *   **Theme Transition (Phase P10):**
     *   All LCDs are explicitly set to an 'active' state (i.e., the `.lcd--dimly-lit` class is removed) by a `call` function in `startupPhase10.js`.
     *   This cleanup is critical. It allows their `background-image` and `color` properties to transition smoothly to the `theme-dark` values as the underlying CSS variables change.
@@ -62,7 +61,7 @@ This document outlines the principles and conventions for theming the HUE 9000 i
     *   SCAN, HUE ASSN, and FIT EVAL buttons flicker from `is-dimly-lit` to their final `.is-energized` states. This animation runs concurrently with the global 1s CSS transition.
 *   **High-Performance Glow Mechanism (IMPORTANT):**
     *   The glow effect on buttons is implemented differently based on their state to ensure performance.
-    *   **Selected Buttons (`.is-selected.is-resonating`):** The "breathing" glow is achieved using a `::after` pseudo-element. Its `transform: scale()` and `opacity` are animated by JavaScript. This is highly performant. The main `.button-unit` element has its `box-shadow` set to `none`.
+    *   **Selected Buttons (`.is-selected.is-resonating`):** The "breathing" glow is achieved using a `::after` pseudo-element. Its `transform: scale()` and `opacity` are animated by JavaScript via CSS variables. A `transition` property on this pseudo-element is critical for the animation to be visible. The main `.button-unit` element has its `box-shadow` set to `none`.
     *   **Unselected Energized Buttons (`.is-energized:not(.is-selected)`):** These buttons use a standard, static `box-shadow` for their glow, as they do not have a continuous animation.
     *   **Theming Implication:** To theme the selected button glow, you must target the `background-color` and `filter: blur()` of the `.button-unit::after` pseudo-element. To theme the unselected glow, you target the `box-shadow` property on the `.button-unit` itself.
 

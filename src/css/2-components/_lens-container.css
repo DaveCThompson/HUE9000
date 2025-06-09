@@ -1,4 +1,4 @@
-/* src/css/components/_lens-container.css (REFACTOR-V2.1 - CORRECTED) */
+/* src/css/components/_lens-container.css */
 /* Styles for the #lens-container (bezel/housing). Uses theme variables. */
 
 #lens-container {
@@ -15,8 +15,8 @@
    background: none;
    box-shadow: none;
    overflow: visible;
-   /* Drop shadow alpha IS attenuated by --startup-opacity-factor */
-   filter: drop-shadow(0 3px 3px oklch(0% 0 0 / calc(var(--lens-bezel-shadow-alpha, 0.15) * var(--startup-opacity-factor, 0)))); /* MODIFIED */
+   /* The drop-shadow's alpha is attenuated by --startup-opacity-factor. */
+   filter: drop-shadow(0 3px 3px oklch(0% 0 0 / calc(var(--lens-bezel-shadow-alpha, 0.15) * var(--startup-opacity-factor, 0))));
    opacity: 1; /* Lens container opacity is not tied to --theme-component-opacity and NOT affected by startup factors */
 
    transition:
@@ -70,7 +70,7 @@
   transition-duration: var(--lens-bezel-effective-transition-duration, var(--transition-duration-medium));
   transition-timing-function: var(--lens-bezel-effective-transition-timing, ease);
   filter: blur(0.25px);
-  opacity: var(--lens-bezel-opacity, 1); /* MODIFIED - Uses theme-dim's base opacity, not affected by --startup-opacity-factor */
+  opacity: var(--lens-bezel-opacity, 1);
 }
 
 #lens-container::after { /* Inner ring of the bezel */
@@ -119,5 +119,5 @@
   transition-duration: var(--lens-bezel-effective-transition-duration, var(--transition-duration-medium));
   transition-timing-function: var(--lens-bezel-effective-transition-timing, ease);
   filter: blur(0.25px);
-  opacity: var(--lens-bezel-opacity, 1); /* MODIFIED - Uses theme-dim's base opacity, not affected by --startup-opacity-factor */
+  opacity: var(--lens-bezel-opacity, 1);
 }

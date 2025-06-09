@@ -1,4 +1,4 @@
-/* src/css/components/_panel-bezel.css (REFACTOR-V2.1) */
+/* src/css/components/_panel-bezel.css */
 /* Styles for .panel-bezel and .panel-section. Uses theme variables. */
 
 .panel-bezel {
@@ -15,9 +15,9 @@
 
     /* Gradient background for metallic sheen - L values from theme, C/H from theme or contract */
     /* L values are modified by --startup-L-reduction-factor */
-    /* MODIFIED: White overlay opacity now also uses --startup-opacity-factor */
+    /* White overlay opacity now also uses --startup-opacity-factor */
     background-image:
-        linear-gradient(oklch(100% 0 0 / calc(0.08 * var(--startup-opacity-factor, 0))), oklch(100% 0 0 / calc(0.08 * var(--startup-opacity-factor, 0)))), /* MODIFIED */
+        linear-gradient(oklch(100% 0 0 / calc(0.08 * var(--startup-opacity-factor, 0))), oklch(100% 0 0 / calc(0.08 * var(--startup-opacity-factor, 0)))),
         linear-gradient(180deg, /* Main metallic gradient */
             oklch(calc(var(--panel-bezel-grad-1-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 0%,
             oklch(calc(var(--panel-bezel-grad-2-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 4.68%,

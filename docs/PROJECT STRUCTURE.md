@@ -20,10 +20,13 @@ HUE9000_Project/
 │   │   ├── dialManager.js             # Class to orchestrate Dial instances
 │   │   ├── debugManager.js            # Manages debug panel UI and logic
 │   │   ├── DynamicStyleManager.js     # NEW: Manages dynamic CSS variables and logo
+│   │   ├── IntensityDisplay.js        # V2 Component: Renders the intensity display
+│   │   ├── IntensityDisplayManager.js # V2 Manager: Bridges appState and IntensityDisplay
 │   │   ├── LcdUpdater.js              # NEW: Manages LCD state and animations
 │   │   ├── lensManager.js             # Class to manage the central lens visuals
 │   │   ├── main.js                    # Application entry point and orchestrator
-│   │   ├── moodMatrixDisplayManager.js  # Manages the Mood Matrix display
+│   │   ├── MoodMatrix.js              # V2 Component: Renders the mood matrix display
+│   │   ├── MoodMatrixManager.js       # V2 Manager: Bridges appState and MoodMatrix
 │   │   ├── PhaseRunner.js             # NEW: Executes declarative startup phase configs
 │   │   ├── resistiveShutdownController.js # Orchestrates the resistive shutdown sequence
 │   │   ├── serviceLocator.js          # NEW: Central dependency locator
@@ -69,7 +72,7 @@ HUE9000_Project/
 │       │   ├── _color-chips.css
 │       │   ├── _grill.css
 │       │   ├── _terminal.css
-│       │   └── _mood-matrix-display.css
+│       │   └── _v2-displays.css
 │       │
 │       ├── 3-themes/
 │       │   ├── theme-dim.css

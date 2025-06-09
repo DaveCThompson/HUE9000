@@ -1,4 +1,4 @@
-/* src/css/core/_typography.css (REFACTOR-V2.1) */
+/* src/css/core/_typography.css */
 /* Base font settings and global text styles. Uses theme variables. */
 
 body {
@@ -13,7 +13,7 @@ body {
 /* --- Shared Label Styles --- */
 /* Label text L value is modified by --startup-L-reduction-factor. Alpha is from theme. */
 .control-group-label {
-   color: oklch(calc(var(--theme-text-secondary-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a)); /* MODIFIED */
+   color: oklch(calc(var(--theme-text-secondary-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a));
    font-size: 0.9em;
    font-weight: 600;
    text-transform: uppercase;
@@ -49,7 +49,7 @@ body {
   transform: translate(-50%, calc(50% + 0.1875rem));
   line-height: 1;
   white-space: nowrap;
-  background-color: oklch(calc(var(--panel-section-bg-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a)); /* MODIFIED */
+  background-color: oklch(calc(var(--panel-section-bg-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
   border-radius: var(--space-xs);
   pointer-events: none;
   transition: color var(--transition-duration-medium) ease, background-color var(--transition-duration-medium) ease;
@@ -58,7 +58,7 @@ body {
 .block-label-bottom--control-group { /* Not currently used, but for smaller group labels */
   padding: 0 var(--control-label-padding);
   /* Label text L value is modified by --startup-L-reduction-factor. Alpha is from theme. */
-  color: oklch(calc(var(--theme-text-secondary-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a)); /* MODIFIED */
+  color: oklch(calc(var(--theme-text-secondary-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--theme-text-secondary-c) var(--theme-text-secondary-h) / var(--theme-text-secondary-a));
   font-size: 0.9em;
   font-weight: 600;
   text-transform: uppercase;
@@ -68,7 +68,7 @@ body {
 .block-label-bottom--descriptor { /* For MAIN PWR, TERMINAL, etc. */
   padding: var(--space-lg);
   /* Label text L value is modified by --startup-L-reduction-factor. Alpha is from theme. */
-  color: oklch(calc(var(--theme-text-tertiary-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--theme-text-tertiary-c) var(--theme-text-tertiary-h) / var(--theme-text-tertiary-a)); /* MODIFIED */
+  color: oklch(calc(var(--theme-text-tertiary-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--theme-text-tertiary-c) var(--theme-text-tertiary-h) / var(--theme-text-tertiary-a));
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.8em;
   font-weight: 500;

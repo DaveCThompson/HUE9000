@@ -45,6 +45,11 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **Core Responsibilities:** Manages the rendering of its canvas, handles user drag interactions, and updates its appearance based on theme and state.
 *   **Key Interactions:** Instantiated and managed by `dialManager`.
 
+#### `MoodMatrix.js` & `IntensityDisplay.js`
+*   **@module MoodMatrix, IntensityDisplay:** Self-contained presentational components for the V2 displays.
+*   **Core Responsibilities:** Create and manage their own internal DOM. Update their visuals based on props passed from their respective managers. They have no knowledge of global application state.
+*   **Key Interactions:** Instantiated and managed by `MoodMatrixManager` and `IntensityDisplayManager`.
+
 ---
 
 ### Manager & Controller Classes (Orchestration)
@@ -82,11 +87,11 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `AmbientAnimationManager.js`
 *   **@module AmbientAnimationManager:** Manages continuous, ambient animations for UI elements.
-*   **Core Responsibilities:** Manages "Harmonic Resonance" and "Idle Light Drift" effects for buttons based on their state.
+*   **Core Responsibilities:** Manages "Harmonic Resonance" and "Idle Light Drift" effects for buttons and V2 Displays based on their state.
 
-#### `moodMatrixDisplayManager.js`
-*   **@module moodMatrixDisplayManager:** Manages the Mood Matrix display in Dial A's LCD.
-*   **Core Responsibilities:** Calculates and displays active moods and percentages, and handles the scrolling animation.
+#### `MoodMatrixManager.js` & `IntensityDisplayManager.js`
+*   **@module MoodMatrixManager, IntensityDisplayManager:** Bridge the gap between `appState` and their respective presentational components.
+*   **Core Responsibilities:** Subscribe to `appState` events (e.g., `dialUpdated`), process the data, and pass simplified props to their `MoodMatrix` or `IntensityDisplay` instance via the `.update()` method.
 
 #### `resistiveShutdownController.js`
 *   **@module resistiveShutdownController:** Orchestrates the resistive shutdown sequence.

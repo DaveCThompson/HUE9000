@@ -1,4 +1,4 @@
-/* src/css/themes/theme-dim.css (REFACTOR-V2.1) */
+/* src/css/themes/theme-dim.css */
 /* Overrides variables from _variables-theme-contract.css for the DIM theme. */
 
 body.theme-dim {
@@ -82,7 +82,6 @@ body.theme-dim {
     --lcd-unlit-border-a: 0.15;
     --lcd-unlit-shadow: none;
 
-    /* FIX: Corrected lightness values to make the dimly-lit state visible */
     --lcd-dimly-lit-grad-start-l: 0.22;
     --lcd-dimly-lit-grad-end-l: 0.18;
     --lcd-dimly-lit-text-l: 0.90;

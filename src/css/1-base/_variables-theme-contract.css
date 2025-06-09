@@ -1,4 +1,4 @@
-/* src/css/core/_variables-theme-contract.css (REFACTOR-V2.1) */
+/* src/css/core/_variables-theme-contract.css */
 /* Defines ALL themeable variable NAMES with default/fallback values. This is the API for themes. */
 
 :root {
@@ -79,6 +79,11 @@
     --btn-dimly-lit-border-l:0.42;--btn-dimly-lit-border-c: var(--dynamic-btn-chroma);--btn-dimly-lit-border-h: var(--dynamic-btn-hue); --btn-dimly-lit-border-a:0.95;
     --btn-dimly-lit-text-l: 0.1;  --btn-dimly-lit-text-c: 0;   --btn-dimly-lit-text-h: 0;    --btn-dimly-lit-text-a: 0.9; 
     --btn-dimly-lit-light-l: 0.90;--btn-dimly-lit-light-c: var(--dynamic-btn-chroma); --btn-dimly-lit-light-h:var(--dynamic-btn-hue); --btn-dimly-lit-light-a: var(--button-unit-light-opacity-dimly-lit);
+
+    --btn-disabled-bg-l: 0.35;
+    --btn-disabled-border-l: 0.40;
+    --btn-disabled-light-l: 0.5;
+    --btn-disabled-light-a: 0.4;
 
     --btn-pressed-bg-l-offset: 0.04;
     --btn-pressed-bg-a-offset: 0.05;
@@ -171,11 +176,15 @@
     --lcd-glow-spread: 2px;
     --lcd-glow-color: oklch(1 0 0 / var(--lcd-glow-opacity));
 
-    /* Mood Matrix Display Text Colors */
+    /* --- Component: V2 Displays & Resonance --- */
     --mood-matrix-value-text-l: 0.9;
     --mood-matrix-value-base-chroma: 0.1;
     --mood-matrix-label-text-l: 0.9;
     --mood-matrix-label-base-chroma: 0.1;
+    /* HARMONIC RESONANCE: These are the variables the AmbientAnimationManager will control. */
+    --harmonic-resonance-lightness-factor: 1.0; /* 1.0 = normal, < 1.0 = dimmer */
+    --harmonic-resonance-glow-blur: 4.0; /* Base blur in px */
+    --harmonic-resonance-glow-opacity: 0.8; /* Base opacity */
 
 
     /* --- Component: Dials --- */

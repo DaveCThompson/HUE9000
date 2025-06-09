@@ -1,4 +1,4 @@
-/* src/css/components/_terminal.css (REFACTOR-V2.2 - Simplified) */
+/* src/css/components/_terminal.css */
 /* Contains only styles unique to the terminal, not general LCD appearance. */
 
 /* Scanline effect on the terminal's container */
@@ -41,7 +41,6 @@
     transform: translateY(2px);
 }
 
-/* FIX: Restored simple, smooth CSS blink animation */
 .terminal-cursor.is-blinking {
     animation: terminalCursorBlink 1s step-end infinite;
 }

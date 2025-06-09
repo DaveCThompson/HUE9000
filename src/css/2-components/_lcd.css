@@ -1,4 +1,4 @@
-/* src/css/components/_lcd.css (REFACTOR-V2.2 - Structural Harmonization) */
+/* src/css/components/_lcd.css */
 /* Authoritative styles for all LCD screens. */
 
 /* --- 1. LCD Container (The Outer Shell) --- */
@@ -15,6 +15,9 @@
     opacity: var(--theme-component-opacity);
 
     /* Default to ACTIVE state styles */
+    /* A solid background-color is defined as a fallback. It matches the darkest
+       stop of the gradient and prevents visual flicker during theme transitions
+       where the background-image gradient might not interpolate smoothly. */
     background-color: oklch(
         var(--lcd-active-grad-end-l)
         calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor))
@@ -35,7 +38,6 @@
         opacity var(--transition-duration-medium) ease;
 }
 
-/* FIX: Target the terminal's container specifically to make it grow. */
 .terminal-block .actual-lcd-screen-element {
     flex-grow: 1;
     min-height: 0; /* Required for flex-grow to work correctly in a flex column */
@@ -80,7 +82,6 @@
     transition: color var(--transition-duration-medium) ease, text-shadow var(--transition-duration-medium) ease;
 }
 
-/* FIX: Add class-based visibility rule */
 .lcd-content-wrapper.is-content-hidden {
     display: none !important;
 }

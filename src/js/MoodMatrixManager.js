@@ -29,7 +29,7 @@ export class MoodMatrixManager {
         this.moodLcdContent = this.dom.lcdA.querySelector('.lcd-content-wrapper');
 
         const displayConfig = {
-            moods: this.config.MOOD_MATRIX_DEFINITIONS,
+            moods: this.config.MOOD_MATRIX_DEFINITIONS.map(mood => mood.toUpperCase()),
             majorBlocks: this.config.V2_DISPLAY_PARAMS.MOOD_MAJOR_BLOCKS,
             fineDots: this.config.V2_DISPLAY_PARAMS.MOOD_FINE_DOTS,
         };
@@ -38,13 +38,16 @@ export class MoodMatrixManager {
 
         this.appState.subscribe('dialUpdated', ({ id, state }) => {
             if (id === 'A') {
-                // If the dragging state has changed, notify the interaction handler first.
+                // If the dragging state has changed, let the interaction handler
+                // manage the transition and then STOP processing for this event tick.
                 if (state.isDragging !== this.lastIsDragging) {
                     this.handleInteractionChange(state.isDragging, state.hue);
                     this.lastIsDragging = state.isDragging;
+                    return; // <-- FIX: Prevents race condition where handleDialUpdate overwrites animations.
                 }
                 
-                // Always update the display visuals.
+                // This will now only run on subsequent 'dialUpdated' events
+                // during a continuous drag, or when the value changes without dragging.
                 this.handleDialUpdate(state.hue, state.isDragging);
             }
         });

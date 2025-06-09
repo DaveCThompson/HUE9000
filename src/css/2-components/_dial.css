@@ -1,4 +1,4 @@
-/* src/css/components/_dial.css (REFACTOR-V2.1) */
+/* src/css/components/_dial.css */
 /* Styles for Dial housing and canvas container. Uses theme variables. */
 
 .dial-canvas-container {
@@ -14,7 +14,7 @@
    touch-action: pan-x;
    box-shadow: inset 0 1px 4px oklch(0% 0 0 / 0.2), inset 0 -1px 2px oklch(100% 0 0 / 0.05);
    border: 1px solid oklch(var(--dial-housing-border-l) var(--dial-housing-border-c) var(--dial-housing-border-h) / var(--dial-housing-border-a));
-   opacity: calc(var(--theme-component-opacity) * var(--startup-opacity-factor-boosted, 0)); /* MODIFIED to use boosted factor */
+   opacity: calc(var(--theme-component-opacity) * var(--startup-opacity-factor-boosted, 0));
 
    transition:
        background-color var(--transition-duration-medium) ease,

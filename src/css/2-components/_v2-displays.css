@@ -28,11 +28,6 @@ KEY ARCHITECTURAL DECISIONS:
     --display-dot-gap: 1px;
     --display-dot-radius: 1px;
     --display-row-gap: 4px;
-
-    /* HARMONIC RESONANCE: These are the variables the AmbientAnimationManager will control. */
-    --harmonic-resonance-lightness-factor: 1.0; /* 1.0 = normal, < 1.0 = dimmer */
-    --harmonic-resonance-glow-blur: 4.0; /* Base blur in px */
-    --harmonic-resonance-glow-opacity: 0.8; /* Base opacity */
 }
 
 /* --- SHARED COMPONENT SETUP --- */
@@ -46,7 +41,7 @@ KEY ARCHITECTURAL DECISIONS:
     height: 100%;
     padding: 4px; /* Reduced padding */
 
-    /* --- THEME DEFINITIONS (NOW USES THEME VARIABLES) --- */
+    /* --- THEME DEFINITIONS --- */
     /* Deconstructed color parts for robust calculations. Values from theme-contract.css */
     --display-color-on-l: var(--mood-matrix-value-text-l);
     --display-color-on-c: var(--mood-matrix-value-base-chroma);

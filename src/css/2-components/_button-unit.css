@@ -1,4 +1,4 @@
-/* src/css/components/_button-unit.css (REFACTOR-V2.1) */
+/* src/css/components/_button-unit.css */
 /* Styles for .button-unit, using variables from _variables-theme-contract.css */
 
 .button-unit {
@@ -11,11 +11,12 @@
     user-select: none;
     -webkit-user-select: none;
     z-index: 6;
-    /* overflow: hidden; <-- CRITICAL FIX: Removed to unclip the glow */
+    /* CRITICAL: Removing overflow is essential for the ::after glow to be visible. */
+    /* overflow: hidden; */
     padding: var(--space-sm);
     box-sizing: border-box;
 
-    /* CRITICAL FIX: Make the main element transparent. The background is now on ::before */
+    /* The main element is transparent; the background is now on the ::before pseudo-element. */
     background-color: transparent;
     border: 1px solid oklch(var(--btn-unlit-border-l) var(--btn-unlit-border-c) var(--btn-unlit-border-h) / var(--btn-unlit-border-a));
     color: oklch(var(--btn-unlit-text-l) var(--btn-unlit-text-c) var(--btn-unlit-text-h) / var(--btn-unlit-text-a));
@@ -31,26 +32,29 @@
         opacity var(--button-p4-prime-transition-duration, var(--transition-duration-medium)) ease;
 }
 
-/* --- [REVISED] HIGH-PERFORMANCE LAYERING --- */
+/* --- HIGH-PERFORMANCE LAYERING --- */
+/* This non-intuitive layering is a critical performance optimization.
+   The background is on ::before and the animated glow is on ::after
+   to allow for smooth animation of transform and opacity. */
 
-/* The ::before pseudo-element is now the dedicated background layer */
+/* The ::before pseudo-element is the dedicated background layer. */
 .button-unit::before {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    z-index: 1; /* Sits below the content */
+    z-index: 1; /* Sits below the content. */
     background-color: oklch(var(--btn-unlit-bg-l) var(--btn-unlit-bg-c) var(--btn-unlit-bg-h) / var(--btn-unlit-bg-a));
     transition: background-color var(--button-p4-prime-transition-duration, var(--transition-duration-medium)) ease;
 }
 
-/* The ::after pseudo-element is the dedicated glow layer */
+/* The ::after pseudo-element is the dedicated glow layer. */
 .button-unit::after {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    z-index: 0; /* Sits behind the background */
+    z-index: 0; /* Sits behind the background. */
     
     background-color: oklch(var(--btn-energized-selected-glow-l) var(--btn-energized-selected-glow-c) var(--btn-energized-selected-glow-h));
     filter: blur(var(--btn-selected-glow-base-size, 13px));
@@ -61,7 +65,7 @@
     will-change: transform, opacity;
 }
 
-/* When a button is selected, fade in the static glow */
+/* When a button is selected, fade in the static glow. */
 .button-unit.is-energized.is-selected::after {
     opacity: var(--btn-selected-glow-base-opacity, 0.8);
     transform: scale(1);
@@ -72,7 +76,7 @@
 .button-unit .light-container {
     position: absolute;
     inset: 0;
-    z-index: 2; /* Above the background and glow */
+    z-index: 2; /* Above the background and glow. */
     overflow: hidden;
     border-radius: inherit;
     pointer-events: none;
@@ -111,7 +115,7 @@
 /* Button Text */
 .button-unit .button-text {
     position: relative;
-    z-index: 2; /* Above the background and glow */
+    z-index: 2; /* Above the background and glow. */
     font-family: 'Inter', sans-serif;
     font-size: 16px;
     font-weight: 600;
@@ -195,7 +199,7 @@
     text-shadow: var(--btn-energized-unselected-shadow);
     --btn-glow-opacity: var(--btn-unselected-glow-base-opacity); 
     --btn-glow-size: var(--btn-unselected-glow-base-size);
-    /* RESTORED: Use box-shadow for the static, non-animated glow */
+    /* Use box-shadow for the static, non-animated glow on unselected buttons. */
     box-shadow: 0 0 var(--btn-glow-size) var(--btn-glow-spread) var(--btn-glow-color); 
 }
 .button-unit.is-energized:not(.is-selected)::before {
@@ -212,7 +216,7 @@
     border-color: oklch(var(--btn-energized-selected-border-l) var(--btn-energized-selected-border-c) var(--btn-energized-selected-border-h) / var(--btn-energized-selected-border-a));
     color: oklch(var(--btn-energized-selected-text-l) var(--btn-energized-selected-text-c) var(--btn-energized-selected-text-h) / var(--btn-energized-selected-text-a));
     text-shadow: var(--btn-energized-selected-shadow);
-    box-shadow: none; /* Use the performant ::after glow instead */
+    box-shadow: none; /* Use the performant ::after glow instead of box-shadow. */
 }
 .button-unit.is-energized.is-selected::before {
     background-color: oklch(var(--btn-energized-selected-bg-l) var(--btn-energized-selected-bg-c) var(--btn-energized-selected-bg-h) / var(--btn-energized-selected-bg-a));
@@ -275,7 +279,7 @@
     transform: scale(1.05);
 }
 
-/* FIX: Even more specific rule for small buttons to prevent position jump */
+/* Even more specific rule for small buttons to prevent position jump */
 .button-unit.is-energized.is-selected.is-pressing.button-unit--s .light {
     transform: translate(-50%, -50%) scale(var(--button-unit-light-responsive-scale-factor)) scale(1.05);
 }
@@ -343,26 +347,18 @@
 }
 
 
-/* --- [FINAL FIX] HIGH-PERFORMANCE HARMONIC RESONANCE --- */
-.button-unit.is-resonating.is-selected {
-    /* No changes needed here, as the ::after element will be targeted directly */
-}
-
+/* --- HIGH-PERFORMANCE HARMONIC RESONANCE --- */
+/* The 'harmonic resonance' (breathing) animation targets the opacity and transform
+   of the ::after pseudo-element for performance. */
 .button-unit.is-resonating.is-selected::after {
-    /* FIX: Add a transition property so the changes are animated */
     transition: transform 0.3s ease-out, opacity 0.3s ease-out;
     opacity: var(--harmonic-resonance-glow-opacity, var(--btn-selected-glow-base-opacity));
     transform: scale(var(--harmonic-resonance-glow-scale, 1));
 }
 
-.button-unit.is-resonating.is-selected .light {
-    /* No longer animated by resonance */
-}
-
 
 /* --- State: Permanently Disabled (Resistive Shutdown) --- */
 .button-unit.is-permanently-disabled {
-    /* MODIFIED: Use dedicated theme-aware variables */
     border-color: oklch(var(--btn-disabled-border-l) 0 0 / 1);
     box-shadow: none;
     cursor: not-allowed;
@@ -377,7 +373,6 @@
     filter: blur(var(--button-unit-light-object-base-blur));
 }
 .button-unit.is-permanently-disabled .button-text {
-    /* MODIFIED: Restore original text color and shadow */
     color: oklch(var(--btn-energized-unselected-text-l) var(--btn-energized-unselected-text-c) var(--btn-energized-unselected-text-h) / var(--btn-energized-unselected-text-a));
     text-shadow: var(--btn-energized-unselected-shadow);
 }

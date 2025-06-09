@@ -1,4 +1,4 @@
-/* src/css/components/_lens-outer-glow.css (REFACTOR-V2.1) */
+/* src/css/components/_lens-outer-glow.css */
 /* Styles for #outer-glow. Exempt from global theme opacity. */
 
 #outer-glow {
@@ -35,7 +35,6 @@
       oklch(var(--base-oklch-l) var(--dynamic-ui-accent-chroma) var(--dynamic-ui-accent-hue) / 0.0) 100% 
   );
   
-  /* MODIFIED: Added transform and transform-origin for Issue 2 */
   transform-origin: center center;
   transform: scale(var(--lens-outer-glow-dim-scale-multiplier, 1.0)); /* Default to 1.0 if var not set */
 

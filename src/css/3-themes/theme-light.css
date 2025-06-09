@@ -1,4 +1,4 @@
-/* src/css/themes/theme-light.css (REFACTOR-V2.1) */
+/* src/css/themes/theme-light.css */
 /* Overrides variables from _variables-theme-contract.css for the LIGHT theme. */
 
 body.theme-light {
@@ -65,25 +65,15 @@ body.theme-light {
     --btn-pressed-bg-a-offset: 0.05;
     --btn-pressed-innershadow-color: oklch(0% 0 0 / 0.1);
     
-    /* NEW: Variables for the permanently disabled state */
     --btn-disabled-bg-l: 0.45;
     --btn-disabled-border-l: 0.50;
     --btn-disabled-light-l: 0.6;
     --btn-disabled-light-a: 0.5;
 
-    /* --btn-energized-pressing-bg-l: calc(0.80 + 0.92) / 2; */ /* Approx 0.86 */
-    /* --btn-energized-pressing-bg-a: calc(0.7 + 0.85) / 2; */ /* Approx 0.775 */
-    /* --btn-energized-pressing-border-l: calc(0.70 + 0.85) / 2; */ /* Approx 0.775 */
-    /* --btn-energized-pressing-border-a: calc(0.8 + 0.9) / 2; */ /* Approx 0.85 */
-    /* --btn-energized-pressing-light-l: calc(0.88 + 0.98) / 2; */ /* Approx 0.93 */
-    /* --btn-energized-pressing-light-a: calc(var(--button-unit-light-opacity-unselected-idle-min) + var(--button-unit-light-opacity-selected)) / 2; */ /* Approx 0.725 */
-    /* These calculations will happen in the theme contract */
-
-
     /* --- Component: LCD Screens --- */
     --lcd-active-grad-start-l: 0.35; 
     --lcd-active-grad-end-l: 0.27;
-    --lcd-active-text-l: 0.94; /* MODIFIED: Text lightness for active LCDs in light theme */
+    --lcd-active-text-l: 0.94;
     --lcd-active-text-a: 1;
     --lcd-active-border-l: 0.50;     
     --lcd-active-border-a: 0.45; 
@@ -106,10 +96,10 @@ body.theme-light {
 
     /* Mood Matrix Display Text Colors */
     --mood-matrix-value-text-l: 0.98;
-    --mood-matrix-value-base-chroma: 0.12; /* No change from dark, just a lightness increase */
+    --mood-matrix-value-base-chroma: 0.12;
 
 
-    /* --- Component: Dials (Original values) --- */
+    /* --- Component: Dials --- */
     --dial-housing-bg-l: 0.08; --dial-housing-bg-c: 0.005; --dial-housing-bg-h: 240; 
     --dial-housing-border-l: 0.15; --dial-housing-border-a: 0.2;
     --dial-face-bg-l: 0.25; 
@@ -121,7 +111,7 @@ body.theme-light {
     --dial-dim-active-ridge-l: 0.65;
     --dial-dim-active-ridge-highlight-l: 0.92; --dial-dim-active-ridge-highlight-a: 0.7;
 
-    /* --- Component: Logo (Original values) --- */
+    /* --- Component: Logo --- */
     --logo-bg-l: 0.705; 
     --logo-text-l: 1; 
     --logo-dynamic-stroke-a: 0.3;
@@ -129,7 +119,7 @@ body.theme-light {
     --logo-dark-fill: oklch(0.85 0.01 var(--dynamic-logo-hue)); 
 
 
-    /* --- Component: Lens Container & Core (Original values) --- */
+    /* --- Component: Lens Container & Core --- */
     --lens-bezel-opacity: 0.9;
     --lens-bezel-shadow-alpha: 0.07; 
     --lens-bezel-o-1-l: 0.575; --lens-bezel-o-1-c: 0.015; --lens-bezel-o-1-h: 260;
@@ -156,10 +146,10 @@ body.theme-light {
     --lens-core-bg-l: 0.85; 
     --lens-specular-opacity: 0.9;
 
-    /* --- Component: Color Chips (Original values) --- */
+    /* --- Component: Color Chips --- */
     --color-chip-border-a: 0.4; 
 
-    /* --- Component: Grill (Original values) --- */
+    /* --- Component: Grill --- */
     --grill-bg-l: 0.98; --grill-bg-c:0; --grill-bg-h:0; 
     --grill-bg-a: 0.9; 
     --grill-placeholder-text-l:0.60;
@@ -167,6 +157,6 @@ body.theme-light {
 
     /* --- Component: Terminal Text Glow (Theme-Specific) --- */
     --terminal-text-glow-color: oklch(0.80 0.06 160); /* Less chromatic, slightly darker base for light mode */
-    --theme-terminal-glow-opacity-factor: 0.7; /* MODIFIED: 30% reduction from baseline (1.0 * 0.7 = 0.7) */
-    --theme-terminal-glow-size-factor: 0.7;    /* MODIFIED: 30% reduction from baseline (16px * 0.7 = 11.2px) */
+    --theme-terminal-glow-opacity-factor: 0.7;
+    --theme-terminal-glow-size-factor: 0.7;
 }
