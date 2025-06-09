@@ -16,6 +16,29 @@ export function debounce(func, wait) {
   };
 }
 
+export function throttle(func, limit) {
+  let inThrottle;
+  let lastFunc;
+  let lastRan;
+  return function(...args) {
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      lastRan = Date.now();
+      inThrottle = true;
+    } else {
+      clearTimeout(lastFunc);
+      lastFunc = setTimeout(() => {
+        if (Date.now() - lastRan >= limit) {
+          func.apply(context, args);
+          lastRan = Date.now();
+        }
+      }, limit - (Date.now() - lastRan));
+    }
+  };
+}
+
+
 export function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }

@@ -5,6 +5,7 @@
  * on each frame to create a 3D perspective rotation effect.
  */
 import { serviceLocator } from './serviceLocator.js';
+import { throttle } from './utils.js';
 
 class DialController {
     /**
@@ -28,27 +29,30 @@ class DialController {
         }
 
         this.config = {
-            NUM_RIDGES: 100,
+            NUM_RIDGES: 66, // Reduced from 100 for a chunkier look
             RIDGE_WIDTH_FACTOR: 1.6,
             PIXELS_PER_DEGREE_ROTATION: 1.3,
-            PIXELS_PER_DEGREE_HUE: 0.16,
-            GSAP_TWEEN_DURATION: 0.5,
-            GSAP_TWEEN_EASE: 'power2.out',
-            LIGHT_ANGLE_DEG: 0,
-            // This factor is now applied in JS to halve the chroma from the environment variable.
-            CHROMA_MODIFICATION_FACTOR: 0.5,
+            PIXELS_PER_DEGREE_HUE: 0.64, // Increased again from 0.32 to further slow value changes
+            SHADOW_OFFSET_MULTIPLIER: 8,
+            THROTTLE_LIMIT_MS: 50, // Update appState at most every 50ms (20fps)
         };
 
+        // Local component state for smooth dragging
         this.isDragging = false;
-        this.rotation = 0;
-        this.targetRotation = 0;
+        this.rotation = this.appState.getDialState(this.dialId).rotation || 0;
+        this.hue = this.appState.getDialState(this.dialId).hue || 0;
+        this.targetRotation = this.rotation;
         this.currentPointerX = 0;
+        
         this.gsapTween = null;
         this.ridgeElements = [];
-        this.lightAngleRad = this.config.LIGHT_ANGLE_DEG * (Math.PI / 180);
+        this.lightAngleRad = 0; // Light from top
         this.unsubscribers = [];
         this.themeVars = {};
         this.debug = false;
+
+        // Throttled function for real-time but performant app state updates
+        this.throttledUpdateAppState = throttle(this._updateAppState.bind(this), this.config.THROTTLE_LIMIT_MS);
 
         this._createRidges();
         this._addDragListeners();
@@ -60,10 +64,15 @@ class DialController {
         const dialUpdateUnsub = this.appState.subscribe('dialUpdated', payload => {
             if (payload && payload.id === this.dialId && !this.isDragging) {
                 if (this.gsapTween) this.gsapTween.kill();
+                
+                const targetState = payload.state;
+                this.targetRotation = targetState.rotation;
+
                 this.gsapTween = this.gsap.to(this, {
-                    rotation: payload.state.rotation,
-                    duration: this.config.GSAP_TWEEN_DURATION,
-                    ease: this.config.GSAP_TWEEN_EASE,
+                    rotation: targetState.rotation,
+                    hue: targetState.hue,
+                    duration: 0.5,
+                    ease: 'power2.out',
                     onUpdate: () => this._draw()
                 });
             }
@@ -120,11 +129,18 @@ class DialController {
         event.preventDefault();
         this.isDragging = true;
         this.containerElement.classList.add('is-dragging');
+        
         if (this.gsapTween) this.gsapTween.kill();
-        this.currentPointerX = event.touches ? event.touches[0].clientX : event.clientX;
+
+        const currentState = this.appState.getDialState(this.dialId);
+        this.rotation = currentState.rotation;
+        this.hue = currentState.hue;
         this.targetRotation = this.rotation;
-        this.appState.updateDialState(this.dialId, { isDragging: true });
+        
+        this.currentPointerX = event.touches ? event.touches[0].clientX : event.clientX;
+
         if (this.dialId === 'B') this.appState.setDialBInteractionState('dragging');
+        // No need to update the main dial state here, the first throttled call will handle it.
     }
 
     _handleInteractionMove(event) {
@@ -135,31 +151,54 @@ class DialController {
         const deltaX = newPointerX - this.currentPointerX;
         this.currentPointerX = newPointerX;
 
-        this.targetRotation += deltaX / this.config.PIXELS_PER_DEGREE_ROTATION;
+        const rotationDelta = deltaX / this.config.PIXELS_PER_DEGREE_ROTATION;
         const hueDelta = deltaX / this.config.PIXELS_PER_DEGREE_HUE;
+        
+        this.rotation += rotationDelta;
+        this.targetRotation = this.rotation;
+        
+        let newHue = this.hue + hueDelta;
+        if (this.dialId === 'A') {
+            newHue = ((newHue % 360) + 360) % 360;
+        } else {
+            newHue = this.gsap.utils.clamp(0, 359.999, newHue);
+        }
+        this.hue = newHue;
 
-        if (this.gsapTween) this.gsapTween.kill();
-        this.gsapTween = this.gsap.to(this, {
-            rotation: this.targetRotation,
-            duration: this.config.GSAP_TWEEN_DURATION,
-            ease: this.config.GSAP_TWEEN_EASE,
-            onUpdate: () => {
-                this._draw();
-                const currentHue = this.appState.getDialState(this.dialId).hue + hueDelta * this.gsapTween.progress();
-                this.appState.updateDialState(this.dialId, { rotation: this.rotation, hue: currentHue });
-                if (this.dialId === 'B') this.appState.setTrueLensPower((this.appState.getDialState('B').hue / 359.999) * 100);
-            }
-        });
+        // Immediately update local visuals for 1:1 feel
+        this._draw();
+        // Update global state on a throttled interval for performance
+        this.throttledUpdateAppState();
     }
 
     _handleInteractionEnd() {
         if (!this.isDragging) return;
         this.isDragging = false;
         this.containerElement.classList.remove('is-dragging');
-        this.appState.updateDialState(this.dialId, { isDragging: false });
+
+        // Perform one final, immediate update to ensure perfect sync
+        this._updateAppState();
+
         if (this.dialId === 'B') {
             this.appState.setDialBInteractionState('settling');
-            setTimeout(() => { if (!this.isDragging) this.appState.setDialBInteractionState('idle'); }, 200);
+            this.gsap.delayedCall(0.2, () => {
+                if (!this.isDragging) this.appState.setDialBInteractionState('idle');
+            });
+        }
+    }
+    
+    /** A dedicated method for updating global state, to be used by the throttler. */
+    _updateAppState() {
+        this.appState.updateDialState(this.dialId, {
+            isDragging: this.isDragging,
+            rotation: this.rotation,
+            targetRotation: this.targetRotation,
+            hue: this.hue,
+            targetHue: this.hue,
+        });
+
+        if (this.dialId === 'B') {
+            this.appState.setTrueLensPower((this.hue / 359.999) * 100);
         }
     }
 
@@ -172,32 +211,17 @@ class DialController {
 
     _updateAndCacheThemeStyles() {
         const style = getComputedStyle(this.containerElement);
-
-        // *** DEFINITIVE FIX EXPLANATION ***
-        // The regression was caused by using `calc()` in the CSS for chroma, e.g.,
-        // `--dial-ridge-c: calc(var(--dynamic-env-chroma) / 2);`
-        // The JavaScript `parseFloat()` function CANNOT parse the string "calc(...)".
-        // It returns NaN, which poisons the color calculation and makes the dials render black.
-        // The CORRECT and ROBUST approach is to have CSS provide a clean, base numeric
-        // value, parse it in JS, and then perform any mathematical modifications.
         const baseChroma = parseFloat(style.getPropertyValue('--dial-ridge-c'));
-        const modifiedChroma = baseChroma * this.config.CHROMA_MODIFICATION_FACTOR;
-
+        const multiplier = parseFloat(style.getPropertyValue('--dial-ridge-chroma-multiplier'));
+        const finalChroma = isNaN(baseChroma) || isNaN(multiplier) ? (baseChroma || 0) : baseChroma * multiplier;
+        
         this.themeVars = {
             ridgeL: parseFloat(style.getPropertyValue('--dial-ridge-l')),
-            ridgeC: modifiedChroma, // Use the modified value
+            ridgeC: finalChroma,
             ridgeH: parseFloat(style.getPropertyValue('--dial-ridge-h')),
             ridgeHighlightL: parseFloat(style.getPropertyValue('--dial-ridge-highlight-l')),
             highlightExponent: parseFloat(style.getPropertyValue('--dial-highlight-exponent')),
         };
-
-        if (this.debug) {
-            console.log(`[DialController ${this.dialId}] Reading styles for theme: ${document.body.className}`);
-            console.table({ ...this.themeVars, baseChroma }); // Log both for clarity
-            if (isNaN(this.themeVars.ridgeL) || isNaN(this.themeVars.ridgeHighlightL)) {
-                console.error(`[DialController ${this.dialId}] CRITICAL FAILURE: A parsed style value is NaN. This will cause rendering to fail. Check CSS variables for the current theme.`);
-            }
-        }
     }
     
     _draw() {
@@ -208,6 +232,9 @@ class DialController {
         const radius = this.svgWidth / 2;
         const baseRidgeWidth = (this.svgWidth / this.config.NUM_RIDGES) * this.config.RIDGE_WIDTH_FACTOR;
         
+        const shadowOffsetY = Math.sin(rotationRadians) * this.config.SHADOW_OFFSET_MULTIPLIER;
+        this.containerElement.style.setProperty('--dial-shadow-offset-y', `${shadowOffsetY}px`);
+
         const ridgesToDraw = [];
 
         for (let i = 0; i < this.config.NUM_RIDGES; i++) {

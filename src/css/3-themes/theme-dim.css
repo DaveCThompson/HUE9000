@@ -104,9 +104,10 @@ body.theme-dim {
     --dial-face-bg-c: 0;
     --dial-face-bg-h: var(--dynamic-env-hue);
     --dial-ridge-l: 0.15;
-    --dial-ridge-c: 0;
+    --dial-ridge-c: 0; /* Base chroma is 0 for dim theme */
     --dial-ridge-h: var(--dynamic-env-hue);
     --dial-ridge-highlight-l: 0.20;
+    --dial-ridge-chroma-multiplier: 1.0; /* No modification needed */
     --dial-shading-top-highlight-color: oklch(100% 0 0 / 0.04);
     --dial-shading-bottom-shadow-color: oklch(0% 0 0 / 0.2);
 }

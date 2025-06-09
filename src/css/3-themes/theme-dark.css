@@ -95,9 +95,10 @@ body.theme-dark {
     --dial-face-bg-c: var(--dynamic-env-chroma);
     --dial-face-bg-h: var(--dynamic-env-hue);
     --dial-ridge-l: 0.45;
-    --dial-ridge-c: var(--dynamic-env-chroma);
+    --dial-ridge-c: var(--dynamic-env-chroma); /* Base chroma from env */
     --dial-ridge-h: var(--dynamic-env-hue);
     --dial-ridge-highlight-l: 0.65;
+    --dial-ridge-chroma-multiplier: 0.5; /* JS will multiply base chroma by this */
     --dial-shading-top-highlight-color: oklch(100% 0 0 / 0.1);
     --dial-shading-bottom-shadow-color: oklch(0% 0 0 / 0.35);
 
