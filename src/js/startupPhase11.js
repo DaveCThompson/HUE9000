@@ -21,6 +21,9 @@ export const phase11Config = {
       deps: ['buttonManager', 'config'],
       position: 0
     },
+    // RESTORED FIX: The call to resizeAllCanvases was mistakenly removed.
+    // This is the most robust place to call it, ensuring the dials are redrawn
+    // with the final theme's CSS variables after all transitions are complete.
     {
       type: 'call',
       function: (dialManager) => dialManager.resizeAllCanvases(true),

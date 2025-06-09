@@ -124,8 +124,17 @@ export class StartupSequenceManager {
     const dom = serviceLocator.get('domElements');
     dom.body.classList.remove('is-transitioning-from-dim');
     document.querySelectorAll('.animate-on-dim-exit').forEach(el => el.classList.remove('animate-on-dim-exit'));
-    // REMOVED: This call was causing the LCDs to turn off prematurely.
-    // serviceLocator.get('lcdUpdater').applyCurrentStateToAllLcds();
+    
+    // Defensively remove any suspected "ghost" classes from dial containers
+    // that might have been part of an incomplete refactor, preventing CSS
+    // specificity conflicts with the final theme.
+    const dialContainers = [dom.dialA, dom.dialB];
+    dialContainers.forEach(container => {
+        if (container) {
+            container.classList.remove('is-active-for-startup');
+        }
+    });
+
     if (this.debug) console.log("[SSM] Theme transition cleanup performed.");
   }
 

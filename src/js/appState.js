@@ -6,6 +6,7 @@
  * Includes basic console logging for event emissions.
  */
 import { HUE_ASSIGNMENT_ROW_HUES, DEFAULT_ASSIGNMENT_SELECTIONS, DEFAULT_DIAL_A_HUE } from './config.js';
+import { clamp } from './utils.js';
 
 const DEBUG_APP_STATE = false; // Global debug flag for appState logging (set to false to reduce console noise)
 
@@ -137,15 +138,23 @@ export function updateDialState(dialId, newState) {
   
   const oldState = { ...dials[dialId] }; 
 
-  // MODIFIED: Remove hue normalization for Dial A to prevent "rainbow flicker".
-  // The lensManager is responsible for wrapping the hue for visual representation.
-  // We keep it for Dial B if it were ever to represent a hue.
-  if (dialId === 'B') {
+  // --- FIX: Apply different logic for Dial A (hue wheel) and Dial B (linear intensity) ---
+  if (dialId === 'A') {
+      // Dial A is a hue wheel, so it should wrap around.
       if (newState.hasOwnProperty('hue')) {
           newState.hue = ((newState.hue % 360) + 360) % 360;
       }
       if (newState.hasOwnProperty('targetHue')) {
           newState.targetHue = ((newState.targetHue % 360) + 360) % 360;
+      }
+  } else if (dialId === 'B') {
+      // Dial B is a linear intensity control. Its value should be clamped, not wrapped.
+      // The visual rotation can still accumulate indefinitely.
+      if (newState.hasOwnProperty('hue')) {
+          newState.hue = clamp(newState.hue, 0, 359.999);
+      }
+      if (newState.hasOwnProperty('targetHue')) {
+          newState.targetHue = clamp(newState.targetHue, 0, 359.999);
       }
   }
 
@@ -159,8 +168,8 @@ export function updateDialState(dialId, newState) {
                             oldState.targetRotation !== dials[dialId].targetRotation;
   
   if (hasRelevantChange) {
-    if (DEBUG_APP_STATE || (dialId === 'A' && Math.abs(oldState.hue - dials[dialId].hue) > 0.01) ) { // Log Dial A changes more often for debugging discontinuity
-        console.log(`[AppState SET] Target: Dial '${dialId}'. Requested (Changes):`, JSON.parse(JSON.stringify(newState)), `Old State:`, JSON.parse(JSON.stringify(oldState)), "Actual (New State):", JSON.parse(JSON.stringify(dials[dialId])));
+    if (DEBUG_APP_STATE || (dialId === 'A' && Math.abs(oldState.hue - dials[dialId].hue) > 0.01) ) {
+        // console.log(`[AppState SET] Target: Dial '${dialId}'. Requested (Changes):`, JSON.parse(JSON.stringify(newState)), `Old State:`, JSON.parse(JSON.stringify(oldState)), "Actual (New State):", JSON.parse(JSON.stringify(dials[dialId])));
     }
     emit('dialUpdated', { id: dialId, state: { ...dials[dialId] } });
   }

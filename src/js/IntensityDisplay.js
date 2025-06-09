@@ -16,9 +16,6 @@ export class IntensityDisplay {
         this.config = config;
         this.container = containerElement;
 
-        // [DEBUG]
-        console.log('[IntensityDisplay] Constructor called. Config:', config);
-
         // Clear any existing content
         this.container.innerHTML = '';
 
@@ -57,18 +54,13 @@ export class IntensityDisplay {
      * @param {number} data.percentage - The intensity percentage (0-100).
      */
     update({ percentage }) {
-        // [DEBUG]
-        // console.log(`[IntensityDisplay] update() called with percentage: ${percentage.toFixed(2)}`);
-
         this._updatePercentageText(percentage);
-        // --- FIX: Use Math.round() to ensure 100% lights the last bar ---
         const litBars = Math.round((percentage / 100) * this.config.bars);
         this._updateBars(litBars);
         this._updateDots(litBars);
     }
 
     _updatePercentageText(percentage) {
-        // FIX: Use Math.round() to correctly display 100%
         const text = `${Math.round(percentage)}%`;
         if (this.percentEl.textContent !== text) {
             this.percentEl.textContent = text;
@@ -87,21 +79,17 @@ export class IntensityDisplay {
 
     _updateDots(litBars) {
         const activeIndex = litBars > 0 ? litBars - 1 : -1;
-
-        // Define the trail position to the left of the active dot
         const p1 = activeIndex - 1;
 
         this.dotEls.forEach((dot, i) => {
-            let stateClass = 'fine-dot--off'; // Default to off
-
+            let stateClass = 'fine-dot--off';
             if (i === activeIndex) {
-                stateClass = 'fine-dot--on'; // [S]
+                stateClass = 'fine-dot--on';
             } else if (i === p1) {
-                stateClass = 'fine-dot--in-progress-1'; // [3]
-            } else if (i < p1) { // All dots further to the left adopt the "lower lit" value
-                stateClass = 'fine-dot--in-progress-2'; // [2]
+                stateClass = 'fine-dot--in-progress-1';
+            } else if (i < p1) {
+                stateClass = 'fine-dot--in-progress-2';
             }
-            // All dots to the right of the active one (i > activeIndex) remain 'fine-dot--off' [D]
             
             const fullClassName = `fine-dot ${stateClass}`;
             if (dot.className !== fullClassName) {

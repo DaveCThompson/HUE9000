@@ -22,8 +22,6 @@ export class MoodMatrix {
         this.isContinuouslyScrambling = false;
         this.currentScrambleTween = null;
 
-        console.log('[MoodMatrix] Constructor called. Config:', config);
-
         this.container.innerHTML = '';
         
         this.nameEl = this.container.appendChild(document.createElement('div'));
@@ -60,19 +58,14 @@ export class MoodMatrix {
      * Updates the display based on new data.
      * @param {object} data
      * @param {number} data.hue - The current hue value (0-360).
-     * @param {boolean} data.isDragging - Whether the dial is being dragged.
      */
-    update({ hue, isDragging }) {
+    update({ hue }) {
         const wrappedHue = ((hue % 360) + 360) % 360;
         
         if (!this.isContinuouslyScrambling) {
-            // --- FIX ---
-            // The displayed mood is determined by the hue's position within N segments of the
-            // 360-degree circle, where N is the number of major blocks. The thematic correctness
-            // of the label is therefore entirely dependent on the order of strings in the
-            // config.MOOD_MATRIX_DEFINITIONS array.
             const moodIndex = Math.floor(wrappedHue / (360 / this.config.majorBlocks)) % this.config.majorBlocks;
-            this._updateMoodName(this.config.moods[moodIndex]);
+            const moodName = this.config.moods[moodIndex] || "UNKNOWN";
+            this._updateMoodName(moodName);
         }
         
         this._updateMajorBlocks(wrappedHue);
@@ -84,22 +77,17 @@ export class MoodMatrix {
         this.isContinuouslyScrambling = true;
 
         const wrappedHue = ((currentHue % 360) + 360) % 360;
-        // --- FIX ---
-        // Ensure the initial text length for the scramble effect matches the text
-        // that *would* be displayed at the current hue.
         const moodIndex = Math.floor(wrappedHue / (360 / this.config.majorBlocks)) % this.config.majorBlocks;
-        const initialText = this.config.moods[moodIndex];
+        const initialText = this.config.moods[moodIndex] || "ERROR";
         const textLength = initialText.length;
 
         if (this.currentScrambleTween) this.currentScrambleTween.kill();
         
         const scrambleChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ*#_1234567890";
 
-        // This tween creates a true continuous scramble effect.
         this.currentScrambleTween = this.gsap.to(this.nameEl, {
-            duration: 0.15, // How long each random scramble cycle lasts (FASTER)
+            duration: 0.15,
             text: {
-                // On each repeat, generate a new random string for the value to scramble towards.
                 value: () => {
                     let text = '';
                     for (let i = 0; i < textLength; i++) {
@@ -109,13 +97,12 @@ export class MoodMatrix {
                 },
                 scrambleText: { 
                     chars: scrambleChars, 
-                    speed: 1.8, // How fast individual characters change (FASTER)
+                    speed: 1.8,
                     tweenLength: false 
                 }
             },
             ease: "none",
             repeat: -1,
-            // This crucial property makes the function-based value re-evaluate on each repeat cycle.
             repeatRefresh: true
         });
     }
@@ -125,14 +112,11 @@ export class MoodMatrix {
         this.isContinuouslyScrambling = false;
 
         const wrappedHue = ((finalHue % 360) + 360) % 360;
-        // --- FIX ---
-        // Ensure the final resolved text corresponds to the final hue value.
         const moodIndex = Math.floor(wrappedHue / (360 / this.config.majorBlocks)) % this.config.majorBlocks;
-        const finalText = this.config.moods[moodIndex];
+        const finalText = this.config.moods[moodIndex] || "RESOLVED";
         
         if (this.currentScrambleTween) this.currentScrambleTween.kill();
         
-        // Proactively trigger the final text resolution animation.
         this.currentScrambleTween = this.gsap.to(this.nameEl, {
             duration: 0.4,
             text: { value: finalText, scrambleText: { chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ*#_1234567890", speed: 0.8, tweenLength: true } },
@@ -169,7 +153,6 @@ export class MoodMatrix {
             let stateClass = 'major-block--off';
             let textContent = '';
 
-            // The letter for each block is statically mapped to its position in the grid.
             const firstLetter = (moods[i] ? moods[i].charAt(0) : '?');
 
             let number = 0;

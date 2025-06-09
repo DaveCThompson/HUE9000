@@ -89,14 +89,17 @@ body.theme-dark {
     --mood-matrix-value-base-chroma: 0.12;
 
 
-    /* --- Component: Dials --- */
-    --dial-housing-bg-l: var(--panel-section-bg-l);
-    --dial-housing-bg-c: var(--panel-section-bg-c);
-    --dial-housing-bg-h: var(--panel-section-bg-h);
-    /* Canvas colors are inherited from _variables-theme-contract.css, which is correct for dark theme */
-    --dial-face-bg-c: calc(var(--dynamic-env-chroma) * 0.9);
-    --dial-ridge-c: calc(var(--dynamic-env-chroma) * 0.9);
-    --dial-ridge-highlight-c: calc(var(--dynamic-env-chroma) * 0.9);
+    /* --- Component: Dials (SVG Theming) --- */
+    --dial-face-bg-l: 0.18;
+    --dial-face-bg-c: var(--panel-section-bg-c);
+    --dial-face-bg-h: var(--panel-section-bg-h);
+    /* UPDATED: Values now derived from panel bezel gradient */
+    --dial-ridge-l: var(--panel-bezel-grad-9-l); /* Darkest ridge = bottom of bezel */
+    --dial-ridge-c: var(--panel-bezel-grad-c);
+    --dial-ridge-h: var(--panel-bezel-grad-h);
+    --dial-ridge-highlight-l: var(--panel-bezel-grad-5-l); /* Brightest ridge = brightest part of bezel */
+    --dial-shading-top-highlight-color: oklch(100% 0 0 / 0.05);
+    --dial-shading-bottom-shadow-color: oklch(0% 0 0 / 0.25);
 
 
     /* --- Component: Logo --- */

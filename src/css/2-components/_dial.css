@@ -1,10 +1,11 @@
 /* src/css/components/_dial.css */
-/* Styles for Dial housing and canvas container. Uses theme variables. */
+/* Styles for Dial housing and SVG container. Uses theme variables. */
 
 .dial-canvas-container {
    width: 100%;
    height: 100%; 
-   background-color: oklch(var(--dial-housing-bg-l) var(--dial-housing-bg-c) var(--dial-housing-bg-h) / var(--dial-housing-bg-a));
+   /* UPDATED: Background color now derived from panel section bg */
+   background-color: oklch(calc(var(--panel-section-bg-l) - 0.1) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
    border-radius: var(--space-sm);
    position: relative;
    z-index: 1;
@@ -13,34 +14,42 @@
    -webkit-user-select: none;
    touch-action: pan-x;
    box-shadow: var(--dial-container-shadow, inset 0 1px 4px oklch(0% 0 0 / 0.2), inset 0 -1px 2px oklch(100% 0 0 / 0.05));
-   border: none; /* Replaced with theme-aware box-shadow for consistent appearance */
+   border: none;
    opacity: calc(var(--theme-component-opacity) * var(--startup-opacity-factor-boosted, 0));
-
+   
    transition:
        background-color var(--transition-duration-medium) ease,
        box-shadow var(--transition-duration-medium) ease,
        border-color var(--transition-duration-medium) ease,
        opacity var(--transition-duration-medium) ease;
 }
-.dial-canvas-container:active {
+
+.dial-canvas-container.is-dragging {
    cursor: grabbing;
 }
 
-/* Canvas elements for the dials */
-#dial-canvas-A,
-#dial-canvas-B {
+/* SVG elements for the dials */
+.dial-svg {
    display: block;
    width: 100%;
    height: 100%;
    border-radius: inherit;
-   background-color: transparent !important; 
+   overflow: hidden; /* Important for containing the ridges */
 }
 
-/* Dim mode specific overrides for dial housing when NOT active dim */
-body.theme-dim .dial-canvas-container:not(.js-active-dim-dial) {
-    /* The opacity is handled by the main .dial-canvas-container rule with --startup-opacity-factor-boosted */
+.dial-face {
+    fill: oklch(var(--dial-face-bg-l) var(--dial-face-bg-c) var(--dial-face-bg-h));
+    transition: fill var(--transition-duration-medium) ease;
 }
-/* When dial is set to "active dim" by JS */
-body.theme-dim .dial-canvas-container.js-active-dim-dial {
-    /* The opacity is handled by the main .dial-canvas-container rule with --startup-opacity-factor-boosted */
+
+/* Ridges are styled via JS, but we add a stroke for definition */
+.dial-ridge {
+    stroke: oklch(0 0 0 / 0.15);
+    stroke-width: 0.25px;
 }
+
+/* UPDATED: New 4-stop gradient classes */
+.dial-shading-top-highlight { stop-color: var(--dial-shading-top-highlight-color); transition: stop-color var(--transition-duration-medium) ease; }
+.dial-shading-top-fade      { stop-color: transparent; }
+.dial-shading-bottom-fade   { stop-color: transparent; }
+.dial-shading-bottom-shadow { stop-color: var(--dial-shading-bottom-shadow-color); transition: stop-color var(--transition-duration-medium) ease; }

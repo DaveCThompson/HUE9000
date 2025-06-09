@@ -11,16 +11,6 @@ export const phase5Config = {
   animations: [
     {
       type: 'tween',
-      target: ['dialA', 'dialB'],
-      vars: {
-        autoAlpha: 0,
-        duration: 1.2, // Must last the entire duration of the phase
-        overwrite: true // Forcefully override any other JS trying to make these visible
-      },
-      position: 0
-    },
-    {
-      type: 'tween',
       target: 'dimmingFactors',
       vars: {
         value: 0.275,

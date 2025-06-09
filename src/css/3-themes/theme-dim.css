@@ -98,13 +98,22 @@ body.theme-dim {
     --mood-matrix-value-base-chroma: 0;
 
 
-    /* --- Component: Dials --- */
-    /* Dim Theme Active Dial State (used during startup) */
-    --dial-dim-active-face-bg-l: 0.03; /* Slightly darker face */
-    --dial-dim-active-ridge-l: 0.05; /* Was 0.08, now significantly darker */
-    --dial-dim-active-ridge-highlight-l: 0.09; /* Was 0.15, now much more subtle */
-    --dial-dim-active-ridge-highlight-a: 0.4; /* Slightly increase alpha to compensate for lower L */
+    /* --- Component: Dials (SVG Theming) --- */
+    /* UPDATED: Values adjusted for a low-contrast, "flat" look matching the bezels */
+    --dial-face-bg-l: 0.12; /* Was 0.20. Darker to match control housing. */
+    --dial-face-bg-c: var(--panel-section-bg-c);
+    --dial-face-bg-h: var(--panel-section-bg-h);
+    --dial-ridge-l: 0.28; /* Was 0.30. Darker base. */
+    --dial-ridge-c: var(--panel-bezel-grad-c);
+    --dial-ridge-h: var(--panel-bezel-grad-h);
+    --dial-ridge-highlight-l: 0.32; /* Was 0.50. Much closer to the base for a flatter look. */
+    --dial-shading-top-highlight-color: oklch(100% 0 0 / 0.04);
+    --dial-shading-bottom-shadow-color: oklch(0% 0 0 / 0.2);
+}
 
+/* REMOVED: The problematic, overly-specific rule is gone. */
+
+body.theme-dim {
     /* --- Component: Logo --- */
 
     /* --- Component: Lens Container & Core --- */

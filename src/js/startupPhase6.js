@@ -19,12 +19,7 @@ export const phase6Config = {
       },
       position: 0
     },
-    {
-      type: 'call',
-      function: (dialManager) => dialManager.setDialsActiveState(true),
-      deps: ['dialManager'],
-      position: 0.1
-    },
+    // REMOVED: The call function that added the problematic class is no longer needed.
     {
       type: 'tween',
       target: ['dialA', 'dialB'],

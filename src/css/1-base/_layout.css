@@ -195,6 +195,7 @@ body.pre-boot #terminal-lcd-content { /* Target the inner content div for termin
     justify-content: center;
     gap: var(--space-md);
     min-width: 0;
+    max-width: 50%; /* Constrain the width of the dial blocks */
 }
 .right-panel .hue-control-block .dial-canvas-container {
     height: var(--dial-container-fixed-height);

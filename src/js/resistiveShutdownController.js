@@ -60,7 +60,7 @@ class ResistiveShutdownController {
             });
         }
 
-        this._updateLensTargets(stageParams);
+        this._updateLensAndDialTargets(stageParams);
         this._updateHueAssignmentButtons(stageParams);
 
         if (newStage === this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
@@ -68,7 +68,7 @@ class ResistiveShutdownController {
         }
     }
 
-    _updateLensTargets(stageParams) {
+    _updateLensAndDialTargets(stageParams) {
         const currentDialA = this.appState.getDialState('A');
         const currentPower = this.appState.getTrueLensPower();
         let targetHue = currentDialA.hue;
@@ -86,15 +86,15 @@ class ResistiveShutdownController {
 
         targetPower = clamp(targetPower, 0, 1);
 
-        // Update Dial A state
+        // Update Dial A state for mood
         this.appState.updateDialState('A', { hue: targetHue, targetHue: targetHue });
         
         // Update the authoritative lens power state
         this.appState.setTrueLensPower(targetPower * 100);
 
-        // --- FIX START: Synchronize Dial B's state with the new power value ---
-        const dialBHue = targetPower * 359.999; // Convert power (0-1) to hue (0-360)
-        const dialBRotation = dialBHue * this.config.DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG;
+        // Synchronize Dial B's state with the new power value
+        const dialBHue = targetPower * 359.999;
+        const dialBRotation = dialBHue * (this.config.DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG || 1);
 
         this.appState.updateDialState('B', {
             hue: dialBHue,
@@ -104,9 +104,8 @@ class ResistiveShutdownController {
         });
 
         if (this.debug) {
-            console.log(`[RSC _updateLensTargets] Synced state. New Lens Power: ${targetPower.toFixed(3)}. New Dial B Hue: ${dialBHue.toFixed(2)}`);
+            console.log(`[RSC _updateLensAndDialTargets] Synced state. New Lens Power: ${targetPower.toFixed(3)}. New Dial B Hue: ${dialBHue.toFixed(2)}`);
         }
-        // --- FIX END ---
     }
 
     _updateHueAssignmentButtons(stageParams) {

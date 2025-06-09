@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     class="dial-svg"
+     viewBox="0 0 200 40"
+     preserveAspectRatio="xMidYMid meet">
+    
+    <defs>
+        <linearGradient id="dial-shading-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <!-- UPDATED: 4-stop gradient for rounded edge effect -->
+            <stop offset="0%" class="dial-shading-top-highlight" />
+            <stop offset="7%" class="dial-shading-top-fade" />
+            <stop offset="93%" class="dial-shading-bottom-fade" />
+            <stop offset="100%" class="dial-shading-bottom-shadow" />
+        </linearGradient>
+    </defs>
+
+    <!-- Background Face: Sized to fill the viewBox exactly -->
+    <rect class="dial-face" x="0" y="0" width="200" height="40" />
+
+    <!-- Ridge container: This group will be populated by the DialController script -->
+    <g class="dial-ridges-group"></g>
+
+    <!-- Shading Overlay -->
+    <rect class="dial-shading-overlay" width="100%" height="100%" fill="url(#dial-shading-gradient)" style="pointer-events: none;" />
+</svg>
