@@ -40,9 +40,9 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **Core Responsibilities:** Manages its own state (`_isSelected`), applies CSS classes to reflect its visual state, and handles its own ambient animations.
 *   **Key Interactions:** Instantiated and managed by `buttonManager`.
 
-#### `Dial.js`
-*   **@module Dial:** Represents a single, individual rotary dial component.
-*   **Core Responsibilities:** Manages the rendering of its canvas, handles user drag interactions, and updates its appearance based on theme and state.
+#### `DialController.js`
+*   **@module DialController:** Represents a single, individual rotary dial component rendered via SVG.
+*   **Core Responsibilities:** Manages the dynamic rendering of its SVG ridges to create a 3D effect, handles user drag interactions, and updates its appearance by subscribing to theme and color changes in `appState`.
 *   **Key Interactions:** Instantiated and managed by `dialManager`.
 
 #### `MoodMatrix.js` & `IntensityDisplay.js`
@@ -59,8 +59,8 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **Core Responsibilities:** Discovers buttons, creates `Button` instances, manages group behaviors (radio/toggle deselection), and provides an API for complex animations (`playFlickerToState`). Emits `buttonInteracted` to `appState`.
 
 #### `dialManager.js`
-*   **@module dialManager:** Orchestrates all `Dial` instances.
-*   **Core Responsibilities:** Discovers dial containers, creates `Dial` instances, and provides global methods like `resizeAllCanvases`.
+*   **@module dialManager:** Orchestrates all `DialController` instances.
+*   **Core Responsibilities:** Discovers dial containers, injects the base SVG markup, and creates `DialController` instances.
 
 #### `ThemeManager.js`
 *   **@module ThemeManager:** Manages global UI theme changes.

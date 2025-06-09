@@ -84,12 +84,12 @@ body.theme-dim {
 
     --lcd-dimly-lit-grad-start-l: 0.22;
     --lcd-dimly-lit-grad-end-l: 0.18;
-    --lcd-dimly-lit-text-l: 0.80; /* MODIFIED: Was 0.90 */
-    --lcd-dimly-lit-text-c: 0.005; /* Give it a very slight cool tint */
+    --lcd-dimly-lit-text-l: 0.80;
+    --lcd-dimly-lit-text-c: 0.005;
     --lcd-dimly-lit-text-h: 240;
     --lcd-dimly-lit-text-a: 1; 
     --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.1);
-    --lcd-dimly-lit-chroma-factor: 0.1; /* Use a low chroma factor for a mostly monochrome look */
+    --lcd-dimly-lit-chroma-factor: 0.1;
 
     --lcd-text-shadow-base-alpha: 0.25; 
 
@@ -99,19 +99,17 @@ body.theme-dim {
 
 
     /* --- Component: Dials (SVG Theming) --- */
-    /* UPDATED: Values adjusted for a low-contrast, "flat" look matching the bezels */
-    --dial-face-bg-l: 0.12; /* Was 0.20. Darker to match control housing. */
-    --dial-face-bg-c: var(--panel-section-bg-c);
-    --dial-face-bg-h: var(--panel-section-bg-h);
-    --dial-ridge-l: 0.28; /* Was 0.30. Darker base. */
-    --dial-ridge-c: var(--panel-bezel-grad-c);
-    --dial-ridge-h: var(--panel-bezel-grad-h);
-    --dial-ridge-highlight-l: 0.32; /* Was 0.50. Much closer to the base for a flatter look. */
+    --dial-highlight-exponent: 2.5;
+    --dial-face-bg-l: 0.12;
+    --dial-face-bg-c: 0;
+    --dial-face-bg-h: var(--dynamic-env-hue);
+    --dial-ridge-l: 0.15;
+    --dial-ridge-c: 0;
+    --dial-ridge-h: var(--dynamic-env-hue);
+    --dial-ridge-highlight-l: 0.20;
     --dial-shading-top-highlight-color: oklch(100% 0 0 / 0.04);
     --dial-shading-bottom-shadow-color: oklch(0% 0 0 / 0.2);
 }
-
-/* REMOVED: The problematic, overly-specific rule is gone. */
 
 body.theme-dim {
     /* --- Component: Logo --- */

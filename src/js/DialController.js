@@ -30,15 +30,13 @@ class DialController {
         this.config = {
             NUM_RIDGES: 100,
             RIDGE_WIDTH_FACTOR: 1.6,
-            // UPDATED: Decoupled speeds.
-            // Higher value = Slower visual rotation
             PIXELS_PER_DEGREE_ROTATION: 1.3,
-            // Lower value = Faster value/hue change
-            PIXELS_PER_DEGREE_HUE: 0.4,
+            PIXELS_PER_DEGREE_HUE: 0.16,
             GSAP_TWEEN_DURATION: 0.5,
             GSAP_TWEEN_EASE: 'power2.out',
             LIGHT_ANGLE_DEG: 0,
-            HIGHLIGHT_EXPONENT: 10,
+            // This factor is now applied in JS to halve the chroma from the environment variable.
+            CHROMA_MODIFICATION_FACTOR: 0.5,
         };
 
         this.isDragging = false;
@@ -50,6 +48,7 @@ class DialController {
         this.lightAngleRad = this.config.LIGHT_ANGLE_DEG * (Math.PI / 180);
         this.unsubscribers = [];
         this.themeVars = {};
+        this.debug = false;
 
         this._createRidges();
         this._addDragListeners();
@@ -70,6 +69,20 @@ class DialController {
             }
         });
         this.unsubscribers.push(dialUpdateUnsub);
+
+        const themeChangeUnsub = this.appState.subscribe('themeChanged', newTheme => {
+            if (this.debug) console.log(`[DialController ${this.dialId}] Detected themeChanged to '${newTheme}'. Forcing redraw.`);
+            requestAnimationFrame(() => this.forceRedraw());
+        });
+        this.unsubscribers.push(themeChangeUnsub);
+
+        const envColorUnsub = this.appState.subscribe('targetColorChanged', payload => {
+            if (payload.targetKey === 'env') {
+                if (this.debug) console.log(`[DialController ${this.dialId}] Detected ENV color change. Forcing redraw.`);
+                this.forceRedraw();
+            }
+        });
+        this.unsubscribers.push(envColorUnsub);
     }
 
     _createRidges() {
@@ -79,7 +92,7 @@ class DialController {
             rect.setAttribute('class', 'dial-ridge');
             rect.setAttribute('y', '0');
             rect.setAttribute('height', '100%');
-            rect.setAttribute('rx', '0.5'); // Slightly rounded ridges
+            rect.setAttribute('rx', '0.5');
             this.ridgeElements.push(rect);
             fragment.appendChild(rect);
         }
@@ -122,11 +135,9 @@ class DialController {
         const deltaX = newPointerX - this.currentPointerX;
         this.currentPointerX = newPointerX;
 
-        // Update the target, but let GSAP handle the animation to it
         this.targetRotation += deltaX / this.config.PIXELS_PER_DEGREE_ROTATION;
         const hueDelta = deltaX / this.config.PIXELS_PER_DEGREE_HUE;
 
-        // Use a GSAP tween for a smoother, eased interaction feel
         if (this.gsapTween) this.gsapTween.kill();
         this.gsapTween = this.gsap.to(this, {
             rotation: this.targetRotation,
@@ -134,7 +145,6 @@ class DialController {
             ease: this.config.GSAP_TWEEN_EASE,
             onUpdate: () => {
                 this._draw();
-                // Update app state on each frame of the tween for max responsiveness
                 const currentHue = this.appState.getDialState(this.dialId).hue + hueDelta * this.gsapTween.progress();
                 this.appState.updateDialState(this.dialId, { rotation: this.rotation, hue: currentHue });
                 if (this.dialId === 'B') this.appState.setTrueLensPower((this.appState.getDialState('B').hue / 359.999) * 100);
@@ -154,6 +164,7 @@ class DialController {
     }
 
     forceRedraw() {
+        if (this.debug) console.log(`[DialController ${this.dialId}] forceRedraw() called.`);
         this.svgWidth = this.svg.getBoundingClientRect().width;
         this._updateAndCacheThemeStyles();
         this._draw();
@@ -161,16 +172,36 @@ class DialController {
 
     _updateAndCacheThemeStyles() {
         const style = getComputedStyle(this.containerElement);
+
+        // *** DEFINITIVE FIX EXPLANATION ***
+        // The regression was caused by using `calc()` in the CSS for chroma, e.g.,
+        // `--dial-ridge-c: calc(var(--dynamic-env-chroma) / 2);`
+        // The JavaScript `parseFloat()` function CANNOT parse the string "calc(...)".
+        // It returns NaN, which poisons the color calculation and makes the dials render black.
+        // The CORRECT and ROBUST approach is to have CSS provide a clean, base numeric
+        // value, parse it in JS, and then perform any mathematical modifications.
+        const baseChroma = parseFloat(style.getPropertyValue('--dial-ridge-c'));
+        const modifiedChroma = baseChroma * this.config.CHROMA_MODIFICATION_FACTOR;
+
         this.themeVars = {
             ridgeL: parseFloat(style.getPropertyValue('--dial-ridge-l')),
-            ridgeC: parseFloat(style.getPropertyValue('--dial-ridge-c')),
+            ridgeC: modifiedChroma, // Use the modified value
             ridgeH: parseFloat(style.getPropertyValue('--dial-ridge-h')),
             ridgeHighlightL: parseFloat(style.getPropertyValue('--dial-ridge-highlight-l')),
+            highlightExponent: parseFloat(style.getPropertyValue('--dial-highlight-exponent')),
         };
+
+        if (this.debug) {
+            console.log(`[DialController ${this.dialId}] Reading styles for theme: ${document.body.className}`);
+            console.table({ ...this.themeVars, baseChroma }); // Log both for clarity
+            if (isNaN(this.themeVars.ridgeL) || isNaN(this.themeVars.ridgeHighlightL)) {
+                console.error(`[DialController ${this.dialId}] CRITICAL FAILURE: A parsed style value is NaN. This will cause rendering to fail. Check CSS variables for the current theme.`);
+            }
+        }
     }
     
     _draw() {
-        if (!this.svgWidth || this.ridgeElements.length === 0) return;
+        if (!this.svgWidth || this.ridgeElements.length === 0 || isNaN(this.themeVars.ridgeL)) return;
 
         const rotationRadians = this.rotation * (Math.PI / 180);
         const angleStep = (2 * Math.PI) / this.config.NUM_RIDGES;
@@ -187,7 +218,7 @@ class DialController {
                 const perspectiveWidth = baseRidgeWidth * cosAngle;
                 const x = radius + sinAngle * radius - perspectiveWidth / 2;
                 const lightIncidence = Math.cos(ridgeAngle - this.lightAngleRad);
-                const highlightFactor = Math.pow(Math.max(0, lightIncidence), this.config.HIGHLIGHT_EXPONENT);
+                const highlightFactor = Math.pow(Math.max(0, lightIncidence), this.themeVars.highlightExponent || 10);
                 ridgesToDraw.push({ element: this.ridgeElements[i], x, width: perspectiveWidth, zIndex: cosAngle, highlightFactor });
                 this.ridgeElements[i].style.display = 'block';
             } else {
@@ -203,11 +234,15 @@ class DialController {
             const currentL = this.gsap.utils.interpolate(this.themeVars.ridgeL, this.themeVars.ridgeHighlightL, ridge.highlightFactor);
             const ridgeColor = `oklch(${currentL} ${this.themeVars.ridgeC} ${this.themeVars.ridgeH})`;
             ridge.element.setAttribute('fill', ridgeColor);
-            this.ridgesGroup.appendChild(ridge.element); // Re-append to handle z-index sorting
+            this.ridgesGroup.appendChild(ridge.element);
         });
     }
 
     destroy() {
+        this.unsubscribers.forEach(unsub => unsub());
+        this.unsubscribers = [];
+        if (this.gsapTween) this.gsapTween.kill();
+        
         this.containerElement.removeEventListener('mousedown', this.boundInteractionStart);
         this.containerElement.removeEventListener('touchstart', this.boundInteractionStart);
         window.removeEventListener('mousemove', this.boundInteractionMove);
@@ -216,9 +251,6 @@ class DialController {
         window.removeEventListener('touchend', this.boundInteractionEnd);
         window.removeEventListener('mouseleave', this.boundInteractionEnd);
         window.removeEventListener('resize', this.boundOnResize);
-        this.unsubscribers.forEach(unsub => unsub());
-        this.unsubscribers = [];
-        if (this.gsapTween) this.gsapTween.kill();
     }
 }
 

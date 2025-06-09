@@ -16,7 +16,7 @@ HUE9000_Project/
 │   │   ├── Button.js                  # Class for individual button components
 │   │   ├── buttonManager.js           # Class to orchestrate Button instances
 │   │   ├── config.js                  # Shared configuration constants
-│   │   ├── Dial.js                    # Class for individual dial components
+│   │   ├── DialController.js          # Class for individual SVG dial components
 │   │   ├── dialManager.js             # Class to orchestrate Dial instances
 │   │   ├── debugManager.js            # Manages debug panel UI and logic
 │   │   ├── DynamicStyleManager.js     # NEW: Manages dynamic CSS variables and logo

@@ -127,7 +127,7 @@ This section details issues addressed during and immediately after the V2.3 refa
     *   **CSSPlugin:** `CSSPlugin` (which handles `autoAlpha` and most DOM animations) is part of the GSAP core and is automatically registered when you import `gsap`. Explicit registration is usually not needed unless specific bundler issues arise. The `autoAlpha` errors were symptomatic of GSAP itself not being correctly available/configured, not necessarily a missing CSSPlugin registration *if GSAP itself was working*.
 
 ### C.7. LCD and Terminal Text/Background Flickering Issues During Startup
-*   **Symptoms:**
+*   **Symptom:**
     1.  **Terminal Text (P1-P5):** Text visible from P1 would briefly flicker off and on when transitioning to subsequent early phases (P2-P5).
     2.  **Dial LCDs (P6):** Dial LCDs would flash on with their `lcd--dimly-lit` styles, then immediately turn off (due to `autoAlpha:0` from their flicker profile), and then flicker on as intended.
     3.  **Dial LCD Backgrounds (P10):** During the theme transition to `theme-dark`, the backgrounds of Dial LCDs would briefly flicker off (become transparent) while their text remained visible.
@@ -188,5 +188,90 @@ This section details issues addressed during and immediately after the V2.3 refa
 *   **Files Affected:** `src/js/config.js`, `src/js/AmbientAnimationManager.js`, `src/js/Button.js`, `src/css/2-components/_button-unit.css`.
 *   **Key Learning:** For smooth, continuous animations, avoid animating expensive CSS properties like `box-shadow` or `filter` on a per-frame basis. Favor animating `transform` and `opacity` on dedicated elements or pseudo-elements. Correct CSS stacking context (`z-index`) and overflow properties are critical for the visibility of layered effects.
 
+### C.10. Dial Theming and Rendering Failures (Multi-part, High-Pain)
+*   **Symptom:** A cascade of issues where the SVG-based dials would fail to adopt the correct theme styles. They would appear too bright initially, disappear during startup, and then render black or fail to update when switching between dark and light themes post-startup.
+*   **Root Cause Analysis (Iterative & Definitive):**
+    1.  **Initial Misdiagnosis (Orchestration):** The problem was initially treated as a simple timing issue where the final redraw call was happening too early. Attempts to fix this by moving the `dialManager.resizeAllCanvases()` call to different points in the startup sequence proved ineffective and brittle.
+    2.  **Architectural Flaw Identified:** The true root cause was a fundamental architectural flaw. The `DialController` component was not self-sufficient. It relied entirely on external code (the `startupSequenceManager`) to tell it when to update its appearance. This external orchestration was fragile and failed to account for all state transitions (e.g., theme changes initiated by the user post-startup).
+    3.  **The `NaN` Poisoning:** The final, critical failure mode was identified via console logging. An attempt to use `calc()` in the CSS to modify a chroma value (e.g., `--dial-ridge-c: calc(var(--dynamic-env-chroma) / 2);`) was the source of the "dials go black" bug. The JavaScript `parseFloat()` function, used in `DialController` to read this value, **cannot parse a string containing "calc(...)"**. It returns `NaN`, which poisons the entire color rendering calculation, resulting in an invalid `fill` attribute.
+*   **Solution Implemented (Definitive):**
+    1.  **Component Self-Sufficiency:** The `DialController` was refactored to be fully reactive and self-updating.
+        *   It now directly subscribes to the `appState`'s `themeChanged` and `targetColorChanged` (for 'env') events.
+        *   Upon detecting a change, it queues its own `forceRedraw()` call, making it completely independent of the startup sequence's orchestration for theme updates. This was the most critical architectural fix.
+    2.  **Elimination of `calc()` in CSS for JS-Consumed Variables:**
+        *   All `calc()` functions were removed from CSS variables that were intended to be read by `parseFloat()` in JavaScript.
+        *   The responsibility for modifying a base value (like halving the chroma) was moved into the `DialController`'s `_updateAndCacheThemeStyles` method. The JS now reads a clean base number from CSS and performs the math itself, preventing any `NaN` parsing errors.
+    3.  **Aesthetic Tuning in CSS:** All dial color and contrast values (`--dial-ridge-l`, `--dial-ridge-highlight-l`, `--dial-highlight-exponent`, etc.) were explicitly defined with static, numeric values in each of the three theme files (`theme-dim.css`, `theme-dark.css`, `theme-light.css`), ensuring each theme has a distinct, predictable, and correctly rendered appearance.
+*   **Files Affected:** `src/js/DialController.js`, `src/css/3-themes/theme-dim.css`, `src/css/3-themes/theme-dark.css`, `src/css/3-themes/theme-light.css`.
+*   **Key Learning (CRITICAL):** Never use `calc()` or other CSS functions in a CSS custom property that you intend to read and parse with JavaScript's `parseFloat()`. The CSS variable must contain a simple, clean numeric value. Perform all mathematical modifications on the JavaScript side after parsing the clean value. This prevents `NaN` poisoning and ensures robust data flow between CSS and JS. A component should, whenever possible, subscribe to the state changes it cares about rather than relying on external callers to manually trigger its updates.
+
 ## Section D: XState Refactor & Key Considerations (Post V2.3 - SSR-V1.0)
-... (rest of the file remains unchanged) ...
+
+This section highlights critical aspects and potential pitfalls related to the XState-orchestrated startup sequence, primarily for future maintenance and development.
+
+### D.1. XState Versioning & API Usage (v5 Focus)
+*   **Critical Pitfall:** XState v4 and v5 have significant API differences. The project uses **XState v5**.
+    *   **Context:** Provide initial context when `interpret`ing the machine or via an event payload assigned by an initial action, not `machine.withContext()`. The `dependencies` object (containing GSAP, managers, etc.) is passed in the payload of the `START_SEQUENCE` event and assigned to the FSM's context.
+    *   **Transitions Listener:** Use `actor.subscribe(snapshot => ...)` not `actor.onTransition()`.
+    *   **Conditional Transitions:** Use `guard:` not `cond:`. The guard function receives `({ context, event })`.
+    *   **Action/Guard Signatures:** Action implementations and guard functions receive an object like `{ context, event, ... }`. Access properties via `event.propertyName` or `context.propertyName`.
+    *   **`send` API:** Always send event objects: `actor.send({ type: 'EVENT_NAME', ...payload })`.
+    *   **Invoking Promises:** Use the `fromPromise` actor creator. The function provided to `fromPromise` receives an object with an `input` property (populated via the `invoke.input` field in the FSM config) and must return a Promise.
+        ```javascript
+        // Correct pattern for invoking a dynamically imported promise-returning function:
+        import { fromPromise } from 'xstate';
+        // ...
+        // Helper function in startupMachine.js:
+        // const createPhaseService = (importPath) => {
+        //   return fromPromise(async ({ input }) => {
+        //     const phaseModule = await import(importPath);
+        //     if (!phaseModule || typeof phaseModule.createPhaseTimeline !== 'function') { /* error handling */ }
+        //     return phaseModule.createPhaseTimeline(input.dependencies);
+        //   });
+        // };
+        // ...
+        // In machine state definition:
+        invoke: {
+          id: 'someService',
+          src: createPhaseService('./path-to-module.js'), // Use the helper
+          input: ({ context }) => ({ dependencies: context.dependencies }), // Pass data to fromPromise's input
+          onDone: { /* ... */ },
+          onError: { /* ... */ }
+        }
+        ```
+*   **Symptom of Mismatch:** Errors like `...is not a function` (e.g., `withContext`, `onTransition`, `getInitialSnapshot`), or incorrect behavior of actions/guards/event sending.
+*   **Files Affected:** `startupMachine.js`, `startupSequenceManager.js`.
+*   **Key Learning:** Always verify XState API usage against the documentation for XState v5. The `fromPromise` creator is standard for promise-based services. Ensure action/guard signatures are correct for v5.
+
+### D.2. Phase Service Promise Resolution & GSAP Timeline Completion
+*   **Critical Pitfall:** Each phase module (e.g., `startupPhaseX.js`) invoked by the FSM *must* return a Promise that resolves only after *all* its asynchronous operations (including all GSAP animations it initiates) are fully completed.
+    *   If a Promise from a phase service never resolves (e.g., a GSAP timeline within it hangs or its `onComplete` never fires), the FSM will stall in that phase's state.
+    *   The `createAdvancedFlicker` utility returns `{ timeline, completionPromise }`. Phase modules must correctly `await` these `completionPromise`s for logical task completion. Additionally, the GSAP `timeline`s returned by `createAdvancedFlicker` (or other GSAP animations) must be properly added to a main GSAP timeline for the phase, and this main timeline must also be played and awaited for visual completion.
+*   **Implementation Detail:**
+    *   Phase modules (`startupPhaseX.js`) are `async` functions.
+    *   They use `Promise.all()` to await all `completionPromise`s from flicker animations.
+    *   They construct a main GSAP timeline (`phaseInternalGsapTimeline`) for the phase, add flicker timelines to it, and then `await` the completion of this main timeline using `new Promise(resolve => phaseInternalGsapTimeline.eventCallback('onComplete', resolve).play());`.
+*   **Symptom of Mismatch:** Startup sequence stalls in a particular phase. Console logs might show individual promises resolving, but the phase service's main promise doesn't. Visuals for the phase might not complete.
+*   **Files Affected:** All `startupPhaseX.js` modules, `animationUtils.js`.
+*   **Key Learning:** Distinguish between awaiting the logical setup/promise of an animation and awaiting the completion of its actual GSAP timeline. Both are necessary for robust FSM phase progression. Ensure all created GSAP timelines are finite and their `onComplete` callbacks are reachable.
+
+### D.3. Dependency Injection & Context Integrity
+*   **Critical Pitfall:** All external dependencies (GSAP, `appStateService`, managers, DOM elements, config) must be correctly passed into the FSM's initial context by `startupSequenceManager.js` (via the `START_SEQUENCE` event's payload). Phase services receive these dependencies via the `input` argument of the function passed to `fromPromise`.
+*   **Symptom of Mismatch:** `TypeError: Cannot read properties of undefined (reading 'someManager')` or `someDependency is not a function` within FSM actions, guards, or phase services.
+*   **Files Affected:** `startupSequenceManager.js` (context creation), `startupMachine.js` (context assignment and `invoke.input`), all `startupPhaseX.js` modules (accessing `dependencies`).
+*   **Key Learning:** Ensure a clear and consistent dependency injection path from application initialization to FSM context to invoked services.
+
+### D.4. Visual Discrepancies & Animation Targeting
+*   **Potential Pitfall:** Animations might logically complete (Promises resolve, FSM transitions) but not produce the intended visual effect.
+    *   **Example (P1 MAIN PWR Buttons):** If these buttons "just appear" instead of visibly flickering, it could be due to:
+        1.  The `buttonEnergizeP2P5` animation profile in `config.js` having parameters that result in a non-perceptible visual change (e.g., amplitudes too similar, durations too short, glow too faint).
+        2.  `createAdvancedFlicker` not correctly targeting the `.light` elements within these specific buttons (check `baseTargetsForOpacity` via logging).
+    *   **Example (P3 HUE ASSN / BTN 1-4 Buttons):** If these don't appear `is-dimly-lit`:
+        1.  Ensure their HTML elements have the correct `data-group-id` attributes (`skill-scan-group`, `fit-eval-group` for BTN 1-4 containers; HUE ASSN buttons are grouped by `gridManager` as 'env', 'lcd', etc.).
+        2.  Verify the `buttonsToPrimeElements` logic in `startupPhase3.js` correctly identifies these buttons based on their `groupId`.
+        3.  Check the `buttonP4DimlyLitFlicker` profile for visibility.
+*   **Debugging Approach:** Use console logging within animation utilities and phase modules to verify targets and parameters. Temporarily exaggerate animation profile values to confirm the animation path is working. Inspect CSS for overrides.
+*   **Files Affected:** `animationUtils.js`, `config.js` (profiles), `startupPhaseX.js` (targeting logic), `index.html` (for `data-group-id`).
+*   **Key Learning:** Visual verification is as important as logical completion. Debug targeting and animation parameters if visuals don't match expectations. Ensure HTML attributes support JS targeting logic.
+
+---

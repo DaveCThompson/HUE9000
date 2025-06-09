@@ -19,18 +19,9 @@ export const phase6Config = {
       },
       position: 0
     },
-    // REMOVED: The call function that added the problematic class is no longer needed.
-    {
-      type: 'tween',
-      target: ['dialA', 'dialB'],
-      vars: {
-        autoAlpha: 1,
-        duration: 0.5,
-        ease: 'power1.out',
-        stagger: 0.05
-      },
-      position: 0.1
-    },
+    // REMOVED: The tween that made the dials appear too brightly and out of sync
+    // with the global startup opacity has been removed. Their visibility is now
+    // correctly handled by the main startup dimming factors.
     {
       // This single declarative action triggers the coordinated animation
       // in LcdUpdater.js for both the container flicker and content fade-in.

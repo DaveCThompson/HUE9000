@@ -4,7 +4,6 @@
 .dial-canvas-container {
    width: 100%;
    height: 100%; 
-   /* UPDATED: Background color now derived from panel section bg */
    background-color: oklch(calc(var(--panel-section-bg-l) - 0.1) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
    border-radius: var(--space-sm);
    position: relative;
@@ -13,9 +12,11 @@
    user-select: none;
    -webkit-user-select: none;
    touch-action: pan-x;
-   box-shadow: var(--dial-container-shadow, inset 0 1px 4px oklch(0% 0 0 / 0.2), inset 0 -1px 2px oklch(100% 0 0 / 0.05));
+   box-shadow: var(--dial-container-shadow, inset 0 0 3px 1px oklch(0 0 0 / 0.3));
    border: none;
    opacity: calc(var(--theme-component-opacity) * var(--startup-opacity-factor-boosted, 0));
+   /* ADDED: 2px (0.125rem) padding to create space between the housing and the dial SVG */
+   padding: 0.125rem;
    
    transition:
        background-color var(--transition-duration-medium) ease,

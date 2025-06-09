@@ -73,7 +73,7 @@ body.theme-light {
     /* --- Component: LCD Screens --- */
     --lcd-active-grad-start-l: 0.35; 
     --lcd-active-grad-end-l: 0.27;
-    --lcd-active-text-l: 1; /* MODIFIED: Was 0.94 */
+    --lcd-active-text-l: 1;
     --lcd-active-text-a: 1;
     --lcd-active-border-l: 0.50;     
     --lcd-active-border-a: 0.45; 
@@ -100,16 +100,16 @@ body.theme-light {
 
 
     /* --- Component: Dials (SVG Theming) --- */
+    --dial-highlight-exponent: 12;
     --dial-face-bg-l: 0.25;
-    --dial-face-bg-c: var(--panel-section-bg-c);
-    --dial-face-bg-h: var(--panel-section-bg-h);
-    /* UPDATED: Values now derived from panel bezel gradient */
-    --dial-ridge-l: var(--panel-bezel-grad-9-l); /* Darkest ridge = bottom of bezel */
-    --dial-ridge-c: var(--panel-bezel-grad-c);
-    --dial-ridge-h: var(--panel-bezel-grad-h);
-    --dial-ridge-highlight-l: var(--panel-bezel-grad-1-l); /* Brightest ridge = top of bezel */
-    --dial-shading-top-highlight-color: oklch(100% 0 0 / 0.18);
-    --dial-shading-bottom-shadow-color: oklch(0% 0 0 / 0.1);
+    --dial-face-bg-c: var(--dynamic-env-chroma);
+    --dial-face-bg-h: var(--dynamic-env-hue);
+    --dial-ridge-l: 0.55;
+    --dial-ridge-c: var(--dynamic-env-chroma);
+    --dial-ridge-h: var(--dynamic-env-hue);
+    --dial-ridge-highlight-l: 0.72;
+    --dial-shading-top-highlight-color: oklch(100% 0 0 / 0.25);
+    --dial-shading-bottom-shadow-color: oklch(0% 0 0 / 0.15);
 
 
     /* --- Component: Logo --- */
@@ -157,7 +157,7 @@ body.theme-light {
     --grill-opacity: 1;
 
     /* --- Component: Terminal Text Glow (Theme-Specific) --- */
-    --terminal-text-glow-color-base: oklch(0.85 0.06 160); /* MODIFIED: Was 0.80. Less chromatic, slightly darker base for light mode */
+    --terminal-text-glow-color-base: oklch(0.85 0.06 160);
     --theme-terminal-glow-opacity-factor: 0.7;
     --theme-terminal-glow-size-factor: 0.7;
 }

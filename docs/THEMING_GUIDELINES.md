@@ -5,7 +5,7 @@ This document outlines the principles and conventions for theming the HUE 9000 i
 ## Core Theming Principles
 
 1.  **"Low" (Dark) vs. "High" (Light) Intensity:** (As before) The primary themes are `theme-dark` and `theme-light`.
-    *   **CRITICAL WARNING NOTE:** The `theme-light.css` (referred to as "High Intensity" or "Light Theme") is **NOT** a traditional light mode (e.g., white backgrounds, dark text). It is designed as a *brighter, higher contrast variant of the dark theme aesthetic*. All design and variable choices for `theme-light.css` should reflect this intent, maintaining the overall retro-futuristic, control panel feel, rather than attempting to invert it into a standard "day mode."
+    *   **CRITICAL WARNING NOTE:** The `theme-light.css` (referred to as "High Intensity" or "Light Theme") is **NOT** a traditional light mode (e.g., white backgrounds, dark text). It is designed as a *brighter, (in some ways lower contast) variant of the dark theme aesthetic*. All design and variable choices for `theme-light.css` should reflect this intent, maintaining the overall retro-futuristic, control panel feel, rather than attempting to invert it into a standard "day mode."
 
 2.  **Dynamic Theming via CSS Variables and JavaScript:** (As before)
     *   **Critical for Theme Overrides:** Selectors like `body.theme-dark` or `body.theme-light` are essential for overriding variables defined in `_variables-theme-contract.css`.
@@ -47,8 +47,8 @@ This document outlines the principles and conventions for theming the HUE 9000 i
     *   This cleanup is critical. It allows their `background-image` and `color` properties to transition smoothly to the `theme-dark` values as the underlying CSS variables change.
 
 ### 2. Dials
-*   **DIM Mode:** Dials are unlit until Phase P6. In P6, `dialManager.js` calls `DialInstance.setActiveDimState(true)`, causing them to be redrawn in an "active dim" state using variables from `theme-dim.css` (attenuated by startup factors).
-*   **Theme Transition (Phase P10):** Dials are redrawn in their full-color state as defined by `theme-dark.css` variables.
+*   **DIM Mode:** Dials are unlit until Phase 6. Their visibility is controlled by the global `--startup-opacity-factor-boosted` variable. They are rendered using variables from `theme-dim.css` (attenuated by startup factors).
+*   **Theme Transition (Phase P10):** Dials are redrawn in their full-color state as defined by `theme-dark.css` variables. The `DialController`'s direct subscription to the `themeChanged` event in `appState` ensures this redraw happens reliably.
 
 ### 3. Buttons (`button-unit` System)
 *   **Color Source:**

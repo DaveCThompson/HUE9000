@@ -76,11 +76,16 @@ export class DialManager {
   }
 
   resizeAllCanvases(forceDraw = false) {
-    // REVERTED: No longer need requestAnimationFrame as timing is handled by the startup machine.
-    Object.values(this.dialInstances).forEach(dial => {
-        if (dial && typeof dial.forceRedraw === 'function') {
-            dial.forceRedraw();
-        }
+    // FIX: Defer the redraw to the next animation frame. This is the crucial fix
+    // for the style recalculation lag. It ensures that when forceRedraw() is called,
+    // the browser has finished applying the new theme's styles, and getComputedStyle()
+    // will return the correct, final values, preventing NaN poisoning.
+    requestAnimationFrame(() => {
+        Object.values(this.dialInstances).forEach(dial => {
+            if (dial && typeof dial.forceRedraw === 'function') {
+                dial.forceRedraw();
+            }
+        });
     });
   }
 }
