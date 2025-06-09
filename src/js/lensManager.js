@@ -16,10 +16,8 @@ export class LensManager {
     this.dom = {};
 
     this.isOscillating = false;
-    this.oscillationStartTime = 0;
     this.smoothedTrueLensPower = { value: 0.0 };
     this.trueLensPowerTarget = 0.0;
-    this.oscillationFrameId = null;
     this.powerSmoothingTween = null;
     this.currentMasterHue = -1;
     this.lastAppliedGradientString = "";
@@ -59,6 +57,8 @@ export class LensManager {
     this.appState.subscribe('dialBInteractionChange', (s) => this._handleDialBInteractionChange(s));
     this.appState.subscribe('dialUpdated', (p) => this._handleDialAUpdateForLensHue(p));
     this.appState.subscribe('appStatusChanged', (s) => this._handleAppStatusChangeForLens(s));
+    // Subscribe to the master ambient pulse for synchronized oscillation
+    this.appState.subscribe('ambientPulse', ({ progress }) => this._applyOscillationVisuals(progress));
   }
 
   energizeLensCoreStartup(targetPowerPercent = null, rampDurationMs = null) {
@@ -170,9 +170,11 @@ export class LensManager {
   }
 
   _updateLensVisualsWithCurrentState(forceLegacyUpdate = false) {
-    const currentVisualPower01 = this.smoothedTrueLensPower.value + (this.isOscillating ? this._calculateOscillationOffset(performance.now()) : 0);
-    this._setLegacyLensPowerVar(currentVisualPower01, forceLegacyUpdate);
-    this._updateLensGradientVisuals(currentVisualPower01);
+    // This method now only updates based on the base (smoothed) power.
+    // The oscillation is additive and handled by _applyOscillationVisuals.
+    const baseVisualPower01 = this.smoothedTrueLensPower.value;
+    this._setLegacyLensPowerVar(baseVisualPower01, forceLegacyUpdate);
+    this._updateLensGradientVisuals(baseVisualPower01);
   }
 
   _updateLensGradientVisuals(visualPower) {
@@ -253,15 +255,14 @@ export class LensManager {
 
     if (isStartingUp || !isDialIdle) {
       this.smoothedTrueLensPower.value = this.trueLensPowerTarget;
-      if (!this.isOscillating) this._updateLensVisualsWithCurrentState(true);
+      this._updateLensVisualsWithCurrentState(true);
     } else {
       this.powerSmoothingTween = this.gsap.to(this.smoothedTrueLensPower, {
         value: this.trueLensPowerTarget, duration: duration, ease: ease,
         onUpdate: () => this._updateLensVisualsWithCurrentState(),
         onComplete: () => {
           this.powerSmoothingTween = null;
-          if (!this.isOscillating) this._updateLensVisualsWithCurrentState(true);
-          // MODIFIED: Removed shutdownStage check
+          this._updateLensVisualsWithCurrentState(true);
           if (this.appState.getAppStatus() === 'interactive' && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
             this._startOscillation();
           }
@@ -269,11 +270,9 @@ export class LensManager {
       });
     }
 
-    // MODIFIED: Removed shutdownStage check
     if ((this.trueLensPowerTarget < this.config.LENS_OSCILLATION_THRESHOLD || !isDialIdle || isStartingUp) && this.isOscillating) {
       this._stopOscillation();
     }
-    // MODIFIED: Removed shutdownStage check
     if (this.appState.getAppStatus() === 'interactive' && isDialIdle && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
       this._startOscillation();
     }
@@ -306,7 +305,6 @@ export class LensManager {
     this._updateSuperGlowHue(this.currentMasterHue);
 
     if (newStatus === 'interactive') {
-      // MODIFIED: Removed shutdownStage check
       if (this.appState.getDialBInteractionState() === 'idle' && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
         this._startOscillation();
       }
@@ -316,7 +314,6 @@ export class LensManager {
   }
 
   _startOscillation() {
-    // MODIFIED: Removed shutdownStage check from canOscillate condition
     const canOscillate = this.appState.getAppStatus() === 'interactive' && 
                          this.appState.getDialBInteractionState() === 'idle';
 
@@ -327,34 +324,33 @@ export class LensManager {
     if (this.isOscillating || !canOscillate) return;
     
     this.isOscillating = true;
-    this.oscillationStartTime = performance.now();
     if (this.debug) console.log('[LensManager _startOscillation] Oscillation STARTED.');
-    this._oscillationLoop(performance.now());
   }
 
   _stopOscillation() {
     if (!this.isOscillating) return;
     if (this.debug) console.log('[LensManager _stopOscillation] Oscillation STOPPED.');
     this.isOscillating = false;
-    if (this.oscillationFrameId) cancelAnimationFrame(this.oscillationFrameId);
-    this.oscillationFrameId = null;
+    // Reset the visuals to the non-oscillated base power
     this._updateLensVisualsWithCurrentState(true);
   }
 
-  _calculateOscillationOffset(timestamp) {
-    if (!this.isOscillating) return 0;
-    const elapsedTime = (timestamp - this.oscillationStartTime) / 1000;
+  /**
+   * Applies the visual oscillation based on the global ambient pulse.
+   * @param {number} progress - The global pulse progress (0 to 1).
+   */
+  _applyOscillationVisuals(progress) {
+    if (!this.isOscillating) return;
+
     const powerAboveThreshold = Math.max(0, this.smoothedTrueLensPower.value - this.config.LENS_OSCILLATION_THRESHOLD);
     const powerRatio = Math.min(1, powerAboveThreshold / (1.0 - this.config.LENS_OSCILLATION_THRESHOLD));
     const amplitude = this.config.LENS_OSCILLATION_AMPLITUDE_MIN + powerRatio * this.config.LENS_OSCILLATION_AMPLITUDE_MAX_ADDITION;
-    const period = mapRange(powerRatio, 0, 1, this.config.LENS_OSCILLATION_PERIOD_AT_THRESHOLD, this.config.LENS_OSCILLATION_PERIOD_AT_MAX_POWER);
-    if (period <= 0.001) return 0;
-    return Math.sin((2 * Math.PI / period) * elapsedTime) * amplitude;
-  }
 
-  _oscillationLoop(timestamp) {
-    if (!this.isOscillating) return;
-    this._updateLensVisualsWithCurrentState();
-    this.oscillationFrameId = requestAnimationFrame((t) => this._oscillationLoop(t));
+    // Use the centrally-driven progress to calculate the lens-specific visual offset
+    const oscillationOffset = this.gsap.utils.interpolate(-amplitude, amplitude, progress);
+    const currentVisualPower01 = this.smoothedTrueLensPower.value + oscillationOffset;
+    
+    this._updateLensGradientVisuals(currentVisualPower01);
+    this._setLegacyLensPowerVar(currentVisualPower01);
   }
 }

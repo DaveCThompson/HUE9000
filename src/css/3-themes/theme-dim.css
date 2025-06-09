@@ -84,7 +84,7 @@ body.theme-dim {
 
     --lcd-dimly-lit-grad-start-l: 0.22;
     --lcd-dimly-lit-grad-end-l: 0.18;
-    --lcd-dimly-lit-text-l: 0.90;
+    --lcd-dimly-lit-text-l: 0.80; /* MODIFIED: Was 0.90 */
     --lcd-dimly-lit-text-c: 0.005; /* Give it a very slight cool tint */
     --lcd-dimly-lit-text-h: 240;
     --lcd-dimly-lit-text-a: 1; 
@@ -153,7 +153,7 @@ body.theme-dim {
     --grill-blend-mode: normal;
 
     /* --- Component: Terminal Text Glow (Theme-Specific) --- */
-    --terminal-text-glow-color: oklch(0.85 0.10 160);
+    --terminal-text-glow-color-base: oklch(0.85 0.10 160);
     --theme-terminal-glow-opacity-factor: 1.0;
     --theme-terminal-glow-size-factor: 1.0;
 }

@@ -26,8 +26,8 @@
 .color-chip-7 { background-color: oklch(0.705 0.15 147.818); } /* Teal */
 .color-chip-8 { background-color: oklch(0.705 0.15 115.091); } /* Green */
 .color-chip-9 { background-color: oklch(0.705 0.15 82.364); }  /* Yellow */
-.color-chip-10 { background-color: oklch(0.705 0.15 49.636); }  /* Orange */
-.color-chip-11 { background-color: oklch(0.705 0.15 16.909); }   /* Red */
+.color-chip-10 { background-color: oklch(0.705 0.15 60.636); }  /* Orange */
+.color-chip-11 { background-color: oklch(0.705 0.15 40.909); }   /* Red */
 
 /* Dim mode specific appearance for color chips is handled in theme-dim.css for their bg/border
    and the --color-chip-base-opacity variable. */

@@ -232,7 +232,8 @@
     color: oklch(var(--btn-dimly-lit-text-l) var(--btn-dimly-lit-text-c) var(--btn-dimly-lit-text-h) / var(--btn-dimly-lit-text-a));
     --btn-glow-opacity: 0; 
     --btn-glow-size: var(--btn-dimly-lit-glow-size, 0px);
-    box-shadow: 0 0 var(--btn-glow-size) var(--btn-glow-spread) var(--btn-dimly-lit-glow-color, transparent); 
+    box-shadow: 0 0 var(--btn-glow-size) var(--btn-glow-spread) var(--btn-dimly-lit-glow-color, transparent);
+    cursor: not-allowed;
 }
 .button-unit.is-dimly-lit::before {
     background-color: oklch(var(--btn-dimly-lit-bg-l) var(--btn-dimly-lit-bg-c) var(--btn-dimly-lit-bg-h) / var(--btn-dimly-lit-bg-a));
@@ -314,19 +315,19 @@
 }
 
 /* --- Hover Effect for non-selected, non-pressing buttons --- */
-.button-unit:not(.is-selected):not(.is-pressing):not(.button-unit--s):not(.is-permanently-disabled):hover .light {
+.button-unit:not(.is-selected):not(.is-pressing):not(.button-unit--s):not(.is-permanently-disabled):not(.is-dimly-lit):hover .light {
     transition: opacity var(--btn-hover-transition-duration) ease, transform var(--btn-hover-transition-duration) ease;
     opacity: calc(var(--_current-light-opacity, var(--btn-unlit-light-a)) + var(--btn-hover-light-opacity-boost));
     transform: scale(var(--btn-hover-light-scale));
 }
 
-.button-unit.button-unit--s:not(.is-selected):not(.is-pressing):not(.is-permanently-disabled):hover .light {
+.button-unit.button-unit--s:not(.is-selected):not(.is-pressing):not(.is-permanently-disabled):not(.is-dimly-lit):hover .light {
     transition: opacity var(--btn-hover-transition-duration) ease, transform var(--btn-hover-transition-duration) ease;
     opacity: calc(var(--_current-light-opacity, var(--btn-unlit-light-a)) + var(--btn-hover-light-opacity-boost));
     transform: translate(-50%, -50%) scale(var(--button-unit-light-responsive-scale-factor)) scale(var(--btn-hover-light-scale));
 }
 
-.button-unit.is-energized:not(.is-selected):not(.is-pressing):not(.is-permanently-disabled):hover {
+.button-unit.is-energized:not(.is-selected):not(.is-pressing):not(.is-permanently-disabled):not(.is-dimly-lit):hover {
      box-shadow: 0 0 calc(var(--btn-glow-size) * 1.2) var(--btn-glow-spread) oklch(var(--btn-energized-unselected-glow-hover-l) var(--btn-energized-unselected-glow-hover-c) var(--btn-energized-unselected-glow-hover-h) / var(--btn-energized-unselected-glow-hover-a));
 }
 .button-unit.is-energized.is-selected:not(.is-pressing):not(.is-permanently-disabled):hover::after {
@@ -359,22 +360,22 @@
 
 /* --- State: Permanently Disabled (Resistive Shutdown) --- */
 .button-unit.is-permanently-disabled {
-    border-color: oklch(var(--btn-disabled-border-l) 0 0 / 1);
+    border-color: oklch(var(--btn-dimly-lit-border-l) var(--btn-dimly-lit-border-c) var(--btn-dimly-lit-border-h) / var(--btn-dimly-lit-border-a));
     box-shadow: none;
     cursor: not-allowed;
     opacity: 1;
 }
 .button-unit.is-permanently-disabled::before {
-    background-color: oklch(var(--btn-disabled-bg-l) 0 0 / 1);
+    background-color: oklch(var(--btn-dimly-lit-bg-l) var(--btn-dimly-lit-bg-c) var(--btn-dimly-lit-bg-h) / var(--btn-dimly-lit-bg-a));
 }
 .button-unit.is-permanently-disabled .light {
-    background-color: oklch(var(--btn-disabled-light-l) 0 0);
-    opacity: var(--btn-disabled-light-a);
+    background-color: oklch(var(--btn-dimly-lit-light-l) var(--btn-dimly-lit-light-c) var(--btn-dimly-lit-light-h));
+    opacity: var(--btn-dimly-lit-light-a);
     filter: blur(var(--button-unit-light-object-base-blur));
 }
 .button-unit.is-permanently-disabled .button-text {
-    color: oklch(var(--btn-energized-unselected-text-l) var(--btn-energized-unselected-text-c) var(--btn-energized-unselected-text-h) / var(--btn-energized-unselected-text-a));
-    text-shadow: var(--btn-energized-unselected-shadow);
+    color: oklch(var(--btn-dimly-lit-text-l) var(--btn-dimly-lit-text-c) var(--btn-dimly-lit-text-h) / var(--btn-dimly-lit-text-a));
+    text-shadow: none;
 }
 .button-unit.is-permanently-disabled:hover {
     /* Ensure no visual change on hover for disabled state */
@@ -382,7 +383,7 @@
     transform: none; 
 }
 .button-unit.is-permanently-disabled:hover .light {
-    opacity: var(--btn-disabled-light-a);
+    opacity: var(--btn-dimly-lit-light-a);
     transform: none; 
 }
 .button-unit.is-permanently-disabled.button-unit--s:hover .light {

@@ -68,7 +68,7 @@ For profiles named `...From[InitialState]To...`, these starting parameters are d
         *   `glow.finalOpacity`: 1.0
         *   `glow.finalSize`: '16px'
     *   **Glow Variables:**
-        *   `glow.colorVar`: `--terminal-text-glow-color`
+        *   `glow.colorVar`: `--terminal-text-glow-color-base`
         *   `glow.animatedProperties`: `{ opacity: '--terminal-text-glow-opacity', blur: '--terminal-text-bloom-size' }`
     *   *(Other dynamic parameters like `numCycles`, `period`, `peakOpacity` are defined in `config.js`)*
 

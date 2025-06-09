@@ -7,7 +7,7 @@ body.theme-light {
     
     --theme-text-primary-l: 0.95;   --theme-text-primary-c: 0.005; --theme-text-primary-h: 240;
     --theme-text-secondary-l: 0.9; --theme-text-secondary-c: 0.008; --theme-text-secondary-h: 240; 
-    --theme-text-tertiary-l: 0.8;  --theme-text-tertiary-c: 0.01; --theme-text-tertiary-h: 240; 
+    --theme-text-tertiary-l: 0.8;  --theme-text-tertiary-c: 0.01;  --theme-text-tertiary-h: 240; 
 
     /* --- Body Background --- */
     --body-bg-top-l: 0.45;     --body-bg-top-c: calc(var(--dynamic-env-chroma) * 0.7); 
@@ -34,9 +34,9 @@ body.theme-light {
 
 
     /* --- Component: Button Unit (Text colors remain as original for light theme) --- */
-    --btn-unlit-bg-l: 0.85;  --btn-unlit-bg-c: 0.005; --btn-unlit-bg-a: 0.8;
-    --btn-unlit-border-l: 0.75; --btn-unlit-border-a: 0.85;
-    --btn-unlit-text-l: 0.3; --btn-unlit-text-a: 0.9; 
+    --btn-unlit-bg-l: 0.30;  --btn-unlit-bg-c: 0.005; --btn-unlit-bg-a: 0.8;
+    --btn-unlit-border-l: 0.35; --btn-unlit-border-a: 0.85;
+    --btn-unlit-text-l: 0.85; --btn-unlit-text-a: 0.9; 
 
     --btn-energized-unselected-bg-l: 0.80;
     --btn-energized-unselected-bg-a: 0.7;
@@ -58,8 +58,8 @@ body.theme-light {
     --btn-energized-selected-glow-a: 0.4;
     --btn-energized-selected-shadow: var(--btn-energized-unselected-shadow);
 
-    --btn-dimly-lit-bg-l: 0.82;   --btn-dimly-lit-bg-c: 0.015; --btn-dimly-lit-bg-a: 0.9;
-    --btn-dimly-lit-text-l: 0.25; 
+    --btn-dimly-lit-bg-l: 0.55;   --btn-dimly-lit-bg-c: 0; --btn-dimly-lit-bg-a: 0.9;
+    --btn-dimly-lit-text-l: 0.20; 
 
     --btn-pressed-bg-l-offset: -0.03; 
     --btn-pressed-bg-a-offset: 0.05;
@@ -73,7 +73,7 @@ body.theme-light {
     /* --- Component: LCD Screens --- */
     --lcd-active-grad-start-l: 0.35; 
     --lcd-active-grad-end-l: 0.27;
-    --lcd-active-text-l: 0.94;
+    --lcd-active-text-l: 1; /* MODIFIED: Was 0.94 */
     --lcd-active-text-a: 1;
     --lcd-active-border-l: 0.50;     
     --lcd-active-border-a: 0.45; 
@@ -107,7 +107,7 @@ body.theme-light {
     --dial-ridge-highlight-l: 0.80; --dial-ridge-highlight-a: 0.9; 
     --dial-shading-start-color: oklch(0% 0 0 / 0.04);
     --dial-shading-end-color: oklch(0% 0 0 / 0.05);
-    --dial-dim-active-face-bg-l: 0.85;
+    --dial-dim-active-face-bg-l: 0.22;
     --dial-dim-active-ridge-l: 0.65;
     --dial-dim-active-ridge-highlight-l: 0.92; --dial-dim-active-ridge-highlight-a: 0.7;
 
@@ -156,7 +156,7 @@ body.theme-light {
     --grill-opacity: 1;
 
     /* --- Component: Terminal Text Glow (Theme-Specific) --- */
-    --terminal-text-glow-color: oklch(0.80 0.06 160); /* Less chromatic, slightly darker base for light mode */
+    --terminal-text-glow-color-base: oklch(0.85 0.06 160); /* MODIFIED: Was 0.80. Less chromatic, slightly darker base for light mode */
     --theme-terminal-glow-opacity-factor: 0.7;
     --theme-terminal-glow-size-factor: 0.7;
 }

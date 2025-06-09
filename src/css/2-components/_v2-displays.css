@@ -10,11 +10,11 @@ KEY ARCHITECTURAL DECISIONS:
 1.  OKLCH COLOR SPACE: Used for all colors to ensure perceptually uniform
     brightness and intuitive manipulation of hue and chroma.
 2.  DYNAMIC THEME VIA CSS VARIABLES: A single global hue variable
-    (`--dynamic-ui-accent-hue`) is updated by JavaScript. All other
+    (`--dynamic-lcd-hue`) is updated by JavaScript. All other
     colors are derived from it, ensuring the entire theme updates consistently.
 3.  HARMONIC RESONANCE: A `.is-resonating` class triggers styles
     that consume global `--harmonic-resonance-*` variables to create a
-    pulsating effect on active elements.
+    pulsating effect on active elements. This is now inherited from _lcd.css.
 ========================================================================
 */
 
@@ -43,28 +43,23 @@ KEY ARCHITECTURAL DECISIONS:
 
     /* --- THEME DEFINITIONS --- */
     /* Deconstructed color parts for robust calculations. Values from theme-contract.css */
-    --display-color-on-l: var(--mood-matrix-value-text-l);
-    --display-color-on-c: var(--mood-matrix-value-base-chroma);
-    --display-color-on-h: var(--dynamic-ui-accent-hue);
+    --display-color-on-l: var(--lcd-active-text-l); /* Use LCD's text lightness */
+    --display-color-on-c: var(--dynamic-lcd-chroma); /* Use LCD's assigned chroma */
+    --display-color-on-h: var(--dynamic-lcd-hue); /* Use LCD's assigned hue */
     
     /* Derived colors */
-    --display-color-on: oklch(var(--display-color-on-l) var(--display-color-on-c) var(--display-color-on-h));
-    --display-color-text-dark: oklch(15% 0.01 var(--display-color-on-h) / 0.5);
-    --display-color-off-bg: oklch(30% 0.01 var(--display-color-on-h) / 0.5);
-    --display-color-off-dot: oklch(40% 0.01 var(--display-color-on-h) / 0.4);
-    
-    --display-glow-color-1: oklch(85% 0.12 var(--display-color-on-h) / var(--harmonic-resonance-glow-opacity, 0.8));
-    --display-glow-color-2: oklch(90% 0.1 var(--display-color-on-h) / calc(var(--harmonic-resonance-glow-opacity, 0.8) * 0.625));
-    --display-glow-blur-1: calc(var(--harmonic-resonance-glow-blur, 4) * 1px);
-    --display-glow-blur-2: calc(var(--harmonic-resonance-glow-blur, 4) * 3px);
+    --display-color-on: oklch(var(--display-color-on-l) var(--display-color-on-c) var(--display-color-on-h) / var(--lcd-active-text-a));
+    --display-color-text-dark: oklch(15% 0.01 var(--display-color-on-h) / 0.8); /* Make text on bright bg darker */
+    --display-color-off-bg: oklch(30% calc(var(--display-color-on-c) * 0.1) var(--display-color-on-h) / 0.5); /* Allow off-states to have a hint of color */
+    --display-color-off-dot: oklch(40% calc(var(--display-color-on-c) * 0.1) var(--display-color-on-h) / 0.4);
 }
 
 /* --- SHARED COMPONENT STYLES --- */
-.display-container__row--name { font-size: 16px; font-weight: 500; letter-spacing: 0.05em; color: var(--display-color-on); text-shadow: 0 0 var(--display-glow-blur-1) var(--display-glow-color-1), 0 0 var(--display-glow-blur-2) var(--display-glow-color-2); transition: color 0.2s ease-out, text-shadow 0.2s ease-out; }
+.display-container__row--name { font-size: 16px; font-weight: 500; letter-spacing: 0.05em; color: var(--display-color-on); text-shadow: inherit; transition: color 0.2s ease-out, text-shadow 0.2s ease-out; }
 .fine-dot-row { display: flex; width: 100%; gap: var(--display-dot-gap); }
 .fine-dot { flex: 1; height: var(--display-dot-height); border-radius: var(--display-dot-radius); transition: background-color 0.1s linear, box-shadow 0.2s ease-out; }
 .fine-dot--off { background-color: var(--display-color-off-dot); box-shadow: none; }
-.fine-dot--on { background-color: var(--display-color-on); box-shadow: 0 0 var(--display-glow-blur-1) var(--display-glow-color-1); }
+.fine-dot--on { background-color: var(--display-color-on); box-shadow: 0 0 4px var(--terminal-text-glow-color); }
 .fine-dot--in-progress-1 { background-color: oklch(from var(--display-color-on) l c h / 0.65); }
 .fine-dot--in-progress-2 { background-color: oklch(from var(--display-color-on) l c h / 0.40); }
 .fine-dot--in-progress-3 { background-color: oklch(from var(--display-color-on) l c h / 0.20); }
@@ -72,26 +67,22 @@ KEY ARCHITECTURAL DECISIONS:
 /* --- MOOD MATRIX SPECIFIC STYLES --- */
 .mood-matrix__row--major-blocks { display: flex; justify-content: center; gap: var(--display-block-gap); width: 100%; }
 .major-block { flex: 1; height: var(--display-block-size); border-radius: var(--display-block-radius); display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: 500; transition: background-color 0.2s ease-out, color 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out; }
-.major-block--off { background-color: var(--display-color-off-bg); color: var(--display-color-off-dot); opacity: 0.7; box-shadow: none; }
-.major-block--in-progress { background-color: var(--display-color-off-bg); color: var(--display-color-on); opacity: 1; text-shadow: 0 0 var(--display-glow-blur-1) var(--display-glow-color-1), 0 0 var(--display-glow-blur-2) var(--display-glow-color-2); box-shadow: none; }
-.major-block--on { background-color: var(--display-color-on); color: var(--display-color-text-dark); opacity: 1; text-shadow: none; box-shadow: 0 0 var(--display-glow-blur-1) var(--display-glow-color-1), 0 0 var(--display-glow-blur-2) var(--display-glow-color-2); }
+.major-block--off { background-color: var(--display-color-off-bg); color: var(--display-color-off-dot); opacity: 0.7; box-shadow: none; text-shadow: none; }
+.major-block--in-progress { background-color: var(--display-color-off-bg); color: var(--display-color-on); opacity: 1; text-shadow: inherit; box-shadow: none; }
+.major-block--on { background-color: var(--display-color-on); color: var(--display-color-text-dark); opacity: 1; text-shadow: none; box-shadow: 0 0 5px var(--terminal-text-glow-color); }
 
 /* --- INTENSITY DISPLAY SPECIFIC STYLES --- */
 .intensity-display__row--bars { display: flex; width: 100%; gap: var(--display-block-gap); align-items: flex-end; }
 .intensity-bar { flex: 1; height: var(--display-block-size); border-radius: var(--display-dot-radius); transition: background-color 0.1s linear, box-shadow 0.2s ease-out; }
 .intensity-bar--unselected { background-color: var(--display-color-off-dot); box-shadow: none; }
-.intensity-bar--selected { background-color: var(--display-color-on); box-shadow: 0 0 var(--display-glow-blur-1) var(--display-glow-color-1); }
+.intensity-bar--selected { background-color: var(--display-color-on); box-shadow: 0 0 4px var(--terminal-text-glow-color); }
 
 /*
 ========================================================================
 HARMONIC RESONANCE STYLES
 ========================================================================
+The .is-resonating class is now applied to the parent .lcd-container.
+The pulsating glow effect is inherited from the styles defined in _lcd.css
+for the .lcd-content-wrapper. No additional rules are needed here.
+========================================================================
 */
-.is-resonating .display-container__row--name,
-.is-resonating .major-block--on,
-.is-resonating .major-block--in-progress,
-.is-resonating .intensity-bar--selected,
-.is-resonating .fine-dot--on {
-    /* The base elements already have transitions, which will now apply,
-       creating a gentle fade into the animated state. */
-}

@@ -70,8 +70,8 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **@module LcdUpdater:** Manages the visual state of all LCD screens.
 *   **Core Responsibilities:**
     *   Handles `unlit`, `dimly-lit`, and `active` states for LCD containers.
-    *   During the startup sequence, its state-setting methods are called **procedurally** by `PhaseRunner`. It remains passive and does not react to global state changes during this time to prevent race conditions.
-    *   When the application is interactive, it applies the correct final state based on `appStatus`.
+    *   Provides an API (`getLcdPowerOnTimeline`) for `PhaseRunner` to create flicker animations during startup.
+    *   When the application is interactive, it applies the correct final state based on `appStatus` and enables the continuous resonance effect on the main terminal.
 
 #### `DynamicStyleManager.js`
 *   **@module DynamicStyleManager:** Manages dynamic CSS custom properties.
@@ -87,11 +87,11 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `AmbientAnimationManager.js`
 *   **@module AmbientAnimationManager:** Manages continuous, ambient animations for UI elements.
-*   **Core Responsibilities:** Manages "Harmonic Resonance" and "Idle Light Drift" effects for buttons and V2 Displays based on their state.
+*   **Core Responsibilities:** Provides global, continuously animated CSS variables (`--harmonic-resonance-glow-opacity`, `--harmonic-resonance-glow-scale`) that are consumed by CSS to create "breathing" effects on buttons and LCD text.
 
 #### `MoodMatrixManager.js` & `IntensityDisplayManager.js`
 *   **@module MoodMatrixManager, IntensityDisplayManager:** Bridge the gap between `appState` and their respective presentational components.
-*   **Core Responsibilities:** Subscribe to `appState` events (e.g., `dialUpdated`), process the data, and pass simplified props to their `MoodMatrix` or `IntensityDisplay` instance via the `.update()` method.
+*   **Core Responsibilities:** Subscribe to `appState` events (e.g., `dialUpdated`), process the data, and pass simplified props to their `MoodMatrix` or `IntensityDisplay` instance via the `.update()` method. Also manage the interaction-based resonance for their specific displays.
 
 #### `resistiveShutdownController.js`
 *   **@module resistiveShutdownController:** Orchestrates the resistive shutdown sequence.

@@ -77,10 +77,30 @@
     font-weight: 500;
     line-height: 1.4;
     color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
-    text-shadow: 0 0 8px oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-text-shadow-base-alpha, 0.3));
+    
+    /* The opacity of the glow is controlled by the alpha channel of the glow color variable itself */
+    --terminal-text-glow-color: oklch(
+        from var(--terminal-text-glow-color-base)
+        l c h / calc(var(--terminal-text-glow-opacity) * var(--theme-terminal-glow-opacity-factor) * var(--harmonic-resonance-glow-opacity, 1))
+    );
+
+    /* The unified, two-layer glow effect */
+    text-shadow:
+        /* Inner, sharper glow */
+        0 0 calc(var(--terminal-text-bloom-size) * 0.3 * var(--theme-terminal-glow-size-factor)) var(--terminal-text-glow-color),
+        /* Outer, softer bloom */
+        0 0 calc(var(--terminal-text-bloom-size) * 1.0 * var(--theme-terminal-glow-size-factor)) var(--terminal-text-glow-color);
 
     transition: color var(--transition-duration-medium) ease, text-shadow var(--transition-duration-medium) ease;
 }
+
+/* Apply resonance scaling to the bloom size */
+.lcd-container.is-resonating .lcd-content-wrapper {
+    --terminal-text-bloom-size: calc(16px * var(--harmonic-resonance-glow-scale, 1));
+    /* Add a transition to smooth the start/stop of resonance */
+    transition: color var(--transition-duration-medium) ease, text-shadow 0.3s ease-out;
+}
+
 
 .lcd-content-wrapper.is-content-hidden {
     display: none !important;
@@ -135,7 +155,9 @@
 }
 .lcd-container.lcd--dimly-lit .lcd-content-wrapper {
     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-    text-shadow: 0 0 5px oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / calc(var(--lcd-text-shadow-base-alpha) * 0.7));
+    /* Apply a more subtle glow for the dimly-lit state */
+    --terminal-text-glow-opacity: 0.7;
+    --terminal-text-bloom-size: 10px;
 }
 .lcd-container.lcd--dimly-lit::after {
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0));

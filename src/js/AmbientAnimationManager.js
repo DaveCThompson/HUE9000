@@ -37,6 +37,9 @@ class AmbientAnimationManager {
         }
 
         this.appState.subscribe('appStatusChanged', (status) => this._handleAppStatusChange(status));
+        
+        // Subscribe to the global pulse to apply its own effects
+        this.appState.subscribe('ambientPulse', ({ progress }) => this._handleAmbientPulse({ progress }));
 
         if (this.buttonManager && typeof this.buttonManager.on === 'function') {
             this.buttonManager.on('beforeButtonTransition', (button) => this._handleBeforeButtonTransition(button));
@@ -49,24 +52,38 @@ class AmbientAnimationManager {
         this._handleAppStatusChange(this.appState.getAppStatus());
     }
 
+    /**
+     * The master clock. Calculates the global pulse progress and emits it.
+     */
     _updateResonance() {
-        if (!this.isActive || !this.configModule || !this.enableHarmonicResonance || !this.gsap.utils) return;
+        if (!this.isActive || !this.enableHarmonicResonance) return;
 
         const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
         const time = this.gsap.ticker.time;
         const progress = (Math.sin((time * Math.PI * 2) / R_PARAMS.PERIOD) + 1) / 2;
 
-        // MODIFIED: Only interpolate properties related to GLOW, not base brightness/opacity.
+        // Emit the global pulse progress for all subscribers
+        this.appState.emit('ambientPulse', { progress });
+    }
+
+    /**
+     * Handles the global pulse to apply resonance to buttons and LCDs.
+     * @param {object} payload
+     * @param {number} payload.progress - The pulse progress from 0 to 1.
+     */
+    _handleAmbientPulse({ progress }) {
+        if (!this.isActive || !this.configModule || !this.enableHarmonicResonance || !this.gsap.utils) return;
+
+        const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
         const glowOpacity = this.gsap.utils.interpolate(R_PARAMS.GLOW_OPACITY_RANGE[0], R_PARAMS.GLOW_OPACITY_RANGE[1], progress);
         const glowScale = this.gsap.utils.interpolate(R_PARAMS.GLOW_SCALE_RANGE[0], R_PARAMS.GLOW_SCALE_RANGE[1], progress);
-        const glowBlur = this.gsap.utils.interpolate(R_PARAMS.GLOW_BLUR_RANGE[0], R_PARAMS.GLOW_BLUR_RANGE[1], progress);
 
         // Set the global CSS variables that the new CSS will consume
         const rootStyle = document.documentElement.style;
         rootStyle.setProperty('--harmonic-resonance-glow-opacity', glowOpacity.toFixed(3));
         rootStyle.setProperty('--harmonic-resonance-glow-scale', glowScale.toFixed(3));
-        rootStyle.setProperty('--harmonic-resonance-glow-blur', glowBlur.toFixed(3));
     }
+
 
     _handleAppStatusChange(newStatus) {
         const previouslyActive = this.isActive;
@@ -78,10 +95,8 @@ class AmbientAnimationManager {
             if (this.enableHarmonicResonance) {
                 this.resonanceTicker.remove(this._updateResonance);
                 const rootStyle = document.documentElement.style;
-                // MODIFIED: Cleanup all managed variables
                 rootStyle.removeProperty('--harmonic-resonance-glow-opacity');
                 rootStyle.removeProperty('--harmonic-resonance-glow-scale');
-                rootStyle.removeProperty('--harmonic-resonance-glow-blur');
             }
         }
 
@@ -139,7 +154,6 @@ class AmbientAnimationManager {
         const rootStyle = document.documentElement.style;
         rootStyle.removeProperty('--harmonic-resonance-glow-opacity');
         rootStyle.removeProperty('--harmonic-resonance-glow-scale');
-        rootStyle.removeProperty('--harmonic-resonance-glow-blur');
     }
 }
 

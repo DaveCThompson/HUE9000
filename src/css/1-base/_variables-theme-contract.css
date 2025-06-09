@@ -118,10 +118,10 @@
     --btn-glow-spread: 3px;
     --btn-glow-color: oklch(var(--btn-energized-unselected-glow-hover-l, 0.80) var(--btn-energized-unselected-glow-hover-c, var(--dynamic-btn-chroma)) var(--btn-energized-unselected-glow-hover-h, var(--dynamic-btn-hue)) / var(--btn-glow-opacity));
 
-    --btn-selected-glow-base-opacity: 0.65;
-    --btn-selected-glow-base-size: 12px;
-    --btn-unselected-glow-base-opacity: 0.35;
-    --btn-unselected-glow-base-size: 6px;
+    --btn-selected-glow-base-opacity: 0.45;
+    --btn-selected-glow-base-size: 10px;
+    --btn-unselected-glow-base-opacity: 0.25;
+    --btn-unselected-glow-base-size: 5px;
 
     --btn-dimly-lit-glow-color: oklch(0.85 0.01 var(--dynamic-btn-hue) / var(--btn-glow-opacity));
     --btn-dimly-lit-glow-size: 4px;
@@ -182,9 +182,8 @@
     --mood-matrix-label-text-l: 0.9;
     --mood-matrix-label-base-chroma: 0.1;
     /* HARMONIC RESONANCE: These are the variables the AmbientAnimationManager will control. */
-    --harmonic-resonance-lightness-factor: 1.0; /* 1.0 = normal, < 1.0 = dimmer */
-    --harmonic-resonance-glow-blur: 4.0; /* Base blur in px */
-    --harmonic-resonance-glow-opacity: 0.8; /* Base opacity */
+    --harmonic-resonance-glow-opacity: 1.0; /* Multiplier for glow alpha */
+    --harmonic-resonance-glow-scale: 1.0; /* Multiplier for glow size */
 
 
     /* --- Component: Dials --- */
@@ -271,7 +270,7 @@
     --terminal-scanline-animation-duration: 8s;
 
     /* Terminal Text Glow - Unified Variables */
-    --terminal-text-glow-color: oklch(0.85 0.10 160); 
+    --terminal-text-glow-color-base: oklch(0.85 0.10 160); 
     --terminal-text-glow-opacity: 1.0; 
     --terminal-text-bloom-size: 16px;  
     /* Theme-specific scaling factors for terminal glow */

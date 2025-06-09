@@ -61,7 +61,7 @@ body.theme-dark {
     /* --- Component: LCD Screens --- */
     --lcd-active-grad-start-l: 0.28; 
     --lcd-active-grad-end-l: 0.22;   
-    --lcd-active-text-l: 0.92;
+    --lcd-active-text-l: 0.95; /* MODIFIED: Was 0.92 */
     --lcd-active-text-a: 0.95;
     --lcd-active-border-l: 0.45;     
     --lcd-active-border-a: 0.5;      
@@ -120,7 +120,7 @@ body.theme-dark {
     --grill-placeholder-text-l:0.55;
 
     /* --- Component: Terminal Text Glow (Theme-Specific) --- */
-    --terminal-text-glow-color: oklch(0.85 0.08 160); /* Slightly less chromatic for dark mode */
+    --terminal-text-glow-color-base: oklch(0.90 0.08 160); /* MODIFIED: Was 0.85. Slightly less chromatic for dark mode */
     --theme-terminal-glow-opacity-factor: 0.8;
     --theme-terminal-glow-size-factor: 0.8;
 }

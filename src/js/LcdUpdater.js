@@ -106,7 +106,15 @@ export class LcdUpdater {
     if (status !== 'starting-up') {
         const targetState = (status === 'interactive') ? 'active' : 'unlit';
         [this.dom.lcdA, this.dom.lcdB, this.dom.terminalContainer].forEach(lcd => {
-            if (lcd) this.setLcdState(lcd, targetState);
+            if (lcd) {
+                this.setLcdState(lcd, targetState);
+                // The terminal should resonate continuously when the app is interactive.
+                // The V2 displays (lcdA, lcdB) have their own managers that control
+                // resonance based on user interaction, so we only set it for the terminal here.
+                if (lcd.classList.contains('actual-lcd-screen-element')) {
+                    lcd.classList.toggle('is-resonating', status === 'interactive');
+                }
+            }
         });
     }
   }

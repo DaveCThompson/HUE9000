@@ -39,8 +39,8 @@ export const HUE_ASSIGNMENT_ROW_HUES = [
   147.818, // 7: Teal
   115.091, // 8: Green
   82.364,  // 9: Yellow
-  49.636,  // 10: Orange
-  16.909   // 11: Red
+  60.0,  // 10: Orange
+  40.0   // 11: Red
 ];
 
 export const DEFAULT_ASSIGNMENT_SELECTIONS = {
@@ -164,7 +164,7 @@ export const ADVANCED_FLICKER_PROFILES = {
         glow: { 
             initialOpacity: 0.0, peakOpacity: 1.0, finalOpacity: 1.0, 
             initialSize: '0px', peakSize: '18px', finalSize: '16px', 
-            colorVar: '--terminal-text-glow-color', scaleWithAmplitude: false, 
+            colorVar: '--terminal-text-glow-color-base', scaleWithAmplitude: false, 
             animatedProperties: { opacity: '--terminal-text-glow-opacity', blur: '--terminal-text-bloom-size' }
         }, 
         targetProperty: 'text-shadow-opacity-and-blur' 
@@ -319,15 +319,11 @@ export function estimateFlickerDuration(profileName) {
 export const HARMONIC_RESONANCE_PARAMS = {
     ENABLED: true,
     PERIOD: 2.5,
-    ELIGIBILITY_CLASS: 'is-resonating',
+    ELIGIBILITY_CLASS: 'is-energized',
 
     // Define min/max animation ranges for a smooth, performant animation.
-    // MODIFIED: Widened ranges for more visible effect
-    LIGHT_OPACITY_RANGE: [0.85, 1.0],   // Range for the button's inner light opacity (NO LONGER USED)
-    GLOW_OPACITY_RANGE:  [0.6, 1.0],  // Range for the pseudo-element glow's opacity
-    GLOW_SCALE_RANGE:    [0.9, 1.1],  // Range for the pseudo-element glow's scale
-    DISPLAY_LIGHTNESS_FACTOR_RANGE: [0.85, 1.0], // Range for V2 Display pulsation (NO LONGER USED)
-    GLOW_BLUR_RANGE: [4, 8], // New: Range for V2 Display glow blur
+    GLOW_OPACITY_RANGE:  [0.4, 0.6],  // Range for the pseudo-element glow's opacity
+    GLOW_SCALE_RANGE:    [0.95, 1.05],  // Range for the pseudo-element glow's scale
 };
 
 export const IDLE_LIGHT_DRIFT_PARAMS = {
@@ -390,10 +386,10 @@ export const RESISTIVE_SHUTDOWN_PARAMS = {
         TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S2',
         LENS_ANIM_DURATION_S: 0.75,
         DIAL_A_HUE_TARGET_MODE: 'absolute',
-        DIAL_A_HUE_VALUE: 49.636, // Orange
+        DIAL_A_HUE_VALUE: 60.636, // Orange
         DIAL_B_POWER_TARGET_MODE: 'increase_absolute_0_1',
         DIAL_B_POWER_VALUE: 0.20,
-        HUE_ASSIGN_TARGET_HUE: 49.636, // Orange
+        HUE_ASSIGN_TARGET_HUE: 60.636, // Orange
     },
     STAGE_3: {
         BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistRedThenSolid',
@@ -401,9 +397,9 @@ export const RESISTIVE_SHUTDOWN_PARAMS = {
         TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S3',
         LENS_ANIM_DURATION_S: 1.0,
         DIAL_A_HUE_TARGET_MODE: 'absolute',
-        DIAL_A_HUE_VALUE: 16.909, // Red
+        DIAL_A_HUE_VALUE: 40.6, // A purer Red
         DIAL_B_POWER_TARGET_MODE: 'absolute_100',
         DIAL_B_POWER_VALUE: 1.0, // Not used, but for clarity
-        HUE_ASSIGN_TARGET_HUE: 16.909, // Red
+        HUE_ASSIGN_TARGET_HUE: 40.6, // A purer Red
     }
 };

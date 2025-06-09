@@ -66,7 +66,9 @@ export class MoodMatrix {
         const wrappedHue = ((hue % 360) + 360) % 360;
         
         if (!this.isContinuouslyScrambling) {
-            const moodIndex = Math.floor(wrappedHue / (360 / this.config.moods.length)) % this.config.moods.length;
+            // --- THE FIX ---
+            // The mood index for the main label MUST use the same scale as the blocks.
+            const moodIndex = Math.floor(wrappedHue / (360 / this.config.majorBlocks)) % this.config.majorBlocks;
             this._updateMoodName(this.config.moods[moodIndex]);
         }
         
@@ -79,7 +81,8 @@ export class MoodMatrix {
         this.isContinuouslyScrambling = true;
 
         const wrappedHue = ((currentHue % 360) + 360) % 360;
-        const moodIndex = Math.floor(wrappedHue / (360 / this.config.moods.length)) % this.config.moods.length;
+        // --- THE FIX ---
+        const moodIndex = Math.floor(wrappedHue / (360 / this.config.majorBlocks)) % this.config.majorBlocks;
         const initialText = this.config.moods[moodIndex];
         const textLength = initialText.length;
 
@@ -117,7 +120,8 @@ export class MoodMatrix {
         this.isContinuouslyScrambling = false;
 
         const wrappedHue = ((finalHue % 360) + 360) % 360;
-        const moodIndex = Math.floor(wrappedHue / (360 / this.config.moods.length)) % this.config.moods.length;
+        // --- THE FIX ---
+        const moodIndex = Math.floor(wrappedHue / (360 / this.config.majorBlocks)) % this.config.majorBlocks;
         const finalText = this.config.moods[moodIndex];
         
         if (this.currentScrambleTween) this.currentScrambleTween.kill();
@@ -142,7 +146,7 @@ export class MoodMatrix {
     }
 
     _updateMajorBlocks(hue) {
-        const { majorBlocks } = this.config;
+        const { majorBlocks, moods } = this.config;
         const degreesPerBlock = 360 / majorBlocks;
         
         const primaryBlockIndex = Math.floor(hue / degreesPerBlock);
@@ -157,15 +161,23 @@ export class MoodMatrix {
 
         this.majorBlockEls.forEach((block, i) => {
             let stateClass = 'major-block--off';
-            let textContent = '00';
+            let textContent = '';
 
+            // The letter for each block is statically mapped to its position in the grid.
+            const firstLetter = (moods[i] ? moods[i].charAt(0) : '?');
+
+            let number = 0;
             if (i === primaryBlockIndex) {
                 stateClass = 'major-block--on';
-                textContent = String(Math.min(99, Math.round(primaryValue))).padStart(2, '0');
+                number = Math.min(9, Math.round(primaryValue / 10));
             } else if (i === secondaryBlockIndex) {
                 stateClass = 'major-block--in-progress';
-                textContent = String(Math.min(99, Math.round(secondaryValue))).padStart(2, '0');
+                number = Math.min(9, Math.round(secondaryValue / 10));
+            } else {
+                stateClass = 'major-block--off';
+                number = 0;
             }
+            textContent = `${firstLetter}${number}`;
             
             const fullClassName = `major-block ${stateClass}`;
             if (block.className !== fullClassName) block.className = fullClassName;
