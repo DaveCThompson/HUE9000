@@ -31,7 +31,7 @@ export const phase5Config = {
     {
       type: 'audio',
       soundKey: 'flickerToDim',
-      position: 0.1
+      position: 0.1 // Let the flicker timeline handle precise sync
     }
   ]
 };

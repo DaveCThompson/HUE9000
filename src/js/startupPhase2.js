@@ -25,12 +25,8 @@ export const phase2Config = {
       groups: ['system-power'],
       state: 'is-dimly-lit',
       profile: 'buttonFlickerToDimlyLit',
+      soundKey: 'flickerToDim', // Sound is now a property of the flicker
       stagger: 0.05,
-      position: 0.1
-    },
-    {
-      type: 'audio',
-      soundKey: 'flickerToDim',
       position: 0.1
     }
   ]

@@ -16,6 +16,7 @@ export class AudioManager {
         this.isUnlocked = false; // State to track if user has interacted
         this.backgroundMusicStarted = false; // Guard against multiple plays
         this.debug = true;
+        this.lastPlayedTimestamps = {}; // NEW: For sound throttling
 
         // Internal state for managing loops
         this.activeLoops = {
@@ -70,7 +71,7 @@ export class AudioManager {
     }
 
     /**
-     * Plays a one-shot sound.
+     * Plays a one-shot sound, with throttling.
      * @param {string} soundKey - The key of the sound in the config (e.g., 'buttonPress').
      */
     play(soundKey) {
@@ -79,8 +80,23 @@ export class AudioManager {
             return;
         }
 
+        // --- MODIFIED: Throttling logic ---
+        const now = Date.now();
+        const cooldowns = this.config.AUDIO_CONFIG.soundCooldowns || {};
+        const cooldown = cooldowns[soundKey];
+
+        if (cooldown) {
+            const lastPlayed = this.lastPlayedTimestamps[soundKey] || 0;
+            if (now - lastPlayed < cooldown) {
+                if (this.debug) console.log(`[AudioManager] Playback for '${soundKey}' throttled.`);
+                return; // Suppress the sound
+            }
+        }
+        // --- END MODIFICATION ---
+
         if (this.sounds[soundKey] && this.isReady) {
             this.sounds[soundKey].play();
+            this.lastPlayedTimestamps[soundKey] = now; // Update timestamp after playing
         } else if (this.debug) {
             console.warn(`[AudioManager] Sound not found or not ready: ${soundKey}`);
         }

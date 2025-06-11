@@ -412,7 +412,10 @@ export const RESISTIVE_SHUTDOWN_PARAMS = {
 export const AUDIO_CONFIG = {
   masterVolume: 1.0,
   musicCrossfadeDuration: 2.0, // seconds, for future use
-
+  soundCooldowns: {
+    // Cooldown in milliseconds to prevent rapid-fire playback of the same sound
+    flickerToDim: 500,
+  },
   sounds: {
     backgroundMusic: {
       src: ['./public/audio/background.mp3'],

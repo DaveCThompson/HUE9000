@@ -116,6 +116,7 @@ export class PhaseRunner {
         const lensTl = this.managers.lensManager.energizeLensCoreStartup(anim.targetPower, anim.durationMs);
         if (lensTl) tl.add(lensTl, position);
         break;
+      // RESTORED: The 'audio' case is now restored to fix the lens sound regression.
       case 'audio':
         if (this.managers.audioManager && anim.soundKey) {
             tl.call(() => this.managers.audioManager.play(anim.soundKey), [], position);
@@ -196,6 +197,7 @@ export class PhaseRunner {
                     : (isFast ? 'buttonFlickerFromDimlyLitToFullyLitUnselectedFast' : 'buttonFlickerFromDimlyLitToFullyLitUnselected');
             }
             
+            // NOTE: The soundKey is no longer passed here. It's handled by the top-level 'audio' animation type.
             const flickerResult = this.managers.buttonManager.playFlickerToState(el, anim.state, {
               profileName: effectiveProfile,
               phaseContext: `PhaseRunner_${effectiveProfile}`
