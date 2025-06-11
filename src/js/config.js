@@ -407,3 +407,28 @@ export const RESISTIVE_SHUTDOWN_PARAMS = {
         HUE_ASSIGN_TARGET_HUE: 40.6, // A purer Red
     }
 };
+
+// --- Audio Configuration ---
+export const AUDIO_CONFIG = {
+  masterVolume: 1.0,
+  musicCrossfadeDuration: 2.0, // seconds, for future use
+
+  sounds: {
+    backgroundMusic: {
+      src: ['./public/audio/background.mp3'],
+      loop: true,
+      volume: 0.35,
+      html5: true, // Use for long audio files to enable streaming
+    },
+    dialLoop: {
+      src: ['./public/audio/dial.mp3'],
+      loop: true,
+      volume: 0.7,
+    },
+    buttonPress: {
+      src: ['./public/audio/button-press.mp3'],
+      loop: false,
+      volume: 0.8,
+    },
+  },
+};

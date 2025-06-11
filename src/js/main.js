@@ -32,6 +32,7 @@ import * as debugManager from './debugManager.js';
 // [NEW] Import V2 Display Managers
 import { MoodMatrixManager } from './MoodMatrixManager.js';
 import { IntensityDisplayManager } from './IntensityDisplayManager.js';
+import { AudioManager } from './AudioManager.js'; // Import the new AudioManager
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -197,9 +198,9 @@ function initializeApp() {
     const ambientAnimationManager = new AmbientAnimationManager();
     const phaseRunner = new PhaseRunner();
     const startupSequenceManager = new StartupSequenceManager();
-    // [NEW] Instantiate V2 Display Managers
     const moodMatrixManager = new MoodMatrixManager();
     const intensityDisplayManager = new IntensityDisplayManager();
+    const audioManager = new AudioManager(); // Instantiate the new manager
 
 
     // --- Register all services and managers ---
@@ -220,11 +221,9 @@ function initializeApp() {
     serviceLocator.register('phaseRunner', phaseRunner);
     serviceLocator.register('startupSequenceManager', startupSequenceManager);
     serviceLocator.register('debugManager', debugManager);
-    // [NEW] Register V2 Display Managers
     serviceLocator.register('moodMatrixManager', moodMatrixManager);
     serviceLocator.register('intensityDisplayManager', intensityDisplayManager);
-    // [DEPRECATED] Remove old manager registration if it existed
-    // serviceLocator.remove('moodMatrixDisplayManager');
+    serviceLocator.register('audioManager', audioManager); // Register the new manager
 
 
     // --- Initialize managers (they will get dependencies from the locator) ---
@@ -235,8 +234,8 @@ function initializeApp() {
         themeManager, lcdUpdater, dynamicStyleManager, buttonManager, dialManager,
         lensManager, ambientAnimationManager,
         terminalManagerInstance, resistiveShutdownControllerInstance, phaseRunner,
-        // [NEW] Add new managers to the init list
-        moodMatrixManager, intensityDisplayManager
+        moodMatrixManager, intensityDisplayManager,
+        audioManager // Add the new manager to the init list
     ];
     managersToInit.forEach(manager => {
         if (typeof manager.init === 'function') {
