@@ -23,6 +23,11 @@ export const phase4Config = {
       type: 'lensEnergize',
       // targetPower and durationMs are read from config inside lensManager
       position: 0.1
+    },
+    {
+      type: 'audio',
+      soundKey: 'lensStartup',
+      position: 0.1
     }
   ]
 };

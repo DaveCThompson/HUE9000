@@ -132,8 +132,12 @@ export const startupMachine = createMachine({
     },
     ERROR: {
       entry: [
-        // FIX: Log the entire context for better debugging when event.data is unhelpful.
-        ({ context }) => console.error('[FSM Error]', { errorInfo: context.errorInfo, fullContext: context }),
+        // --- ADDED HYPER-SPECIFIC DEBUGGING ---
+        ({ context, event }) => {
+            console.error('[FSM Error] An error occurred in the startup sequence.');
+            console.error('Error Details from event:', event.data);
+            console.error('Full FSM Context at time of error:', context);
+        },
         () => serviceLocator.get('appState').setAppStatus('error'),
         ({ context }) => serviceLocator.get('appState').emit('requestTerminalMessage', {
           type: 'status',

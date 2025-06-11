@@ -29,10 +29,9 @@ import resistiveShutdownControllerInstance from './resistiveShutdownController.j
 import terminalManagerInstance from './terminalManager.js';
 import { StartupSequenceManager } from './startupSequenceManager.js';
 import * as debugManager from './debugManager.js';
-// [NEW] Import V2 Display Managers
 import { MoodMatrixManager } from './MoodMatrixManager.js';
 import { IntensityDisplayManager } from './IntensityDisplayManager.js';
-import { AudioManager } from './AudioManager.js'; // Import the new AudioManager
+import { AudioManager } from './AudioManager.js';
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -99,10 +98,22 @@ function setupEventListeners() {
         dialB_wasDragging: false
     };
 
+    const audioManager = serviceLocator.get('audioManager');
+
     // Listener for all button interactions
     appState.subscribe('buttonInteracted', ({ button }) => {
         const groupId = button.getGroupId();
         const value = button.getValue();
+
+        // --- Audio Logic ---
+        if (groupId === 'system-power' && value === 'off') {
+            audioManager.play('powerOff');
+        } else if (groupId === 'light' && button.isSelected()) {
+            audioManager.play('bigOn');
+        } else {
+            // Generic press sound for other buttons
+            audioManager.play('buttonPress');
+        }
 
         // --- Logic for core app state changes ---
         if (groupId === 'light') {
@@ -200,7 +211,7 @@ function initializeApp() {
     const startupSequenceManager = new StartupSequenceManager();
     const moodMatrixManager = new MoodMatrixManager();
     const intensityDisplayManager = new IntensityDisplayManager();
-    const audioManager = new AudioManager(); // Instantiate the new manager
+    const audioManager = new AudioManager();
 
 
     // --- Register all services and managers ---
@@ -223,11 +234,10 @@ function initializeApp() {
     serviceLocator.register('debugManager', debugManager);
     serviceLocator.register('moodMatrixManager', moodMatrixManager);
     serviceLocator.register('intensityDisplayManager', intensityDisplayManager);
-    serviceLocator.register('audioManager', audioManager); // Register the new manager
+    serviceLocator.register('audioManager', audioManager);
 
 
     // --- Initialize managers (they will get dependencies from the locator) ---
-    // Initialize StartupSequenceManager first so it can register its proxies before PhaseRunner needs them.
     startupSequenceManager.init();
 
     const managersToInit = [
@@ -235,8 +245,9 @@ function initializeApp() {
         lensManager, ambientAnimationManager,
         terminalManagerInstance, resistiveShutdownControllerInstance, phaseRunner,
         moodMatrixManager, intensityDisplayManager,
-        audioManager // Add the new manager to the init list
+        audioManager
     ];
+    
     managersToInit.forEach(manager => {
         if (typeof manager.init === 'function') {
             manager.init();

@@ -34,6 +34,11 @@ export const phase10Config = {
       position: 0.05 // Slightly delay theme change to ensure LCD state is set first
     },
     {
+      type: 'audio',
+      soundKey: 'lightsOn',
+      position: 0.05 // Play sound concurrently with theme change
+    },
+    {
       type: 'flicker',
       target: 'buttonGroup',
       groups: ['env', 'lcd', 'logo', 'btn', 'skill-scan-group', 'fit-eval-group'],

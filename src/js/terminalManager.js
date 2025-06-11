@@ -6,6 +6,7 @@
  */
 import { getMessage } from './terminalMessages.js';
 import { serviceLocator } from './serviceLocator.js';
+import { createAdvancedFlicker } from './animationUtils.js'; // Import flicker utility
 
 class TerminalManager {
     constructor() {
@@ -14,16 +15,13 @@ class TerminalManager {
         this._appState = null;
         this._configModule = null;
         this._gsap = null;
+        this._lcdUpdater = null; // Property for the LcdUpdater dependency
 
         this._messageQueue = [];
         this._isTyping = false;
         this._currentLineElement = null;
         this._cursorElement = null;
-        this.debug = false; // Enable detailed logging
-
-        // New properties for line wrapping
-        this._textMeasureSpan = null;
-        this._terminalWidth = 0;
+        this.debug = true; // Enable detailed logging
     }
 
     init() {
@@ -33,17 +31,10 @@ class TerminalManager {
         this._appState = serviceLocator.get('appState');
         this._configModule = serviceLocator.get('config');
         this._gsap = serviceLocator.get('gsap');
+        this._lcdUpdater = serviceLocator.get('lcdUpdater'); // Correctly inject the dependency
 
         this._setupDOM();
         this._appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
-        
-        // Wait for fonts to be ready before calculating width
-        document.fonts.ready.then(() => {
-            if (this.debug) console.log('[TerminalManager] Fonts ready, performing initial width calculation.');
-            this._updateTerminalWidth();
-        });
-
-        window.addEventListener('resize', () => this._updateTerminalWidth());
         if (this.debug) console.log('[TerminalManager INIT]');
     }
 
@@ -61,56 +52,90 @@ class TerminalManager {
     _setupDOM() {
         this._cursorElement = document.createElement('span');
         this._cursorElement.className = 'terminal-cursor';
-        
-        // Create the text measurement element
-        this._textMeasureSpan = document.createElement('span');
-        this._textMeasureSpan.style.position = 'absolute';
-        this._textMeasureSpan.style.visibility = 'hidden';
-        this._textMeasureSpan.style.height = 'auto';
-        this._textMeasureSpan.style.width = 'auto';
-        this._textMeasureSpan.style.whiteSpace = 'nowrap'; // Crucial for measuring
-        this._terminalContentElement.appendChild(this._textMeasureSpan);
-        
         this.reset();
     }
 
-    _updateTerminalWidth() {
-        this._terminalWidth = this._terminalContentElement.getBoundingClientRect().width;
-        if (this.debug) console.log(`[TerminalManager] Terminal width updated to: ${this._terminalWidth}px`);
-    }
+    /**
+     * Creates and plays a special flicker animation for the initial startup message.
+     * @param {string[]} messageLines - An array of strings for the startup message.
+     * @returns {gsap.core.Timeline} The GSAP timeline for the full animation.
+     */
+    playStartupFlicker(messageLines) {
+        if (this.debug) console.log('[TerminalManager] Playing startup flicker animation.');
+        this.reset();
+        this._setCursorState('typing');
 
-    _measureTextWidth(text) {
-        if (!this._textMeasureSpan || !text) return 0;
-        this._textMeasureSpan.textContent = text;
-        return this._textMeasureSpan.offsetWidth;
-    }
+        // Create a master timeline for this specific effect
+        const masterFlickerTl = this._gsap.timeline();
 
-    _wrapLine(lineText) {
-        if (this._measureTextWidth(lineText) <= this._terminalWidth) {
-            return [lineText];
-        }
+        // Animate the container background flicker using the injected dependency
+        const containerFlicker = this._lcdUpdater.getLcdPowerOnTimeline(this._terminalContainerElement, {
+            profileName: 'terminalScreenFlickerToDimlyLit',
+            state: 'dimly-lit'
+        });
+        masterFlickerTl.add(containerFlicker, 0);
 
-        const words = lineText.split(' ');
-        const wrappedLines = [];
-        let currentLine = words[0];
+        // Animate the text flicker
+        const lineElements = messageLines.map(lineText => {
+            const lineEl = document.createElement('div');
+            lineEl.className = 'terminal-line';
+            lineEl.textContent = lineText;
+            return lineEl;
+        });
+        
+        this._terminalContentElement.append(...lineElements);
+        this._gsap.set(lineElements, { autoAlpha: 0 });
 
-        for (let i = 1; i < words.length; i++) {
-            const testLine = currentLine + ' ' + words[i];
-            if (this._measureTextWidth(testLine) <= this._terminalWidth) {
-                currentLine = testLine;
-            } else {
-                wrappedLines.push(currentLine);
-                currentLine = words[i];
+        const textFlicker = createAdvancedFlicker(lineElements, 'textFlickerToDimlyLit', {
+            gsapInstance: this._gsap,
+            stagger: 0.1,
+            onTimelineComplete: () => {
+                if (lineElements.length > 0) {
+                    lineElements[lineElements.length - 1].appendChild(this._cursorElement);
+                }
+                this._setCursorState('idle');
             }
-        }
-        wrappedLines.push(currentLine);
-        return wrappedLines;
+        });
+        
+        // Add the text flicker partway through the container flicker
+        masterFlickerTl.add(textFlicker.timeline, ">-0.5");
+
+        return masterFlickerTl;
+    }
+
+
+    /**
+     * Creates and returns a GSAP timeline for typing text.
+     * @param {string[]} messageLines - An array of strings to be typed.
+     * @returns {gsap.core.Timeline} A GSAP timeline for the typing animation.
+     */
+    getTypingTimeline(messageLines) {
+        if (this.debug) console.log(`[TerminalManager] getTypingTimeline called with:`, messageLines);
+        const typingTl = this._gsap.timeline();
+        
+        this._setCursorState('typing');
+        
+        messageLines.forEach((line, index) => {
+            typingTl.call(() => this._addNewLineAndPrepareForTyping());
+            
+            const duration = (line.length * this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) / 1000;
+            typingTl.to(this._currentLineElement, {
+                duration: Math.max(0.1, duration),
+                text: { value: line, delimiter: "" },
+                ease: "none",
+                onUpdate: () => this._currentLineElement.appendChild(this._cursorElement),
+                onComplete: () => this._currentLineElement.appendChild(this._cursorElement)
+            });
+        });
+
+        typingTl.call(() => this._setCursorState('idle'));
+        return typingTl;
     }
 
     _handleRequestTerminalMessage(payload) {
         if (this.debug) console.log(`[TerminalManager] Received message request:`, payload);
-        const messageObject = getMessage(payload, this._appState, this._configModule);
-        this._messageQueue.push({ ...payload, ...messageObject });
+        const messageData = getMessage(payload, {}, this._configModule);
+        this._messageQueue.push({ ...payload, ...messageData });
         if (!this._isTyping) this._processQueue();
     }
 
@@ -124,26 +149,11 @@ class TerminalManager {
         const messageObject = this._messageQueue.shift();
         
         this._setCursorState('typing');
-
-        // Handle spacing before the message block
-        if (this._terminalContentElement.childElementCount > 0 && messageObject.formatting.spacingBefore > 0) {
-            for (let i = 0; i < messageObject.formatting.spacingBefore; i++) {
-                this._addNewLineAndPrepareForTyping();
-            }
-        }
         
+        // This loop will now work correctly as messageObject.content is the expected array.
         for (const lineText of messageObject.content) {
-            const wrappedLines = this._wrapLine(lineText);
-            for (let i = 0; i < wrappedLines.length; i++) {
-                this._addNewLineAndPrepareForTyping();
-                await this._typeLine(wrappedLines[i], messageObject.type);
-                // Handle spacing within the message block (after each original line)
-                if (i === wrappedLines.length - 1 && messageObject.formatting.lineSpacing > 0) {
-                     for (let j = 0; j < messageObject.formatting.lineSpacing; j++) {
-                        this._addNewLineAndPrepareForTyping();
-                    }
-                }
-            }
+            this._addNewLineAndPrepareForTyping();
+            await this._typeLine(lineText, messageObject.type);
         }
 
         this._isTyping = false;
@@ -164,8 +174,8 @@ class TerminalManager {
 
     _typeLine(text, messageType = 'status') {
         return new Promise(resolve => {
-            const speedPerChar = (messageType === 'block' || messageType === 'startup')
-                ? this._configModule.TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR
+            const speedPerChar = messageType === 'block' 
+                ? this._configModule.TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR 
                 : this._configModule.TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
             const duration = (text.length * speedPerChar) / 1000;
 

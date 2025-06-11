@@ -13,6 +13,8 @@ export class AudioManager {
         this.appState = null;
         this.sounds = {}; // Will hold the Howl instances
         this.isReady = false;
+        this.isUnlocked = false; // State to track if user has interacted
+        this.backgroundMusicStarted = false; // Guard against multiple plays
         this.debug = true;
 
         // Internal state for managing loops
@@ -27,7 +29,7 @@ export class AudioManager {
         this.config = serviceLocator.get('config');
         this.appState = serviceLocator.get('appState');
         
-        // 1. Load all sounds from config, which triggers preloading
+        // 1. Load ALL sounds from config immediately.
         const audioConfig = this.config.AUDIO_CONFIG.sounds;
         for (const key in audioConfig) {
             this.sounds[key] = new Howl(audioConfig[key]);
@@ -38,11 +40,33 @@ export class AudioManager {
 
         // 3. Subscribe to application events
         this.appState.subscribe('appStatusChanged', this.handleAppStatusChange.bind(this));
-        this.appState.subscribe('buttonInteracted', this.handleButtonInteraction.bind(this));
         this.appState.subscribe('dialUpdated', this.handleDialUpdate.bind(this));
         
         if (this.debug) console.log('[AudioManager] Initialized and sounds are preloading.');
         this.isReady = true;
+
+        // 4. Set up a one-time listener to unlock the audio context on first user interaction.
+        document.addEventListener('click', () => this._unlockAudio(), { once: true });
+        document.addEventListener('touchstart', () => this._unlockAudio(), { once: true });
+    }
+
+    _unlockAudio() {
+        if (this.isUnlocked) return;
+        this.isUnlocked = true;
+
+        // Manually resume the AudioContext. Howler attempts this automatically on play,
+        // but being explicit is more robust.
+        if (Howler.ctx && Howler.ctx.state !== 'running') {
+            Howler.ctx.resume();
+        }
+
+        if (this.debug) console.log('[AudioManager] Audio context unlocked by user interaction.');
+        
+        // Play music immediately on unlock, if it hasn't started.
+        if (!this.backgroundMusicStarted) {
+            this.play('backgroundMusic');
+            this.backgroundMusicStarted = true;
+        }
     }
 
     /**
@@ -50,6 +74,11 @@ export class AudioManager {
      * @param {string} soundKey - The key of the sound in the config (e.g., 'buttonPress').
      */
     play(soundKey) {
+        if (!this.isUnlocked) {
+            if (this.debug) console.log(`[AudioManager] Playback for '${soundKey}' blocked, audio not yet unlocked.`);
+            return;
+        }
+
         if (this.sounds[soundKey] && this.isReady) {
             this.sounds[soundKey].play();
         } else if (this.debug) {
@@ -62,6 +91,8 @@ export class AudioManager {
      * @param {string} soundKey - The key of the looping sound (e.g., 'dialLoop').
      */
     startLoop(soundKey) {
+        if (!this.isUnlocked) return;
+
         if (this.sounds[soundKey] && this.isReady && !this.activeLoops[soundKey]) {
             if (this.debug) console.log(`[AudioManager] Starting loop: ${soundKey}`);
             this.activeLoops[soundKey] = this.sounds[soundKey].play();
@@ -73,6 +104,8 @@ export class AudioManager {
      * @param {string} soundKey - The key of the looping sound to stop.
      */
     stopLoop(soundKey) {
+        if (!this.isUnlocked) return;
+
         if (this.sounds[soundKey] && this.isReady && this.activeLoops[soundKey]) {
             if (this.debug) console.log(`[AudioManager] Stopping loop: ${soundKey}`);
             // Fade out for a smoother stop
@@ -95,18 +128,13 @@ export class AudioManager {
     handleAppStatusChange(newStatus) {
         if (!this.isReady) return;
 
-        if (newStatus === 'interactive') {
-            if (this.debug) console.log('[AudioManager] App interactive, starting background music.');
+        // This is now just a fallback in case unlock happens after interactive state is reached,
+        // which is unlikely in the current flow but safe to keep.
+        if (newStatus === 'interactive' && this.isUnlocked && !this.backgroundMusicStarted) {
+            if (this.debug) console.log('[AudioManager] App is interactive and audio is unlocked, starting background music.');
             this.play('backgroundMusic');
-        } else {
-            // Future: Stop or fade out music if status changes to 'error' or 'loading'
+            this.backgroundMusicStarted = true;
         }
-    }
-
-    handleButtonInteraction(payload) {
-        if (!this.isReady) return;
-        // For now, any button press plays the same sound.
-        this.play('buttonPress');
     }
 
     handleDialUpdate({ id, state }) {

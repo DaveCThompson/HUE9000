@@ -6,8 +6,9 @@
 export const phase1Config = {
   phase: 1,
   name: "EMERGENCY_SUBSYSTEMS",
-  terminalMessageKey: "P1_EMERGENCY_SUBSYSTEMS", // This key now triggers the composed animation in PhaseRunner
-  duration: 2.0, // Increased duration to accommodate the full animation
+  duration: 2.0,
+  specialTerminalFlicker: true,
+  message: ["INITIATING STARTUP PROTOCOL"],
   animations: [
     {
       type: 'tween',
@@ -29,7 +30,5 @@ export const phase1Config = {
       },
       position: 0
     }
-    // The complex flicker+typing animation is now handled by PhaseRunner
-    // when it sees the terminalMessageKey for this phase.
   ]
 };

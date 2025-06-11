@@ -22,6 +22,11 @@ export const phase9Config = {
       state: 'is-energized',
       profile: 'buttonFlickerFromDimlyLitToFullyLitUnselected',
       position: 0.1
+    },
+    {
+      type: 'audio',
+      soundKey: 'bigOn',
+      position: 0.1
     }
   ]
 };

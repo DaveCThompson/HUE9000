@@ -32,6 +32,11 @@ export const phase3Config = {
       state: 'is-energized',
       profile: 'buttonFlickerFromDimlyLitToFullyLitUnselectedFast',
       position: 0.1
+    },
+    {
+      type: 'audio',
+      soundKey: 'bigOn',
+      position: 0.1
     }
   ]
 };

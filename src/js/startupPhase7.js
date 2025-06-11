@@ -27,6 +27,11 @@ export const phase7Config = {
       profile: 'buttonFlickerToDimlyLit',
       stagger: 0.008,
       position: 0.1
+    },
+    {
+      type: 'audio',
+      soundKey: 'flickerToDim',
+      position: 0.1
     }
   ]
 };

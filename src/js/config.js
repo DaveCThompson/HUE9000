@@ -181,13 +181,13 @@ export const ADVANCED_FLICKER_PROFILES = {
     },
     terminalScreenFlickerToDimlyLit: { 
         numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
-        amplitudeStart: 1.0, 
+        amplitudeStart: 0.0, // THE CRITICAL FIX
         amplitudeEnd: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, 
         glow: { 
             initialOpacity: 0.0, peakOpacity: 0.4, finalOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity,
             initialSize: '0px', peakSize: '9px', finalSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize,
             colorVar: '--lcd-glow-color', sizeVar: '--lcd-glow-size',
-            opacityVar: '--lcd-glow-opacity', scaleWithAmplitude: false 
+            opacityVar: '--lcd-glow-opacity', scaleWithAmplitude: true
         }, targetProperty: 'element-opacity-and-box-shadow' 
     },
     buttonFlickerToDimlyLit: {
@@ -418,7 +418,7 @@ export const AUDIO_CONFIG = {
       src: ['./public/audio/background.mp3'],
       loop: true,
       volume: 0.35,
-      html5: true, // Use for long audio files to enable streaming
+      html5: true, 
     },
     dialLoop: {
       src: ['./public/audio/dial.mp3'],
@@ -429,6 +429,31 @@ export const AUDIO_CONFIG = {
       src: ['./public/audio/button-press.mp3'],
       loop: false,
       volume: 0.8,
+    },
+    flickerToDim: {
+      src: ['./public/audio/flicker-to-dim.wav'],
+      loop: false,
+      volume: 0.6,
+    },
+    lensStartup: {
+      src: ['./public/audio/lens-startup.wav'],
+      loop: false,
+      volume: 0.9,
+    },
+    powerOff: {
+      src: ['./public/audio/off.wav'],
+      loop: false,
+      volume: 1.0,
+    },
+    bigOn: {
+      src: ['./public/audio/big-on.wav'],
+      loop: false,
+      volume: 1.0,
+    },
+    lightsOn: {
+      src: ['./public/audio/lights-on.wav'],
+      loop: false,
+      volume: 0.9,
     },
   },
 };

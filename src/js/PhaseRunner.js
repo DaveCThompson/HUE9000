@@ -30,13 +30,14 @@ export class PhaseRunner {
       dialManager: serviceLocator.get('dialManager'),
       lensManager: serviceLocator.get('lensManager'),
       lcdUpdater: serviceLocator.get('lcdUpdater'),
-      terminalManager: serviceLocator.get('terminalManager'), // Add terminalManager
+      terminalManager: serviceLocator.get('terminalManager'),
+      audioManager: serviceLocator.get('audioManager'),
     };
     if (this.debug) console.log('[PhaseRunner INIT]');
   }
 
   run(phaseConfig) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (this.debug) {
         console.group(`[PhaseRunner] Executing Phase ${phaseConfig.phase}: ${phaseConfig.name}`);
       }
@@ -58,54 +59,21 @@ export class PhaseRunner {
           }
         });
 
-        // Handle terminal message typing as a special, composed animation
-        if (phaseConfig.terminalMessageKey) {
-            if (this.debug) console.log(`[PhaseRunner] Phase has terminalMessageKey: ${phaseConfig.terminalMessageKey}`);
-            
-            if (phaseConfig.phase === 1) {
-                const composedTl = this.gsap.timeline();
-                // FIX: getMessage returns an object { content, formatting }. Destructure it.
-                const messageObject = getMessage({ type: 'startup', messageKey: phaseConfig.terminalMessageKey }, {}, this.config);
-
-                const containerFlicker = this.managers.lcdUpdater.getLcdPowerOnTimeline(this.dom.terminalContainer, {
-                    profileName: 'terminalScreenFlickerToDimlyLit',
-                    state: 'dimly-lit'
-                });
-                composedTl.add(containerFlicker, 0);
-
-                const textFlickerTl = this.gsap.timeline();
-                const lineElements = [];
-                
-                // FIX: Iterate over messageObject.content, not the object itself.
-                messageObject.content.forEach(lineText => {
-                    const lineEl = document.createElement('div');
-                    lineEl.className = 'terminal-line';
-                    lineEl.textContent = lineText;
-                    lineElements.push(lineEl);
-                });
-
-                textFlickerTl.call(() => {
-                    this.managers.terminalManager.reset();
-                    this.dom.terminalLcdContentElement.append(...lineElements);
-                    this.gsap.set(lineElements, { autoAlpha: 0 });
-                }, [], 0);
-
-                const textFlicker = createAdvancedFlicker(lineElements, 'textFlickerToDimlyLit', {
-                    gsapInstance: this.gsap,
-                    stagger: 0.1
-                });
-                textFlickerTl.add(textFlicker.timeline, '>');
-
-                composedTl.add(textFlickerTl, containerFlicker.duration() * 0.2);
-                masterTl.add(composedTl, 0);
-            } else {
-                // For all other phases, just type the message normally.
+        // --- REVERTED/FIXED: Handle terminal messages based on phase config ---
+        if (phaseConfig.specialTerminalFlicker && phaseConfig.message) {
+            // For P1, get the terminal's own flicker timeline and add it to the master.
+            const terminalFlickerTl = this.managers.terminalManager.playStartupFlicker(phaseConfig.message);
+            masterTl.add(terminalFlickerTl, 0);
+        } else if (phaseConfig.terminalMessageKey) {
+            // For all other phases, use a gsap.call to emit the message request.
+            // This ensures the event is fired when the timeline *plays*, not when it's built.
+            masterTl.call(() => {
                 this.appState.emit('requestTerminalMessage', {
                     type: 'startup',
                     source: phaseConfig.name,
                     messageKey: phaseConfig.terminalMessageKey,
                 });
-            }
+            }, [], 0);
         }
 
         if (phaseConfig.animations && Array.isArray(phaseConfig.animations)) {
@@ -147,6 +115,11 @@ export class PhaseRunner {
       case 'lensEnergize':
         const lensTl = this.managers.lensManager.energizeLensCoreStartup(anim.targetPower, anim.durationMs);
         if (lensTl) tl.add(lensTl, position);
+        break;
+      case 'audio':
+        if (this.managers.audioManager && anim.soundKey) {
+            tl.call(() => this.managers.audioManager.play(anim.soundKey), [], position);
+        }
         break;
       default:
         console.warn(`[PhaseRunner] Unknown animation type: ${anim.type}`);
