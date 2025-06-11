@@ -19,7 +19,11 @@ class TerminalManager {
         this._isTyping = false;
         this._currentLineElement = null;
         this._cursorElement = null;
-        this.debug = true; // Enable detailed logging
+        this.debug = false; // Enable detailed logging
+
+        // New properties for line wrapping
+        this._textMeasureSpan = null;
+        this._terminalWidth = 0;
     }
 
     init() {
@@ -32,6 +36,14 @@ class TerminalManager {
 
         this._setupDOM();
         this._appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
+        
+        // Wait for fonts to be ready before calculating width
+        document.fonts.ready.then(() => {
+            if (this.debug) console.log('[TerminalManager] Fonts ready, performing initial width calculation.');
+            this._updateTerminalWidth();
+        });
+
+        window.addEventListener('resize', () => this._updateTerminalWidth());
         if (this.debug) console.log('[TerminalManager INIT]');
     }
 
@@ -49,41 +61,56 @@ class TerminalManager {
     _setupDOM() {
         this._cursorElement = document.createElement('span');
         this._cursorElement.className = 'terminal-cursor';
+        
+        // Create the text measurement element
+        this._textMeasureSpan = document.createElement('span');
+        this._textMeasureSpan.style.position = 'absolute';
+        this._textMeasureSpan.style.visibility = 'hidden';
+        this._textMeasureSpan.style.height = 'auto';
+        this._textMeasureSpan.style.width = 'auto';
+        this._textMeasureSpan.style.whiteSpace = 'nowrap'; // Crucial for measuring
+        this._terminalContentElement.appendChild(this._textMeasureSpan);
+        
         this.reset();
     }
 
-    /**
-     * Creates and returns a GSAP timeline for typing text.
-     * @param {string[]} messageLines - An array of strings to be typed.
-     * @returns {gsap.core.Timeline} A GSAP timeline for the typing animation.
-     */
-    getTypingTimeline(messageLines) {
-        if (this.debug) console.log(`[TerminalManager] getTypingTimeline called with:`, messageLines);
-        const typingTl = this._gsap.timeline();
-        
-        this._setCursorState('typing');
-        
-        messageLines.forEach((line, index) => {
-            typingTl.call(() => this._addNewLineAndPrepareForTyping());
-            
-            const duration = (line.length * this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) / 1000;
-            typingTl.to(this._currentLineElement, {
-                duration: Math.max(0.1, duration),
-                text: { value: line, delimiter: "" },
-                ease: "none",
-                onUpdate: () => this._currentLineElement.appendChild(this._cursorElement),
-                onComplete: () => this._currentLineElement.appendChild(this._cursorElement)
-            });
-        });
+    _updateTerminalWidth() {
+        this._terminalWidth = this._terminalContentElement.getBoundingClientRect().width;
+        if (this.debug) console.log(`[TerminalManager] Terminal width updated to: ${this._terminalWidth}px`);
+    }
 
-        typingTl.call(() => this._setCursorState('idle'));
-        return typingTl;
+    _measureTextWidth(text) {
+        if (!this._textMeasureSpan || !text) return 0;
+        this._textMeasureSpan.textContent = text;
+        return this._textMeasureSpan.offsetWidth;
+    }
+
+    _wrapLine(lineText) {
+        if (this._measureTextWidth(lineText) <= this._terminalWidth) {
+            return [lineText];
+        }
+
+        const words = lineText.split(' ');
+        const wrappedLines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const testLine = currentLine + ' ' + words[i];
+            if (this._measureTextWidth(testLine) <= this._terminalWidth) {
+                currentLine = testLine;
+            } else {
+                wrappedLines.push(currentLine);
+                currentLine = words[i];
+            }
+        }
+        wrappedLines.push(currentLine);
+        return wrappedLines;
     }
 
     _handleRequestTerminalMessage(payload) {
         if (this.debug) console.log(`[TerminalManager] Received message request:`, payload);
-        const content = getMessage(payload, {}, this._configModule);
-        this._messageQueue.push({ ...payload, content });
+        const messageObject = getMessage(payload, this._appState, this._configModule);
+        this._messageQueue.push({ ...payload, ...messageObject });
         if (!this._isTyping) this._processQueue();
     }
 
@@ -97,10 +124,26 @@ class TerminalManager {
         const messageObject = this._messageQueue.shift();
         
         this._setCursorState('typing');
+
+        // Handle spacing before the message block
+        if (this._terminalContentElement.childElementCount > 0 && messageObject.formatting.spacingBefore > 0) {
+            for (let i = 0; i < messageObject.formatting.spacingBefore; i++) {
+                this._addNewLineAndPrepareForTyping();
+            }
+        }
         
         for (const lineText of messageObject.content) {
-            this._addNewLineAndPrepareForTyping();
-            await this._typeLine(lineText, messageObject.type);
+            const wrappedLines = this._wrapLine(lineText);
+            for (let i = 0; i < wrappedLines.length; i++) {
+                this._addNewLineAndPrepareForTyping();
+                await this._typeLine(wrappedLines[i], messageObject.type);
+                // Handle spacing within the message block (after each original line)
+                if (i === wrappedLines.length - 1 && messageObject.formatting.lineSpacing > 0) {
+                     for (let j = 0; j < messageObject.formatting.lineSpacing; j++) {
+                        this._addNewLineAndPrepareForTyping();
+                    }
+                }
+            }
         }
 
         this._isTyping = false;
@@ -121,8 +164,8 @@ class TerminalManager {
 
     _typeLine(text, messageType = 'status') {
         return new Promise(resolve => {
-            const speedPerChar = messageType === 'block' 
-                ? this._configModule.TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR 
+            const speedPerChar = (messageType === 'block' || messageType === 'startup')
+                ? this._configModule.TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR
                 : this._configModule.TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
             const duration = (text.length * speedPerChar) / 1000;
 

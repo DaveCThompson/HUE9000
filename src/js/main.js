@@ -89,14 +89,21 @@ function createGridButtons(buttonManager) {
 
 /**
  * Sets up top-level event listeners for application side-effects.
+ * This function also serves as the "Terminal Interaction Bridge".
  */
 function setupEventListeners() {
+    // State object to track dial drag-release events for the terminal bridge
+    const interactionState = {
+        dialA_wasDragging: false,
+        dialB_wasDragging: false
+    };
+
     // Listener for all button interactions
     appState.subscribe('buttonInteracted', ({ button }) => {
         const groupId = button.getGroupId();
         const value = button.getValue();
 
-        // --- Logic from old toggleManager ---
+        // --- Logic for core app state changes ---
         if (groupId === 'light') {
             const newTheme = value === 'on' ? 'light' : 'dark';
             if (appState.getCurrentTheme() !== newTheme) {
@@ -108,25 +115,53 @@ function setupEventListeners() {
             } else if (value === 'on' && appState.getResistiveShutdownStage() > 0) {
                 appState.setResistiveShutdownStage(0);
             }
-        }
-        // --- Logic from old gridManager ---
-        else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
+        } else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
             const hue = config.HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
             appState.setTargetColorProperties(groupId, hue);
-        }
-        // --- Logic for action buttons ---
-        else if (groupId === 'skill-scan-group' || groupId === 'fit-eval-group') {
+        } else if (groupId === 'skill-scan-group' || groupId === 'fit-eval-group') {
             const messageKeyMap = {
-                'Scan Button 1': 'BTN1_MESSAGE',
-                'Scan Button 2': 'BTN2_MESSAGE',
-                'Scan Button 3': 'BTN3_MESSAGE',
-                'Scan Button 4': 'BTN4_MESSAGE',
+                'Scan Button 1': 'BTN1_MESSAGE', 'Scan Button 2': 'BTN2_MESSAGE',
+                'Scan Button 3': 'BTN3_MESSAGE', 'Scan Button 4': 'BTN4_MESSAGE',
             };
             const messageKey = messageKeyMap[button.getElement().ariaLabel];
             if (messageKey) {
                 appState.emit('requestTerminalMessage', { type: 'block', messageKey });
             }
         }
+
+        // --- Terminal Interaction Bridge Logic for Buttons ---
+        let terminalPayload = null;
+        if (groupId === 'light') {
+            terminalPayload = { type: 'interaction', source: 'aux_light', data: { state: value.toUpperCase() } };
+        } else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
+            const hue = config.HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
+            terminalPayload = { type: 'interaction', source: 'hue_assign', data: { target: groupId.toUpperCase(), hue: hue } };
+        }
+        if (terminalPayload) {
+            appState.emit('requestTerminalMessage', terminalPayload);
+        }
+    });
+
+    // Terminal Interaction Bridge listener for dial drag-release events
+    appState.subscribe('dialUpdated', ({ id, state }) => {
+        const wasDragging = (id === 'A') ? interactionState.dialA_wasDragging : interactionState.dialB_wasDragging;
+
+        if (wasDragging && !state.isDragging) {
+            let terminalPayload = null;
+            if (id === 'A') { // Mood Dial release
+                terminalPayload = { type: 'interaction', source: 'mood_change', data: { hue: state.hue } };
+            } else if (id === 'B') { // Intensity Dial release
+                const power = (state.hue / 359.999) * 100;
+                terminalPayload = { type: 'interaction', source: 'intensity_change', data: { power: power } };
+            }
+            if (terminalPayload) {
+                appState.emit('requestTerminalMessage', terminalPayload);
+            }
+        }
+        
+        // Update the tracking state for the next event
+        if (id === 'A') interactionState.dialA_wasDragging = state.isDragging;
+        if (id === 'B') interactionState.dialB_wasDragging = state.isDragging;
     });
 
     // Listener for all physical button clicks to delegate to buttonManager
@@ -137,6 +172,7 @@ function setupEventListeners() {
         }
     });
 }
+
 
 /**
  * Main application initialization function.

@@ -38,7 +38,7 @@ export class LcdUpdater {
    * @returns {gsap.core.Timeline} A GSAP timeline for the full effect.
    */
   getLcdPowerOnTimeline(lcdContainer, options) {
-    const { profileName, state } = options;
+    // FIX: Improved logging for elements without an ID.
     const targetIdForLog = lcdContainer ? (lcdContainer.id || lcdContainer.className.split(' ')[0]) : 'NullElement';
     if (this.debug) console.groupCollapsed(`[LcdUpdater] getLcdPowerOnTimeline for ${targetIdForLog}`);
 
@@ -54,12 +54,12 @@ export class LcdUpdater {
     // 1. Make the content wrapper visible so GSAP has an element to animate.
     masterTimeline.call(() => {
         if (this.debug) console.log(`[LcdUpdater] Making content wrapper visible for animation.`);
-        this._updateLcdVisibility(lcdContainer, state);
+        this._updateLcdVisibility(lcdContainer, options.state);
     }, [], 0);
 
     // 2. Create and add the container (background) flicker timeline.
-    if (this.debug) console.log(`[LcdUpdater] Creating container flicker with profile: ${profileName}`);
-    const containerFlicker = createAdvancedFlicker(lcdContainer, profileName, { gsapInstance: this.gsap });
+    if (this.debug) console.log(`[LcdUpdater] Creating container flicker with profile: ${options.profileName}`);
+    const containerFlicker = createAdvancedFlicker(lcdContainer, options.profileName, { gsapInstance: this.gsap });
     masterTimeline.add(containerFlicker.timeline, 0);
 
     // 3. Create and add a generic, smooth content fade-in animation.
@@ -81,11 +81,11 @@ export class LcdUpdater {
 
     // 4. After animation, set the final static CSS class on the container.
     masterTimeline.eventCallback('onComplete', () => {
-        if (this.debug) console.log(`[LcdUpdater] Power-on complete. Setting final state: ${state}`);
-        const targetClass = state === 'dimly-lit' ? 'lcd--dimly-lit' : '';
+        if (this.debug) console.log(`[LcdUpdater] Power-on complete. Setting final state: ${options.state}`);
+        const targetClass = options.state === 'dimly-lit' ? 'lcd--dimly-lit' : '';
         MANAGED_LCD_CLASSES.forEach(cls => lcdContainer.classList.remove(cls));
         if (targetClass) lcdContainer.classList.add(targetClass);
-        this.appState.emit('lcdStateChanged', { lcdId: lcdContainer.id, newStateKey: state });
+        this.appState.emit('lcdStateChanged', { lcdId: targetIdForLog, newStateKey: options.state });
         if (this.debug) console.groupEnd();
     });
 
@@ -93,12 +93,13 @@ export class LcdUpdater {
   }
 
   setLcdState(lcdContainer, stateName) {
-    if (this.debug) console.log(`[LcdUpdater] setLcdState (instant) for ${lcdContainer.id} to ${stateName}`);
+    const targetIdForLog = lcdContainer ? (lcdContainer.id || lcdContainer.className.split(' ')[0]) : 'NullElement';
+    if (this.debug) console.log(`[LcdUpdater] setLcdState (instant) for ${targetIdForLog} to ${stateName}`);
     const targetClass = stateName === 'dimly-lit' ? 'lcd--dimly-lit' : stateName === 'unlit' ? 'lcd--unlit' : '';
     MANAGED_LCD_CLASSES.forEach(cls => lcdContainer.classList.remove(cls));
     if (targetClass) lcdContainer.classList.add(targetClass);
     this._updateLcdVisibility(lcdContainer, stateName);
-    this.appState.emit('lcdStateChanged', { lcdId: lcdContainer.id, newStateKey: stateName });
+    this.appState.emit('lcdStateChanged', { lcdId: targetIdForLog, newStateKey: stateName });
   }
 
   applyCurrentStateToAllLcds() {
@@ -120,6 +121,7 @@ export class LcdUpdater {
   }
 
   _updateLcdVisibility(lcdContainer, stateName) {
+    if (!lcdContainer) return;
     const contentWrapper = lcdContainer.querySelector('.lcd-content-wrapper');
     if (!contentWrapper) return;
     const isVisible = (stateName === 'active' || stateName === 'dimly-lit');

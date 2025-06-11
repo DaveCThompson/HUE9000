@@ -62,10 +62,10 @@ export class PhaseRunner {
         if (phaseConfig.terminalMessageKey) {
             if (this.debug) console.log(`[PhaseRunner] Phase has terminalMessageKey: ${phaseConfig.terminalMessageKey}`);
             
-            // FIX: Only perform the complex flicker for Phase 1.
             if (phaseConfig.phase === 1) {
                 const composedTl = this.gsap.timeline();
-                const messageContent = getMessage({ type: 'startup', messageKey: phaseConfig.terminalMessageKey }, {}, this.config);
+                // FIX: getMessage returns an object { content, formatting }. Destructure it.
+                const messageObject = getMessage({ type: 'startup', messageKey: phaseConfig.terminalMessageKey }, {}, this.config);
 
                 const containerFlicker = this.managers.lcdUpdater.getLcdPowerOnTimeline(this.dom.terminalContainer, {
                     profileName: 'terminalScreenFlickerToDimlyLit',
@@ -76,7 +76,8 @@ export class PhaseRunner {
                 const textFlickerTl = this.gsap.timeline();
                 const lineElements = [];
                 
-                messageContent.forEach(lineText => {
+                // FIX: Iterate over messageObject.content, not the object itself.
+                messageObject.content.forEach(lineText => {
                     const lineEl = document.createElement('div');
                     lineEl.className = 'terminal-line';
                     lineEl.textContent = lineText;

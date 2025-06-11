@@ -28,6 +28,11 @@
     to { background-position: 0 calc(var(--terminal-scanline-thickness) * -8); }
 }
 
+/* NEW: Added overflow-wrap for robustness */
+.terminal-line {
+    overflow-wrap: break-word;
+}
+
 /* Terminal Cursor */
 .terminal-cursor {
     display: inline-block;
