@@ -7,6 +7,19 @@
 import { Howl, Howler } from 'howler';
 import { serviceLocator } from './serviceLocator.js';
 
+// Import audio files - Vite will handle these paths
+import backgroundMusicUrl from '../assets/audio/background.mp3';
+import dialLoopUrl from '../assets/audio/dial.mp3';
+import buttonPressUrl from '../assets/audio/button-press.mp3';
+import flickerToDimUrl from '../assets/audio/flicker-to-dim.wav';
+import terminalOnUrl from '../assets/audio/terminal-on.wav';
+import lcdOnUrl from '../assets/audio/lcd-on.wav';
+import lensStartupUrl from '../assets/audio/lens-startup.wav';
+import powerOffUrl from '../assets/audio/off.wav';
+import bigOnUrl from '../assets/audio/big-on.wav';
+import lightsOnUrl from '../assets/audio/lights-on.wav';
+
+
 export class AudioManager {
     constructor() {
         this.config = null;
@@ -18,27 +31,36 @@ export class AudioManager {
         this.debug = true;
         this.lastPlayedTimestamps = {}; // For sound throttling
 
-        // Internal state for managing loops
         this.activeLoops = {
-            dial: null, // Will store the playback ID for the dial sound
+            dial: null,
         };
-        // Track dragging state for both dials to prevent redundant sound triggers
         this.dialDragState = { A: false, B: false };
 
         const configModule = serviceLocator.get('config');
         this.config = configModule;
+
         if (configModule && configModule.AUDIO_CONFIG) {
-            const audioConfig = configModule.AUDIO_CONFIG.sounds;
-            for (const key in audioConfig) {
-                this.sounds[key] = new Howl(audioConfig[key]);
-            }
+            const audioConfigBase = configModule.AUDIO_CONFIG;
+            const soundSettings = audioConfigBase.sounds;
+
+            this.sounds = {
+                backgroundMusic: new Howl({ ...soundSettings.backgroundMusic, src: [backgroundMusicUrl] }),
+                dialLoop: new Howl({ ...soundSettings.dialLoop, src: [dialLoopUrl] }),
+                buttonPress: new Howl({ ...soundSettings.buttonPress, src: [buttonPressUrl] }),
+                flickerToDim: new Howl({ ...soundSettings.flickerToDim, src: [flickerToDimUrl] }),
+                terminalOn: new Howl({ ...soundSettings.terminalOn, src: [terminalOnUrl] }),
+                lcdOn: new Howl({ ...soundSettings.lcdOn, src: [lcdOnUrl] }),
+                lensStartup: new Howl({ ...soundSettings.lensStartup, src: [lensStartupUrl] }),
+                powerOff: new Howl({ ...soundSettings.powerOff, src: [powerOffUrl] }),
+                bigOn: new Howl({ ...soundSettings.bigOn, src: [bigOnUrl] }),
+                lightsOn: new Howl({ ...soundSettings.lightsOn, src: [lightsOnUrl] }),
+            };
         } else {
             console.error('[AudioManager] AUDIO_CONFIG not found during construction. Sounds will not be loaded.');
         }
     }
 
     init() {
-        // This method is now safe to call early, as it has no dependencies.
         if (this.isReady) return;
 
         if (!this.config) {
@@ -54,9 +76,6 @@ export class AudioManager {
         document.addEventListener('touchstart', () => this._unlockAudio(), { once: true });
     }
 
-    /**
-     * Subscribes to appState events. This MUST be called after appState is registered.
-     */
     postInitSubscribe() {
         this.appState = serviceLocator.get('appState');
         this.appState.subscribe('appStatusChanged', this.handleAppStatusChange.bind(this));
@@ -76,7 +95,6 @@ export class AudioManager {
 
         if (this.debug) console.log('[AudioManager] Audio context unlocked by user interaction.');
         
-        // Play background music immediately upon unlock if it hasn't started.
         if (!this.backgroundMusicStarted) {
             this.play('backgroundMusic');
         }
@@ -100,11 +118,10 @@ export class AudioManager {
             }
         }
 
-        const soundConfig = this.config.AUDIO_CONFIG.sounds[soundKey];
         const sound = this.sounds[soundKey];
+        const soundConfigFromMain = this.config.AUDIO_CONFIG.sounds[soundKey];
 
-        // Add detailed debugging for playback failures.
-        if (sound && soundConfig && this.isReady) {
+        if (sound && this.isReady) {
             if (this.debug) console.log(`[AudioManager] Playing sound: '${soundKey}'`);
             const soundId = sound.play();
             this.lastPlayedTimestamps[soundKey] = now;
@@ -113,14 +130,13 @@ export class AudioManager {
                  this.backgroundMusicStarted = true;
             }
 
-            if (soundConfig.fadeOutDuration && soundId) {
-                sound.fade(sound.volume(soundId), 0, soundConfig.fadeOutDuration, soundId);
+            if (soundConfigFromMain && soundConfigFromMain.fadeOutDuration && soundId) {
+                sound.fade(sound.volume(soundId), 0, soundConfigFromMain.fadeOutDuration, soundId);
             }
         } else if (this.debug) {
             const debugInfo = {
                 soundKey,
                 soundExists: !!sound,
-                soundConfigExists: !!soundConfig,
                 isManagerReady: this.isReady,
                 soundState: sound ? sound.state() : 'N/A'
             };
@@ -147,7 +163,10 @@ export class AudioManager {
             setTimeout(() => {
                 if (this.activeLoops[soundKey]) {
                     this.sounds[soundKey].stop(this.activeLoops[soundKey]);
-                    this.sounds[soundKey].volume(this.config.AUDIO_CONFIG.sounds[soundKey].volume);
+                    const originalVolume = this.config.AUDIO_CONFIG.sounds[soundKey]?.volume;
+                    if (typeof originalVolume === 'number') {
+                        this.sounds[soundKey].volume(originalVolume);
+                    }
                     this.activeLoops[soundKey] = null;
                 }
             }, 100);
@@ -160,17 +179,11 @@ export class AudioManager {
     }
 
     handleAppStatusChange(newStatus) {
-        // This function is kept for potential future use, but the background music
-        // logic has been moved to _unlockAudio for more immediate playback.
         if (!this.isReady) return;
     }
 
     handleDialUpdate({ id, state }) {
         if (!this.isReady || !this.appState || (id !== 'A' && id !== 'B')) return;
-
-        if (this.debug) {
-            // console.log(`[AudioManager handleDialUpdate] ID: ${id}, isDragging: ${state.isDragging}, wasDragging: ${this.dialDragState[id]}`);
-        }
 
         const wasDragging = this.dialDragState[id];
         const isDragging = state.isDragging;

@@ -3,6 +3,8 @@
  * @description Handles the thematic "cold boot" preloader sequence.
  */
 import { serviceLocator } from './serviceLocator.js';
+import dialSvgUrl from '../assets/svgs/dial.svg'; // Vite will handle this path
+import logoSvgUrl from '../assets/svgs/logo.svg'; // Vite will handle this path
 
 /**
  * Runs the preloader sequence, handling asset loading and user interaction.
@@ -66,8 +68,8 @@ export function runPreloader(dom, gsap) {
                 const statusSpan = await typeLine(checks[1]);
                 try {
                     await Promise.all([
-                        fetch('./dial.svg').then(res => res.ok ? res.text() : Promise.reject('dial.svg failed')),
-                        fetch('./logo.svg').then(res => res.ok ? res.text() : Promise.reject('logo.svg failed'))
+                        fetch(dialSvgUrl).then(res => res.ok ? res.text() : Promise.reject('dial.svg failed')),
+                        fetch(logoSvgUrl).then(res => res.ok ? res.text() : Promise.reject('logo.svg failed'))
                     ]);
                     updateStatus(statusSpan, true);
                     gsap.to(progressBar, { width: '66.6%' });
@@ -77,20 +79,24 @@ export function runPreloader(dom, gsap) {
                 const statusSpan = await typeLine(checks[2]);
                 try {
                     await new Promise((res, rej) => {
-                        const timeout = setTimeout(() => rej(new Error("Audio loading timed out.")), 10000);
+                        const timeout = setTimeout(() => rej(new Error("Audio loading timed out.")), 15000);
                         const checkAudioReady = () => {
-                            // FIX: The check must be for 'loaded' state ONLY.
                             const allSounds = Object.values(audioManager.sounds);
                             const loadedSounds = allSounds.filter(s => s.state() === 'loaded');
                             
-                            if (loadedSounds.length === allSounds.length) {
+                            if (loadedSounds.length === allSounds.length && allSounds.length > 0) { // Ensure sounds object is populated
                                 clearTimeout(timeout);
                                 res();
-                            } else {
+                            } else if (allSounds.length === 0 && audioManager.isReady) { // If no sounds defined but manager is ready
+                                clearTimeout(timeout);
+                                console.warn("[Preloader] No audio sounds defined in AudioManager, proceeding.");
+                                res();
+                            }
+                            else {
                                 setTimeout(checkAudioReady, 100);
                             }
                         };
-                        checkAudioReady();
+                        setTimeout(checkAudioReady, 50);
                     });
                     updateStatus(statusSpan, true);
                     gsap.to(progressBar, { width: '100%' });
@@ -98,16 +104,21 @@ export function runPreloader(dom, gsap) {
             })(),
         ];
 
-        // Wait for all assets to load, then show the engage button.
         Promise.all(assetPromises).then(() => {
             engageButtonContainer.classList.remove('hidden');
             gsap.fromTo(engageButtonContainer, { opacity: 0 }, { opacity: 1, duration: 0.5 });
             
-            // Type out final messages concurrently.
             checks[3].classList.add('visible');
              gsap.to({}, { duration: 0.5 }).then(() => {
                  checks[4].classList.add('visible');
              });
+        }).catch(err => {
+            console.error("[Preloader] Error during asset loading phase:", err);
+            // Potentially show an error message to the user or allow bypass
+            engageButtonContainer.classList.remove('hidden');
+            gsap.fromTo(engageButtonContainer, { opacity: 0 }, { opacity: 1, duration: 0.5 });
+            checks[3].classList.add('visible');
+            checks[4].classList.add('visible');
         });
 
         engageButton.addEventListener('click', () => {

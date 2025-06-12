@@ -5,6 +5,7 @@
  * Replaces the dynamic styling portion of the old uiUpdater.js.
  */
 import { serviceLocator } from './serviceLocator.js';
+import logoSvgUrl from '../assets/svgs/logo.svg'; // Vite will handle this path
 
 export class DynamicStyleManager {
   constructor() {
@@ -65,7 +66,7 @@ export class DynamicStyleManager {
       return; // Already injected
     }
 
-    fetch('./logo.svg')
+    fetch(logoSvgUrl) // Use the imported URL
       .then(response => {
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         return response.text();

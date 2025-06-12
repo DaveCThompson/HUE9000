@@ -14,10 +14,6 @@
     align-items: stretch;
     opacity: var(--theme-component-opacity);
 
-    /* Default to ACTIVE state styles */
-    /* A solid background-color is defined as a fallback. It matches the darkest
-       stop of the gradient and prevents visual flicker during theme transitions
-       where the background-image gradient might not interpolate smoothly. */
     background-color: oklch(
         var(--lcd-active-grad-end-l)
         calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor))
@@ -40,7 +36,7 @@
 
 .terminal-block .actual-lcd-screen-element {
     flex-grow: 1;
-    min-height: 0; /* Required for flex-grow to work correctly in a flex column */
+    min-height: 0; 
 }
 
 
@@ -49,7 +45,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('/public/crt-overlay.png');
+    background-image: url('../../assets/textures/crt-overlay.png'); /* MODIFIED PATH */
     background-size: var(--lcd-crt-overlay-size, 1920px 1120px);
     background-repeat: repeat;
     background-position: 0 0;
@@ -70,7 +66,6 @@
     flex-grow: 1;
     box-sizing: border-box;
 
-    /* Unified content styles */
     padding: var(--space-md);
     font-family: 'IBM Plex Mono', monospace;
     font-size: var(--lcd-content-font-size, 0.9em);
@@ -78,26 +73,20 @@
     line-height: 1.4;
     color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
     
-    /* The opacity of the glow is controlled by the alpha channel of the glow color variable itself */
     --terminal-text-glow-color: oklch(
         from var(--terminal-text-glow-color-base)
         l c h / calc(var(--terminal-text-glow-opacity) * var(--theme-terminal-glow-opacity-factor) * var(--harmonic-resonance-glow-opacity, 1))
     );
 
-    /* The unified, two-layer glow effect */
     text-shadow:
-        /* Inner, sharper glow */
         0 0 calc(var(--terminal-text-bloom-size) * 0.3 * var(--theme-terminal-glow-size-factor)) var(--terminal-text-glow-color),
-        /* Outer, softer bloom */
         0 0 calc(var(--terminal-text-bloom-size) * 1.0 * var(--theme-terminal-glow-size-factor)) var(--terminal-text-glow-color);
 
     transition: color var(--transition-duration-medium) ease, text-shadow var(--transition-duration-medium) ease;
 }
 
-/* Apply resonance scaling to the bloom size */
 .lcd-container.is-resonating .lcd-content-wrapper {
     --terminal-text-bloom-size: calc(16px * var(--harmonic-resonance-glow-scale, 1));
-    /* Add a transition to smooth the start/stop of resonance */
     transition: color var(--transition-duration-medium) ease, text-shadow 0.3s ease-out;
 }
 
@@ -106,7 +95,6 @@
     display: none !important;
 }
 
-/* Specific layout needs for content wrappers */
 #hue-lcd-A .lcd-content-wrapper,
 #hue-lcd-B .lcd-content-wrapper {
     display: flex;
@@ -124,7 +112,6 @@
 
 /* --- 3. State Modifications --- */
 
-/* State: Unlit */
 .lcd-container.lcd--unlit {
     background-image: none !important;
     background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
@@ -139,7 +126,6 @@
     opacity: 0 !important;
 }
 
-/* State: Dimly Lit */
 .lcd-container.lcd--dimly-lit {
     background-color: oklch(
         var(--lcd-dimly-lit-grad-end-l)
@@ -155,7 +141,6 @@
 }
 .lcd-container.lcd--dimly-lit .lcd-content-wrapper {
     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-    /* Apply a more subtle glow for the dimly-lit state */
     --terminal-text-glow-opacity: 0.7;
     --terminal-text-bloom-size: 10px;
 }
@@ -166,18 +151,15 @@
 
 /* --- 4. Component-Specific Content Styles --- */
 
-/* Dial B's numeric value */
 .lcd-value {
     font-weight: 600;
     line-height: 1;
 }
 
-/* Terminal lines inherit from the wrapper, but need their own glow for flicker effects */
 .terminal-line {
     display: flex;
     align-items: baseline;
     line-height: 1.7;
-    color: inherit; /* Inherit color from the content wrapper */
-    /* The flicker effect will apply its own text-shadow. This is for the static state. */
+    color: inherit; 
     text-shadow: inherit;
 }

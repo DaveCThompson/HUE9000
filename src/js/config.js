@@ -16,12 +16,12 @@ export const HIGHLIGHT_WIDTH_FACTOR = 0.15;
 export const DIAL_GRADIENT_SCALE_FACTOR = 0.8;
 export const DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG = 2;
 export const DEFAULT_DIAL_A_HUE = 40.6;
-export const DIAL_CANVAS_FADE_IN_DURATION = 0.5; // NEW: Duration for dial canvas fade-in
+export const DIAL_CANVAS_FADE_IN_DURATION = 0.5;
 
 // --- Animation Settings (GSAP) ---
 export const GSAP_TWEEN_DURATION = 0.4;
 export const GSAP_TWEEN_EASE = "power1.out";
-export const PERCEPTUAL_AUDIO_OFFSET_MS = 60; // NEW: Delay audio to align with visual perception
+export const PERCEPTUAL_AUDIO_OFFSET_MS = 60;
 
 // --- Button Animation Config ---
 export const GSAP_BUTTON_IDLE_DURATION_MIN = 1.7;
@@ -182,7 +182,6 @@ export const ADVANCED_FLICKER_PROFILES = {
             opacityVar: '--lcd-glow-opacity', scaleWithAmplitude: true
         }, targetProperty: 'element-opacity-and-box-shadow'
     },
-    // FIX: Added amplitudeStart: 0.0 to prevent the terminal from popping in at full opacity.
     terminalScreenFlickerToDimlyLit: { 
         numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
         amplitudeStart: 0.0, 
@@ -324,10 +323,8 @@ export const HARMONIC_RESONANCE_PARAMS = {
     ENABLED: true,
     PERIOD: 2.5,
     ELIGIBILITY_CLASS: 'is-energized',
-
-    // Define min/max animation ranges for a smooth, performant animation.
-    GLOW_OPACITY_RANGE:  [0.4, 0.6],  // Range for the pseudo-element glow's opacity
-    GLOW_SCALE_RANGE:    [0.95, 1.05],  // Range for the pseudo-element glow's scale
+    GLOW_OPACITY_RANGE:  [0.4, 0.6],
+    GLOW_SCALE_RANGE:    [0.95, 1.05],
 };
 
 export const IDLE_LIGHT_DRIFT_PARAMS = {
@@ -354,15 +351,14 @@ export const STATE_TRANSITION_ECHO_PARAMS = {
 
 // --- Mood Matrix Display Configuration ---
 export const MOOD_MATRIX_DEFINITIONS = [
-    "Commanding",    // 0-60° (Red/Orange) - The ultimate state of control.
-    "Analytical",    // 60-120° (Yellow/Green) - The state of data processing.
-    "Focused",       // 120-180° (Green/Cyan) - The state of neutral concentration.
-    "Advisory",      // 180-240° (Cyan/Blue) - The state of providing output/guidance.
-    "Introspective", // 240-300° (Blue/Purple) - The state of internal processing.
-    "Evaluative"     // 300-360° (Magenta/Pink) - The state of judgment and decision-making.
+    "Commanding",
+    "Analytical",
+    "Focused",
+    "Advisory",
+    "Introspective",
+    "Evaluative"
 ];
 
-// [NEW] V2 Display Parameters
 export const V2_DISPLAY_PARAMS = {
     INTENSITY_BARS: 36,
     INTENSITY_DOTS: 36,
@@ -371,109 +367,65 @@ export const V2_DISPLAY_PARAMS = {
     RESONANCE_IDLE_DELAY_MS: 250
 };
 
-
 // --- Resistive Shutdown Configuration ---
 export const RESISTIVE_SHUTDOWN_PARAMS = {
     MAX_STAGE: 3,
     LENS_ANIMATION_EASING_DEFAULT: "power2.inOut",
-
     STAGE_1: {
         BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistYellow',
-        BUTTON_FLASH_GLOW_COLOR: 'oklch(0.85 0.15 85)', // Soft Yellow
+        BUTTON_FLASH_GLOW_COLOR: 'oklch(0.85 0.15 85)',
         TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S1',
         LENS_ANIM_DURATION_S: 0.75,
         DIAL_A_HUE_TARGET_MODE: 'absolute',
-        DIAL_A_HUE_VALUE: 82.364, // Yellow
+        DIAL_A_HUE_VALUE: 82.364,
         DIAL_B_POWER_TARGET_MODE: 'increase_absolute_0_1',
         DIAL_B_POWER_VALUE: 0.20,
-        HUE_ASSIGN_TARGET_HUE: 82.364, // Yellow
+        HUE_ASSIGN_TARGET_HUE: 82.364,
     },
     STAGE_2: {
         BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistOrange',
-        BUTTON_FLASH_GLOW_COLOR: 'oklch(0.75 0.16 50)', // Deeper Orange
+        BUTTON_FLASH_GLOW_COLOR: 'oklch(0.75 0.16 50)',
         TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S2',
         LENS_ANIM_DURATION_S: 0.75,
         DIAL_A_HUE_TARGET_MODE: 'absolute',
-        DIAL_A_HUE_VALUE: 60.636, // Orange
+        DIAL_A_HUE_VALUE: 60.636,
         DIAL_B_POWER_TARGET_MODE: 'increase_absolute_0_1',
         DIAL_B_POWER_VALUE: 0.20,
-        HUE_ASSIGN_TARGET_HUE: 60.636, // Orange
+        HUE_ASSIGN_TARGET_HUE: 60.636,
     },
     STAGE_3: {
         BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistRedThenSolid',
-        BUTTON_FLASH_GLOW_COLOR: 'oklch(0.65 0.22 25)', // Red
+        BUTTON_FLASH_GLOW_COLOR: 'oklch(0.65 0.22 25)',
         TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S3',
         LENS_ANIM_DURATION_S: 1.0,
         DIAL_A_HUE_TARGET_MODE: 'absolute',
-        DIAL_A_HUE_VALUE: 40.6, // A purer Red
+        DIAL_A_HUE_VALUE: 40.6,
         DIAL_B_POWER_TARGET_MODE: 'absolute_100',
-        DIAL_B_POWER_VALUE: 1.0, // Not used, but for clarity
-        HUE_ASSIGN_TARGET_HUE: 40.6, // A purer Red
+        DIAL_B_POWER_VALUE: 1.0,
+        HUE_ASSIGN_TARGET_HUE: 40.6,
     }
 };
 
 // --- Audio Configuration ---
+// NOTE: `src` paths are removed as they are now handled by direct imports in AudioManager.js
 export const AUDIO_CONFIG = {
   masterVolume: 1.0,
-  musicCrossfadeDuration: 2.0, // seconds, for future use
+  musicCrossfadeDuration: 2.0,
   soundCooldowns: {
-    // Cooldown in milliseconds to prevent rapid-fire playback of the same sound
-    flickerToDim: 250, // Reduced cooldown as it's a common effect
+    flickerToDim: 250,
     terminalOn: 4000,
     lcdOn: 6000,
   },
-  sounds: {
-    backgroundMusic: {
-      src: ['./public/audio/background.wav'],
-      loop: true,
-      volume: 0.35,
-    },
-    dialLoop: {
-      src: ['./public/audio/dial.mp3'],
-      loop: true,
-      volume: 0.7,
-    },
-    buttonPress: {
-      src: ['./public/audio/button-press.mp3'],
-      loop: false,
-      volume: 0.8,
-    },
-    flickerToDim: {
-      src: ['./public/audio/flicker-to-dim.wav'],
-      loop: false,
-      volume: 0.6,
-    },
-    terminalOn: {
-      src: ['./public/audio/terminal-on.wav'],
-      loop: false,
-      volume: 0.8,
-      fadeOutDuration: 4000, // Custom property for AudioManager
-    },
-    lcdOn: {
-      src: ['./public/audio/lcd-on.wav'],
-      loop: false,
-      volume: 0.7,
-      fadeOutDuration: 6000, // Custom property for AudioManager
-    },
-    lensStartup: {
-      src: ['./public/audio/lens-startup.wav'],
-      loop: false,
-      volume: 0.9,
-    },
-    powerOff: {
-      src: ['./public/audio/off.wav'],
-      loop: false,
-      volume: 1.0,
-    },
-    bigOn: {
-      src: ['./public/audio/big-on.wav'],
-      loop: false,
-      volume: 1.0,
-    },
-    lightsOn: {
-      src: ['./public/audio/lights-on.wav'],
-      loop: false,
-      volume: 0.9,
-    },
+  sounds: { // Only non-path properties remain
+    backgroundMusic: { loop: true, volume: 0.35 },
+    dialLoop: { loop: true, volume: 0.7 },
+    buttonPress: { loop: false, volume: 0.8 },
+    flickerToDim: { loop: false, volume: 0.6 },
+    terminalOn: { loop: false, volume: 0.8, fadeOutDuration: 4000 },
+    lcdOn: { loop: false, volume: 0.7, fadeOutDuration: 6000 },
+    lensStartup: { loop: false, volume: 0.9 },
+    powerOff: { loop: false, volume: 1.0 },
+    bigOn: { loop: false, volume: 1.0 },
+    lightsOn: { loop: false, volume: 0.9 },
   },
 };

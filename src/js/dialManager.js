@@ -5,6 +5,7 @@
  */
 import DialController from './DialController.js';
 import { serviceLocator } from './serviceLocator.js';
+import dialSvgUrl from '../assets/svgs/dial.svg'; // Vite will handle this path
 
 export class DialManager {
   constructor() {
@@ -32,7 +33,6 @@ export class DialManager {
             const dialId = container.dataset.dialId;
             if (dialId) {
                 if (this.dialInstances[dialId]) this.dialInstances[dialId].destroy();
-                // Pass dependencies to the controller
                 this.dialInstances[dialId] = new DialController(container, dialId);
             }
         });
@@ -43,7 +43,7 @@ export class DialManager {
 
   async injectDialSVGs() {
     try {
-        const response = await fetch('./dial.svg');
+        const response = await fetch(dialSvgUrl); // Use the imported URL
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -65,21 +65,15 @@ export class DialManager {
                 container.innerHTML = `<p style="color: grey; font-size: 0.8em; text-align: center;">Dial Error</p>`;
             }
         });
-        // Re-throw the error to be caught by the caller in init()
         throw error;
     }
   }
 
   setDialsActiveState(isActive) {
     // This method is now effectively a no-op for the SVG dial, but kept for API consistency.
-    // The active state is handled by the controller itself if needed.
   }
 
   resizeAllCanvases(forceDraw = false) {
-    // FIX: Defer the redraw to the next animation frame. This is the crucial fix
-    // for the style recalculation lag. It ensures that when forceRedraw() is called,
-    // the browser has finished applying the new theme's styles, and getComputedStyle()
-    // will return the correct, final values, preventing NaN poisoning.
     requestAnimationFrame(() => {
         Object.values(this.dialInstances).forEach(dial => {
             if (dial && typeof dial.forceRedraw === 'function') {

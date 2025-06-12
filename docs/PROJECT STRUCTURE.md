@@ -1,27 +1,32 @@
-# HUE 9000 Project Structure (Project Decouple - V2.1)
+# HUE 9000 Project Structure (Project Decouple - V2.1 - Vite Asset Migration)
 
-This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns after the "Project Decouple" refactoring.
+This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns after the "Project Decouple" refactoring and Vite-idiomatic asset migration.
 
 HUE9000_Project/
-├── public/
-│   ├── audio/
-│   │   ├── background.mp3
-│   │   ├── big-on.wav
-│   │   ├── button-press.mp3
-│   │   ├── dial.mp3
-│   │   ├── flicker-to-dim.wav
-│   │   ├── lcd-on.wav
-│   │   ├── lens-startup.wav
-│   │   ├── lights-on.wav
-│   │   ├── off.wav
-│   │   └── terminal-on.wav
-│   ├── crt-overlay.png
-│   ├── dial.svg
-│   ├── metal-grill.png
-│   ├── noise.svg
-│   ├── specular-highlights.svg
-│   └── logo.svg
+├── public/                     # Should now be minimal, for truly static assets not processed by Vite (e.g., favicon.ico, robots.txt)
+│                               # All previously listed assets (audio, images, SVGs) have been moved to src/assets/
 ├── src/
+│   ├── assets/                 # NEW: All static assets processed by Vite
+│   │   ├── audio/
+│   │   │   ├── background.mp3
+│   │   │   ├── big-on.wav
+│   │   │   ├── button-press.mp3
+│   │   │   ├── dial.mp3
+│   │   │   ├── flicker-to-dim.wav
+│   │   │   ├── lcd-on.wav
+│   │   │   ├── lens-startup.wav
+│   │   │   ├── lights-on.wav
+│   │   │   ├── off.wav
+│   │   │   └── terminal-on.wav
+│   │   ├── svgs/
+│   │   │   ├── dial.svg
+│   │   │   ├── logo.svg
+│   │   │   └── specular-highlights.svg
+│   │   └── textures/
+│   │       ├── crt-overlay.png
+│   │       ├── metal-grill.png
+│   │       └── noise.svg
+│   │
 │   ├── js/
 │   │   ├── AmbientAnimationManager.js # Manages continuous ambient animations
 │   │   ├── animationUtils.js          # Utilities for complex animations (e.g., flicker)
@@ -41,10 +46,10 @@ HUE9000_Project/
 │   │   ├── MoodMatrix.js              # V2 Component: Renders the mood matrix display
 │   │   ├── MoodMatrixManager.js       # V2 Manager: Bridges appState and MoodMatrix
 │   │   ├── PhaseRunner.js             # Executes declarative startup phase configs
-│   │   ├── preloader.js               # NEW: Manages the initial boot-up/loading screen
+│   │   ├── preloader.js               # Manages the initial boot-up/loading screen
 │   │   ├── resistiveShutdownController.js # Orchestrates the resistive shutdown sequence
 │   │   ├── serviceLocator.js          # Central dependency locator
-│   │   ├── sidePanelManager.js        # NEW: Manages the left/right info/debug panels
+│   │   ├── sidePanelManager.js        # Manages the left/right info/debug panels
 │   │   ├── startupSequenceManager.js  # Manages the XState startup sequence
 │   │   ├── startupMachine.js          # XState machine definition for startup
 │   │   ├── startupPhase0.js           # Declarative config for startup phase 0
@@ -75,8 +80,8 @@ HUE9000_Project/
 │       │   └── _utilities.css
 │       │
 │       ├── 2-components/
-│       │   ├── _preloader.css             # NEW: Styles for the preloader
-│       │   ├── _side-panels.css         # NEW: Styles for the side info/debug panels
+│       │   ├── _preloader.css
+│       │   ├── _side-panels.css
 │       │   ├── _panel-bezel.css
 │       │   ├── _button-unit.css
 │       │   ├── _dial.css
@@ -98,4 +103,7 @@ HUE9000_Project/
 │       │
 │       └── main.css
 ├── index.html
-└── JAVASCRIPT_MODULE_REFERENCE.md
+├── vite.config.js             # Vite build configuration
+├── package.json
+├── yarn.lock / package-lock.json
+└── README.md

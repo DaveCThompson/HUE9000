@@ -30,8 +30,8 @@
 
 /* --- 2: Components --- */
 /* Styles for individual UI components */
-@import url('./2-components/_preloader.css'); /* ADDED */
-@import url('./2-components/_side-panels.css'); /* ADDED */
+@import url('./2-components/_preloader.css');
+@import url('./2-components/_side-panels.css');
 @import url('./2-components/_panel-bezel.css');
 @import url('./2-components/_button-unit.css');
 @import url('./2-components/_dial.css');
@@ -69,26 +69,22 @@ body {
     align-items: center;
     min-height: 100vh;
 
-    /* Background L values are modified by --startup-L-reduction-factor. Alphas are from theme. */
     background-color: oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
-    /* Noise texture is applied via background-image with a multiply blend mode. */
     background-image:
-        url('/public/noise.svg'), /* Noise texture overlay */
+        url('../assets/textures/noise.svg'), /* MODIFIED PATH */
         linear-gradient(180deg,
             oklch(calc(var(--body-bg-top-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
             oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%
         );
-    background-repeat: repeat, no-repeat; /* repeat for noise, no-repeat for gradient */
-    background-size: 150px 150px, cover; /* size for noise, cover for gradient */
+    background-repeat: repeat, no-repeat;
+    background-size: 150px 150px, cover;
     background-position: 0 0, 0 0;
-    background-blend-mode: multiply, normal; /* Multiply for noise, normal for gradient */
-
+    background-blend-mode: multiply, normal;
 
     color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
     font-family: 'IBM Plex Mono', 'Inter', sans-serif;
     padding: var(--space-3xl);
     touch-action: none;
-    /* FIX: Removed 'overflow: hidden' which was clipping the fixed-position side panels. */
 
     transition:
         color var(--transition-duration-medium) ease,

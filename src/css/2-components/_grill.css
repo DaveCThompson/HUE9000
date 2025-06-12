@@ -6,22 +6,13 @@
   height: 100%;
   width: 100%;
   background-color: oklch(var(--grill-bg-l) var(--grill-bg-c) var(--grill-bg-h) / var(--grill-bg-a));
-  background-image: url('/public/metal-grill.png');
+  background-image: url('../../assets/textures/metal-grill.png'); /* MODIFIED PATH */
   background-size: 337px 228px;
   background-repeat: repeat;
   background-position: center center;
-  /* background-blend-mode is now controlled by theme-dim.css or theme-dark.css via --grill-blend-mode */
   background-blend-mode: var(--grill-blend-mode, multiply); 
   color: oklch(var(--grill-placeholder-text-l) var(--grill-placeholder-text-c) var(--grill-placeholder-text-h));
   border-radius: var(--radius-panel-tight);
-  /* 
-    Opacity logic:
-    - Base opacity from --grill-opacity (theme-specific, e.g., 0.6 in theme-dim, 1 in contract/theme-dark).
-    - This base is then multiplied by --startup-opacity-factor-boosted during startup.
-    - --startup-opacity-factor-boosted goes from ~0.75 (P0) to 1.25 (clamped to 1) by P8.
-    - So, in theme-dim P0, effective opacity = 0.6 * 0.75 = 0.45.
-    - In theme-dim P8+, effective opacity = 0.6 * 1.0 (clamped) = 0.6.
-  */
   opacity: calc(var(--grill-opacity, 1) * var(--startup-opacity-factor-boosted, 0));
   transition:
       background-color var(--transition-duration-medium) ease,

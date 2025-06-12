@@ -57,7 +57,7 @@
 /* Base Panel Section Structure */
 .panel-section {
     background-color: oklch(calc(var(--panel-section-bg-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a)); 
-    background-image: url('/public/noise.svg'); 
+    background-image: url('../../assets/textures/noise.svg'); /* FIX: Use root-relative path */
     background-size: 150px 150px;
     background-repeat: repeat;
     background-position: 0 0;
