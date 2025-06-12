@@ -424,7 +424,7 @@ export const AUDIO_CONFIG = {
   },
   sounds: {
     backgroundMusic: {
-      src: ['./public/audio/background.mp3'],
+      src: ['./public/audio/background.wav'],
       loop: true,
       volume: 0.35,
     },

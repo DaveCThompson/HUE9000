@@ -7,7 +7,7 @@ export const phase8Config = {
   phase: 8,
   name: "EXTERNAL_LIGHTING_CONTROLS",
   terminalMessageKey: "P8_EXTERNAL_LIGHTING_CONTROLS",
-  duration: 1.2,
+  duration: 2.2,
   animations: [
     {
       type: 'tween',

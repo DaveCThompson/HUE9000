@@ -7,7 +7,7 @@ export const phase2Config = {
   phase: 2,
   name: "BACKUP_POWER",
   terminalMessageKey: "P2_BACKUP_POWER",
-  duration: 1.2,
+  duration: 2.2,
   animations: [
     {
       type: 'tween',

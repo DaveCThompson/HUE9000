@@ -7,7 +7,7 @@ export const phase11Config = {
   phase: 11,
   name: "SYSTEM_OPERATIONAL",
   terminalMessageKey: "P11_SYSTEM_OPERATIONAL",
-  duration: 0.5,
+  duration: 0.15,
   animations: [
     {
       type: 'call',

@@ -7,7 +7,7 @@ export const phase4Config = {
   phase: 4,
   name: "OPTICAL_CORE_REACTIVATE",
   terminalMessageKey: "P4_OPTICAL_CORE_REACTIVATE",
-  duration: 1.7,
+  duration: 3.0,
   animations: [
     {
       type: 'tween',

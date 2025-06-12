@@ -7,7 +7,7 @@ export const phase7Config = {
   phase: 7,
   name: "HUE_CORRECTION_SYSTEMS",
   terminalMessageKey: "P7_HUE_CORRECTION_SYSTEMS",
-  duration: 1.2,
+  duration: 2.2,
   animations: [
     {
       type: 'tween',

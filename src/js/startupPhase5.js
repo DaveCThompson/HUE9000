@@ -7,7 +7,7 @@ export const phase5Config = {
   phase: 5,
   name: "DIAGNOSTIC_INTERFACE",
   terminalMessageKey: "P5_DIAGNOSTIC_INTERFACE",
-  duration: 1.2,
+  duration: 2.2,
   animations: [
     {
       type: 'tween',

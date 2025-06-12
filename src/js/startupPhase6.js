@@ -7,7 +7,7 @@ export const phase6Config = {
   phase: 6,
   name: "MOOD_INTENSITY_CONTROLS",
   terminalMessageKey: "P6_MOOD_INTENSITY_CONTROLS",
-  duration: 1.5,
+  duration: 2.5,
   animations: [
     {
       type: 'tween',

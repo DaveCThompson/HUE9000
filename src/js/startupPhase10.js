@@ -6,7 +6,7 @@
 export const phase10Config = {
   phase: 10,
   name: "THEME_TRANSITION",
-  duration: 1.5,
+  duration: 2.0,
   animations: [
     {
       type: 'call',

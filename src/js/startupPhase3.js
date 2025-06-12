@@ -7,7 +7,7 @@ export const phase3Config = {
   phase: 3,
   name: "MAIN_POWER_ONLINE",
   terminalMessageKey: "P3_MAIN_POWER_ONLINE",
-  duration: 1.2,
+  duration: 3.2,
   animations: [
     {
       type: 'tween',
