@@ -31,7 +31,7 @@ export const phase5Config = {
     {
       type: 'audio',
       soundKey: 'flickerToDim',
-      position: 0.1 // This sound is fast, so a small offset is fine
+      position: 1.2 // This sound is fast, so a small offset is fine
     }
   ]
 };

@@ -427,7 +427,6 @@ export const AUDIO_CONFIG = {
       src: ['./public/audio/background.mp3'],
       loop: true,
       volume: 0.35,
-      html5: true, 
     },
     dialLoop: {
       src: ['./public/audio/dial.mp3'],

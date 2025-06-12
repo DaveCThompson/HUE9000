@@ -38,21 +38,30 @@ export class AudioManager {
     }
 
     init() {
-        this.appState = serviceLocator.get('appState');
+        // This method is now safe to call early, as it has no dependencies.
+        if (this.isReady) return;
+
         if (!this.config) {
             this.config = serviceLocator.get('config');
         }
         
         Howler.volume(this.config.AUDIO_CONFIG.masterVolume);
-
-        this.appState.subscribe('appStatusChanged', this.handleAppStatusChange.bind(this));
-        this.appState.subscribe('dialUpdated', this.handleDialUpdate.bind(this));
         
-        if (this.debug) console.log('[AudioManager] Initialized and subscribed to events.');
+        if (this.debug) console.log('[AudioManager] Pre-initialized.');
         this.isReady = true;
 
         document.addEventListener('click', () => this._unlockAudio(), { once: true });
         document.addEventListener('touchstart', () => this._unlockAudio(), { once: true });
+    }
+
+    /**
+     * Subscribes to appState events. This MUST be called after appState is registered.
+     */
+    postInitSubscribe() {
+        this.appState = serviceLocator.get('appState');
+        this.appState.subscribe('appStatusChanged', this.handleAppStatusChange.bind(this));
+        this.appState.subscribe('dialUpdated', this.handleDialUpdate.bind(this));
+        if (this.debug) console.log('[AudioManager] Subscribed to appState events.');
     }
 
     _unlockAudio() {
@@ -67,6 +76,7 @@ export class AudioManager {
 
         if (this.debug) console.log('[AudioManager] Audio context unlocked by user interaction.');
         
+        // Play background music immediately upon unlock if it hasn't started.
         if (!this.backgroundMusicStarted) {
             this.play('backgroundMusic');
         }
@@ -93,6 +103,7 @@ export class AudioManager {
         const soundConfig = this.config.AUDIO_CONFIG.sounds[soundKey];
         const sound = this.sounds[soundKey];
 
+        // Add detailed debugging for playback failures.
         if (sound && soundConfig && this.isReady) {
             if (this.debug) console.log(`[AudioManager] Playing sound: '${soundKey}'`);
             const soundId = sound.play();
@@ -106,7 +117,14 @@ export class AudioManager {
                 sound.fade(sound.volume(soundId), 0, soundConfig.fadeOutDuration, soundId);
             }
         } else if (this.debug) {
-            console.warn(`[AudioManager] Sound not found or not ready: ${soundKey}`);
+            const debugInfo = {
+                soundKey,
+                soundExists: !!sound,
+                soundConfigExists: !!soundConfig,
+                isManagerReady: this.isReady,
+                soundState: sound ? sound.state() : 'N/A'
+            };
+            console.warn(`[AudioManager] Sound not found or not ready.`, debugInfo);
         }
     }
 
@@ -142,20 +160,16 @@ export class AudioManager {
     }
 
     handleAppStatusChange(newStatus) {
+        // This function is kept for potential future use, but the background music
+        // logic has been moved to _unlockAudio for more immediate playback.
         if (!this.isReady) return;
-
-        if (newStatus === 'interactive' && this.isUnlocked && !this.backgroundMusicStarted) {
-            if (this.debug) console.log('[AudioManager] App is interactive and audio is unlocked, starting background music.');
-            this.play('backgroundMusic');
-        }
     }
 
     handleDialUpdate({ id, state }) {
-        if (!this.isReady || (id !== 'A' && id !== 'B')) return;
+        if (!this.isReady || !this.appState || (id !== 'A' && id !== 'B')) return;
 
-        // DEBUG: Add detailed logging to diagnose the endless loop issue.
         if (this.debug) {
-            console.log(`[AudioManager handleDialUpdate] ID: ${id}, isDragging: ${state.isDragging}, wasDragging: ${this.dialDragState[id]}`);
+            // console.log(`[AudioManager handleDialUpdate] ID: ${id}, isDragging: ${state.isDragging}, wasDragging: ${this.dialDragState[id]}`);
         }
 
         const wasDragging = this.dialDragState[id];

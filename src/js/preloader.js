@@ -15,39 +15,18 @@ export function runPreloader(dom, gsap) {
     gsap.to(dom.body, { opacity: 1, duration: 0.3 });
 
     return new Promise(async (resolve) => {
-        const { preloader, bootSeqList, engageButton, engageButtonContainer } = dom;
+        const { preloader, bootSeqList, engageButton, engageButtonContainer, progressBar } = dom;
         const checks = Array.from(bootSeqList.querySelectorAll('li[data-check]'));
         const typingDelayMs = 60;
         const checkDelayMs = 200;
         const audioManager = serviceLocator.get('audioManager');
 
-        const assetPromises = {
-            memory: document.fonts.ready,
-            logic: Promise.all([
-                fetch('./dial.svg').then(res => res.ok ? res.text() : Promise.reject()),
-                fetch('./logo.svg').then(res => res.ok ? res.text() : Promise.reject())
-            ]),
-            core: new Promise(res => {
-                const checkAudioReady = () => {
-                    const allLoaded = Object.values(audioManager.sounds).every(s => s.state() === 'loaded' || s.state() === 'loading');
-                    if (allLoaded) {
-                        res();
-                    } else {
-                        setTimeout(checkAudioReady, 100);
-                    }
-                };
-                checkAudioReady();
-            })
-        };
-
-        for (const check of checks) {
-            if (check.dataset.check === 'complete' || check.dataset.check === 'ready') continue;
-
-            check.classList.add('visible');
-            const text = check.textContent;
-            check.innerHTML = '> <span class="text"></span><span class="cursor">_</span>';
-            const textSpan = check.querySelector('.text');
-            const cursorSpan = check.querySelector('.cursor');
+        const typeLine = async (checkElement) => {
+            checkElement.classList.add('visible');
+            const text = checkElement.textContent;
+            checkElement.innerHTML = '> <span class="text"></span><span class="cursor">_</span>';
+            const textSpan = checkElement.querySelector('.text');
+            const cursorSpan = checkElement.querySelector('.cursor');
 
             gsap.to(cursorSpan, { opacity: 0, repeat: -1, yoyo: true, duration: 0.4, ease: 'steps(1)' });
 
@@ -59,24 +38,78 @@ export function runPreloader(dom, gsap) {
 
             await gsap.to({}, { duration: checkDelayMs / 1000 });
 
-            check.innerHTML += ' <span class="status">[PENDING]</span>';
-            const statusSpan = check.querySelector('.status');
+            checkElement.innerHTML += ' <span class="status">[PENDING]</span>';
+            return checkElement.querySelector('.status');
+        };
 
-            try {
-                await assetPromises[check.dataset.check];
+        const updateStatus = (statusSpan, isOk, error) => {
+            if (isOk) {
                 statusSpan.textContent = '[OK]';
                 statusSpan.classList.add('ok');
-            } catch (error) {
-                console.error(`Preloader check failed for '${check.dataset.check}':`, error);
+            } else {
+                console.error(`Preloader check failed for '${statusSpan.parentElement.dataset.check}':`, error);
                 statusSpan.textContent = '[FAIL]';
                 statusSpan.classList.add('fail');
             }
-        }
+        };
 
-        // FIX: Make engage button available as soon as assets are loaded.
-        engageButtonContainer.classList.remove('hidden');
-        gsap.fromTo(engageButtonContainer, { opacity: 0 }, { opacity: 1, duration: 0.5 });
-        
+        const assetPromises = [
+            (async () => {
+                const statusSpan = await typeLine(checks[0]);
+                try {
+                    await document.fonts.ready;
+                    updateStatus(statusSpan, true);
+                    gsap.to(progressBar, { width: '33.3%' });
+                } catch (e) { updateStatus(statusSpan, false, e); }
+            })(),
+            (async () => {
+                const statusSpan = await typeLine(checks[1]);
+                try {
+                    await Promise.all([
+                        fetch('./dial.svg').then(res => res.ok ? res.text() : Promise.reject('dial.svg failed')),
+                        fetch('./logo.svg').then(res => res.ok ? res.text() : Promise.reject('logo.svg failed'))
+                    ]);
+                    updateStatus(statusSpan, true);
+                    gsap.to(progressBar, { width: '66.6%' });
+                } catch (e) { updateStatus(statusSpan, false, e); }
+            })(),
+            (async () => {
+                const statusSpan = await typeLine(checks[2]);
+                try {
+                    await new Promise((res, rej) => {
+                        const timeout = setTimeout(() => rej(new Error("Audio loading timed out.")), 10000);
+                        const checkAudioReady = () => {
+                            // FIX: The check must be for 'loaded' state ONLY.
+                            const allSounds = Object.values(audioManager.sounds);
+                            const loadedSounds = allSounds.filter(s => s.state() === 'loaded');
+                            
+                            if (loadedSounds.length === allSounds.length) {
+                                clearTimeout(timeout);
+                                res();
+                            } else {
+                                setTimeout(checkAudioReady, 100);
+                            }
+                        };
+                        checkAudioReady();
+                    });
+                    updateStatus(statusSpan, true);
+                    gsap.to(progressBar, { width: '100%' });
+                } catch (e) { updateStatus(statusSpan, false, e); }
+            })(),
+        ];
+
+        // Wait for all assets to load, then show the engage button.
+        Promise.all(assetPromises).then(() => {
+            engageButtonContainer.classList.remove('hidden');
+            gsap.fromTo(engageButtonContainer, { opacity: 0 }, { opacity: 1, duration: 0.5 });
+            
+            // Type out final messages concurrently.
+            checks[3].classList.add('visible');
+             gsap.to({}, { duration: 0.5 }).then(() => {
+                 checks[4].classList.add('visible');
+             });
+        });
+
         engageButton.addEventListener('click', () => {
             audioManager._unlockAudio();
             gsap.to(preloader, {
@@ -88,11 +121,5 @@ export function runPreloader(dom, gsap) {
                 }
             });
         }, { once: true });
-
-        // FIX: Type out final messages concurrently, not blocking the engage button.
-        bootSeqList.querySelector('[data-check="complete"]').classList.remove('hidden');
-        gsap.to({}, { duration: 0.5 }).then(() => {
-             bootSeqList.querySelector('[data-check="ready"]').classList.remove('hidden');
-        });
     });
 }

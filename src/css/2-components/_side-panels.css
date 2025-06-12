@@ -57,8 +57,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 1rem 0;
-    gap: 1rem;
+    padding: 0.75rem 0; /* Adjusted padding */
+    gap: 0.75rem; /* Adjusted gap */
     pointer-events: all; /* The actual bar needs events */
 }
 
@@ -67,17 +67,21 @@
     border: none;
     color: oklch(0.7 0 0); /* Muted grey for the text label */
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0.4rem; /* Adjusted padding */
     font-size: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.2rem; /* Adjusted gap */
     width: 100%;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* FIX: Style the new Material Symbols icons */
+.panel-control-button.hidden {
+    display: none;
+}
+
+/* Style the new Material Symbols icons */
 .panel-control-button .material-symbols-outlined {
     font-size: 24px;
     color: oklch(0.7 0 0); /* Muted grey for icon */
@@ -88,16 +92,31 @@
     background-color: oklch(0.8 0.01 240 / 0.1);
 }
 
-.panel-control-button:hover,
+.panel-control-button:hover .label-text,
 .panel-control-button:hover .material-symbols-outlined {
     color: oklch(0.9 0.01 240);
 }
 
-/* FIX: Re-orient the text label to be horizontal */
+/* Active state for autoplay toggle */
+#seq-autoplay-toggle.is-active,
+#seq-autoplay-toggle.is-active .material-symbols-outlined {
+    color: oklch(0.9 0.1 150) !important; /* Greenish-cyan */
+}
+
+
+.panel-control-button:disabled,
+.panel-control-button:disabled .material-symbols-outlined,
+.panel-control-button:disabled .label-text {
+    color: oklch(0.4 0 0) !important;
+    cursor: not-allowed;
+    background-color: transparent !important;
+}
+
+
+/* Re-orient the text label to be horizontal */
 .panel-control-button .label-text {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    /* Removed vertical writing mode properties */
 }
 
 /* --- Expanded View (The Main Panel Content) --- */
@@ -182,8 +201,8 @@
 #briefing-tab a:hover { text-decoration: underline; }
 
 /* Control Deck Specifics */
-#audio-tab ul, .sequence-list, #state-tab ul { list-style: none; padding: 0; margin: 0; }
-#audio-tab li, .sequence-list li, #state-tab li {
+.sequence-list, #state-tab ul { list-style: none; padding: 0; margin: 0; }
+.sequence-list li, #state-tab li {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -191,31 +210,20 @@
     border-bottom: 1px solid oklch(0.3 0 0 / 0.5);
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;
-}
-.sequence-list li {
-    cursor: pointer;
     transition: background-color 0.2s ease;
 }
-.sequence-list li:hover {
-    background-color: oklch(0.8 0.01 240 / 0.1);
-}
+
 .sequence-list li.is-complete {
     color: oklch(0.6 0.01 240);
+    text-decoration: line-through;
 }
 .sequence-list li.is-active {
-    color: oklch(0.9 0.1 240);
+    color: oklch(0.9 0.1 150); /* Greenish-cyan */
     font-weight: bold;
-}
-
-#audio-tab button, #state-tab button {
-    background-color: oklch(0.3 0 0 / 0.5);
-    border: 1px solid oklch(0.5 0 0 / 0.5);
-    color: oklch(0.9 0.01 240);
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    cursor: pointer;
+    background-color: oklch(0.8 0.01 150 / 0.1);
 }
 
 #state-tab .state-value {
     color: oklch(0.9 0.1 150); /* Greenish-cyan for values */
+    font-weight: 500;
 }

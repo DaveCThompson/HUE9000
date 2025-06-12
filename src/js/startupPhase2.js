@@ -31,7 +31,7 @@ export const phase2Config = {
     {
       type: 'audio',
       soundKey: 'flickerToDim',
-      position: 0.15 // Manually offset sound to sync with visual peak
+      position: 1.2 // Manually offset sound to sync with visual peak
     }
   ]
 };

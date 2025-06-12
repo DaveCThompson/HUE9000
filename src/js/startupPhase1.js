@@ -6,7 +6,7 @@
 export const phase1Config = {
   phase: 1,
   name: "EMERGENCY_SUBSYSTEMS",
-  duration: 2.0,
+  duration: 1.0,
   specialTerminalFlicker: true,
   message: ["INITIATING STARTUP PROTOCOL"],
   animations: [

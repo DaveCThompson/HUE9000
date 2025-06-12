@@ -30,9 +30,10 @@
                 <li data-check="memory">MEMORY INTEGRITY CHECK...</li>
                 <li data-check="logic">LOGIC GATE VERIFICATION...</li>
                 <li data-check="core">CORE DIRECTIVE SYNC...</li>
-                <li data-check="complete" class="hidden">> ALL SYSTEMS NOMINAL.</li>
-                <li data-check="ready" class="hidden">> AWAITING ENGAGEMENT.</li>
+                <li data-check="complete">> ALL SYSTEMS NOMINAL.</li>
+                <li data-check="ready">> AWAITING ENGAGEMENT.</li>
             </ul>
+            <div id="progress-bar-container"><div id="progress-bar"></div></div>
             <div id="engage-button-container" class="hidden">
                 <button id="engage-button">[ ENGAGE ]</button>
             </div>
@@ -42,8 +43,10 @@
     <!-- FIX: Consolidated all panel controls to the left side -->
     <div class="compact-view-wrapper left-panel">
         <div class="compact-view">
-            <!-- FIX: Replaced emoji icons with Google Material Symbols -->
-            <button class="panel-control-button" id="seq-play-pause" aria-label="Play or Pause Sequence"><span class="material-symbols-outlined">play_arrow</span><span class="label-text">SEQ</span></button>
+            <!-- FIX: Reworked controls for explicit Autoplay toggle -->
+            <button class="panel-control-button" id="seq-autoplay-toggle" aria-label="Toggle Sequence Autoplay"><span class="material-symbols-outlined">rule</span><span class="label-text">AUTO</span></button>
+            <button class="panel-control-button hidden" id="seq-next-step" aria-label="Next Step"><span class="material-symbols-outlined">skip_next</span><span class="label-text">NEXT</span></button>
+            <button class="panel-control-button hidden" id="seq-play-all" aria-label="Play All Remaining Steps"><span class="material-symbols-outlined">fast_forward</span><span class="label-text">PLAY</span></button>
             <button class="panel-control-button" id="seq-reset" aria-label="Reset Sequence"><span class="material-symbols-outlined">replay</span><span class="label-text">RST</span></button>
             <button class="panel-control-button" id="audio-mute-toggle" aria-label="Mute or Unmute Audio"><span class="material-symbols-outlined">volume_up</span><span class="label-text">AUD</span></button>
             <button class="panel-control-button" id="deck-toggle" aria-label="Expand Control Deck"><span class="material-symbols-outlined">tune</span><span class="label-text">CTRL</span></button>
@@ -55,16 +58,12 @@
             <div class="panel-header">HUE 9000 INTERFACE</div>
             <div class="panel-tabs">
                 <button class="panel-tab-button active" data-tab="sequence-tab">Sequence</button>
-                <button class="panel-tab-button" data-tab="audio-tab">Audio</button>
                 <button class="panel-tab-button" data-tab="state-tab">State</button>
-                <!-- FIX: Added Briefing tab -->
                 <button class="panel-tab-button" data-tab="briefing-tab">Briefing</button>
             </div>
             <div class="panel-content">
                 <div id="sequence-tab" class="panel-tab-content active"></div>
-                <div id="audio-tab" class="panel-tab-content"></div>
                 <div id="state-tab" class="panel-tab-content"></div>
-                <!-- FIX: Added Briefing content container -->
                 <div id="briefing-tab" class="panel-tab-content">
                     <h3>HUE 9000: An Interactive Study</h3>
                     <p><strong>Unit Designation:</strong> Heuristically-enhanced Utility Engine 9000.</p>

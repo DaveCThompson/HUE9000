@@ -31,12 +31,12 @@ export const phase10Config = {
         appState.setTheme('dark');
       },
       deps: ['domElements', 'config', 'appState'],
-      position: 0.05 // Slightly delay theme change to ensure LCD state is set first
+      position: 0.5 // Slightly delay theme change to ensure LCD state is set first
     },
     {
       type: 'audio',
       soundKey: 'lightsOn',
-      position: 0.1 // Play sound concurrently with theme change
+      position: 0.61 // Play sound concurrently with theme change
     },
     {
       type: 'flicker',
@@ -45,7 +45,7 @@ export const phase10Config = {
       state: 'is-energized', // This will be split into selected/unselected by buttonManager
       profile: 'buttonFlickerFromDimlyLitToFullyLit', // A generic key, buttonManager will pick correct profile
       stagger: 0.03,
-      position: 0.1
+      position: 0.6
     }
   ]
 };
