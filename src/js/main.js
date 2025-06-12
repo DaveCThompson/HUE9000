@@ -1,9 +1,7 @@
 /**
  * @module main
- * @description Entry point for the HUE 9000 application.
- * Initializes all managers, registers them with the service locator,
- * and sets up top-level application logic and event listeners.
- * (Project Decouple Refactor)
+ * @description Entry point for the HUE 9000 application. Orchestrates the preloader
+ * and the initialization of all application managers.
  */
 import { gsap } from "gsap";
 import { Draggable } from "gsap/Draggable";
@@ -15,6 +13,7 @@ import * as appState from './appState.js';
 import * as config from './config.js';
 import { serviceLocator } from './serviceLocator.js';
 import { phaseConfigs } from './startupMachine.js';
+import { runPreloader } from './preloader.js';
 
 // Manager Classes
 import { ButtonManager } from './buttonManager.js';
@@ -28,10 +27,10 @@ import AmbientAnimationManager from './AmbientAnimationManager.js';
 import resistiveShutdownControllerInstance from './resistiveShutdownController.js';
 import terminalManagerInstance from './terminalManager.js';
 import { StartupSequenceManager } from './startupSequenceManager.js';
-import * as debugManager from './debugManager.js';
 import { MoodMatrixManager } from './MoodMatrixManager.js';
 import { IntensityDisplayManager } from './IntensityDisplayManager.js';
 import { AudioManager } from './AudioManager.js';
+import { SidePanelManager } from './sidePanelManager.js';
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -40,6 +39,17 @@ gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
 const domElements = {
     root: document.documentElement,
     body: document.body,
+    appWrapper: document.querySelector('.app-wrapper'),
+    // Preloader elements
+    preloader: document.getElementById('preloader'),
+    bootSeqList: document.getElementById('boot-sequence-list'),
+    engageButtonContainer: document.getElementById('engage-button-container'),
+    engageButton: document.getElementById('engage-button'),
+    // Side Panel elements
+    controlDeck: document.getElementById('control-deck'),
+    missionBriefing: document.getElementById('mission-briefing'), // This ID is gone, but selector might be used elsewhere
+    deckToggle: document.getElementById('deck-toggle'),
+    // Main UI elements
     allButtons: Array.from(document.querySelectorAll('.button-unit')),
     dialA: document.getElementById('dial-canvas-container-A'),
     dialB: document.getElementById('dial-canvas-container-B'),
@@ -51,16 +61,6 @@ const domElements = {
     lensSuperGlow: document.getElementById('lens-super-glow'),
     logoContainer: document.getElementById('logo-container'),
     hueAssignmentColumns: Array.from(document.querySelectorAll('.hue-assignment-column[data-assignment-target]')),
-    // Buttons for startup sequence
-    mainPowerOnBtn: document.getElementById('main-power-on-btn'),
-    auxLightLowBtn: document.getElementById('aux-light-low-btn'),
-    // Debug controls
-    debugControls: document.getElementById('debug-controls'),
-    btnNextPhase: document.getElementById('btn-next-phase'),
-    btnPlayAll: document.getElementById('btn-play-all'),
-    btnResetStartup: document.getElementById('btn-reset-startup-debug'),
-    debugPhaseStatus: document.getElementById('debug-phase-status'),
-    debugPhaseInfo: document.getElementById('debug-phase-info'),
 };
 
 /**
@@ -89,117 +89,47 @@ function createGridButtons(buttonManager) {
 
 /**
  * Sets up top-level event listeners for application side-effects.
- * This function also serves as the "Terminal Interaction Bridge".
  */
 function setupEventListeners() {
-    // State object to track dial drag-release events for the terminal bridge
-    const interactionState = {
-        dialA_wasDragging: false,
-        dialB_wasDragging: false
-    };
-
     const audioManager = serviceLocator.get('audioManager');
 
-    // Listener for all button interactions
     appState.subscribe('buttonInteracted', ({ button }) => {
         const groupId = button.getGroupId();
         const value = button.getValue();
 
-        // --- Audio Logic ---
-        if (groupId === 'system-power' && value === 'off') {
-            audioManager.play('powerOff');
-        } else if (groupId === 'light' && button.isSelected()) {
-            audioManager.play('bigOn');
-        } else {
-            // Generic press sound for other buttons
-            audioManager.play('buttonPress');
-        }
+        if (groupId === 'system-power' && value === 'off') audioManager.play('powerOff');
+        else if (groupId === 'light' && button.isSelected()) audioManager.play('bigOn');
+        else audioManager.play('buttonPress');
 
-        // --- Logic for core app state changes ---
-        if (groupId === 'light') {
-            const newTheme = value === 'on' ? 'light' : 'dark';
-            if (appState.getCurrentTheme() !== newTheme) {
-                appState.setTheme(newTheme);
-            }
-        } else if (groupId === 'system-power') {
-            if (value === 'off') {
-                resistiveShutdownControllerInstance.handlePowerOffClick();
-            } else if (value === 'on' && appState.getResistiveShutdownStage() > 0) {
-                appState.setResistiveShutdownStage(0);
-            }
-        } else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
+        if (groupId === 'light') appState.setTheme(value === 'on' ? 'light' : 'dark');
+        else if (groupId === 'system-power') {
+            if (value === 'off') resistiveShutdownControllerInstance.handlePowerOffClick();
+            else if (value === 'on' && appState.getResistiveShutdownStage() > 0) appState.setResistiveShutdownStage(0);
+        }
+        else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
             const hue = config.HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
             appState.setTargetColorProperties(groupId, hue);
-        } else if (groupId === 'skill-scan-group' || groupId === 'fit-eval-group') {
-            const messageKeyMap = {
-                'Scan Button 1': 'BTN1_MESSAGE', 'Scan Button 2': 'BTN2_MESSAGE',
-                'Scan Button 3': 'BTN3_MESSAGE', 'Scan Button 4': 'BTN4_MESSAGE',
-            };
-            const messageKey = messageKeyMap[button.getElement().ariaLabel];
-            if (messageKey) {
-                appState.emit('requestTerminalMessage', { type: 'block', messageKey });
-            }
-        }
-
-        // --- Terminal Interaction Bridge Logic for Buttons ---
-        let terminalPayload = null;
-        if (groupId === 'light') {
-            terminalPayload = { type: 'interaction', source: 'aux_light', data: { state: value.toUpperCase() } };
-        } else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
-            const hue = config.HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
-            terminalPayload = { type: 'interaction', source: 'hue_assign', data: { target: groupId.toUpperCase(), hue: hue } };
-        }
-        if (terminalPayload) {
-            appState.emit('requestTerminalMessage', terminalPayload);
         }
     });
 
-    // Terminal Interaction Bridge listener for dial drag-release events
-    appState.subscribe('dialUpdated', ({ id, state }) => {
-        const wasDragging = (id === 'A') ? interactionState.dialA_wasDragging : interactionState.dialB_wasDragging;
-
-        if (wasDragging && !state.isDragging) {
-            let terminalPayload = null;
-            if (id === 'A') { // Mood Dial release
-                terminalPayload = { type: 'interaction', source: 'mood_change', data: { hue: state.hue } };
-            } else if (id === 'B') { // Intensity Dial release
-                const power = (state.hue / 359.999) * 100;
-                terminalPayload = { type: 'interaction', source: 'intensity_change', data: { power: power } };
-            }
-            if (terminalPayload) {
-                appState.emit('requestTerminalMessage', terminalPayload);
-            }
-        }
-        
-        // Update the tracking state for the next event
-        if (id === 'A') interactionState.dialA_wasDragging = state.isDragging;
-        if (id === 'B') interactionState.dialB_wasDragging = state.isDragging;
-    });
-
-    // Listener for all physical button clicks to delegate to buttonManager
     document.body.addEventListener('click', (event) => {
         const buttonElement = event.target.closest('.button-unit');
-        if (buttonElement) {
-            serviceLocator.get('buttonManager').handleInteraction(buttonElement);
-        }
+        if (buttonElement) serviceLocator.get('buttonManager').handleInteraction(buttonElement);
     });
 }
 
-
 /**
- * Main application initialization function.
+ * Main application initialization function. Called after the preloader is complete.
  */
 function initializeApp() {
-    // Use a global guard to prevent re-initialization from HMR or other sources
-    if (window.HUE9000_INITIALIZED) {
-        return;
-    }
+    if (window.HUE9000_INITIALIZED) return;
     window.HUE9000_INITIALIZED = true;
 
     console.log('[Main INIT] HUE 9000 Project Decouple Initializing...');
     appState.setAppStatus('loading');
 
     // --- Instantiate all managers ---
+    const audioManager = serviceLocator.get('audioManager');
     const themeManager = new ThemeManager();
     const lcdUpdater = new LcdUpdater();
     const dynamicStyleManager = new DynamicStyleManager();
@@ -211,15 +141,13 @@ function initializeApp() {
     const startupSequenceManager = new StartupSequenceManager();
     const moodMatrixManager = new MoodMatrixManager();
     const intensityDisplayManager = new IntensityDisplayManager();
-    const audioManager = new AudioManager();
-
+    const sidePanelManager = new SidePanelManager();
 
     // --- Register all services and managers ---
-    serviceLocator.register('gsap', gsap);
     serviceLocator.register('appState', appState);
-    // Augment the imported config with phaseConfigs before registering
-    serviceLocator.register('config', { ...config, phaseConfigs });
     serviceLocator.register('domElements', domElements);
+    
+    // Register all manager instances
     serviceLocator.register('themeManager', themeManager);
     serviceLocator.register('lcdUpdater', lcdUpdater);
     serviceLocator.register('dynamicStyleManager', dynamicStyleManager);
@@ -227,39 +155,29 @@ function initializeApp() {
     serviceLocator.register('dialManager', dialManager);
     serviceLocator.register('lensManager', lensManager);
     serviceLocator.register('ambientAnimationManager', ambientAnimationManager);
-    serviceLocator.register('terminalManager', terminalManagerInstance);
-    serviceLocator.register('resistiveShutdownController', resistiveShutdownControllerInstance);
     serviceLocator.register('phaseRunner', phaseRunner);
     serviceLocator.register('startupSequenceManager', startupSequenceManager);
-    serviceLocator.register('debugManager', debugManager);
     serviceLocator.register('moodMatrixManager', moodMatrixManager);
     serviceLocator.register('intensityDisplayManager', intensityDisplayManager);
-    serviceLocator.register('audioManager', audioManager);
+    serviceLocator.register('sidePanelManager', sidePanelManager);
+    serviceLocator.register('resistiveShutdownController', resistiveShutdownControllerInstance);
+    serviceLocator.register('terminalManager', terminalManagerInstance);
 
 
-    // --- Initialize managers (they will get dependencies from the locator) ---
+    // --- Initialize managers IN DEPENDENCY ORDER ---
+    // StartupSequenceManager must be initialized first to register the proxies.
     startupSequenceManager.init();
-
-    const managersToInit = [
-        themeManager, lcdUpdater, dynamicStyleManager, buttonManager, dialManager,
-        lensManager, ambientAnimationManager,
-        terminalManagerInstance, resistiveShutdownControllerInstance, phaseRunner,
-        moodMatrixManager, intensityDisplayManager,
-        audioManager
+    // PhaseRunner depends on the proxies, so it's initialized next.
+    phaseRunner.init();
+    // The rest of the managers can be initialized.
+    const otherManagers = [
+        audioManager, themeManager, lcdUpdater, dynamicStyleManager, buttonManager,
+        dialManager, lensManager, ambientAnimationManager, moodMatrixManager,
+        intensityDisplayManager, sidePanelManager, resistiveShutdownControllerInstance,
+        terminalManagerInstance
     ];
-    
-    managersToInit.forEach(manager => {
-        if (typeof manager.init === 'function') {
-            manager.init();
-        }
-    });
-
-    debugManager.init({
-        debugStatusDiv: domElements.debugPhaseStatus,
-        debugPhaseInfo: domElements.debugPhaseInfo,
-        nextPhaseButton: domElements.btnNextPhase,
-        playAllButton: domElements.btnPlayAll,
-        resetButton: domElements.btnResetStartup,
+    otherManagers.forEach(manager => {
+        if (typeof manager.init === 'function') manager.init();
     });
 
     // --- Dynamic UI Generation & Event Listener Setup ---
@@ -268,9 +186,20 @@ function initializeApp() {
     setupEventListeners();
 
     // --- Start the application ---
-    startupSequenceManager.start(true); // Start in step-through mode
+    startupSequenceManager.start(false); // Start in auto-play mode
     console.log('[Main INIT] HUE 9000 Initialization Complete.');
 }
 
 // --- App Entry Point ---
-document.addEventListener('DOMContentLoaded', initializeApp);
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Register services that are needed *before* the preloader runs.
+    serviceLocator.register('gsap', gsap);
+    serviceLocator.register('config', { ...config, phaseConfigs });
+
+    // 2. Instantiate and register the ONE TRUE AudioManager.
+    const audioManager = new AudioManager();
+    serviceLocator.register('audioManager', audioManager);
+
+    // 3. Run the preloader.
+    runPreloader(domElements, gsap).then(initializeApp);
+});

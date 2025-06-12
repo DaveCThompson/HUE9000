@@ -11,6 +11,11 @@ export const phase1Config = {
   message: ["INITIATING STARTUP PROTOCOL"],
   animations: [
     {
+      type: 'audio',
+      soundKey: 'terminalOn',
+      position: 0 // Play immediately as the flicker starts
+    },
+    {
       type: 'tween',
       target: 'dimmingFactors',
       vars: {

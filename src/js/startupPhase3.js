@@ -28,15 +28,16 @@ export const phase3Config = {
     },
     {
       type: 'flicker',
-      target: 'Main Power Off', // CORRECTED: Use aria-label for targeting
+      target: 'Main Power Off', // Use aria-label for targeting
       state: 'is-energized',
       profile: 'buttonFlickerFromDimlyLitToFullyLitUnselectedFast',
       position: 0.1
-    },
-    {
-      type: 'audio',
-      soundKey: 'bigOn',
-      position: 0.1
     }
+    // FIX: Removed bigOn sound as requested
+    // {
+    //   type: 'audio',
+    //   soundKey: 'bigOn',
+    //   position: 0.15 // Manually offset sound to sync with visual peak
+    // }
   ]
 };

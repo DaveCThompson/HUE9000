@@ -1,35 +1,50 @@
-# HUE 9000 Project Structure (Project Decouple - V2.0)
+# HUE 9000 Project Structure (Project Decouple - V2.1)
 
 This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns after the "Project Decouple" refactoring.
 
 HUE9000_Project/
 ├── public/
+│   ├── audio/
+│   │   ├── background.mp3
+│   │   ├── big-on.wav
+│   │   ├── button-press.mp3
+│   │   ├── dial.mp3
+│   │   ├── flicker-to-dim.wav
+│   │   ├── lcd-on.wav
+│   │   ├── lens-startup.wav
+│   │   ├── lights-on.wav
+│   │   ├── off.wav
+│   │   └── terminal-on.wav
+│   ├── crt-overlay.png
+│   ├── dial.svg
 │   ├── metal-grill.png
-│   ├── specular-highlights.svg
 │   ├── noise.svg
+│   ├── specular-highlights.svg
 │   └── logo.svg
 ├── src/
 │   ├── js/
 │   │   ├── AmbientAnimationManager.js # Manages continuous ambient animations
 │   │   ├── animationUtils.js          # Utilities for complex animations (e.g., flicker)
 │   │   ├── appState.js                # Central application state management
+│   │   ├── AudioManager.js            # Class to manage all application audio
 │   │   ├── Button.js                  # Class for individual button components
 │   │   ├── buttonManager.js           # Class to orchestrate Button instances
 │   │   ├── config.js                  # Shared configuration constants
 │   │   ├── DialController.js          # Class for individual SVG dial components
 │   │   ├── dialManager.js             # Class to orchestrate Dial instances
-│   │   ├── debugManager.js            # Manages debug panel UI and logic
-│   │   ├── DynamicStyleManager.js     # NEW: Manages dynamic CSS variables and logo
+│   │   ├── DynamicStyleManager.js     # Manages dynamic CSS variables and logo
 │   │   ├── IntensityDisplay.js        # V2 Component: Renders the intensity display
 │   │   ├── IntensityDisplayManager.js # V2 Manager: Bridges appState and IntensityDisplay
-│   │   ├── LcdUpdater.js              # NEW: Manages LCD state and animations
+│   │   ├── LcdUpdater.js              # Manages LCD state and animations
 │   │   ├── lensManager.js             # Class to manage the central lens visuals
 │   │   ├── main.js                    # Application entry point and orchestrator
 │   │   ├── MoodMatrix.js              # V2 Component: Renders the mood matrix display
 │   │   ├── MoodMatrixManager.js       # V2 Manager: Bridges appState and MoodMatrix
-│   │   ├── PhaseRunner.js             # NEW: Executes declarative startup phase configs
+│   │   ├── PhaseRunner.js             # Executes declarative startup phase configs
+│   │   ├── preloader.js               # NEW: Manages the initial boot-up/loading screen
 │   │   ├── resistiveShutdownController.js # Orchestrates the resistive shutdown sequence
-│   │   ├── serviceLocator.js          # NEW: Central dependency locator
+│   │   ├── serviceLocator.js          # Central dependency locator
+│   │   ├── sidePanelManager.js        # NEW: Manages the left/right info/debug panels
 │   │   ├── startupSequenceManager.js  # Manages the XState startup sequence
 │   │   ├── startupMachine.js          # XState machine definition for startup
 │   │   ├── startupPhase0.js           # Declarative config for startup phase 0
@@ -46,7 +61,7 @@ HUE9000_Project/
 │   │   ├── startupPhase11.js
 │   │   ├── terminalManager.js         # Manages terminal display
 │   │   ├── terminalMessages.js        # Terminal message content
-│   │   ├── ThemeManager.js            # NEW: Manages global theme changes
+│   │   ├── ThemeManager.js            # Manages global theme changes
 │   │   └── utils.js                   # Common utility functions
 │   │
 │   └── css/
@@ -60,6 +75,8 @@ HUE9000_Project/
 │       │   └── _utilities.css
 │       │
 │       ├── 2-components/
+│       │   ├── _preloader.css             # NEW: Styles for the preloader
+│       │   ├── _side-panels.css         # NEW: Styles for the side info/debug panels
 │       │   ├── _panel-bezel.css
 │       │   ├── _button-unit.css
 │       │   ├── _dial.css
@@ -77,7 +94,8 @@ HUE9000_Project/
 │       ├── 3-themes/
 │       │   ├── theme-dim.css
 │       │   ├── theme-dark.css
-│       │   └── theme-light.css
+│       └── │   └── theme-light.css
 │       │
 │       └── main.css
 ├── index.html
+└── JAVASCRIPT_MODULE_REFERENCE.md

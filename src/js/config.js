@@ -21,6 +21,7 @@ export const DIAL_CANVAS_FADE_IN_DURATION = 0.5; // NEW: Duration for dial canva
 // --- Animation Settings (GSAP) ---
 export const GSAP_TWEEN_DURATION = 0.4;
 export const GSAP_TWEEN_EASE = "power1.out";
+export const PERCEPTUAL_AUDIO_OFFSET_MS = 60; // NEW: Delay audio to align with visual perception
 
 // --- Button Animation Config ---
 export const GSAP_BUTTON_IDLE_DURATION_MIN = 1.7;
@@ -59,7 +60,7 @@ export const LENS_STARTUP_RAMP_DURATION = 1500; // ms
 export const P3_LENS_RAMP_DURATION_S = LENS_STARTUP_RAMP_DURATION / 1000;
 export const THEME_TRANSITION_DURATION = 1.0;
 export const SYSTEM_READY_PHASE_DURATION = 0.1;
-export const MIN_PHASE_DURATION_for_STEPPING = 0.05;
+export const MIN_PHASE_DURATION_FOR_STEPPING = 0.05;
 export const LCD_TEXT_FADE_IN_DURATION = 0.3; 
 
 export const STARTUP_L_REDUCTION_FACTORS = {
@@ -142,8 +143,10 @@ export const TERMINAL_MAX_LINES_IN_DOM = 150;
 export const TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR = 40;
 export const TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR = 15;
 export const TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR = 20;
-export const TERMINAL_NEW_LINE_DELAY_MIN_MS = 50;
-export const TERMINAL_NEW_LINE_DELAY_MAX_MS = 150;
+export const TERMINAL_INTERACTION_DEBOUNCE_MS = 500;
+export const TERMINAL_THINKING_DELAY_MIN_MS = 50;
+export const TERMINAL_THINKING_DELAY_MAX_MS = 250;
+export const TERMINAL_SCROLL_DURATION_S = 0.4;
 export const TERMINAL_CURSOR_BLINK_ON_MS = 530;
 export const TERMINAL_CURSOR_BLINK_OFF_MS = 370;
 
@@ -179,9 +182,10 @@ export const ADVANCED_FLICKER_PROFILES = {
             opacityVar: '--lcd-glow-opacity', scaleWithAmplitude: true
         }, targetProperty: 'element-opacity-and-box-shadow'
     },
+    // FIX: Added amplitudeStart: 0.0 to prevent the terminal from popping in at full opacity.
     terminalScreenFlickerToDimlyLit: { 
         numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
-        amplitudeStart: 0.0, // THE CRITICAL FIX
+        amplitudeStart: 0.0, 
         amplitudeEnd: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, 
         glow: { 
             initialOpacity: 0.0, peakOpacity: 0.4, finalOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity,
@@ -414,7 +418,9 @@ export const AUDIO_CONFIG = {
   musicCrossfadeDuration: 2.0, // seconds, for future use
   soundCooldowns: {
     // Cooldown in milliseconds to prevent rapid-fire playback of the same sound
-    flickerToDim: 500,
+    flickerToDim: 250, // Reduced cooldown as it's a common effect
+    terminalOn: 4000,
+    lcdOn: 6000,
   },
   sounds: {
     backgroundMusic: {
@@ -437,6 +443,18 @@ export const AUDIO_CONFIG = {
       src: ['./public/audio/flicker-to-dim.wav'],
       loop: false,
       volume: 0.6,
+    },
+    terminalOn: {
+      src: ['./public/audio/terminal-on.wav'],
+      loop: false,
+      volume: 0.8,
+      fadeOutDuration: 4000, // Custom property for AudioManager
+    },
+    lcdOn: {
+      src: ['./public/audio/lcd-on.wav'],
+      loop: false,
+      volume: 0.7,
+      fadeOutDuration: 6000, // Custom property for AudioManager
     },
     lensStartup: {
       src: ['./public/audio/lens-startup.wav'],

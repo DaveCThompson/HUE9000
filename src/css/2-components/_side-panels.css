@@ -1,0 +1,221 @@
+/* src/css/2-components/_side-panels.css */
+
+.side-panel {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    z-index: 8000; /* Lowered z-index */
+    display: flex;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none; /* The panel itself should not catch events */
+}
+
+/* --- Left Panel (Control Deck) --- */
+.side-panel.left-panel {
+    left: 0;
+    transform: translateX(-100%);
+}
+.side-panel.left-panel.is-expanded {
+    transform: translateX(0);
+    pointer-events: all; /* Allow events when expanded */
+}
+
+/* --- App Wrapper Shift --- */
+.app-wrapper {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+.app-wrapper.left-panel-expanded {
+    transform: translateX(350px) scale(0.95);
+}
+
+/* --- Compact View Wrapper (The always-visible bar) --- */
+.compact-view-wrapper {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    z-index: 9000; /* Higher z-index to be on top */
+    display: flex;
+    align-items: center; /* Center the compact-view vertically */
+    pointer-events: none; /* The wrapper itself doesn't need events */
+}
+.compact-view-wrapper.left-panel { left: 0; }
+/* Removed .right-panel wrapper rule */
+
+/* --- Compact View (The Vertical Bar Content) --- */
+.compact-view {
+    width: 48px;
+    height: auto; /* Let content define height */
+    background-color: oklch(0.1 0 0 / 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid oklch(0.3 0 0 / 0.5);
+    border-left: none; /* For left panel */
+    border-radius: 0 8px 8px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0;
+    gap: 1rem;
+    pointer-events: all; /* The actual bar needs events */
+}
+
+.panel-control-button {
+    background: none;
+    border: none;
+    color: oklch(0.7 0 0); /* Muted grey for the text label */
+    cursor: pointer;
+    padding: 0.5rem;
+    font-size: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* FIX: Style the new Material Symbols icons */
+.panel-control-button .material-symbols-outlined {
+    font-size: 24px;
+    color: oklch(0.7 0 0); /* Muted grey for icon */
+    transition: color 0.2s ease;
+}
+
+.panel-control-button:hover {
+    background-color: oklch(0.8 0.01 240 / 0.1);
+}
+
+.panel-control-button:hover,
+.panel-control-button:hover .material-symbols-outlined {
+    color: oklch(0.9 0.01 240);
+}
+
+/* FIX: Re-orient the text label to be horizontal */
+.panel-control-button .label-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    /* Removed vertical writing mode properties */
+}
+
+/* --- Expanded View (The Main Panel Content) --- */
+.expanded-view {
+    width: 350px;
+    height: 100%;
+    background-color: oklch(0.15 0 0 / 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-right: 1px solid oklch(0.3 0 0 / 0.5);
+    display: flex;
+    flex-direction: column;
+    color: oklch(0.9 0.01 240);
+}
+
+.panel-header {
+    padding: 1rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+    text-align: center;
+    background-color: oklch(0.2 0 0 / 0.5);
+    flex-shrink: 0;
+}
+
+.panel-tabs {
+    display: flex;
+    flex-shrink: 0;
+}
+
+.panel-tab-button {
+    flex: 1;
+    padding: 0.75rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid oklch(0.5 0.01 240 / 0.3);
+    color: oklch(0.7 0.01 240);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.panel-tab-button.active, .panel-tab-button:hover {
+    color: oklch(0.95 0.01 240);
+    background-color: oklch(0.8 0.01 240 / 0.1);
+    border-bottom-color: oklch(0.8 0.1 240);
+}
+
+.panel-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    position: relative;
+}
+
+.panel-tab-content { display: none; }
+.panel-tab-content.active { display: block; }
+
+/* Scrollbar styling */
+.panel-content::-webkit-scrollbar { width: 8px; }
+.panel-content::-webkit-scrollbar-track { background: oklch(0.2 0 0); }
+.panel-content::-webkit-scrollbar-thumb { background: oklch(0.4 0 0); border-radius: 4px; }
+.panel-content::-webkit-scrollbar-thumb:hover { background: oklch(0.5 0 0); }
+
+/* Briefing Content Specifics (now inside the main panel) */
+#briefing-tab h3 {
+    color: oklch(0.9 0.1 240);
+    border-bottom: 1px solid oklch(0.8 0.1 240 / 0.5);
+    padding-bottom: 0.5rem; margin-top: 0;
+}
+#briefing-tab p, #briefing-tab ul {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; line-height: 1.6;
+    color: oklch(0.8 0.01 240);
+}
+#briefing-tab hr {
+    border: none;
+    border-top: 1px solid oklch(0.5 0.01 240 / 0.3);
+    margin: 1rem 0;
+}
+#briefing-tab a { color: oklch(0.8 0.15 260); text-decoration: none; }
+#briefing-tab a:hover { text-decoration: underline; }
+
+/* Control Deck Specifics */
+#audio-tab ul, .sequence-list, #state-tab ul { list-style: none; padding: 0; margin: 0; }
+#audio-tab li, .sequence-list li, #state-tab li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid oklch(0.3 0 0 / 0.5);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+}
+.sequence-list li {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.sequence-list li:hover {
+    background-color: oklch(0.8 0.01 240 / 0.1);
+}
+.sequence-list li.is-complete {
+    color: oklch(0.6 0.01 240);
+}
+.sequence-list li.is-active {
+    color: oklch(0.9 0.1 240);
+    font-weight: bold;
+}
+
+#audio-tab button, #state-tab button {
+    background-color: oklch(0.3 0 0 / 0.5);
+    border: 1px solid oklch(0.5 0 0 / 0.5);
+    color: oklch(0.9 0.01 240);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#state-tab .state-value {
+    color: oklch(0.9 0.1 150); /* Greenish-cyan for values */
+}

@@ -36,7 +36,7 @@ export const phase10Config = {
     {
       type: 'audio',
       soundKey: 'lightsOn',
-      position: 0.05 // Play sound concurrently with theme change
+      position: 0.1 // Play sound concurrently with theme change
     },
     {
       type: 'flicker',

@@ -54,6 +54,15 @@ export const startupMachine = createMachine({
             themeTransitionCleanupPerformed: false,
             errorInfo: null,
           })
+        },
+        JUMP_TO_PHASE: {
+            target: 'RUNNING_PHASE',
+            actions: assign({
+                isStepThroughMode: ({ event }) => event.isStepThroughMode,
+                currentPhase: ({ event }) => event.phase,
+                themeTransitionCleanupPerformed: false,
+                errorInfo: null,
+            })
         }
       }
     },
@@ -76,7 +85,6 @@ export const startupMachine = createMachine({
           phaseConfig: phaseConfigs[context.currentPhase]
         }),
         onDone: {
-          // Simplified: Always increment the phase and let CHECK_SEQUENCE_STATUS decide what to do.
           actions: assign({
             currentPhase: ({ context }) => context.currentPhase + 1
           }),
@@ -90,24 +98,24 @@ export const startupMachine = createMachine({
       on: {
         SET_AUTO_PLAY: {
             actions: assign({ isStepThroughMode: false })
+        },
+        // FIX: Add handler to allow pausing mid-phase
+        PAUSE_SEQUENCE: {
+            actions: assign({ isStepThroughMode: true })
         }
       }
     },
-    // New transient state to decide where to go next
     CHECK_SEQUENCE_STATUS: {
         always: [
             {
-                // If we've incremented past the last valid phase index, we are done.
                 target: 'COMPLETE',
                 guard: ({ context }) => context.currentPhase >= phaseConfigs.length
             },
             {
-                // If in auto-play mode, loop back to run the next phase.
                 target: 'RUNNING_PHASE',
                 guard: ({ context }) => !context.isStepThroughMode
             },
             {
-                // Otherwise, we must be in step-through mode, so pause.
                 target: 'PAUSED'
             }
         ]
@@ -116,7 +124,6 @@ export const startupMachine = createMachine({
       on: {
         NEXT_STEP_REQUESTED: {
           target: 'RUNNING_PHASE'
-          // No action needed, RUNNING_PHASE will use the already-incremented currentPhase
         },
         SET_AUTO_PLAY: {
           actions: [
@@ -132,7 +139,6 @@ export const startupMachine = createMachine({
     },
     ERROR: {
       entry: [
-        // --- ADDED HYPER-SPECIFIC DEBUGGING ---
         ({ context, event }) => {
             console.error('[FSM Error] An error occurred in the startup sequence.');
             console.error('Error Details from event:', event.data);

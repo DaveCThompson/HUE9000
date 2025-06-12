@@ -81,6 +81,7 @@ class DialController {
 
         const themeChangeUnsub = this.appState.subscribe('themeChanged', newTheme => {
             if (this.debug) console.log(`[DialController ${this.dialId}] Detected themeChanged to '${newTheme}'. Forcing redraw.`);
+            // FIX: Defer redraw to next frame to ensure browser has applied new CSS variables.
             requestAnimationFrame(() => this.forceRedraw());
         });
         this.unsubscribers.push(themeChangeUnsub);
@@ -211,6 +212,7 @@ class DialController {
 
     _updateAndCacheThemeStyles() {
         const style = getComputedStyle(this.containerElement);
+        // FIX: Add validation to prevent NaN poisoning from getComputedStyle during theme changes.
         const baseChroma = parseFloat(style.getPropertyValue('--dial-ridge-c'));
         const multiplier = parseFloat(style.getPropertyValue('--dial-ridge-chroma-multiplier'));
         const finalChroma = isNaN(baseChroma) || isNaN(multiplier) ? (baseChroma || 0) : baseChroma * multiplier;
@@ -225,6 +227,7 @@ class DialController {
     }
     
     _draw() {
+        // FIX: Add guard clause to prevent drawing if theme variables are invalid (NaN).
         if (!this.svgWidth || this.ridgeElements.length === 0 || isNaN(this.themeVars.ridgeL)) return;
 
         const rotationRadians = this.rotation * (Math.PI / 180);

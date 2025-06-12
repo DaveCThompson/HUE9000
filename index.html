@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FIX: Added Google Material Symbols for debug controls -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0" />
 
     <!-- Main Stylesheet (Imports all other CSS partials) -->
     <link rel="stylesheet" href="./src/css/main.css">
@@ -18,48 +20,72 @@
         .pre-boot {
             opacity: 0;
         }
-        /* Debug Controls Styling (can be moved to a separate debug.css if preferred) */
-        #debug-controls {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background-color: rgba(0,0,0,0.8);
-            padding: 15px;
-            border-radius: 8px;
-            z-index: 10000;
-            color: white;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 13px;
-            border: 1px solid #444;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-        #debug-controls button {
-            margin: 5px 2px;
-            padding: 6px 10px;
-            font-size: 12px;
-            background-color: #333;
-            color: #eee;
-            border: 1px solid #555;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        #debug-controls button:hover {
-            background-color: #444;
-        }
-        #debug-phase-status { margin-top: 8px; font-weight: bold; }
-        #debug-phase-info { font-size: 11px; margin-top: 4px; color: #ccc; max-width: 300px;}
-
     </style>
 </head>
 <body class="theme-dim pre-boot">
-    <div id="debug-controls">
-        <div>HUE 9000 - Startup Debug (REFACTOR-V2.1)</div>
-        <button id="btn-next-phase">Next Phase</button>
-        <button id="btn-play-all" title="Play entire sequence from current point">Play All Remaining</button>
-        <button id="btn-reset-startup-debug" title="Reset sequence to beginning">Reset Sequence</button>
-        <div id="debug-phase-status">Phase: Idle</div>
-        <div id="debug-phase-info">Expected changes for next phase will appear here.</div>
+
+    <div id="preloader">
+        <div id="preloader-content">
+            <ul id="boot-sequence-list">
+                <li data-check="memory">MEMORY INTEGRITY CHECK...</li>
+                <li data-check="logic">LOGIC GATE VERIFICATION...</li>
+                <li data-check="core">CORE DIRECTIVE SYNC...</li>
+                <li data-check="complete" class="hidden">> ALL SYSTEMS NOMINAL.</li>
+                <li data-check="ready" class="hidden">> AWAITING ENGAGEMENT.</li>
+            </ul>
+            <div id="engage-button-container" class="hidden">
+                <button id="engage-button">[ ENGAGE ]</button>
+            </div>
+        </div>
     </div>
+    
+    <!-- FIX: Consolidated all panel controls to the left side -->
+    <div class="compact-view-wrapper left-panel">
+        <div class="compact-view">
+            <!-- FIX: Replaced emoji icons with Google Material Symbols -->
+            <button class="panel-control-button" id="seq-play-pause" aria-label="Play or Pause Sequence"><span class="material-symbols-outlined">play_arrow</span><span class="label-text">SEQ</span></button>
+            <button class="panel-control-button" id="seq-reset" aria-label="Reset Sequence"><span class="material-symbols-outlined">replay</span><span class="label-text">RST</span></button>
+            <button class="panel-control-button" id="audio-mute-toggle" aria-label="Mute or Unmute Audio"><span class="material-symbols-outlined">volume_up</span><span class="label-text">AUD</span></button>
+            <button class="panel-control-button" id="deck-toggle" aria-label="Expand Control Deck"><span class="material-symbols-outlined">tune</span><span class="label-text">CTRL</span></button>
+        </div>
+    </div>
+
+    <div id="control-deck" class="side-panel left-panel">
+        <div class="expanded-view">
+            <div class="panel-header">HUE 9000 INTERFACE</div>
+            <div class="panel-tabs">
+                <button class="panel-tab-button active" data-tab="sequence-tab">Sequence</button>
+                <button class="panel-tab-button" data-tab="audio-tab">Audio</button>
+                <button class="panel-tab-button" data-tab="state-tab">State</button>
+                <!-- FIX: Added Briefing tab -->
+                <button class="panel-tab-button" data-tab="briefing-tab">Briefing</button>
+            </div>
+            <div class="panel-content">
+                <div id="sequence-tab" class="panel-tab-content active"></div>
+                <div id="audio-tab" class="panel-tab-content"></div>
+                <div id="state-tab" class="panel-tab-content"></div>
+                <!-- FIX: Added Briefing content container -->
+                <div id="briefing-tab" class="panel-tab-content">
+                    <h3>HUE 9000: An Interactive Study</h3>
+                    <p><strong>Unit Designation:</strong> Heuristically-enhanced Utility Engine 9000.</p>
+                    <p><strong>Primary Directive:</strong> To explore the boundaries of user experience through diegetic interface design, complex state management, and declarative animation systems. The unit assesses and responds to user input, recalibrating its affective state and operational parameters in real-time.</p>
+                    <hr/>
+                    <p><strong>Technical Overview:</strong> This project is a single-page web application built with vanilla JavaScript, leveraging modern tools to create a rich, interactive experience. Key technologies include:</p>
+                    <ul>
+                        <li><strong>GSAP:</strong> For all high-performance animations.</li>
+                        <li><strong>XState:</strong> To manage the complex startup sequence and other finite states.</li>
+                        <li><strong>Howler.js:</strong> For robust cross-browser audio management.</li>
+                    </ul>
+                    <p>The architecture emphasizes decoupling, with a service locator pattern managing dependencies between modules.</p>
+                    <hr/>
+                    <p><strong>Credits:</strong><br/>Design & Development by [Your Name/Handle]</p>
+                    <p><a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer">View on GitHub</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIX: Removed the entire right-side panel and its wrapper -->
 
     <div class="app-wrapper">
         <div class="main-content-area">

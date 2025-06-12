@@ -1,4 +1,4 @@
-# HUE 9000 JavaScript Module Reference (Project Decouple - V2.0)
+# HUE 9000 JavaScript Module Reference (Project Decouple - V2.1)
 
 This document provides a high-level overview of each JavaScript module in the refactored HUE 9000 project.
 
@@ -9,9 +9,10 @@ This document provides a high-level overview of each JavaScript module in the re
 #### `main.js`
 *   **@module main:** Entry point and application orchestrator.
 *   **Core Responsibilities:**
+    *   Orchestrates the `preloader` sequence.
     *   Initializes and registers all managers with the `serviceLocator`.
-    *   Sets up top-level event listeners (e.g., for `buttonInteracted`) to handle application-wide side-effects.
-    *   Starts the `startupSequenceManager`.
+    *   Sets up top-level event listeners (e.g., for `buttonInteracted`).
+    *   Starts the `startupSequenceManager` after the preloader completes.
 *   **Key Interactions:** Instantiates and initializes nearly every other manager.
 
 #### `appState.js`
@@ -20,7 +21,7 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **Key Interactions:** Interacted with by almost every module.
 
 #### `config.js`
-*   **@module config:** Defines shared, static configuration constants (animation parameters, data structures, flicker profiles, etc.).
+*   **@module config:** Defines shared, static configuration constants (animation parameters, audio settings, flicker profiles, etc.).
 *   **Key Interactions:** Imported by nearly every module to retrieve constant values.
 
 #### `serviceLocator.js`
@@ -53,6 +54,10 @@ This document provides a high-level overview of each JavaScript module in the re
 ---
 
 ### Manager & Controller Classes (Orchestration)
+
+#### `AudioManager.js`
+*   **@module AudioManager:** Manages all application audio using Howler.js.
+*   **Core Responsibilities:** Preloads sounds, handles playback for UI interactions and background music, manages looping sounds, and responds to application state changes. Unlocks the audio context on first user interaction.
 
 #### `buttonManager.js`
 *   **@module buttonManager:** Orchestrates all `Button` instances.
@@ -97,13 +102,21 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **@module resistiveShutdownController:** Orchestrates the resistive shutdown sequence.
 *   **Core Responsibilities:** Listens for `resistiveShutdownStage` changes in `appState` and triggers all corresponding UI effects (terminal messages, lens animations, button flickers).
 
+#### `sidePanelManager.js`
+*   **@module sidePanelManager:** Manages the UI and interactions for the left and right side panels.
+*   **Core Responsibilities:** Handles panel expansion/collapse, tab switching, and populating panel content (e.g., audio controls, sequence list).
+
 ---
 
-### Startup Sequence
+### Startup & Preloader
+
+#### `preloader.js`
+*   **@module preloader:** Handles the initial "cold boot" loading sequence.
+*   **Core Responsibilities:** Displays a thematic loading screen, orchestrates the loading of critical assets (fonts, audio, SVGs), and waits for a user interaction (`[ ENGAGE ]`) before allowing the main application to initialize.
 
 #### `startupSequenceManager.js`
 *   **@module startupSequenceManager:** Manages the application startup sequence using an XState machine.
-*   **Core Responsibilities:** Initializes and runs the `startupMachine`, provides dependencies, and exposes an API for debug controls.
+*   **Core Responsibilities:** Initializes and runs the `startupMachine`, provides dependencies, and exposes an API for debug controls (used by `sidePanelManager`).
 
 #### `startupMachine.js`
 *   **@module startupMachine:** Defines the XState Finite State Machine for the startup sequence.
@@ -113,7 +126,7 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **@module PhaseRunner:** A generic executor for declarative startup phase configurations.
 *   **Core Responsibilities:**
     *   Parses a phase config object and builds a GSAP timeline dynamically from it.
-    *   Orchestrates all procedural state changes for components during the startup sequence, acting as the **single source of truth** for animations and state until the sequence completes.
+    *   Orchestrates all procedural state changes for components during the startup sequence.
     *   Returns a promise that resolves on completion of the phase timeline.
 
 #### `startupPhase[0-11].js`

@@ -26,12 +26,12 @@ export const phase5Config = {
       state: 'is-dimly-lit',
       profile: 'buttonFlickerToDimlyLit',
       stagger: 0.04,
-      position: 0.1
+      position: 0.1,
     },
     {
       type: 'audio',
       soundKey: 'flickerToDim',
-      position: 0.1 // Let the flicker timeline handle precise sync
+      position: 0.1 // This sound is fast, so a small offset is fine
     }
   ]
 };

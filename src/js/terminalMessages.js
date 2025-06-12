@@ -15,23 +15,35 @@ const messageFormattingDefaults = {
     default: { spacingBefore: 1, lineSpacing: 0 }
 };
 
-const messageCounters = {};
-function getPseudoRandomMessage(key, templates) {
-    if (!messageCounters[key]) {
-        messageCounters[key] = 0;
+// --- Verbosity State Management ---
+
+const interactionVerbosityState = {};
+let lastHueAssignTarget = null;
+
+function getHueAssignVerbosity(target) {
+    if (target !== lastHueAssignTarget) {
+        // If the user switches to a different column, reset the counter for the new column.
+        interactionVerbosityState[`hue_assign_${target}`] = 1;
     }
-    const messages = templates[key];
-    if (!messages || messages.length === 0) return `NO TEMPLATE FOR ${key}`;
-    const message = messages[messageCounters[key] % messages.length];
-    messageCounters[key]++;
-    return message;
+    lastHueAssignTarget = target;
+
+    if (!interactionVerbosityState[`hue_assign_${target}`]) {
+        interactionVerbosityState[`hue_assign_${target}`] = 1;
+    }
+    
+    const count = interactionVerbosityState[`hue_assign_${target}`];
+    interactionVerbosityState[`hue_assign_${target}`]++; // Increment for next time
+    return count;
 }
+
+
+// --- Semantic Hue Mapping ---
 
 const HUE_SEMANTIC_NAMES = {
     CRIMSON: [340, 360], ROSE: [315, 339], MAGENTA: [290, 314],
     VIOLET: [265, 289], AZURE: [240, 264], CERULEAN: [210, 239],
     CYAN: [185, 209], VIRIDIAN: [140, 184], LIME: [100, 139],
-    OCHRE: [70, 99], AMBER: [45, 69], VERMILION: [0, 44]
+    OCHRE: [70, 99], AMBER: [45, 69], VERMILION: [1, 44]
 };
 
 function getSemanticNameForHue(hue) {
@@ -78,11 +90,20 @@ const interactionMessageTemplates = {
         "EXTERNAL LIGHTING PARAMETERS UPDATED. INTENSITY: {state}",
         "EXECUTING LIGHTING PROTOCOL. NEW STATE: {state}"
     ],
-    hue_assign: [
-        "HUE DIRECTIVE ACCEPTED. TARGET: {target}. ASSIGNING SPECTRUM: {semanticName} ({hue}°).",
-        "RECALIBRATING {target} HUE TO {semanticName} ({hue}°).",
-        "CHROMATIC ASSIGNMENT FOR {target} CONFIRMED: {semanticName} ({hue}°)."
-    ],
+    hue_assign: {
+        verbose: [
+            "HUE DIRECTIVE ACCEPTED. TARGET: {target}. ASSIGNING SPECTRUM: {semanticName} ({hue}°).",
+            "RECALIBRATING {target} HUE TO {semanticName} ({hue}°).",
+            "CHROMATIC ASSIGNMENT FOR {target} CONFIRMED: {semanticName} ({hue}°)."
+        ],
+        concise: [
+            "HUE RE-CONFIRMED: {target} TO {semanticName}.",
+            "{target} SPECTRUM: {semanticName}."
+        ],
+        terse: [
+            "{target}: {semanticName}."
+        ]
+    },
     intensity_change: [
         "OPTICAL OUTPUT CALIBRATED. LENS INTENSITY SET TO {power}%.",
         "LENS POWER LEVEL ADJUSTED. CURRENT OUTPUT: {power}%.",
@@ -95,6 +116,19 @@ const interactionMessageTemplates = {
     ]
 };
 
+// Helper to get a pseudo-random message from an array
+const messageCounters = {};
+function getPseudoRandomMessage(key, templates) {
+    if (!messageCounters[key]) {
+        messageCounters[key] = 0;
+    }
+    const messages = templates[key];
+    if (!messages || messages.length === 0) return `NO TEMPLATE FOR ${key}`;
+    const message = messages[messageCounters[key] % messages.length];
+    messageCounters[key]++;
+    return message;
+}
+
 export function getMessage(payload, currentAppState = {}, configModule = null) {
     const { type, source, data, messageKey } = payload || {};
     let content = [];
@@ -106,7 +140,6 @@ export function getMessage(payload, currentAppState = {}, configModule = null) {
             break;
 
         case 'block':
-            // This case uses the old `currentAppState` pattern for now.
             if (messageKey && blockMessages[messageKey]) {
                 if (messageKey === 'BTN4_MESSAGE' && configModule) {
                     content = blockMessages[messageKey].map(line =>
@@ -138,36 +171,50 @@ export function getMessage(payload, currentAppState = {}, configModule = null) {
             break;
 
         case 'interaction':
-            const template = getPseudoRandomMessage(source, interactionMessageTemplates);
             let message = `UNKNOWN INTERACTION: ${source}`;
-            switch(source) {
-                case 'aux_light':
-                    message = template.replace('{state}', data.state);
-                    break;
-                case 'hue_assign':
-                    const semanticName = getSemanticNameForHue(data.hue);
-                    message = template.replace('{target}', data.target)
-                                      .replace(/{semanticName}/g, semanticName)
-                                      .replace(/{hue}/g, Math.round(data.hue));
-                    break;
-                case 'intensity_change':
-                    message = template.replace('{power}', data.power.toFixed(1));
-                    break;
-                case 'mood_change':
-                    if (configModule && configModule.MOOD_MATRIX_DEFINITIONS) {
-                        const moods = configModule.MOOD_MATRIX_DEFINITIONS;
-                        const degreesPerBlock = 360 / moods.length;
-                        const primaryIndex = Math.floor(data.hue / degreesPerBlock);
-                        const progressInSegment = (data.hue % degreesPerBlock) / degreesPerBlock;
-                        const primaryValue = Math.round(100 - (Math.abs(progressInSegment - 0.5) * 200));
-                        const secondaryValue = 100 - primaryValue;
-                        const secondaryIndex = progressInSegment < 0.5 ? (primaryIndex - 1 + moods.length) % moods.length : (primaryIndex + 1) % moods.length;
-                        const primaryMood = moods[primaryIndex].toUpperCase();
-                        const secondaryMood = moods[secondaryIndex].toUpperCase();
-                        const moodSummary = `PRIMARY MOOD: ${primaryValue}% ${primaryMood}. SECONDARY INFLUENCE: ${secondaryValue}% ${secondaryMood}.`;
-                        message = template.replace('{moodSummary}', moodSummary);
-                    }
-                    break;
+            const templatesForSource = interactionMessageTemplates[source];
+
+            if (source === 'hue_assign') {
+                const verbosityCount = getHueAssignVerbosity(data.target.toLowerCase());
+                let verbosityLevel = 'terse';
+                if (verbosityCount === 1) verbosityLevel = 'verbose';
+                else if (verbosityCount === 2) verbosityLevel = 'concise';
+                
+                const templateArray = templatesForSource[verbosityLevel];
+                const templateKey = `${source}_${verbosityLevel}`;
+                const template = getPseudoRandomMessage(templateKey, { [templateKey]: templateArray });
+
+                const semanticName = getSemanticNameForHue(data.hue);
+                message = template.replace('{target}', data.target)
+                                  .replace(/{semanticName}/g, semanticName)
+                                  .replace(/{hue}/g, Math.round(data.hue));
+            } else if (templatesForSource) {
+                // For other interactions, reset the hue assignment tracking
+                lastHueAssignTarget = null;
+                const template = getPseudoRandomMessage(source, { [source]: templatesForSource });
+                switch(source) {
+                    case 'aux_light':
+                        message = template.replace('{state}', data.state);
+                        break;
+                    case 'intensity_change':
+                        message = template.replace('{power}', data.power.toFixed(1));
+                        break;
+                    case 'mood_change':
+                        if (configModule && configModule.MOOD_MATRIX_DEFINITIONS) {
+                            const moods = configModule.MOOD_MATRIX_DEFINITIONS;
+                            const degreesPerBlock = 360 / moods.length;
+                            const primaryIndex = Math.floor(data.hue / degreesPerBlock);
+                            const progressInSegment = (data.hue % degreesPerBlock) / degreesPerBlock;
+                            const primaryValue = Math.round(100 - (Math.abs(progressInSegment - 0.5) * 200));
+                            const secondaryValue = 100 - primaryValue;
+                            const secondaryIndex = progressInSegment < 0.5 ? (primaryIndex - 1 + moods.length) % moods.length : (primaryIndex + 1) % moods.length;
+                            const primaryMood = moods[primaryIndex].toUpperCase();
+                            const secondaryMood = moods[secondaryIndex].toUpperCase();
+                            const moodSummary = `PRIMARY MOOD: ${primaryValue}% ${primaryMood}. SECONDARY INFLUENCE: ${secondaryValue}% ${secondaryMood}.`;
+                            message = template.replace('{moodSummary}', moodSummary);
+                        }
+                        break;
+                }
             }
             content = [message];
             break;

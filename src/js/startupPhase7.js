@@ -25,9 +25,13 @@ export const phase7Config = {
       groups: ['env', 'lcd', 'logo', 'btn'],
       state: 'is-dimly-lit',
       profile: 'buttonFlickerToDimlyLit',
-      soundKey: 'flickerToDim', // Sound is now a property of the flicker
       stagger: 0.008,
       position: 0.1
+    },
+    {
+      type: 'audio',
+      soundKey: 'flickerToDim',
+      position: 0.1 // This sound is fast, so a small offset is fine
     }
   ]
 };

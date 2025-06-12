@@ -35,8 +35,6 @@ export class StartupSequenceManager {
   start(isStepThroughMode = true) {
     this._resetVisualsAndState(isStepThroughMode);
 
-    // Interpret the machine directly. The initial context is defined in the machine,
-    // and the START_SEQUENCE event payload will set the mode.
     this.fsmInterpreter = interpret(startupMachine);
 
     this.fsmInterpreter.subscribe(snapshot => {
@@ -59,16 +57,58 @@ export class StartupSequenceManager {
 
   playAllRemaining() {
     if (this.fsmInterpreter) {
-        // This event is handled by the machine to switch to auto-play mode.
         this.fsmInterpreter.send({ type: 'SET_AUTO_PLAY' });
     }
+  }
+
+  pauseSequence() {
+      if (this.fsmInterpreter) {
+          // FIX: Send the correct event to the FSM to enable step-through mode.
+          this.fsmInterpreter.send({ type: 'PAUSE_SEQUENCE' });
+          console.log("[SSM] Sequence auto-play paused.");
+      }
+  }
+
+  resumeSequence() {
+      if (this.fsmInterpreter) {
+          this.playAllRemaining();
+          console.log("[SSM] Sequence auto-play resumed.");
+      }
   }
 
   resetSequence() {
     this.start(true);
   }
 
-  _resetVisualsAndState(forStepping) {
+  /**
+   * Jumps the startup sequence to a specific phase. Used by the side panel UI.
+   * @param {number} phaseNumber The phase number to jump to (0-11).
+   */
+  jumpToPhase(phaseNumber) {
+    if (this.fsmInterpreter) {
+      this.fsmInterpreter.stop();
+    }
+    this._resetVisualsAndState(true); // FIX: Pass true to ensure body is visible
+    this.fsmInterpreter = interpret(startupMachine);
+
+    this.fsmInterpreter.subscribe(snapshot => {
+      const currentValueString = JSON.stringify(snapshot.value);
+      if (snapshot.changed || currentValueString !== this.previousFsmSnapshotValue) {
+        this._notifyFsmTransition(snapshot);
+        this.previousFsmSnapshotValue = currentValueString;
+      }
+    });
+
+    this.fsmInterpreter.start();
+    this.fsmInterpreter.send({
+        type: 'JUMP_TO_PHASE',
+        phase: phaseNumber,
+        isStepThroughMode: false // Assume auto-play when jumping
+    });
+  }
+
+  _resetVisualsAndState(makeBodyVisible) {
+    if (this.debug) console.log(`[SSM] _resetVisualsAndState called. Make Body Visible: ${makeBodyVisible}`);
     if (this.fsmInterpreter) {
       this.fsmInterpreter.stop();
       this.fsmInterpreter = null;
@@ -79,21 +119,26 @@ export class StartupSequenceManager {
     const gsap = serviceLocator.get('gsap');
     const config = serviceLocator.get('config');
     const appState = serviceLocator.get('appState');
-    const lcdUpdater = serviceLocator.get('lcdUpdater'); // Get the LcdUpdater
+    const lcdUpdater = serviceLocator.get('lcdUpdater');
 
     if (dom.body.classList.contains('pre-boot')) {
       dom.body.classList.remove('pre-boot');
     }
-
-    // Reverted: Do not kill tweens of logoContainer or set its opacity here.
-    // Let it be controlled by the global opacity factors like other elements.
+    
     gsap.killTweensOf([dom.body, this.LReductionProxy, this.opacityFactorProxy]);
+
+    // FIX: Remove the line that forces body opacity to 0. Let the preloader and CSS manage it.
+    // The body should be visible after the preloader, showing the dim state.
+    if (makeBodyVisible) {
+        gsap.set(dom.body, { opacity: 1 });
+    }
 
     this.LReductionProxy.value = config.STARTUP_L_REDUCTION_FACTORS.P0;
     this.opacityFactorProxy.value = 1.0 - this.LReductionProxy.value;
     dom.root.style.setProperty('--startup-L-reduction-factor', this.LReductionProxy.value.toFixed(3));
     dom.root.style.setProperty('--startup-opacity-factor', this.opacityFactorProxy.value.toFixed(3));
     dom.root.style.setProperty('--startup-opacity-factor-boosted', Math.min(1, this.opacityFactorProxy.value * 1.25).toFixed(3));
+    if (this.debug) console.log(`[SSM Reset] Set L-reduction to ${this.LReductionProxy.value}`);
 
     appState.setAppStatus('starting-up');
     appState.setCurrentStartupPhaseNumber(-1);
@@ -101,23 +146,19 @@ export class StartupSequenceManager {
     appState.setTrueLensPower(0);
     appState.updateDialState('A', { hue: config.DEFAULT_DIAL_A_HUE, targetHue: config.DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0, isDragging: false });
     appState.updateDialState('B', { hue: 0, targetHue: 0, rotation: 0, targetRotation: 0, isDragging: false });
+    if (this.debug) console.log('[SSM Reset] App state reset (status, theme, lens, dials).');
 
     serviceLocator.get('buttonManager').setInitialDimStates();
     serviceLocator.get('lensManager').directUpdateLensVisuals(0);
     serviceLocator.get('terminalManager').reset();
 
-    // --- THE FIX ---
-    // Explicitly set all LCDs to the 'unlit' state at the very beginning.
-    // This ensures their content wrappers are hidden before any animations start.
     const allLcds = [dom.terminalContainer, dom.lcdA, dom.lcdB];
     allLcds.forEach(lcd => {
         if (lcd) {
             lcdUpdater.setLcdState(lcd, 'unlit', { phaseContext: 'Reset' });
         }
     });
-
-    // Set body opacity based on mode. Step-through starts visible, auto-play fades in.
-    gsap.set(dom.body, { opacity: forStepping ? 1 : 0 });
+    if (this.debug) console.log('[SSM Reset] All managers reset to initial state.');
   }
 
   _performThemeTransitionCleanup() {
@@ -125,9 +166,6 @@ export class StartupSequenceManager {
     dom.body.classList.remove('is-transitioning-from-dim');
     document.querySelectorAll('.animate-on-dim-exit').forEach(el => el.classList.remove('animate-on-dim-exit'));
     
-    // Defensively remove any suspected "ghost" classes from dial containers
-    // that might have been part of an incomplete refactor, preventing CSS
-    // specificity conflicts with the final theme.
     const dialContainers = [dom.dialA, dom.dialB];
     dialContainers.forEach(container => {
         if (container) {
@@ -140,14 +178,11 @@ export class StartupSequenceManager {
 
   _notifyFsmTransition(snapshot) {
     const appState = serviceLocator.get('appState');
-    const debugManager = serviceLocator.get('debugManager');
+    const sidePanelManager = serviceLocator.get('sidePanelManager');
 
     const phaseInfo = this._getPhaseInfoFromSnapshot(snapshot);
     appState.emit('startup:phaseChanged', phaseInfo);
     appState.setCurrentStartupPhaseNumber(phaseInfo.numericPhase);
-
-    const isPaused = snapshot.matches('PAUSED') || snapshot.matches('IDLE') || snapshot.done;
-    debugManager.setNextPhaseButtonEnabled(isPaused);
   }
 
   _getPhaseInfoFromSnapshot(snapshot) {
@@ -164,8 +199,6 @@ export class StartupSequenceManager {
     else currentPhaseName = JSON.stringify(snapshot.value);
 
     const nextPhaseConfig = (phaseConfigs && (numericPhase + 1) < phaseConfigs.length) ? phaseConfigs[numericPhase + 1] : null;
-
-    // Defensively check for snapshot.nextEvents before calling .join()
     const nextEventsString = snapshot.nextEvents ? snapshot.nextEvents.join(', ') : 'N/A';
 
     return {

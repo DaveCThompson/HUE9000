@@ -31,6 +31,11 @@ export const phase6Config = {
       profile: 'lcdScreenFlickerToDimlyLit', // Profile for the containers
       stagger: 0.05,
       position: 0.2
+    },
+    {
+      type: 'audio',
+      soundKey: 'lcdOn',
+      position: 0.2
     }
   ]
 };

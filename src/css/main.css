@@ -30,6 +30,8 @@
 
 /* --- 2: Components --- */
 /* Styles for individual UI components */
+@import url('./2-components/_preloader.css'); /* ADDED */
+@import url('./2-components/_side-panels.css'); /* ADDED */
 @import url('./2-components/_panel-bezel.css');
 @import url('./2-components/_button-unit.css');
 @import url('./2-components/_dial.css');
@@ -86,7 +88,7 @@ body {
     font-family: 'IBM Plex Mono', 'Inter', sans-serif;
     padding: var(--space-3xl);
     touch-action: none;
-    overflow: hidden;
+    /* FIX: Removed 'overflow: hidden' which was clipping the fixed-position side panels. */
 
     transition:
         color var(--transition-duration-medium) ease,

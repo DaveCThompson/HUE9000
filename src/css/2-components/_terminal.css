@@ -31,6 +31,12 @@
 /* NEW: Added overflow-wrap for robustness */
 .terminal-line {
     overflow-wrap: break-word;
+    display: flex;
+    align-items: baseline;
+    line-height: 1.7;
+    color: inherit; /* Inherit color from the content wrapper */
+    /* The flicker effect will apply its own text-shadow. This is for the static state. */
+    text-shadow: inherit;
 }
 
 /* Terminal Cursor */

@@ -16,7 +16,7 @@ export class AudioManager {
         this.isUnlocked = false; // State to track if user has interacted
         this.backgroundMusicStarted = false; // Guard against multiple plays
         this.debug = true;
-        this.lastPlayedTimestamps = {}; // NEW: For sound throttling
+        this.lastPlayedTimestamps = {}; // For sound throttling
 
         // Internal state for managing loops
         this.activeLoops = {
@@ -24,29 +24,33 @@ export class AudioManager {
         };
         // Track dragging state for both dials to prevent redundant sound triggers
         this.dialDragState = { A: false, B: false };
+
+        const configModule = serviceLocator.get('config');
+        this.config = configModule;
+        if (configModule && configModule.AUDIO_CONFIG) {
+            const audioConfig = configModule.AUDIO_CONFIG.sounds;
+            for (const key in audioConfig) {
+                this.sounds[key] = new Howl(audioConfig[key]);
+            }
+        } else {
+            console.error('[AudioManager] AUDIO_CONFIG not found during construction. Sounds will not be loaded.');
+        }
     }
 
     init() {
-        this.config = serviceLocator.get('config');
         this.appState = serviceLocator.get('appState');
-        
-        // 1. Load ALL sounds from config immediately.
-        const audioConfig = this.config.AUDIO_CONFIG.sounds;
-        for (const key in audioConfig) {
-            this.sounds[key] = new Howl(audioConfig[key]);
+        if (!this.config) {
+            this.config = serviceLocator.get('config');
         }
-
-        // 2. Set global volume
+        
         Howler.volume(this.config.AUDIO_CONFIG.masterVolume);
 
-        // 3. Subscribe to application events
         this.appState.subscribe('appStatusChanged', this.handleAppStatusChange.bind(this));
         this.appState.subscribe('dialUpdated', this.handleDialUpdate.bind(this));
         
-        if (this.debug) console.log('[AudioManager] Initialized and sounds are preloading.');
+        if (this.debug) console.log('[AudioManager] Initialized and subscribed to events.');
         this.isReady = true;
 
-        // 4. Set up a one-time listener to unlock the audio context on first user interaction.
         document.addEventListener('click', () => this._unlockAudio(), { once: true });
         document.addEventListener('touchstart', () => this._unlockAudio(), { once: true });
     }
@@ -55,32 +59,25 @@ export class AudioManager {
         if (this.isUnlocked) return;
         this.isUnlocked = true;
 
-        // Manually resume the AudioContext. Howler attempts this automatically on play,
-        // but being explicit is more robust.
         if (Howler.ctx && Howler.ctx.state !== 'running') {
-            Howler.ctx.resume();
+            Howler.ctx.resume().then(() => {
+                if (this.debug) console.log('[AudioManager] Audio context resumed successfully.');
+            }).catch(e => console.error('[AudioManager] Error resuming audio context:', e));
         }
 
         if (this.debug) console.log('[AudioManager] Audio context unlocked by user interaction.');
         
-        // Play music immediately on unlock, if it hasn't started.
         if (!this.backgroundMusicStarted) {
             this.play('backgroundMusic');
-            this.backgroundMusicStarted = true;
         }
     }
 
-    /**
-     * Plays a one-shot sound, with throttling.
-     * @param {string} soundKey - The key of the sound in the config (e.g., 'buttonPress').
-     */
     play(soundKey) {
         if (!this.isUnlocked) {
-            if (this.debug) console.log(`[AudioManager] Playback for '${soundKey}' blocked, audio not yet unlocked.`);
+            if (this.debug) console.log(`[AudioManager] Playback for '${soundKey}' BLOCKED, audio not yet unlocked.`);
             return;
         }
 
-        // --- MODIFIED: Throttling logic ---
         const now = Date.now();
         const cooldowns = this.config.AUDIO_CONFIG.soundCooldowns || {};
         const cooldown = cooldowns[soundKey];
@@ -89,23 +86,30 @@ export class AudioManager {
             const lastPlayed = this.lastPlayedTimestamps[soundKey] || 0;
             if (now - lastPlayed < cooldown) {
                 if (this.debug) console.log(`[AudioManager] Playback for '${soundKey}' throttled.`);
-                return; // Suppress the sound
+                return;
             }
         }
-        // --- END MODIFICATION ---
 
-        if (this.sounds[soundKey] && this.isReady) {
-            this.sounds[soundKey].play();
-            this.lastPlayedTimestamps[soundKey] = now; // Update timestamp after playing
+        const soundConfig = this.config.AUDIO_CONFIG.sounds[soundKey];
+        const sound = this.sounds[soundKey];
+
+        if (sound && soundConfig && this.isReady) {
+            if (this.debug) console.log(`[AudioManager] Playing sound: '${soundKey}'`);
+            const soundId = sound.play();
+            this.lastPlayedTimestamps[soundKey] = now;
+
+            if (soundKey === 'backgroundMusic') {
+                 this.backgroundMusicStarted = true;
+            }
+
+            if (soundConfig.fadeOutDuration && soundId) {
+                sound.fade(sound.volume(soundId), 0, soundConfig.fadeOutDuration, soundId);
+            }
         } else if (this.debug) {
             console.warn(`[AudioManager] Sound not found or not ready: ${soundKey}`);
         }
     }
 
-    /**
-     * Starts a looping sound if it's not already playing.
-     * @param {string} soundKey - The key of the looping sound (e.g., 'dialLoop').
-     */
     startLoop(soundKey) {
         if (!this.isUnlocked) return;
 
@@ -115,23 +119,16 @@ export class AudioManager {
         }
     }
 
-    /**
-     * Stops a looping sound.
-     * @param {string} soundKey - The key of the looping sound to stop.
-     */
     stopLoop(soundKey) {
         if (!this.isUnlocked) return;
 
         if (this.sounds[soundKey] && this.isReady && this.activeLoops[soundKey]) {
             if (this.debug) console.log(`[AudioManager] Stopping loop: ${soundKey}`);
-            // Fade out for a smoother stop
             this.sounds[soundKey].fade(this.sounds[soundKey].volume(), 0, 100, this.activeLoops[soundKey]);
             
-            // After fade, stop it and reset volume for next play
             setTimeout(() => {
-                if (this.activeLoops[soundKey]) { // Check if it hasn't been started again
+                if (this.activeLoops[soundKey]) {
                     this.sounds[soundKey].stop(this.activeLoops[soundKey]);
-                    // Reset volume to its original value
                     this.sounds[soundKey].volume(this.config.AUDIO_CONFIG.sounds[soundKey].volume);
                     this.activeLoops[soundKey] = null;
                 }
@@ -139,32 +136,34 @@ export class AudioManager {
         }
     }
 
-    // --- Event Handlers ---
+    toggleMute(isMuted) {
+        Howler.mute(isMuted);
+        if (this.debug) console.log(`[AudioManager] Global mute set to: ${isMuted}`);
+    }
 
     handleAppStatusChange(newStatus) {
         if (!this.isReady) return;
 
-        // This is now just a fallback in case unlock happens after interactive state is reached,
-        // which is unlikely in the current flow but safe to keep.
         if (newStatus === 'interactive' && this.isUnlocked && !this.backgroundMusicStarted) {
             if (this.debug) console.log('[AudioManager] App is interactive and audio is unlocked, starting background music.');
             this.play('backgroundMusic');
-            this.backgroundMusicStarted = true;
         }
     }
 
     handleDialUpdate({ id, state }) {
         if (!this.isReady || (id !== 'A' && id !== 'B')) return;
 
+        // DEBUG: Add detailed logging to diagnose the endless loop issue.
+        if (this.debug) {
+            console.log(`[AudioManager handleDialUpdate] ID: ${id}, isDragging: ${state.isDragging}, wasDragging: ${this.dialDragState[id]}`);
+        }
+
         const wasDragging = this.dialDragState[id];
         const isDragging = state.isDragging;
 
         if (isDragging && !wasDragging) {
-            // Drag started for this specific dial
             this.startLoop('dialLoop');
         } else if (!isDragging && wasDragging) {
-            // Drag ended for this specific dial
-            // Check if the other dial is also not dragging before stopping the sound
             const otherDialId = id === 'A' ? 'B' : 'A';
             if (!this.dialDragState[otherDialId]) {
                 this.stopLoop('dialLoop');

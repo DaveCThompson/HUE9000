@@ -18,15 +18,16 @@ export const phase9Config = {
     },
     {
       type: 'flicker',
-      target: 'Auxiliary Light High', // CORRECTED: Use aria-label for targeting
+      target: 'Auxiliary Light High', // Use aria-label for targeting
       state: 'is-energized',
       profile: 'buttonFlickerFromDimlyLitToFullyLitUnselected',
       position: 0.1
-    },
-    {
-      type: 'audio',
-      soundKey: 'bigOn',
-      position: 0.1
     }
+    // FIX: Removed bigOn sound as requested
+    // {
+    //   type: 'audio',
+    //   soundKey: 'bigOn',
+    //   position: 0.15 // Manually offset sound to sync with visual peak
+    // }
   ]
 };

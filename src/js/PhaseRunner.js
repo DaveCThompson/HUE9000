@@ -59,14 +59,10 @@ export class PhaseRunner {
           }
         });
 
-        // --- REVERTED/FIXED: Handle terminal messages based on phase config ---
         if (phaseConfig.specialTerminalFlicker && phaseConfig.message) {
-            // For P1, get the terminal's own flicker timeline and add it to the master.
             const terminalFlickerTl = this.managers.terminalManager.playStartupFlicker(phaseConfig.message);
             masterTl.add(terminalFlickerTl, 0);
         } else if (phaseConfig.terminalMessageKey) {
-            // For all other phases, use a gsap.call to emit the message request.
-            // This ensures the event is fired when the timeline *plays*, not when it's built.
             masterTl.call(() => {
                 this.appState.emit('requestTerminalMessage', {
                     type: 'startup',
@@ -116,7 +112,7 @@ export class PhaseRunner {
         const lensTl = this.managers.lensManager.energizeLensCoreStartup(anim.targetPower, anim.durationMs);
         if (lensTl) tl.add(lensTl, position);
         break;
-      // RESTORED: The 'audio' case is now restored to fix the lens sound regression.
+      // FIX: Re-introduced the 'audio' case to handle declarative sound playback.
       case 'audio':
         if (this.managers.audioManager && anim.soundKey) {
             tl.call(() => this.managers.audioManager.play(anim.soundKey), [], position);
@@ -197,17 +193,17 @@ export class PhaseRunner {
                     : (isFast ? 'buttonFlickerFromDimlyLitToFullyLitUnselectedFast' : 'buttonFlickerFromDimlyLitToFullyLitUnselected');
             }
             
-            // NOTE: The soundKey is no longer passed here. It's handled by the top-level 'audio' animation type.
-            const flickerResult = this.managers.buttonManager.playFlickerToState(el, anim.state, {
+            const flickerOptions = {
               profileName: effectiveProfile,
               phaseContext: `PhaseRunner_${effectiveProfile}`
-            });
+            };
+
+            const flickerResult = this.managers.buttonManager.playFlickerToState(el, anim.state, flickerOptions);
 
             if (flickerResult && flickerResult.timeline) {
                 tl.add(flickerResult.timeline, `${position}+=${index * stagger}`);
             }
         } else {
-            // This path is now deprecated in favor of 'lcdPowerOn', but kept for compatibility.
             const flickerTl = this.managers.lcdUpdater.getLcdPowerOnTimeline(el, {
                 profileName: anim.profile,
                 state: anim.state

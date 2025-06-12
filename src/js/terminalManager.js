@@ -20,7 +20,9 @@ class TerminalManager {
         this._messageQueue = [];
         this._isTyping = false;
         this._currentLineElement = null;
+        this._currentTextSpan = null; // NEW: To hold the text being typed
         this._cursorElement = null;
+        this._isFirstLine = true; // Track if we're about to type the very first line
         this.debug = true; // Enable detailed logging
     }
 
@@ -46,6 +48,7 @@ class TerminalManager {
         if (this._cursorElement && this._cursorElement.parentNode) {
             this._cursorElement.parentNode.removeChild(this._cursorElement);
         }
+        this._isFirstLine = true; // Reset the flag
         this._setCursorState('idle');
     }
 
@@ -90,9 +93,12 @@ class TerminalManager {
             gsapInstance: this._gsap,
             stagger: 0.1,
             onTimelineComplete: () => {
-                if (lineElements.length > 0) {
-                    lineElements[lineElements.length - 1].appendChild(this._cursorElement);
+                const lastLine = this._terminalContentElement.querySelector('.terminal-line:last-child');
+                if (lastLine) {
+                    // For startup flicker, we can't use the span method easily, so we just append.
+                    lastLine.appendChild(this._cursorElement);
                 }
+                this._isFirstLine = false; // Mark that the first line has been printed
                 this._setCursorState('idle');
             }
         });
@@ -119,22 +125,24 @@ class TerminalManager {
             typingTl.call(() => this._addNewLineAndPrepareForTyping());
             
             const duration = (line.length * this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) / 1000;
-            typingTl.to(this._currentLineElement, {
+            // Target the text span for the animation
+            typingTl.to(this._currentTextSpan, {
                 duration: Math.max(0.1, duration),
                 text: { value: line, delimiter: "" },
                 ease: "none",
-                onUpdate: () => this._currentLineElement.appendChild(this._cursorElement),
-                onComplete: () => this._currentLineElement.appendChild(this._cursorElement)
             });
         });
 
-        typingTl.call(() => this._setCursorState('idle'));
+        typingTl.call(() => {
+            this._isFirstLine = false;
+            this._setCursorState('idle');
+        });
         return typingTl;
     }
 
     _handleRequestTerminalMessage(payload) {
         if (this.debug) console.log(`[TerminalManager] Received message request:`, payload);
-        const messageData = getMessage(payload, {}, this._configModule);
+        const messageData = getMessage(payload, this._appState, this._configModule);
         this._messageQueue.push({ ...payload, ...messageData });
         if (!this._isTyping) this._processQueue();
     }
@@ -148,28 +156,44 @@ class TerminalManager {
         this._isTyping = true;
         const messageObject = this._messageQueue.shift();
         
-        this._setCursorState('typing');
-        
-        // This loop will now work correctly as messageObject.content is the expected array.
-        for (const lineText of messageObject.content) {
-            this._addNewLineAndPrepareForTyping();
-            await this._typeLine(lineText, messageObject.type);
-        }
+        const delay = this._gsap.utils.random(
+            this._configModule.TERMINAL_THINKING_DELAY_MIN_MS,
+            this._configModule.TERMINAL_THINKING_DELAY_MAX_MS
+        );
 
-        this._isTyping = false;
-        this._processQueue();
+        setTimeout(async () => {
+            this._setCursorState('typing');
+            
+            if (!this._isFirstLine && messageObject.formatting.spacingBefore > 0) {
+                for (let i = 0; i < messageObject.formatting.spacingBefore; i++) {
+                    this._addNewLineAndPrepareForTyping(true);
+                }
+            }
+            
+            for (const lineText of messageObject.content) {
+                this._addNewLineAndPrepareForTyping();
+                await this._typeLine(lineText, messageObject.type);
+            }
+
+            this._isTyping = false;
+            this._processQueue();
+        }, this._isFirstLine ? 0 : delay);
     }
 
-    _addNewLineAndPrepareForTyping() {
-        if (this._cursorElement && this._cursorElement.parentNode) {
-            this._cursorElement.parentNode.removeChild(this._cursorElement);
-        }
+    _addNewLineAndPrepareForTyping(isSpacer = false) {
         this._currentLineElement = document.createElement('div');
         this._currentLineElement.className = 'terminal-line';
+        
+        if (!isSpacer) {
+            this._currentTextSpan = document.createElement('span');
+            this._currentLineElement.appendChild(this._currentTextSpan);
+            this._currentLineElement.appendChild(this._cursorElement);
+        }
+        
         this._terminalContentElement.appendChild(this._currentLineElement);
         this._scrollTerminal();
         this._limitMaxLines();
-        this._currentLineElement.appendChild(this._cursorElement);
+        this._isFirstLine = false;
     }
 
     _typeLine(text, messageType = 'status') {
@@ -179,13 +203,11 @@ class TerminalManager {
                 : this._configModule.TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
             const duration = (text.length * speedPerChar) / 1000;
 
-            this._gsap.to(this._currentLineElement, {
+            this._gsap.to(this._currentTextSpan, { // Animate the text span
                 duration: Math.max(0.1, duration),
                 text: { value: text, delimiter: "" },
                 ease: "none",
-                onUpdate: () => this._currentLineElement.appendChild(this._cursorElement),
                 onComplete: () => {
-                    this._currentLineElement.appendChild(this._cursorElement);
                     resolve();
                 }
             });
@@ -194,7 +216,13 @@ class TerminalManager {
 
     _scrollTerminal() {
         const scrollContainer = this._terminalContentElement.parentElement;
-        if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        if (scrollContainer) {
+            this._gsap.to(scrollContainer, {
+                scrollTop: scrollContainer.scrollHeight,
+                duration: this._configModule.TERMINAL_SCROLL_DURATION_S,
+                ease: 'power2.out'
+            });
+        }
     }
 
     _limitMaxLines() {

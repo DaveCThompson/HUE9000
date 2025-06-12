@@ -4,7 +4,7 @@
  * such as advanced flicker and glow effects.
  */
 import { gsap as globalGsap } from "gsap"; // Import gsap, but we'll prefer injected if available
-import { ADVANCED_FLICKER_PROFILES } from './config.js';
+import { ADVANCED_FLICKER_PROFILES, PERCEPTUAL_AUDIO_OFFSET_MS } from './config.js';
 import { serviceLocator } from './serviceLocator.js'; // Import serviceLocator
 
 /**
@@ -190,16 +190,6 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         if (Object.keys(onGlowCSS).length > 0) {
             tl.to(elementsToAnimate, { css: onGlowCSS, duration: onDuration, ease: "power1.inOut" }, currentTime);
         }
-
-        // --- NEW CONCURRENCY FIX ---
-        // Play the sound exactly when the first "on" tween starts.
-        if (i === 0 && options.soundKey) {
-            const audioManager = serviceLocator.get('audioManager');
-            if (audioManager) {
-                tl.call(() => audioManager.play(options.soundKey), [], currentTime);
-            }
-        }
-        // --- END FIX ---
 
         currentTime += onDuration;
 
