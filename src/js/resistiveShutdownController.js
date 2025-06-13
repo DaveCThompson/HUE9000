@@ -4,22 +4,23 @@
  * (Project Decouple Refactor)
  */
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // IMPORT appState directly
 import { clamp } from './utils.js';
 
 class ResistiveShutdownController {
     constructor() {
-        this.appState = null;
+        // this.appState = null; // REMOVED
         this.config = null;
         this.buttonManager = null;
         this.debug = true;
     }
 
     init() {
-        this.appState = serviceLocator.get('appState');
+        // this.appState = serviceLocator.get('appState'); // REMOVED
         this.config = serviceLocator.get('config');
         this.buttonManager = serviceLocator.get('buttonManager');
 
-        this.appState.subscribe('resistiveShutdownStageChanged', (payload) => this.handleStageChange(payload));
+        appState.subscribe('resistiveShutdownStageChanged', (payload) => this.handleStageChange(payload));
         if (this.debug) console.log('[RSC INIT]');
     }
 
@@ -27,15 +28,15 @@ class ResistiveShutdownController {
      * This method is called from the main.js event listener when the power off button is clicked.
      */
     handlePowerOffClick() {
-        if (this.appState.getIsMainPowerOffButtonDisabled()) {
+        if (appState.getIsMainPowerOffButtonDisabled()) {
             if (this.debug) console.log(`[RSC] MAIN PWR OFF is disabled. Interaction blocked.`);
             return;
         }
-        const currentStage = this.appState.getResistiveShutdownStage();
+        const currentStage = appState.getResistiveShutdownStage();
         if (currentStage < this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
             const newStage = currentStage + 1;
             if (this.debug) console.log(`[RSC] Advancing resistive shutdown to stage ${newStage}.`);
-            this.appState.setResistiveShutdownStage(newStage);
+            appState.setResistiveShutdownStage(newStage);
         }
     }
 
@@ -43,8 +44,8 @@ class ResistiveShutdownController {
         if (this.debug) console.log(`[RSC] Stage changed to ${newStage}`);
 
         if (newStage === 0) {
-            if (this.appState.getIsMainPowerOffButtonDisabled()) {
-                this.appState.setIsMainPowerOffButtonDisabled(false);
+            if (appState.getIsMainPowerOffButtonDisabled()) {
+                appState.setIsMainPowerOffButtonDisabled(false);
             }
             return;
         }
@@ -54,7 +55,7 @@ class ResistiveShutdownController {
         if (!stageParams) return;
 
         if (stageParams.TERMINAL_MESSAGE_KEY) {
-            this.appState.emit('requestTerminalMessage', {
+            appState.emit('requestTerminalMessage', {
                 type: 'status',
                 messageKey: stageParams.TERMINAL_MESSAGE_KEY,
             });
@@ -64,13 +65,13 @@ class ResistiveShutdownController {
         this._updateHueAssignmentButtons(stageParams);
 
         if (newStage === this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
-            this.appState.setIsMainPowerOffButtonDisabled(true);
+            appState.setIsMainPowerOffButtonDisabled(true);
         }
     }
 
     _updateLensAndDialTargets(stageParams) {
-        const currentDialA = this.appState.getDialState('A');
-        const currentPower = this.appState.getTrueLensPower();
+        const currentDialA = appState.getDialState('A');
+        const currentPower = appState.getTrueLensPower();
         let targetHue = currentDialA.hue;
         let targetPower = currentPower;
 
@@ -86,17 +87,13 @@ class ResistiveShutdownController {
 
         targetPower = clamp(targetPower, 0, 1);
 
-        // Update Dial A state for mood
-        this.appState.updateDialState('A', { hue: targetHue, targetHue: targetHue });
-        
-        // Update the authoritative lens power state
-        this.appState.setTrueLensPower(targetPower * 100);
+        appState.updateDialState('A', { hue: targetHue, targetHue: targetHue });
+        appState.setTrueLensPower(targetPower * 100);
 
-        // Synchronize Dial B's state with the new power value
         const dialBHue = targetPower * 359.999;
         const dialBRotation = dialBHue * (this.config.DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG || 1);
 
-        this.appState.updateDialState('B', {
+        appState.updateDialState('B', {
             hue: dialBHue,
             targetHue: dialBHue,
             rotation: dialBRotation,
@@ -125,7 +122,7 @@ class ResistiveShutdownController {
 
         if (closestIndex !== -1) {
             ['btn', 'logo', 'lcd', 'env'].forEach(groupId => {
-                this.appState.setTargetColorProperties(groupId, this.config.HUE_ASSIGNMENT_ROW_HUES[closestIndex]);
+                appState.setTargetColorProperties(groupId, this.config.HUE_ASSIGNMENT_ROW_HUES[closestIndex]);
                 this.buttonManager.setGroupSelected(groupId, closestIndex.toString());
             });
         }

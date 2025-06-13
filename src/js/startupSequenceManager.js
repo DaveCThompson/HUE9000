@@ -7,6 +7,7 @@
 import { interpret } from 'xstate';
 import { startupMachine } from './startupMachine.js';
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // ENSURE appState is imported
 
 export class StartupSequenceManager {
   constructor() {
@@ -25,7 +26,6 @@ export class StartupSequenceManager {
     this.LReductionProxy.value = config.STARTUP_L_REDUCTION_FACTORS.P0;
     this.opacityFactorProxy.value = 1.0 - this.LReductionProxy.value;
 
-    // Register proxies so PhaseRunner can access them during its own init
     serviceLocator.register('proxies', {
         LReductionProxy: this.LReductionProxy,
         opacityFactorProxy: this.opacityFactorProxy
@@ -63,7 +63,6 @@ export class StartupSequenceManager {
 
   pauseSequence() {
       if (this.fsmInterpreter) {
-          // FIX: Send the correct event to the FSM to enable step-through mode.
           this.fsmInterpreter.send({ type: 'PAUSE_SEQUENCE' });
           console.log("[SSM] Sequence auto-play paused.");
       }
@@ -80,15 +79,11 @@ export class StartupSequenceManager {
     this.start(true);
   }
 
-  /**
-   * Jumps the startup sequence to a specific phase. Used by the side panel UI.
-   * @param {number} phaseNumber The phase number to jump to (0-11).
-   */
   jumpToPhase(phaseNumber) {
     if (this.fsmInterpreter) {
       this.fsmInterpreter.stop();
     }
-    this._resetVisualsAndState(true); // FIX: Pass true to ensure body is visible
+    this._resetVisualsAndState(true); 
     this.fsmInterpreter = interpret(startupMachine);
 
     this.fsmInterpreter.subscribe(snapshot => {
@@ -103,7 +98,7 @@ export class StartupSequenceManager {
     this.fsmInterpreter.send({
         type: 'JUMP_TO_PHASE',
         phase: phaseNumber,
-        isStepThroughMode: false // Assume auto-play when jumping
+        isStepThroughMode: false 
     });
   }
 
@@ -118,7 +113,7 @@ export class StartupSequenceManager {
     const dom = serviceLocator.get('domElements');
     const gsap = serviceLocator.get('gsap');
     const config = serviceLocator.get('config');
-    const appState = serviceLocator.get('appState');
+    // REMOVE: const localAppStateRef = serviceLocator.get('appState'); // THIS WAS THE ERROR LINE (121)
     const lcdUpdater = serviceLocator.get('lcdUpdater');
 
     if (dom.body.classList.contains('pre-boot')) {
@@ -127,8 +122,6 @@ export class StartupSequenceManager {
     
     gsap.killTweensOf([dom.body, this.LReductionProxy, this.opacityFactorProxy]);
 
-    // FIX: Remove the line that forces body opacity to 0. Let the preloader and CSS manage it.
-    // The body should be visible after the preloader, showing the dim state.
     if (makeBodyVisible) {
         gsap.set(dom.body, { opacity: 1 });
     }
@@ -140,6 +133,7 @@ export class StartupSequenceManager {
     dom.root.style.setProperty('--startup-opacity-factor-boosted', Math.min(1, this.opacityFactorProxy.value * 1.25).toFixed(3));
     if (this.debug) console.log(`[SSM Reset] Set L-reduction to ${this.LReductionProxy.value}`);
 
+    // Use the imported appState module directly
     appState.setAppStatus('starting-up');
     appState.setCurrentStartupPhaseNumber(-1);
     appState.setTheme('dim');
@@ -177,9 +171,7 @@ export class StartupSequenceManager {
   }
 
   _notifyFsmTransition(snapshot) {
-    const appState = serviceLocator.get('appState');
-    const sidePanelManager = serviceLocator.get('sidePanelManager');
-
+    // Use the imported appState module directly
     const phaseInfo = this._getPhaseInfoFromSnapshot(snapshot);
     appState.emit('startup:phaseChanged', phaseInfo);
     appState.setCurrentStartupPhaseNumber(phaseInfo.numericPhase);
@@ -187,7 +179,7 @@ export class StartupSequenceManager {
 
   _getPhaseInfoFromSnapshot(snapshot) {
     const numericPhase = snapshot.context.currentPhase;
-    const phaseConfigs = serviceLocator.get('config').phaseConfigs;
+    const phaseConfigs = serviceLocator.get('config').phaseConfigs; // Config is fine from locator
     const phaseConfig = (phaseConfigs && numericPhase >= 0 && numericPhase < phaseConfigs.length) ? phaseConfigs[numericPhase] : null;
     
     let currentPhaseName = "N/A";

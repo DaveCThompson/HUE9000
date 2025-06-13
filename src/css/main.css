@@ -30,7 +30,8 @@
 
 /* --- 2: Components --- */
 /* Styles for individual UI components */
-@import url('./2-components/_preloader.css');
+@import url('./2-components/_preloader-v2.css'); /* NEW PRELOADER STYLES - LOAD FIRST */
+/* @import url('./2-components/_preloader.css'); /* OLD PRELOADER - COMMENTED OUT */
 @import url('./2-components/_side-panels.css');
 @import url('./2-components/_panel-bezel.css');
 @import url('./2-components/_button-unit.css');
@@ -53,25 +54,32 @@ html {
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    height: 100%; /* Ensure html tag takes full height */
+    width: 100%;  /* Ensure html tag takes full width */
+    margin: 0;
+    padding: 0;
 }
 
 html, body {
-    height: 100%;
+    /* width: 100%; /* Ensured by html rule */
+    /* height: 100%; /* Ensured by html rule */
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    box-sizing: border-box; /* Apply to all elements for consistency */
 }
 
 body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; /* Use min-height to ensure it fills viewport at least */
+    height: 100%; /* Explicitly set height to 100% of html */
+    width: 100%; /* Explicitly set width to 100% of html */
 
     background-color: oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
     background-image:
-        url('../assets/textures/noise.svg'), /* MODIFIED PATH */
+        url('../assets/textures/noise.svg'), 
         linear-gradient(180deg,
             oklch(calc(var(--body-bg-top-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
             oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%
@@ -83,7 +91,6 @@ body {
 
     color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
     font-family: 'IBM Plex Mono', 'Inter', sans-serif;
-    padding: var(--space-3xl);
     touch-action: none;
 
     transition:
@@ -92,6 +99,17 @@ body {
         background-image var(--transition-duration-medium) ease;
 }
 
+/* Ensure pre-boot state also has flex centering for body */
+body.pre-boot {
+    opacity: 0;
+    display: flex; /* This should be inherited, but being explicit */
+    justify-content: center; /* This should be inherited */
+    align-items: center; /* This should be inherited */
+    /* min-height: 100vh; /* Already set above */
+    /* height: 100%; /* Already set above */
+}
+
+
 *, *:before, *:after {
-    box-sizing: inherit;
+    box-sizing: inherit; /* Inherit from html/body */
 }

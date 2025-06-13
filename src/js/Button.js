@@ -5,13 +5,14 @@
  * (Project Decouple Refactor)
  */
 import { ButtonStates }  from './buttonManager.js';
+// Removed appState import from here as it's passed in constructor
 
 class Button {
     constructor(domElement, config, gsapInstance, appStateService, configModule) {
         this.element = domElement;
         this.config = config; // { type, groupId, value, isSelectedByDefault }
         this.gsap = gsapInstance;
-        this.appState = appStateService;
+        this.appState = appStateService; // Use the passed appStateService
         this.configModule = configModule;
 
         this.debugAmbient = false;
@@ -20,6 +21,8 @@ class Button {
 
         if (!this.gsap) throw new Error(`[Button CONSTRUCTOR ${this.getIdentifier()}] GSAP instance is not available.`);
         if (!this.configModule) console.warn(`[Button CONSTRUCTOR ${this.getIdentifier()}] configModule not available at construction.`);
+        if (!this.appState) console.warn(`[Button CONSTRUCTOR ${this.getIdentifier()}] appStateService not available at construction.`);
+
 
         this.currentClasses = new Set();
         this.currentFlickerAnim = null;
@@ -41,6 +44,18 @@ class Button {
         const { skipAria = false, internalFlickerCall = false, forceState = false, phaseContext } = options;
         const effectivePhaseContext = phaseContext || 'UnknownPhase_ButtonSetState';
         const buttonId = this.getIdentifier();
+        
+        // Check if this specific setState call is the one immediately following a P7 flicker to dimly-lit
+        const isFinalSetAfterP7DimlyLitFlicker = effectivePhaseContext.endsWith('_FinalSet') && 
+                                                 effectivePhaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') &&
+                                                 newStateClassesStr === ButtonStates.DIMLY_LIT;
+
+        if (isFinalSetAfterP7DimlyLitFlicker && buttonId.includes('Assign')) { 
+            console.log(`[BTN_SETSTATE_START P7_VISUALS_FINAL_DIM] Button: ${buttonId}. NewState: '${newStateClassesStr}'. Force: ${forceState}. AppTime: ${performance.now().toFixed(2)}`);
+        } else if (effectivePhaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && buttonId.includes('Assign')) { 
+             console.log(`[BTN_SETSTATE_START P7_VISUALS_OTHER] Button: ${buttonId}. NewState: '${newStateClassesStr}'. EffectiveCtx: ${effectivePhaseContext}. AppTime: ${performance.now().toFixed(2)}`);
+        }
+
 
         const newClassesArray = newStateClassesStr ? newStateClassesStr.split(' ').filter(c => c) : [];
         const newClassesSet = new Set(newClassesArray);
@@ -76,12 +91,23 @@ class Button {
             this.currentFlickerAnim.kill(); this.currentFlickerAnim = null;
         }
 
-        if (!internalFlickerCall) {
+        const lights = Array.from(this.element.querySelectorAll('.light'));
+        if (!internalFlickerCall) { 
             this.element.classList.remove(ButtonStates.FLICKERING);
-            const lights = Array.from(this.element.querySelectorAll('.light'));
-            if (lights.length > 0) this.gsap.set(lights, { clearProps: "all" });
-            this.gsap.set(this.element, { clearProps: "css" });
+            
+            if (isFinalSetAfterP7DimlyLitFlicker) {
+                // For the final setState after P7's dimly-lit flicker, be selective with clearProps on lights
+                // to preserve the opacity set by the flicker animation (target 0.8).
+                if (lights.length > 0) this.gsap.set(lights, { clearProps: "transform,filter" }); // Keep opacity, clear others
+                console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS] Button: ${buttonId}. Used selective clearProps for lights. AppTime: ${performance.now().toFixed(2)}`);
+            } else {
+                // For all other setState calls, or initial flicker setup, clear all from lights.
+                if (lights.length > 0) this.gsap.set(lights, { clearProps: "all" });
+            }
+            // Always clear CSS variables from the main button element for glow management.
+            this.gsap.set(this.element, { clearProps: "css" }); 
         }
+
 
         const allPossibleStateClasses = Object.values(ButtonStates).flatMap(s => s.split(' ')).filter(c => c && c !== 'is-selected' && c !== ButtonStates.PERMANENTLY_DISABLED);
         [...new Set(allPossibleStateClasses)].forEach(cls => {
@@ -98,6 +124,17 @@ class Button {
         this.currentClasses.clear();
         this.element.classList.forEach(cls => this.currentClasses.add(cls));
         if (!skipAria) this._updateAriaAttributes();
+
+        if (isFinalSetAfterP7DimlyLitFlicker && buttonId.includes('Assign')) {
+            const finalClasses = Array.from(this.element.classList).join(' ');
+            // Log GSAP's inline style for opacity IF it exists, otherwise computed.
+            // This helps see if GSAP's 0.8 "stuck" or if CSS immediately took over.
+            const finalLightOpacities = lights.map(l => l.style.opacity || getComputedStyle(l).opacity ).join(', ');
+            console.log(`[BTN_SETSTATE_END P7_VISUALS_FINAL_DIM] Button: ${buttonId}. FinalClasses: '${finalClasses}'. Final Light Opacities (inline||computed): [${finalLightOpacities}]. AppTime: ${performance.now().toFixed(2)}`);
+        } else if (effectivePhaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && buttonId.includes('Assign')) {
+             const finalClasses = Array.from(this.element.classList).join(' ');
+            console.log(`[BTN_SETSTATE_END P7_VISUALS_OTHER] Button: ${buttonId}. EffectiveCtx: ${effectivePhaseContext}. FinalClasses: '${finalClasses}'. AppTime: ${performance.now().toFixed(2)}`);
+        }
     }
 
     _updateAriaAttributes() {
@@ -260,9 +297,21 @@ class Button {
 
     playStateTransitionEcho() {
         if (!this.configModule) return;
+        const buttonId = this.getIdentifier(); // For logging
+
         if (this.stateTransitionEchoTween && this.stateTransitionEchoTween.isActive()) {
+            const currentPhase = this.appState && this.appState.getCurrentStartupPhaseNumber ? this.appState.getCurrentStartupPhaseNumber() : -1;
+            if (buttonId.includes('Assign') && currentPhase === 7) {
+                console.warn(`[BTN_ECHO_START_OVERLAP P7_VISUALS] Button: ${buttonId}. Starting echo while previous echo was active. AppTime: ${performance.now().toFixed(2)}`);
+            }
             this.stateTransitionEchoTween.kill();
         }
+
+        const currentPhase = this.appState && this.appState.getCurrentStartupPhaseNumber ? this.appState.getCurrentStartupPhaseNumber() : -1;
+        if (buttonId.includes('Assign') && currentPhase === 7) {
+             console.log(`[BTN_ECHO_START P7_VISUALS] Button: ${buttonId}. Echo requested (but will be skipped by ButtonManager). AppTime: ${performance.now().toFixed(2)}`);
+        }
+
 
         const lights = Array.from(this.element.querySelectorAll('.light'));
         if (!lights.length) return;
@@ -270,7 +319,13 @@ class Button {
         const E_PARAMS = this.configModule.STATE_TRANSITION_ECHO_PARAMS;
         const tl = this.gsap.timeline({
             delay: E_PARAMS.DELAY_AFTER_TRANSITION,
-            onComplete: () => { this.stateTransitionEchoTween = null; }
+            onComplete: () => { 
+                this.stateTransitionEchoTween = null; 
+                const endPhase = this.appState && this.appState.getCurrentStartupPhaseNumber ? this.appState.getCurrentStartupPhaseNumber() : -1;
+                if (buttonId.includes('Assign') && endPhase <= 7 && endPhase !== -1) { 
+                     console.log(`[BTN_ECHO_END P7_VISUALS] Button: ${buttonId}. Echo (if it ran) would have ended. AppTime: ${performance.now().toFixed(2)}`);
+                }
+            }
         });
         this.stateTransitionEchoTween = tl;
 

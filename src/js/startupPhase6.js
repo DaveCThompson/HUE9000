@@ -32,6 +32,7 @@ export const phase6Config = {
     {
       type: 'audio',
       soundKey: 'itemAppear', 
+      forceRestart: true, // Added forceRestart
       // Sound for dial appearance plays at T=1.8s. This explicit delay is timed for its auditory
       // peak to align with the visual stabilization of the dials becoming active (which starts at T=0.5s).
       position: 1.8 
@@ -44,10 +45,11 @@ export const phase6Config = {
       stagger: 0.05, 
       position: 1.5 // Dial LCDs' visual flicker to dimly-lit starts at T=1.5s.
     },
-    //{ // This sound was commented out in your provided file.
-    //  type: 'audio',
-    //  soundKey: 'lcdPowerOn', 
-    //  position: 1.5 // Intended to coincide with LCD visual power-on start.
-    //}
+    { 
+      type: 'audio',
+      soundKey: 'lcdPowerOn', 
+      forceRestart: true, // Added forceRestart
+      position: 1.5 // Intended to coincide with LCD visual power-on start.
+    }
   ]
 };

@@ -3,11 +3,12 @@
  * @description Replaces the old moodMatrixDisplayManager, bridging appState and the new MoodMatrix component.
  */
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // IMPORT appState directly
 import { MoodMatrix } from './MoodMatrix.js';
 
 export class MoodMatrixManager {
     constructor() {
-        this.appState = null;
+        // this.appState = null; // REMOVED
         this.config = null;
         this.dom = null;
         this.gsap = null;
@@ -18,7 +19,7 @@ export class MoodMatrixManager {
     }
 
     init() {
-        this.appState = serviceLocator.get('appState');
+        // this.appState = serviceLocator.get('appState'); // REMOVED
         this.config = serviceLocator.get('config');
         this.dom = serviceLocator.get('domElements');
         this.gsap = serviceLocator.get('gsap');
@@ -33,19 +34,18 @@ export class MoodMatrixManager {
 
         this.moodMatrix = new MoodMatrix(this.moodLcdContent, displayConfig, this.gsap);
 
-        this.appState.subscribe('dialUpdated', ({ id, state }) => {
+        appState.subscribe('dialUpdated', ({ id, state }) => {
             if (id === 'A') {
                 if (state.isDragging !== this.lastIsDragging) {
                     this.handleInteractionChange(state.isDragging, state.hue);
                     this.lastIsDragging = state.isDragging;
-                    return; // Prevents race condition where handleDialUpdate overwrites animations.
+                    return; 
                 }
                 this.handleDialUpdate(state.hue);
             }
         });
 
-        // Initial render
-        this.handleDialUpdate(this.appState.getDialState('A').hue);
+        this.handleDialUpdate(appState.getDialState('A').hue);
     }
 
     handleDialUpdate(hue) {
@@ -63,8 +63,7 @@ export class MoodMatrixManager {
         } else {
             this.moodMatrix.stopContinuousScramble(currentHue);
             this.resonanceTimer = setTimeout(() => {
-                const dialState = this.appState.getDialState('A');
-                // Only resonate if there's a non-zero value
+                const dialState = appState.getDialState('A');
                 if (dialState && dialState.hue > 0) {
                     this.dom.lcdA.classList.add('is-resonating');
                 }

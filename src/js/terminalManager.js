@@ -6,37 +6,38 @@
  */
 import { getMessage } from './terminalMessages.js';
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // IMPORT appState directly
 import { createAdvancedFlicker } from './animationUtils.js'; // Import flicker utility
 
 class TerminalManager {
     constructor() {
         this._terminalContainerElement = null;
         this._terminalContentElement = null;
-        this._appState = null;
+        // this._appState = null; // REMOVED
         this._configModule = null;
         this._gsap = null;
-        this._lcdUpdater = null; // Property for the LcdUpdater dependency
+        this._lcdUpdater = null; 
 
         this._messageQueue = [];
         this._isTyping = false;
         this._currentLineElement = null;
-        this._currentTextSpan = null; // NEW: To hold the text being typed
+        this._currentTextSpan = null; 
         this._cursorElement = null;
-        this._isFirstLine = true; // Track if we're about to type the very first line
-        this.debug = true; // Enable detailed logging
+        this._isFirstLine = true; 
+        this.debug = true; 
     }
 
     init() {
         const dom = serviceLocator.get('domElements');
         this._terminalContainerElement = dom.terminalContainer;
         this._terminalContentElement = dom.terminalLcdContentElement;
-        this._appState = serviceLocator.get('appState');
+        // this._appState = serviceLocator.get('appState'); // REMOVED
         this._configModule = serviceLocator.get('config');
         this._gsap = serviceLocator.get('gsap');
-        this._lcdUpdater = serviceLocator.get('lcdUpdater'); // Correctly inject the dependency
+        this._lcdUpdater = serviceLocator.get('lcdUpdater'); 
 
         this._setupDOM();
-        this._appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
+        appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
         if (this.debug) console.log('[TerminalManager INIT]');
     }
 
@@ -48,7 +49,7 @@ class TerminalManager {
         if (this._cursorElement && this._cursorElement.parentNode) {
             this._cursorElement.parentNode.removeChild(this._cursorElement);
         }
-        this._isFirstLine = true; // Reset the flag
+        this._isFirstLine = true; 
         this._setCursorState('idle');
     }
 
@@ -58,27 +59,19 @@ class TerminalManager {
         this.reset();
     }
 
-    /**
-     * Creates and plays a special flicker animation for the initial startup message.
-     * @param {string[]} messageLines - An array of strings for the startup message.
-     * @returns {gsap.core.Timeline} The GSAP timeline for the full animation.
-     */
     playStartupFlicker(messageLines) {
         if (this.debug) console.log('[TerminalManager] Playing startup flicker animation.');
         this.reset();
         this._setCursorState('typing');
 
-        // Create a master timeline for this specific effect
         const masterFlickerTl = this._gsap.timeline();
 
-        // Animate the container background flicker using the injected dependency
         const containerFlicker = this._lcdUpdater.getLcdPowerOnTimeline(this._terminalContainerElement, {
             profileName: 'terminalScreenFlickerToDimlyLit',
             state: 'dimly-lit'
         });
         masterFlickerTl.add(containerFlicker, 0);
 
-        // Animate the text flicker
         const lineElements = messageLines.map(lineText => {
             const lineEl = document.createElement('div');
             lineEl.className = 'terminal-line';
@@ -95,26 +88,18 @@ class TerminalManager {
             onTimelineComplete: () => {
                 const lastLine = this._terminalContentElement.querySelector('.terminal-line:last-child');
                 if (lastLine) {
-                    // For startup flicker, we can't use the span method easily, so we just append.
                     lastLine.appendChild(this._cursorElement);
                 }
-                this._isFirstLine = false; // Mark that the first line has been printed
+                this._isFirstLine = false; 
                 this._setCursorState('idle');
             }
         });
         
-        // Add the text flicker partway through the container flicker
         masterFlickerTl.add(textFlicker.timeline, ">-0.5");
 
         return masterFlickerTl;
     }
 
-
-    /**
-     * Creates and returns a GSAP timeline for typing text.
-     * @param {string[]} messageLines - An array of strings to be typed.
-     * @returns {gsap.core.Timeline} A GSAP timeline for the typing animation.
-     */
     getTypingTimeline(messageLines) {
         if (this.debug) console.log(`[TerminalManager] getTypingTimeline called with:`, messageLines);
         const typingTl = this._gsap.timeline();
@@ -125,7 +110,6 @@ class TerminalManager {
             typingTl.call(() => this._addNewLineAndPrepareForTyping());
             
             const duration = (line.length * this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR) / 1000;
-            // Target the text span for the animation
             typingTl.to(this._currentTextSpan, {
                 duration: Math.max(0.1, duration),
                 text: { value: line, delimiter: "" },
@@ -142,7 +126,8 @@ class TerminalManager {
 
     _handleRequestTerminalMessage(payload) {
         if (this.debug) console.log(`[TerminalManager] Received message request:`, payload);
-        const messageData = getMessage(payload, this._appState, this._configModule);
+        // Pass the imported appState module to getMessage
+        const messageData = getMessage(payload, appState, this._configModule);
         this._messageQueue.push({ ...payload, ...messageData });
         if (!this._isTyping) this._processQueue();
     }
@@ -203,7 +188,7 @@ class TerminalManager {
                 : this._configModule.TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
             const duration = (text.length * speedPerChar) / 1000;
 
-            this._gsap.to(this._currentTextSpan, { // Animate the text span
+            this._gsap.to(this._currentTextSpan, { 
                 duration: Math.max(0.1, duration),
                 text: { value: text, delimiter: "" },
                 ease: "none",

@@ -1,0 +1,415 @@
+/* src/css/2-components/_preloader-v2.css */
+/* Styles for the "Preloader V2 Enhanced" - self-contained for speed */
+
+/* --- START: Hardcoded Critical Variables for Preloader --- */
+#datastream-preloader {
+    --preloader-display-font: 'IBM Plex Mono', monospace;
+    --preloader-body-font: 'Inter', sans-serif;
+
+    --preloader-space-xxs: 0.0625rem; /* 1px */
+    --preloader-space-xs:  0.125rem;  /* 2px */
+    --preloader-space-sm:  0.25rem;   /* 4px */
+    --preloader-space-md:  0.375rem;  /* 6px */
+    --preloader-space-lg:  0.5rem;    /* 8px */
+    --preloader-space-xl:  0.75rem;   /* 12px */
+    --preloader-space-2xl: 1rem;      /* 16px */
+    --preloader-space-3xl: 1.5rem;    /* 24px */
+
+    --preloader-radius-panel-tight: 0.1rem;
+    --preloader-control-section-radius: 0.5rem;
+    --preloader-button-unit-radius: var(--preloader-space-xs);
+
+    --preloader-transition-duration-fast: 0.15s;
+    --preloader-transition-duration-medium: 0.3s;
+    --preloader-transition-duration-slow: 0.5s;
+    
+    --preloader-button-unit-light-object-base-size: 64px;
+    --preloader-button-unit-light-object-base-blur: 20px;
+
+    /* --- Dark Mode Aligned Colors --- */
+    /* --preloader-bg-color: oklch(0.05 0 0); /* Intended for full overlay, but not used if #datastream-preloader is the centered box */
+    --preloader-panel-bezel-bg: oklch(0.12 0.002 240 / 0.75); 
+    --preloader-panel-section-bg: oklch(0.10 0.002 240 / 0.85); 
+    --preloader-panel-section-border: oklch(0.4 0.001 240 / 0.3); 
+
+    --preloader-text-primary: oklch(0.9 0.005 240);   
+    --preloader-text-secondary: oklch(0.8 0.008 240); 
+    --preloader-text-tertiary: oklch(0.65 0.01 240);  
+
+    --preloader-lcd-unlit-bg: oklch(0.03 0 0 / 0.5);
+    --preloader-lcd-unlit-border: oklch(0.08 0 0 / 0.2);
+    --preloader-lcd-dimly-lit-text: oklch(0.85 0.01 220 / 0.85); 
+    --preloader-lcd-text-shadow: 0 0 3px oklch(from var(--preloader-lcd-dimly-lit-text) l c h / 0.2);
+
+    --preloader-btn-unlit-bg: oklch(0.20 0.002 240 / 0.7);
+    --preloader-btn-unlit-border: oklch(0.25 0.002 240 / 0.75);
+    --preloader-btn-unlit-text: oklch(0.7 0.001 240 / 0.85);
+    --preloader-btn-unlit-light: oklch(0.2 0.001 240 / 0.15);
+
+    /* Engage button uses success colors */
+    --preloader-success-color-l: 0.70; --preloader-success-color-c: 0.20; --preloader-success-color-h: 145; --preloader-success-color-a: 1;
+    --preloader-error-color-l: 0.60; --preloader-error-color-c: 0.23; --preloader-error-color-h: 20; --preloader-error-color-a: 1;
+    
+    --preloader-btn-energized-bg-l: var(--preloader-success-color-l); 
+    --preloader-btn-energized-bg-c: var(--preloader-success-color-c); 
+    --preloader-btn-energized-bg-h: var(--preloader-success-color-h);  
+    --preloader-btn-energized-bg-a: 0.75;
+    
+    --preloader-btn-energized-border-l: calc(var(--preloader-success-color-l) * 0.9); 
+    --preloader-btn-energized-border-c: var(--preloader-success-color-c);
+    --preloader-btn-energized-border-h: var(--preloader-success-color-h);
+    --preloader-btn-energized-border-a: 0.85;
+    
+    --preloader-btn-energized-text-l: 0.10; 
+    --preloader-btn-energized-text-c: 0; 
+    --preloader-btn-energized-text-h: 0; 
+    --preloader-btn-energized-text-a: 1;
+
+    --preloader-btn-energized-light-l: var(--preloader-success-color-l);
+    --preloader-btn-energized-light-c: var(--preloader-success-color-c);
+    --preloader-btn-energized-light-h: var(--preloader-success-color-h);
+    --preloader-btn-energized-light-a: 0.85; 
+
+    --preloader-btn-unselected-glow-base-opacity: 0.3; 
+    --preloader-btn-unselected-glow-base-size: 6px;    
+    --preloader-btn-glow-spread: 2px;                   
+    --preloader-btn-glow-color: oklch(
+        var(--preloader-btn-energized-light-l) 
+        var(--preloader-btn-energized-light-c) 
+        var(--preloader-btn-energized-light-h) / 
+        var(--preloader-btn-unselected-glow-base-opacity)
+    );
+    --preloader-btn-pressed-innershadow-color: oklch(0% 0 0 / 0.2); 
+    --preloader-btn-hover-light-opacity-boost: 0.2; 
+    --preloader-btn-hover-light-scale: 1.1;         
+
+    --preloader-component-opacity: 0.9; 
+}
+/* --- END: Hardcoded Critical Variables --- */
+
+/* --- Preloader Root Container --- */
+/* This element IS the main visible preloader box due to current HTML structure */
+#datastream-preloader {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    /* width: auto; Let content and max-width determine actual width */
+    /* height: auto; Let content determine actual height */
+    /* max-width is applied by .preloader-main-bezel class */
+
+    /* Visuals applied because this element also has .panel-bezel.preloader-main-bezel classes */
+    /* background-color will come from .preloader-main-bezel */
+    /* padding will come from .preloader-main-bezel */
+    
+    color: var(--preloader-text-primary);
+    font-family: var(--preloader-display-font);
+    
+    /* It is a container for .preloader-content-section */
+    display: flex; 
+    flex-direction: column; 
+    align-items: stretch; /* Make .preloader-content-section fill width */
+    /* justify-content: center; /* If vertical centering of content-section is desired */
+
+    z-index: 10001; 
+    opacity: 0; /* Initially hidden, JS or critical CSS will show it */
+    box-sizing: border-box;
+    transition: opacity var(--preloader-transition-duration-slow) ease-out;
+}
+#datastream-preloader.is-visible {
+    opacity: 1;
+}
+#datastream-preloader.is-hiding {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--preloader-transition-duration-slow) ease-in;
+}
+
+/* --- Preloader Panel & Section Styling --- */
+/* Styles for the .preloader-main-bezel (which is on #datastream-preloader) */
+.preloader-main-bezel {
+    width: 100%; /* Takes width from parent constraints (max-width) or viewport if smaller */
+    max-width: 900px; 
+    padding: var(--preloader-space-xl);
+    background-color: var(--preloader-panel-bezel-bg);
+    border-radius: var(--preloader-radius-panel-tight);
+    box-shadow: inset 0 0 8px oklch(0 0 0 / 0.25), 0 0 12px oklch(0 0 0 / 0.15);
+    /* margin-left: auto; margin-right: auto; align-self: center; */ /* Centering handled by #datastream-preloader transform */
+    box-sizing: border-box;
+    /* This element is also #datastream-preloader, so display:flex is handled by the ID selector */
+}
+
+.preloader-content-section {
+    background-color: var(--preloader-panel-section-bg);
+    padding: var(--preloader-space-2xl);
+    border-radius: var(--preloader-radius-panel-tight);
+    box-shadow: inset 0 0 4px oklch(0 0 0 / 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: var(--preloader-space-2xl);
+    box-sizing: border-box;
+    width: 100%; /* Ensure it fills the bezel */
+}
+
+.preloader-data-stream.control-block { 
+    border: var(--preloader-control-block-border-width) solid var(--preloader-panel-section-border);
+    border-radius: var(--preloader-control-section-radius);
+    padding: var(--preloader-space-xl);
+    box-sizing: border-box;
+}
+
+/* --- Stream Columns & Individual Streams --- */
+.preloader-stream-columns {
+    display: flex;
+    gap: var(--preloader-space-lg);
+    justify-content: space-around; 
+    flex-wrap: wrap; 
+    box-sizing: border-box;
+}
+
+.preloader-data-stream {
+    width: 250px; 
+    flex-grow: 0; 
+    flex-shrink: 0; 
+    min-height: 200px; 
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; 
+    opacity: var(--preloader-component-opacity);
+    background-color: oklch(
+        from var(--preloader-panel-section-bg) calc(l * 0.9) c h / calc(a * 0.8)
+    );
+    transition: border-color var(--preloader-transition-duration-medium) ease, 
+                box-shadow var(--preloader-transition-duration-medium) ease, 
+                background-color var(--preloader-transition-duration-medium) ease, 
+                opacity var(--preloader-transition-duration-medium) ease;
+    box-sizing: border-box;
+}
+.preloader-data-stream.is-inactive { opacity: 0.65; } 
+.preloader-data-stream.is-active { opacity: 0.95; } 
+
+.preloader-stream-header {
+    font-family: var(--preloader-display-font);
+    font-size: 0.85em; 
+    font-weight: 500; 
+    text-transform: uppercase;
+    color: var(--preloader-text-secondary);
+    text-align: center;
+    padding-bottom: var(--preloader-space-sm);
+    margin-bottom: var(--preloader-space-md);
+    border-bottom: 1px dashed oklch(from var(--preloader-text-secondary) l c h / 0.25);
+    transition: color var(--preloader-transition-duration-fast) ease, border-bottom-color var(--preloader-transition-duration-fast) ease;
+    flex-shrink: 0; 
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+
+.preloader-stream-output {
+    height: 90px; 
+    background-color: var(--preloader-lcd-unlit-bg);
+    border: 1px solid var(--preloader-lcd-unlit-border);
+    border-radius: var(--preloader-radius-panel-tight);
+    padding: var(--preloader-space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; 
+    flex-shrink: 0; 
+    box-sizing: border-box;
+}
+.preloader-stream-output-text {
+    font-family: var(--preloader-display-font);
+    font-size: 0.75em; 
+    line-height: 1.35;
+    word-break: break-all; 
+    white-space: pre-wrap; 
+    color: var(--preloader-lcd-dimly-lit-text);
+    text-shadow: var(--preloader-lcd-text-shadow);
+    width: 100%; 
+    height: 100%;
+    overflow: hidden; 
+    transition: color var(--preloader-transition-duration-fast) ease;
+    box-sizing: border-box;
+}
+.preloader-data-stream.is-verified .preloader-stream-output-text,
+.preloader-data-stream.is-error .preloader-stream-output-text {
+    text-align: center;
+    font-weight: 500; 
+    font-size: 0.8em; 
+    white-space: nowrap; 
+    overflow: hidden;    
+    text-overflow: ellipsis; 
+}
+
+.preloader-stream-status {
+    font-family: var(--preloader-display-font);
+    font-size: 0.75em; 
+    text-align: center;
+    margin-top: var(--preloader-space-md);
+    color: var(--preloader-text-tertiary);
+    transition: color var(--preloader-transition-duration-fast) ease, font-weight var(--preloader-transition-duration-fast) ease;
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0; 
+    box-sizing: border-box;
+}
+.preloader-data-stream.is-verified .preloader-stream-status,
+.preloader-data-stream.is-error .preloader-stream-status {
+    font-weight: 500; 
+}
+
+/* --- Overall Progress --- */
+.preloader-overall-progress {
+    font-family: var(--preloader-display-font);
+    font-size: 1.0em; 
+    text-align: center;
+    margin-top: var(--preloader-space-lg);
+    box-sizing: border-box;
+}
+.preloader-progress-label {
+    color: var(--preloader-text-primary);
+}
+.preloader-progress-value {
+    color: oklch(var(--preloader-success-color-l) var(--preloader-success-color-c) var(--preloader-success-color-h) / var(--preloader-success-color-a));
+    font-weight: 500;
+}
+.preloader-progress-bar-container {
+    height: var(--preloader-space-sm);
+    border: 1px solid oklch(from var(--preloader-panel-section-border) l c h / 0.4);
+    background-color: oklch(from var(--preloader-panel-section-bg) calc(l * 0.8) c h / a);
+    padding: var(--preloader-space-xxs);
+    margin-top: var(--preloader-space-sm);
+    border-radius: var(--preloader-radius-panel-tight);
+    box-sizing: border-box;
+}
+.preloader-progress-bar-fill {
+    height: 100%; width: 0%;
+    background-color: oklch(var(--preloader-success-color-l) var(--preloader-success-color-c) var(--preloader-success-color-h) / var(--preloader-success-color-a));
+    border-radius: calc(var(--preloader-radius-panel-tight) - var(--preloader-space-xxs));
+    transition: width var(--preloader-transition-duration-medium) ease-out;
+}
+
+/* --- Engage Button Area --- */
+.preloader-engage-container {
+    margin-top: var(--preloader-space-xl);
+    text-align: center;
+    opacity: 0; 
+    transform: translateY(var(--preloader-space-md));
+    transition: opacity var(--preloader-transition-duration-medium) ease-out, transform var(--preloader-transition-duration-medium) ease-out;
+    box-sizing: border-box;
+}
+.preloader-engage-container.is-visible { opacity: 1; transform: translateY(0); }
+
+/* --- Button Styling (Preloader Engage Button) --- */
+#datastream-preloader .button-unit {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    border-radius: var(--preloader-button-unit-radius);
+    cursor: pointer; user-select: none; padding: var(--preloader-space-sm); box-sizing: border-box;
+    background-color: transparent;
+    border: 1px solid var(--preloader-btn-unlit-border);
+    color: var(--preloader-btn-unlit-text);
+    opacity: var(--preloader-component-opacity);
+    transition:
+        transform var(--preloader-transition-duration-fast) ease,
+        border-color var(--preloader-transition-duration-medium) ease,
+        color var(--preloader-transition-duration-medium) ease,
+        box-shadow var(--preloader-transition-duration-medium) ease;
+}
+#datastream-preloader .button-unit::before { 
+    content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: 1;
+    background-color: var(--preloader-btn-unlit-bg);
+    transition: background-color var(--preloader-transition-duration-medium) ease;
+}
+#datastream-preloader .button-unit .light-container {
+    position: absolute; inset: 0; z-index: 2; overflow: hidden; border-radius: inherit;
+    pointer-events: none; display: flex; align-items: center; justify-content: space-around; padding: 0 var(--preloader-space-xs);
+}
+#datastream-preloader .button-unit .light {
+    width: calc(var(--preloader-button-unit-light-object-base-size) * 0.25); 
+    height: calc(var(--preloader-button-unit-light-object-base-size) * 0.25);
+    border-radius: 50%;
+    filter: blur(calc(var(--preloader-button-unit-light-object-base-blur) * 0.18)); 
+    background-color: var(--preloader-btn-unlit-light);
+    opacity: oklch(from var(--preloader-btn-unlit-light) l c h / a); 
+    transition: opacity var(--preloader-transition-duration-fast) ease-out, background-color var(--preloader-transition-duration-medium) ease, transform var(--preloader-transition-duration-fast) ease-out;
+}
+#datastream-preloader .button-unit .button-text {
+    position: relative; z-index: 2; font-family: var(--preloader-body-font);
+    font-size: 0.9em; font-weight: 500; line-height: normal; text-align: center;
+    padding: 0 var(--preloader-space-sm); pointer-events: none; text-transform: uppercase;
+}
+#datastream-preloader .button-unit--l { padding: var(--preloader-space-md); min-height: calc(var(--preloader-space-2xl) + var(--preloader-space-md)); } 
+#datastream-preloader .button-unit--l .button-text { font-size: 0.9em; }
+
+#datastream-preloader .button-unit:disabled {
+    cursor: not-allowed;
+    opacity: calc(var(--preloader-component-opacity) * 0.4);
+    border-color: oklch(from var(--preloader-btn-unlit-border) l c h / calc(a * 0.6));
+    color: oklch(from var(--preloader-btn-unlit-text) l c h / calc(a * 0.6));
+}
+#datastream-preloader .button-unit:disabled::before {
+     background-color: oklch(from var(--preloader-btn-unlit-bg) l c h / calc(a * 0.6));
+}
+#datastream-preloader .button-unit:disabled .light {
+    opacity: oklch(from var(--preloader-btn-unlit-light) l c h / calc(a * 0.4));
+}
+
+#datastream-preloader .button-unit.is-energized {
+    border-color: oklch(var(--preloader-btn-energized-border-l) var(--preloader-btn-energized-border-c) var(--preloader-btn-energized-border-h) / var(--preloader-btn-energized-border-a));
+    color: oklch(var(--preloader-btn-energized-text-l) var(--preloader-btn-energized-text-c) var(--preloader-btn-energized-text-h) / var(--preloader-btn-energized-text-a));
+    box-shadow: 0 0 var(--preloader-btn-unselected-glow-base-size) var(--preloader-btn-glow-spread) var(--preloader-btn-glow-color);
+}
+#datastream-preloader .button-unit.is-energized::before {
+    background-color: oklch(var(--preloader-btn-energized-bg-l) var(--preloader-btn-energized-bg-c) var(--preloader-btn-energized-bg-h) / var(--preloader-btn-energized-bg-a));
+}
+#datastream-preloader .button-unit.is-energized .light {
+    background-color: oklch(var(--preloader-btn-energized-light-l) var(--preloader-btn-energized-light-c) var(--preloader-btn-energized-light-h));
+    opacity: var(--preloader-btn-energized-light-a);
+}
+#datastream-preloader .button-unit.is-energized:not(:disabled):hover .light {
+    opacity: calc(var(--preloader-btn-energized-light-a) + var(--preloader-btn-hover-light-opacity-boost));
+    transform: scale(var(--preloader-btn-hover-light-scale));
+}
+#datastream-preloader .button-unit.is-energized:not(:disabled):active {
+    transform: translateY(1px);
+    box-shadow: inset 0 0 2px 1px var(--preloader-btn-pressed-innershadow-color), 
+                0 0 var(--preloader-btn-unselected-glow-base-size) var(--preloader-btn-glow-spread) var(--preloader-btn-glow-color);
+}
+#datastream-preloader .button-unit.is-energized:not(:disabled):active::before {
+    background-color: oklch(from oklch(var(--preloader-btn-energized-bg-l) var(--preloader-btn-energized-bg-c) var(--preloader-btn-energized-bg-h)) calc(l * 0.96) c h / var(--preloader-btn-energized-bg-a));
+}
+
+/* --- State-Specific Visual Changes for Streams --- */
+.preloader-data-stream.is-verified {
+    border-color: oklch(var(--preloader-success-color-l) var(--preloader-success-color-c) var(--preloader-success-color-h) / var(--preloader-success-color-a));
+    box-shadow: 0 0 var(--preloader-space-md) 0 oklch(var(--preloader-success-color-l) var(--preloader-success-color-c) var(--preloader-success-color-h) / 0.35);
+}
+.preloader-data-stream.is-verified .preloader-stream-header {
+    color: oklch(var(--preloader-success-color-l) var(--preloader-success-color-c) var(--preloader-success-color-h) / var(--preloader-success-color-a));
+    border-bottom-color: oklch(var(--preloader-success-color-l) var(--preloader-success-color-c) var(--preloader-success-color-h) / 0.4);
+}
+.preloader-data-stream.is-verified .preloader-stream-output-text {
+    color: oklch(var(--preloader-success-color-l) var(--preloader-success-color-c) var(--preloader-success-color-h) / var(--preloader-success-color-a));
+}
+.preloader-data-stream.is-verified .preloader-stream-status {
+    color: oklch(var(--preloader-success-color-l) var(--preloader-success-color-c) var(--preloader-success-color-h) / var(--preloader-success-color-a));
+}
+
+.preloader-data-stream.is-error {
+    border-color: oklch(var(--preloader-error-color-l) var(--preloader-error-color-c) var(--preloader-error-color-h) / var(--preloader-error-color-a));
+    box-shadow: 0 0 var(--preloader-space-md) 0 oklch(var(--preloader-error-color-l) var(--preloader-error-color-c) var(--preloader-error-color-h) / 0.35);
+}
+.preloader-data-stream.is-error .preloader-stream-header {
+    color: oklch(var(--preloader-error-color-l) var(--preloader-error-color-c) var(--preloader-error-color-h) / var(--preloader-error-color-a));
+    border-bottom-color: oklch(var(--preloader-error-color-l) var(--preloader-error-color-c) var(--preloader-error-color-h) / 0.4);
+}
+.preloader-data-stream.is-error .preloader-stream-output-text {
+    color: oklch(var(--preloader-error-color-l) var(--preloader-error-color-c) var(--preloader-error-color-h) / var(--preloader-error-color-a));
+}
+.preloader-data-stream.is-error .preloader-stream-status {
+    color: oklch(var(--preloader-error-color-l) var(--preloader-error-color-c) var(--preloader-error-color-h) / var(--preloader-error-color-a));
+}

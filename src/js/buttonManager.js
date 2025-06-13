@@ -7,6 +7,7 @@ import Button from './Button.js';
 import { createAdvancedFlicker } from './animationUtils.js';
 import { shuffleArray } from './utils.js';
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // IMPORT appState directly
 
 export const ButtonStates = {
     UNLIT: 'is-unlit',
@@ -23,7 +24,7 @@ export const ButtonStates = {
 export class ButtonManager {
     constructor() {
         this.gsap = null;
-        this.appState = null;
+        // this.appState = null; // REMOVED
         this.config = null;
         this.aam = null; // AmbientAnimationManager
         this.audioManager = null; // Added for easier access
@@ -39,13 +40,13 @@ export class ButtonManager {
 
     init() {
         this.gsap = serviceLocator.get('gsap');
-        this.appState = serviceLocator.get('appState');
+        // this.appState = serviceLocator.get('appState'); // REMOVED
         this.config = serviceLocator.get('config');
         this.aam = serviceLocator.get('ambientAnimationManager');
         this.audioManager = serviceLocator.get('audioManager'); // Get AudioManager instance
 
-        this.appState.subscribe('resistiveShutdownStageChanged', this.handleResistiveShutdownStageChange.bind(this));
-        this.appState.subscribe('mainPowerOffButtonDisabledChanged', this.handleMainPowerOffButtonDisabledChange.bind(this));
+        appState.subscribe('resistiveShutdownStageChanged', this.handleResistiveShutdownStageChange.bind(this));
+        appState.subscribe('mainPowerOffButtonDisabledChanged', this.handleMainPowerOffButtonDisabledChange.bind(this));
 
         if (this.debug) console.log('[ButtonManager INIT]');
     }
@@ -74,7 +75,8 @@ export class ButtonManager {
         if (!element || this._buttons.has(element)) return;
 
         const buttonConfig = this._generateButtonConfig(element, explicitGroupId);
-        const buttonInstance = new Button(element, buttonConfig, this.gsap, this.appState, this.config);
+        // Pass the imported appState module to the Button constructor
+        const buttonInstance = new Button(element, buttonConfig, this.gsap, appState, this.config);
         this._buttons.set(element, buttonInstance);
 
         const finalGroupId = buttonInstance.getGroupId();
@@ -144,17 +146,17 @@ export class ButtonManager {
         const wasSelected = buttonInstance.isSelected(); // Capture state BEFORE interaction
 
         if (this.debugResistive) {
-            console.log(`[BM handleInteraction] Clicked: ${buttonId}, Group: ${groupId}, Value: ${value}, WasSelected: ${wasSelected}, AppStatus: ${this.appState.getAppStatus()}`);
+            console.log(`[BM handleInteraction] Clicked: ${buttonId}, Group: ${groupId}, Value: ${value}, WasSelected: ${wasSelected}, AppStatus: ${appState.getAppStatus()}`);
         }
 
-        if (this.appState.getAppStatus() !== 'interactive' && groupId !== 'system-power') {
+        if (appState.getAppStatus() !== 'interactive' && groupId !== 'system-power') {
             if (this.debug) console.log(`[BM INTERACTION] Blocked, app not interactive for ${buttonId}`);
             return;
         }
 
         if (groupId === 'system-power' && value === 'off') {
             buttonInstance.setPressedVisuals(true); 
-            this.appState.emit('buttonInteracted', { button: buttonInstance }); 
+            appState.emit('buttonInteracted', { button: buttonInstance }); 
             if (this.debugResistive) console.log(`[BM handleInteraction] Intercepted "off" button press. Emitting event only.`);
             return; 
         }
@@ -179,23 +181,23 @@ export class ButtonManager {
                 });
             }
         }
-        this.appState.emit('buttonInteracted', { button: buttonInstance });
+        appState.emit('buttonInteracted', { button: buttonInstance });
         this.emit('afterButtonTransition', buttonInstance);
 
         // Play auxModeChange sound if an AUX button's selection state changed to selected
-        if (groupId === 'light' && this.appState.getAppStatus() === 'interactive') {
+        if (groupId === 'light' && appState.getAppStatus() === 'interactive') {
             if (buttonInstance.isSelected() && !wasSelected) { // Check if it *became* selected
                 if (this.audioManager) {
-                    this.audioManager.play('auxModeChange');
+                    this.audioManager.play('auxModeChange', true); // forceRestart
                     if (this.debug) console.log(`[BM handleInteraction] Played 'auxModeChange' for ${buttonId}`);
                 }
             }
-        } else if (this.appState.getAppStatus() === 'interactive' && buttonInstance.config.type !== 'radio' && buttonInstance.config.type !== 'toggle') {
+        } else if (appState.getAppStatus() === 'interactive' && buttonInstance.config.type !== 'radio' && buttonInstance.config.type !== 'toggle') {
             // Play generic button press for action buttons if app is interactive
             // This avoids playing it for radio/toggle buttons that have specific sounds (like auxModeChange)
             // or for buttons during startup.
             if (this.audioManager) {
-                 this.audioManager.play('buttonPress');
+                 this.audioManager.play('buttonPress', true); // forceRestart
                  if (this.debug) console.log(`[BM handleInteraction] Played 'buttonPress' for action button ${buttonId}`);
             }
         }
@@ -223,6 +225,14 @@ export class ButtonManager {
 
         this.emit('beforeButtonTransition', buttonInstance);
         const { profileName, phaseContext = "UnknownPhase", isButtonSelectedOverride = null, onFlickerComplete, tempGlowColor, tempTintColorClass } = options;
+        
+        const buttonId = buttonInstance.getIdentifier();
+        const isP7DimlyLitFlicker = phaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit');
+
+        if (isP7DimlyLitFlicker && buttonId.includes('Assign')) { 
+             console.log(`[BM_FLICK_START P7_VISUALS] Button: ${buttonId}. Target: '${targetState}'. Profile: '${profileName}'. AppTime: ${performance.now().toFixed(2)}`);
+        }
+
 
         if (this.debug) {
             console.log(`[BM playFlickerToState] For: ${buttonInstance.getIdentifier()}, Target State: '${targetState}', Profile: '${profileName}'`);
@@ -233,12 +243,12 @@ export class ButtonManager {
         else if (profileName.toLowerCase().includes('resist')) baseStateToSet = buttonInstance.isSelected() ? ButtonStates.ENERGIZED_SELECTED : ButtonStates.ENERGIZED_UNSELECTED;
 
         if (!profileName.toLowerCase().includes('resist')) {
-            buttonInstance.setState(baseStateToSet, { skipAnimation: true, forceState: true });
+            buttonInstance.setState(baseStateToSet, { skipAnimation: true, forceState: true, phaseContext: `${phaseContext}_BaseSet` });
         }
 
         const impliesSelection = targetState.includes('is-selected');
         if (buttonInstance.isSelected() !== impliesSelection && !profileName.toLowerCase().includes('resist')) {
-            buttonInstance.setSelected(impliesSelection, { skipAnimation: true, forceState: true });
+            buttonInstance.setSelected(impliesSelection, { skipAnimation: true, forceState: true, phaseContext: `${phaseContext}_SelectSet` });
         }
 
         if (tempGlowColor) buttonElement.style.setProperty('--btn-glow-color', tempGlowColor);
@@ -248,13 +258,40 @@ export class ButtonManager {
             ...options,
             overrideGlowParams: { isButtonSelected: typeof isButtonSelectedOverride === 'boolean' ? isButtonSelectedOverride : impliesSelection },
             onTimelineComplete: () => {
+                if (isP7DimlyLitFlicker && buttonInstance.getIdentifier().includes('Assign')) {
+                    const glowVarName = '--btn-dimly-lit-glow-opacity'; 
+                    const glowOpacity = buttonElement.style.getPropertyValue(glowVarName);
+                    const lightOpacities = Array.from(buttonElement.querySelectorAll('.light')).map(l => l.style.opacity || getComputedStyle(l).opacity).join(', ');
+                    console.log(`[BM_FLICK_COMPLETE P7_VISUALS] Button: ${buttonInstance.getIdentifier()}. Flicker timeline done. BEFORE final setState. GlowVar(${glowVarName}): '${glowOpacity}'. LightOpacities: [${lightOpacities}]. AppTime: ${performance.now().toFixed(2)}`);
+                }
+
                 if (this.debug) {
                     console.log(`[BM onFlickerComplete] For: ${buttonInstance.getIdentifier()}. Applying final state: '${targetState}'`);
                 }
                 if (tempGlowColor) buttonElement.style.removeProperty('--btn-glow-color');
                 if (tempTintColorClass) buttonElement.classList.remove(tempTintColorClass);
-                buttonInstance.setState(targetState, { skipAnimation: true, forceState: true });
-                if (targetState !== ButtonStates.PERMANENTLY_DISABLED) buttonInstance.playStateTransitionEcho();
+                buttonInstance.setState(targetState, { skipAnimation: true, forceState: true, phaseContext: `${phaseContext}_FinalSet` });
+
+                if (isP7DimlyLitFlicker && buttonInstance.getIdentifier().includes('Assign')) {
+                    const glowOpacityAfter = getComputedStyle(buttonElement).getPropertyValue('--btn-dimly-lit-glow-opacity');
+                    const glowSizeAfter = getComputedStyle(buttonElement).getPropertyValue('--btn-dimly-lit-glow-size');
+                    const glowColorAfter = getComputedStyle(buttonElement).getPropertyValue('--btn-dimly-lit-glow-color');
+                    const lightOpacitiesAfter = Array.from(buttonElement.querySelectorAll('.light')).map(l => l.style.opacity || getComputedStyle(l).opacity).join(', ');
+                    const finalClasses = Array.from(buttonElement.classList).join(' ');
+                    console.log(`[BM_FLICK_SETSTATE_DONE P7_VISUALS] Button: ${buttonInstance.getIdentifier()}. Final setState done. Computed GlowOpacity: '${glowOpacityAfter}', Size: '${glowSizeAfter}', Color: '${glowColorAfter}'. LightOpacities: [${lightOpacitiesAfter}]. Classes: '${finalClasses}'. AppTime: ${performance.now().toFixed(2)}`);
+                }
+
+                if (targetState !== ButtonStates.PERMANENTLY_DISABLED) {
+                    const currentPhaseNum = appState.getCurrentStartupPhaseNumber ? appState.getCurrentStartupPhaseNumber() : -1;
+                    const isP7HueButtonDimlyLitFlickerContext = (phaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && 
+                                                 buttonInstance.getGroupId().match(/^(env|lcd|logo|btn)$/));
+
+                    if (!isP7HueButtonDimlyLitFlickerContext) { 
+                        buttonInstance.playStateTransitionEcho();
+                    } else {
+                        console.log(`[BM P7_VISUALS_ECHO_SKIP] Button: ${buttonInstance.getIdentifier()}. Skipping echo in P7 for DimlyLit flicker.`);
+                    }
+                }
                 this.emit('afterButtonTransition', buttonInstance);
                 if (onFlickerComplete) onFlickerComplete();
             }

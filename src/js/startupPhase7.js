@@ -31,6 +31,7 @@ export const phase7Config = {
     {
       type: 'audio',
       soundKey: 'itemAppear', 
+      forceRestart: true, // Added forceRestart
       // Sound for button appearance plays at T=1.3s. This explicit delay is timed
       // for its auditory peak to align with the visual stabilization of the flicker effect.
       position: 1.3 

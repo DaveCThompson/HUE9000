@@ -3,6 +3,25 @@
  * @description Defines shared configuration constants and settings for the HUE 9000 interface.
  */
 
+// Asset Imports (Vite will handle these paths)
+import backgroundMusicSrc from '../assets/audio/background.mp3';
+import dialLoopSrc from '../assets/audio/dial.mp3';
+import buttonPressSrc from '../assets/audio/button-press.mp3';
+// import preloaderStreamDataSrc from '../assets/audio/preloader_stream_data.mp3'; // REMOVED - Assumed unused during preloader
+import itemAppearSrc from '../assets/audio/itemAppear.mp3'; 
+import terminalBootSrc from '../assets/audio/terminalBoot.mp3'; 
+import lcdPowerOnSrc from '../assets/audio/lcdPowerOn.mp3';   
+import lensStartupSrc from '../assets/audio/lensStartup.mp3'; 
+import powerOffSrc from '../assets/audio/off.mp3';          
+import buttonEnergizeSrc from '../assets/audio/buttonEnergize.mp3'; 
+import themeEngageSrc from '../assets/audio/lights-on.mp3'; 
+
+
+import logoSvgSrc from '../assets/svgs/logo.svg';
+import dialSvgSrc from '../assets/svgs/dial.svg';
+import grillTextureSrc from '../assets/textures/metal-grill.png';
+
+
 // --- Interaction Sensitivity & Thresholds ---
 export const PIXELS_PER_DEGREE_ROTATION = 1.3;
 export const PIXELS_PER_DEGREE_HUE = 1.3;
@@ -414,22 +433,87 @@ export const AUDIO_CONFIG = {
     itemAppear: 250,      
     terminalBoot: 4000,   
     lcdPowerOn: 6000,     
-    // buttonEnergize: 100, // Example if needed
-    // auxModeChange: 100, // Example if needed
   },
   sounds: { 
-    backgroundMusic: { loop: true, volume: 0.35 },
-    dialLoop: { loop: true, volume: 0.35 },
-    buttonPress: { loop: false, volume: 0.8 },
-    
-    // Conceptual Keys for clarity, matching AudioManager usage
-    itemAppear: { loop: false, volume: 0.6 },        // Formerly flickerToDim
-    terminalBoot: { loop: false, volume: 0.9, fadeOutDuration: 4000 }, // Formerly terminalOn
-    lcdPowerOn: { loop: false, volume: 0.8, fadeOutDuration: 6000 },   // Formerly lcdOn
-    lensStartup: { loop: false, volume: 0.9 },       
-    powerOff: { loop: false, volume: 1.0 },          // Formerly off
-    buttonEnergize: { loop: false, volume: 0.2 },    // Formerly bigOn, volume set to 20%
-    themeEngage: { loop: false, volume: 0.9 },       // Formerly lightsOn
-    auxModeChange: { loop: false, volume: 0.7 },     // Settings for auxModeChange
+    backgroundMusic: { src: backgroundMusicSrc, loop: true, volume: 0.35, html5: true },
+    dialLoop:        { src: dialLoopSrc, loop: true, volume: 0.35, html5: false },
+    buttonPress:     { src: buttonPressSrc,loop: false, volume: 0.8, html5: false },
+    // preloaderStreamData entry removed
+    itemAppear:      { src: itemAppearSrc, loop: false, volume: 0.6, html5: false },
+    terminalBoot:    { src: terminalBootSrc, loop: false, volume: 0.9, fadeOutDuration: 4000, html5: false },
+    lcdPowerOn:      { src: lcdPowerOnSrc, loop: false, volume: 0.8, fadeOutDuration: 6000, html5: false },
+    lensStartup:     { src: lensStartupSrc, loop: false, volume: 0.9, html5: false },       
+    powerOff:        { src: powerOffSrc, loop: false, volume: 1.0, html5: false },
+    buttonEnergize:  { src: buttonEnergizeSrc, loop: false, volume: 0.2, html5: false }, 
+    themeEngage:     { src: themeEngageSrc, loop: false, volume: 0.9, html5: false },
+    auxModeChange:   { src: buttonEnergizeSrc, loop: false, volume: 0.7, html5: false }, 
   },
+};
+
+// --- Preloader Configuration ---
+export const PRELOADER_ASSETS = {
+    fonts: { 
+        id: 'systemFonts',
+        name: 'SYS_FONTS',
+        type: 'fontsDocumentReady', 
+        timeout: 7000, 
+        initialStatus: '[ANALYZING FONT CACHE...]',
+        successMessage: '[SYS_FONTS: CACHE VALIDATED ✓]',
+        timeoutMessage: '[SYS_FONTS: CACHE TIMEOUT X]',
+        errorMessage: '[SYS_FONTS: LOAD FAILURE X]',
+        streamOutputSuccess: 'SYSTEM FONT INTEGRITY: CONFIRMED',
+        streamOutputError: 'ERROR: UNABLE TO VERIFY SYSTEM FONTS',
+    },
+    graphics: {
+        id: 'coreGraphics',
+        name: 'GFX_PIPELINE',
+        type: 'fetch', 
+        assets: [ 
+            { id: 'logoSvg', name: 'logo.svg', url: logoSvgSrc, type: 'fetch' }, 
+            { id: 'dialSvg', name: 'dial.svg', url: dialSvgSrc, type: 'fetch' }, 
+            { id: 'grillTexture', name: 'metal-grill.png', url: grillTextureSrc, type: 'fetchImage' } 
+        ],
+        initialStatus: '[INITIALIZING GFX SUBSYSTEM...]',
+        successMessage: '[GFX_PIPELINE: CORE ASSETS LOADED ✓]',
+        errorMessage: '[GFX_PIPELINE: ASSET LOAD FAILURE X]', 
+        streamOutputSuccess: 'GRAPHICS PACKET SIGNATURE: VALID',
+        streamOutputError: 'ERROR: GRAPHICS DATA CORRUPTION DETECTED',
+        individualAssetStatusTemplate: (name, status) => `LOAD GFX MODULE: ${name}... ${status}`
+    },
+    audio: { // Reduced to truly critical audio for preloader
+        id: 'coreAudio',
+        name: 'AUDIO_IO_BUFFER',
+        type: 'audioManager', 
+        assets: [ 
+            // preloaderStreamData asset removed
+            { id: 'buttonPressSfx', keyInAudioManager: 'buttonPress', name: 'button-press.mp3' },
+            // backgroundMusicTrack asset removed
+        ],
+        initialStatus: '[ESTABLISHING AUDIO SYNC...]',
+        successMessage: '[AUDIO_IO_BUFFER: SYNC CONFIRMED ✓]',
+        errorMessage: '[AUDIO_IO_BUFFER: SYNC FAILED X]',
+        streamOutputSuccess: 'AUDIO STREAM INTEGRITY: OPTIMAL',
+        streamOutputError: 'ERROR: AUDIO DESYNCHRONIZATION',
+        individualAssetStatusTemplate: (name, status) => `SYNC AUDIO CH: ${name}... ${status}`
+    }
+};
+
+export const PRELOADER_CONFIG = {
+    streamCharScrollIntervalMs: 75, 
+    randomCharSet: '0123456789ABCDEF*/%?$#@!&<>()[]{}|-_+=:.',
+    streamTextLength: 250, 
+    staggerDelayMs: { 
+        fonts: 50,
+        graphics: 150,
+        audio: 250
+    },
+    baseDurationMs: { 
+        fonts: 700,
+        graphics: 1000, // Will be dominated by actual asset load times
+        audio: 900    // Will be dominated by actual asset load times
+    },
+    engageButtonAppearDelayMs: 300, 
+    preloaderFadeOutDurationMs: 500, 
+    preloaderInitialFadeInDurationMs: 300,
+    preloaderSoundFadeOutMs: 750, 
 };

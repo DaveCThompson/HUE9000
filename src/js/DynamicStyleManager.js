@@ -5,12 +5,14 @@
  * Replaces the dynamic styling portion of the old uiUpdater.js.
  */
 import { serviceLocator } from './serviceLocator.js';
-import logoSvgUrl from '../assets/svgs/logo.svg'; // Vite will handle this path
+import * as appState from './appState.js'; // IMPORT appState directly
+// import logoSvgUrl from '../assets/svgs/logo.svg'; // OLD: Direct string path
+import logoSvgUrl from '../assets/svgs/logo.svg?raw'; // NEW: Vite ?raw import for SVG string
 
 export class DynamicStyleManager {
   constructor() {
     this.root = document.documentElement;
-    this.appState = null;
+    // this.appState = null; // REMOVED
     this.config = null;
     this.dom = {};
     this.debug = false;
@@ -20,14 +22,14 @@ export class DynamicStyleManager {
    * Initializes the DynamicStyleManager.
    */
   init() {
-    this.appState = serviceLocator.get('appState');
+    // this.appState = serviceLocator.get('appState'); // REMOVED
     this.config = serviceLocator.get('config');
     this.dom = serviceLocator.get('domElements');
 
     if (this.debug) console.log('[DynamicStyleManager INIT]');
 
-    this.appState.subscribe('targetColorChanged', (payload) => this.handleTargetColorChange(payload));
-    this.appState.subscribe('dialUpdated', (payload) => this.handleDialAUpdateForUIAccent(payload));
+    appState.subscribe('targetColorChanged', (payload) => this.handleTargetColorChange(payload));
+    appState.subscribe('dialUpdated', (payload) => this.handleDialAUpdateForUIAccent(payload));
 
     this.injectLogoSVG();
     this.applyInitialDynamicCSSVars();
@@ -54,7 +56,8 @@ export class DynamicStyleManager {
   }
 
   /**
-   * Fetches and injects the logo SVG into its container.
+   * Injects the logo SVG into its container.
+   * Uses Vite's ?raw import to get SVG as a string.
    */
   injectLogoSVG() {
     const logoContainer = this.dom.logoContainer;
@@ -63,23 +66,18 @@ export class DynamicStyleManager {
       return;
     }
     if (logoContainer.querySelector('svg.logo-svg')) {
-      return; // Already injected
+      if (this.debug) console.log('[DynamicStyleManager] Logo SVG already injected.');
+      return; 
     }
 
-    fetch(logoSvgUrl) // Use the imported URL
-      .then(response => {
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        return response.text();
-      })
-      .then(svgData => {
-        if (!svgData || !svgData.trim().startsWith('<svg')) throw new Error("Invalid SVG data.");
-        logoContainer.innerHTML = svgData;
+    if (typeof logoSvgUrl === 'string' && logoSvgUrl.trim().startsWith('<svg')) {
+        logoContainer.innerHTML = logoSvgUrl;
+        if (this.debug) console.log('[DynamicStyleManager] SVG logo injected via ?raw import.');
         this.applyInitialDynamicCSSVars(); // Re-apply vars to the new SVG
-      })
-      .catch(error => {
-        console.error('[DynamicStyleManager] Error fetching/injecting SVG logo:', error);
+    } else {
+        console.error('[DynamicStyleManager] Error: logoSvgUrl is not a valid SVG string.', logoSvgUrl);
         logoContainer.innerHTML = `<p style="color: #ccc; font-size: 0.8em;">Logo Load Error</p>`;
-      });
+    }
   }
 
   /**
@@ -87,13 +85,13 @@ export class DynamicStyleManager {
    */
   applyInitialDynamicCSSVars() {
     ['env', 'lcd', 'logo', 'btn'].forEach(key => {
-      const props = this.appState.getTargetColorProperties(key);
+      const props = appState.getTargetColorProperties(key);
       if (props) {
         this.updateDynamicCSSVar(key, props.hue, props.isColorless);
       }
     });
 
-    const dialAState = this.appState.getDialState('A');
+    const dialAState = appState.getDialState('A');
     const initialDialAHue = dialAState ? dialAState.hue : this.config.DEFAULT_DIAL_A_HUE;
     this.updateDynamicCSSVar('ui-accent', initialDialAHue, false);
   }

@@ -4,13 +4,13 @@
  * It parses a phase config, builds a GSAP timeline dynamically, and returns a promise.
  */
 import { serviceLocator } from './serviceLocator.js';
+import * as appStateModule from './appState.js'; 
 import { getMessage } from './terminalMessages.js';
 import { createAdvancedFlicker } from './animationUtils.js';
 
 export class PhaseRunner {
   constructor() {
     this.gsap = null;
-    this.appState = null;
     this.config = null;
     this.managers = {};
     this.dom = {};
@@ -20,7 +20,6 @@ export class PhaseRunner {
 
   init() {
     this.gsap = serviceLocator.get('gsap');
-    this.appState = serviceLocator.get('appState');
     this.config = serviceLocator.get('config');
     this.dom = serviceLocator.get('domElements');
     this.proxies = serviceLocator.get('proxies');
@@ -39,12 +38,16 @@ export class PhaseRunner {
   run(phaseConfig) {
     return new Promise(async (resolve, reject) => {
       if (this.debug) {
-        console.group(`[PhaseRunner] Executing Phase ${phaseConfig.phase}: ${phaseConfig.name}`);
+        console.groupCollapsed(`[PhaseRunner] Executing Phase ${phaseConfig.phase}: ${phaseConfig.name}`);
+        console.log(`[PhaseRunner] Config for Phase ${phaseConfig.phase}:`, JSON.parse(JSON.stringify(phaseConfig)));
       }
       try {
         const masterTl = this.gsap.timeline({
           onComplete: () => {
             if (this.debug) {
+              if (phaseConfig.phase === 6) {
+                console.warn(`[P_RUNNER_P6_TL_DEBUG] P6 Master Timeline COMPLETED. Final duration: ${masterTl.duration().toFixed(3)}s. AppTime: ${performance.now().toFixed(2)}`);
+              }
               console.log(`[PhaseRunner] <<<< COMPLETED >>>> Phase ${phaseConfig.phase}: ${phaseConfig.name}`);
               console.groupEnd();
             }
@@ -59,21 +62,18 @@ export class PhaseRunner {
           }
         });
 
-        // --- REVERTED P1 DELAY LOGIC ---
-        // specialTerminalFlicker visual will now be added at position 0 by default.
         if (phaseConfig.specialTerminalFlicker && phaseConfig.message) {
             const terminalFlickerTl = this.managers.terminalManager.playStartupFlicker(phaseConfig.message);
-            masterTl.add(terminalFlickerTl, 0); // Add at T=0
+            masterTl.add(terminalFlickerTl, 0); 
         } else if (phaseConfig.terminalMessageKey) {
             masterTl.call(() => {
-                this.appState.emit('requestTerminalMessage', {
+                appStateModule.emit('requestTerminalMessage', { 
                     type: 'startup',
                     source: phaseConfig.name,
                     messageKey: phaseConfig.terminalMessageKey,
                 });
             }, [], 0); 
         }
-        // --- END REVERTED P1 DELAY LOGIC ---
 
         if (phaseConfig.animations && Array.isArray(phaseConfig.animations)) {
           phaseConfig.animations.forEach(anim => this._buildAnimation(masterTl, anim, phaseConfig));
@@ -83,7 +83,19 @@ export class PhaseRunner {
         if (masterTl.duration() < minDuration) {
           masterTl.to({}, { duration: minDuration - masterTl.duration() });
         }
+        
+        if (phaseConfig.phase === 6) {
+            console.warn(`[P_RUNNER_P6_TL_DEBUG] P6 Master Timeline Duration BEFORE PLAY (after potential padding): ${masterTl.duration().toFixed(3)}s. Configured Phase Duration: ${minDuration.toFixed(3)}s. AppTime: ${performance.now().toFixed(2)}`);
+            // Optional: Sparsely log timeline updates for P6 if still debugging its timing.
+            // masterTl.eventCallback("onUpdate", function() { 
+            //     if (this.progress() > 0.01 && this.progress() < 0.99 && Math.random() < 0.05) { // Log very sparsely
+            //          console.log(`[P_RUNNER_P6_TL_UPDATE] P6 Time: ${this.time().toFixed(3)}s / ${this.duration().toFixed(3)}s`);
+            //     }
+            // });
+        }
 
+        if (this.debug) console.log(`[PhaseRunner] Phase ${phaseConfig.phase} Master Timeline Duration (final): ${masterTl.duration()}`);
+        console.groupEnd(); 
         masterTl.play();
       } catch (error)
       {
@@ -95,15 +107,21 @@ export class PhaseRunner {
   }
 
   _buildAnimation(tl, anim, currentPhaseConfig) { 
-    const position = anim.position || '>'; // Default to '>', but phase configs should be explicit.
-    if (this.debug) console.log(`[PhaseRunner] Building animation:`, anim, `at position: ${position}`);
+    const position = anim.position !== undefined ? anim.position : '>'; 
+
+    if (currentPhaseConfig.phase === 6 && anim.type === 'audio') {
+        console.warn(`[P_RUNNER_P6_AUDIO_BUILD_ENTRY] Processing P6 audio anim:`, JSON.stringify(anim), `at GSAP pos: ${position}. AppTime: ${performance.now().toFixed(2)}`);
+    } else if (this.debug) { 
+        console.log(`[PhaseRunner _buildAnimation] Anim:`, anim, `at effective position: ${position} (Phase: ${currentPhaseConfig.name})`);
+    }
+
 
     switch (anim.type) {
       case 'tween':
         this._handleTween(tl, anim, position);
         break;
       case 'flicker':
-        this._handleSimpleFlicker(tl, anim, position);
+        this._handleSimpleFlicker(tl, anim, position, currentPhaseConfig); 
         break;
       case 'lcdPowerOn':
         this._handleLcdPowerOn(tl, anim, position);
@@ -112,6 +130,9 @@ export class PhaseRunner {
         const deps = anim.deps ? anim.deps.map(depName => {
             if (depName === 'self') {
                 return currentPhaseConfig; 
+            }
+            if (depName === 'appState') {
+                return appStateModule; 
             }
             try {
                 return serviceLocator.get(depName);
@@ -127,11 +148,28 @@ export class PhaseRunner {
         if (lensTl) tl.add(lensTl, position);
         break;
       case 'audio':
+        if (currentPhaseConfig.phase === 6) { 
+            console.warn(`[P_RUNNER_P6_AUDIO_IN_SWITCH] IN-SWITCH for P6 - SoundKey: ${anim.soundKey}. Manager exists: ${!!this.managers.audioManager}. SoundKey exists: ${!!anim.soundKey}. AppTime: ${performance.now().toFixed(2)}`);
+        }
         if (this.managers.audioManager && anim.soundKey) {
-            // --- REVERTED P1 SOUND POSITION OVERRIDE ---
-            // Sound will now play at its defined anim.position from the phase config.
-            tl.call(() => this.managers.audioManager.play(anim.soundKey), [], position);
-            // --- END REVERTED ---
+            if (this.debug && !(currentPhaseConfig.phase === 6 && anim.type === 'audio')) { 
+                console.log(`[PhaseRunner _buildAnimation] Scheduling audio: ${anim.soundKey} at timeline position: ${position}`);
+            }
+            tl.call(() => {
+                if (anim.soundKey === 'itemAppear' && currentPhaseConfig.phase === 7) {
+                    console.warn(`[P_RUNNER_SCHED P7_SOUND] itemAppear: Call to play scheduled in P7 timeline at GSAP position ${position}. App Time: ${performance.now().toFixed(2)}`);
+                }
+                if (currentPhaseConfig.phase === 6) {
+                    if (anim.soundKey === 'itemAppear') {
+                        console.warn(`[P_RUNNER_SCHED P6_SOUND_ITEMAPPEAR] itemAppear: Call to play scheduled in P6 at GSAP pos ${position}. App Time: ${performance.now().toFixed(2)}`);
+                    } else if (anim.soundKey === 'lcdPowerOn') {
+                         console.warn(`[P_RUNNER_SCHED P6_SOUND_LCDPOWERON] lcdPowerOn: Call to play scheduled in P6 at GSAP pos ${position}. App Time: ${performance.now().toFixed(2)}`);
+                    }
+                }
+
+                if (this.debug) console.log(`[PhaseRunner AUDIO PLAY] Playing: ${anim.soundKey} (Phase: ${currentPhaseConfig.name}, Current Timeline Time: ${tl.time().toFixed(3)})`);
+                this.managers.audioManager.play(anim.soundKey, anim.forceRestart || false); 
+            }, [], position);
         }
         break;
       default:
@@ -170,7 +208,7 @@ export class PhaseRunner {
     }
   }
 
-  _handleSimpleFlicker(tl, anim, position) {
+  _handleSimpleFlicker(tl, anim, position, currentPhaseConfig) { 
     let elements = [];
     let isButtonFlicker = false;
 
@@ -194,6 +232,11 @@ export class PhaseRunner {
 
     const stagger = anim.stagger || 0;
     elements.forEach((el, index) => {
+        if (isButtonFlicker && currentPhaseConfig.phase === 7) { 
+            const buttonId = el.ariaLabel || el.id || 'UnknownButton';
+            console.log(`[P_RUNNER_FLICK_INIT P7_VISUALS] Button: ${buttonId}. Scheduling flicker to '${anim.state}'. Profile: '${anim.profile}'. StaggeredPos: ${position}+=${index * stagger}. AppTime: ${performance.now().toFixed(2)}`);
+        }
+
         if (isButtonFlicker) {
             const buttonInstance = this.managers.buttonManager.getButtonInstance(el);
             if (!buttonInstance) return;
@@ -211,7 +254,7 @@ export class PhaseRunner {
             
             const flickerOptions = {
               profileName: effectiveProfile,
-              phaseContext: `PhaseRunner_${effectiveProfile}`
+              phaseContext: `PhaseRunner_P${currentPhaseConfig.phase}_${effectiveProfile}` 
             };
 
             const flickerResult = this.managers.buttonManager.playFlickerToState(el, anim.state, flickerOptions);

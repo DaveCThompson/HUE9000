@@ -5,11 +5,12 @@
  * Works in conjunction with ButtonManager and appState.
  */
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // IMPORT appState directly
 
 class AmbientAnimationManager {
     constructor() {
         this.gsap = null;
-        this.appState = null;
+        // this.appState = null; // REMOVED
         this.buttonManager = null;
         this.configModule = null;
 
@@ -25,7 +26,7 @@ class AmbientAnimationManager {
 
     init() {
         this.gsap = serviceLocator.get('gsap');
-        this.appState = serviceLocator.get('appState');
+        // this.appState = serviceLocator.get('appState'); // REMOVED
         this.buttonManager = serviceLocator.get('buttonManager');
         this.configModule = serviceLocator.get('config');
 
@@ -36,10 +37,8 @@ class AmbientAnimationManager {
             this.enableHarmonicResonance = this.configModule.HARMONIC_RESONANCE_PARAMS.ENABLED;
         }
 
-        this.appState.subscribe('appStatusChanged', (status) => this._handleAppStatusChange(status));
-        
-        // Subscribe to the global pulse to apply its own effects
-        this.appState.subscribe('ambientPulse', ({ progress }) => this._handleAmbientPulse({ progress }));
+        appState.subscribe('appStatusChanged', (status) => this._handleAppStatusChange(status));
+        appState.subscribe('ambientPulse', ({ progress }) => this._handleAmbientPulse({ progress }));
 
         if (this.buttonManager && typeof this.buttonManager.on === 'function') {
             this.buttonManager.on('beforeButtonTransition', (button) => this._handleBeforeButtonTransition(button));
@@ -49,12 +48,9 @@ class AmbientAnimationManager {
         }
 
         this.resonanceTicker = this.gsap.ticker;
-        this._handleAppStatusChange(this.appState.getAppStatus());
+        this._handleAppStatusChange(appState.getAppStatus());
     }
 
-    /**
-     * The master clock. Calculates the global pulse progress and emits it.
-     */
     _updateResonance() {
         if (!this.isActive || !this.enableHarmonicResonance) return;
 
@@ -62,15 +58,9 @@ class AmbientAnimationManager {
         const time = this.gsap.ticker.time;
         const progress = (Math.sin((time * Math.PI * 2) / R_PARAMS.PERIOD) + 1) / 2;
 
-        // Emit the global pulse progress for all subscribers
-        this.appState.emit('ambientPulse', { progress });
+        appState.emit('ambientPulse', { progress });
     }
 
-    /**
-     * Handles the global pulse to apply resonance to buttons and LCDs.
-     * @param {object} payload
-     * @param {number} payload.progress - The pulse progress from 0 to 1.
-     */
     _handleAmbientPulse({ progress }) {
         if (!this.isActive || !this.configModule || !this.enableHarmonicResonance || !this.gsap.utils) return;
 
@@ -78,7 +68,6 @@ class AmbientAnimationManager {
         const glowOpacity = this.gsap.utils.interpolate(R_PARAMS.GLOW_OPACITY_RANGE[0], R_PARAMS.GLOW_OPACITY_RANGE[1], progress);
         const glowScale = this.gsap.utils.interpolate(R_PARAMS.GLOW_SCALE_RANGE[0], R_PARAMS.GLOW_SCALE_RANGE[1], progress);
 
-        // Set the global CSS variables that the new CSS will consume
         const rootStyle = document.documentElement.style;
         rootStyle.setProperty('--harmonic-resonance-glow-opacity', glowOpacity.toFixed(3));
         rootStyle.setProperty('--harmonic-resonance-glow-scale', glowScale.toFixed(3));
@@ -119,6 +108,13 @@ class AmbientAnimationManager {
 
     _handleAfterButtonTransition(buttonInstance) {
         if (!this.isActive) return;
+        
+        const buttonId = buttonInstance.getIdentifier();
+        // Check if this button is part of the P7 Hue Assignment group
+        const isP7HueButton = buttonId.includes('Assign') && appState.getCurrentStartupPhaseNumber() === 7; 
+        if (isP7HueButton) {
+            console.log(`[AAM_AFTER_TRANS P7_VISUALS] Button: ${buttonId}. isActive: ${this.isActive}. AppTime: ${performance.now().toFixed(2)}`);
+        }
         this._applyAmbientAnimation(buttonInstance);
     }
 
@@ -134,7 +130,19 @@ class AmbientAnimationManager {
 
         const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
         const isSelected = buttonInstance.isSelected();
-        const isEnergized = buttonInstance.getCurrentClasses().has(R_PARAMS.ELIGIBILITY_CLASS);
+        const currentClasses = buttonInstance.getCurrentClasses(); // Get live classes
+        const isEnergized = currentClasses.has(R_PARAMS.ELIGIBILITY_CLASS); // Check live class
+        const buttonId = buttonInstance.getIdentifier();
+
+        // P7 Debug Logging
+        const isP7HueButton = buttonId.includes('Assign') && appState.getCurrentStartupPhaseNumber() === 7;
+        if (isP7HueButton) {
+            console.log(`[AAM_APPLY_EFFECT P7_VISUALS] Button: ${buttonId}. Active: ${this.isActive}, Selected: ${isSelected}, Energized: ${isEnergized}, Classes: ${Array.from(currentClasses).join(' ')}. AppTime: ${performance.now().toFixed(2)}`);
+            if (isEnergized && this.isActive) {
+                 console.warn(`[AAM_APPLY_EFFECT P7_VISUALS_WARN] Button: ${buttonId}. AAM IS APPLYING EFFECT (Resonance/Drift) during P7. This might be UNINTENDED.`);
+            }
+        }
+
 
         if (isEnergized) {
             if (isSelected) {
@@ -144,6 +152,9 @@ class AmbientAnimationManager {
             } else {
                 buttonInstance.setCssIdleLightDriftActive(true);
             }
+        } else {
+            // Non-P7 related log, for general AAM debugging if needed
+            // if (this.debug && this.isActive) console.log(`[AAM _applyAmbientAnimation - ${buttonId}] Not energized, no AAM effect applied.`);
         }
     }
 

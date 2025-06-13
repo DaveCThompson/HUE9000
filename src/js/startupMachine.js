@@ -6,6 +6,7 @@
 import { createMachine, assign, fromPromise } from 'xstate';
 import { raise } from 'xstate/actions';
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // IMPORT appState directly
 
 // Import all declarative phase configurations
 import { phase0Config } from './startupPhase0.js';
@@ -68,10 +69,15 @@ export const startupMachine = createMachine({
     },
     RUNNING_PHASE: {
       entry: [
-        // Perform cleanup before P11 runs
         ({ context }) => {
             if (context.currentPhase === 11 && !context.themeTransitionCleanupPerformed) {
-                serviceLocator.get('startupSequenceManager')._performThemeTransitionCleanup();
+                // Assuming StartupSequenceManager instance is on serviceLocator
+                const ssm = serviceLocator.get('startupSequenceManager');
+                if (ssm && typeof ssm._performThemeTransitionCleanup === 'function') {
+                    ssm._performThemeTransitionCleanup();
+                } else {
+                    console.warn("[FSM] Could not find startupSequenceManager or _performThemeTransitionCleanup for P11 cleanup.");
+                }
             }
         },
         assign({
@@ -99,7 +105,6 @@ export const startupMachine = createMachine({
         SET_AUTO_PLAY: {
             actions: assign({ isStepThroughMode: false })
         },
-        // FIX: Add handler to allow pausing mid-phase
         PAUSE_SEQUENCE: {
             actions: assign({ isStepThroughMode: true })
         }
@@ -135,7 +140,7 @@ export const startupMachine = createMachine({
     },
     COMPLETE: {
       type: 'final',
-      entry: () => serviceLocator.get('appState').setAppStatus('interactive')
+      entry: () => appState.setAppStatus('interactive') // Use imported appState
     },
     ERROR: {
       entry: [
@@ -144,8 +149,8 @@ export const startupMachine = createMachine({
             console.error('Error Details from event:', event.data);
             console.error('Full FSM Context at time of error:', context);
         },
-        () => serviceLocator.get('appState').setAppStatus('error'),
-        ({ context }) => serviceLocator.get('appState').emit('requestTerminalMessage', {
+        () => appState.setAppStatus('error'), // Use imported appState
+        ({ context }) => appState.emit('requestTerminalMessage', { // Use imported appState
           type: 'status',
           source: 'FSM_ERROR',
           messageKey: 'FSM_ERROR',

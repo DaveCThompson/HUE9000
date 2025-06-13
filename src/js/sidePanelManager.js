@@ -3,22 +3,23 @@
  * @description Manages the UI and interactions for the left and right side panels.
  */
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // IMPORT appState directly
 
 export class SidePanelManager {
     constructor() {
         this.dom = null;
-        this.appState = null;
+        // this.appState = null; // REMOVED
         this.startupManager = null;
         this.audioManager = null;
         this.config = null;
         this.isMuted = false;
-        this.isAutoplayOn = false; // New state for the autoplay toggle
+        this.isAutoplayOn = false; 
         this.debug = true;
     }
 
     init() {
         this.dom = serviceLocator.get('domElements');
-        this.appState = serviceLocator.get('appState');
+        // this.appState = serviceLocator.get('appState'); // REMOVED
         this.startupManager = serviceLocator.get('startupSequenceManager');
         this.audioManager = serviceLocator.get('audioManager');
         this.config = serviceLocator.get('config');
@@ -31,14 +32,12 @@ export class SidePanelManager {
         this._populateStateTab();
         this._setupGlobalStateListeners();
         
-        // Set initial state for manual controls (hidden by default)
         this._updateManualControlsVisibility();
 
         if (this.debug) console.log('[SidePanelManager] Initialization complete.');
     }
 
     _setupPanelToggles() {
-        // Main panel toggle
         const deckToggle = document.getElementById('deck-toggle');
         if (deckToggle) {
             deckToggle.addEventListener('click', () => {
@@ -47,7 +46,6 @@ export class SidePanelManager {
             });
         }
 
-        // --- New Sequence Controls ---
         const autoplayBtn = document.getElementById('seq-autoplay-toggle');
         const nextStepBtn = document.getElementById('seq-next-step');
         const playAllBtn = document.getElementById('seq-play-all');
@@ -78,7 +76,7 @@ export class SidePanelManager {
 
         if (playAllBtn) {
             playAllBtn.addEventListener('click', () => {
-                this.isAutoplayOn = true; // Also set autoplay to on
+                this.isAutoplayOn = true; 
                 this._updateManualControlsVisibility();
                  const icon = autoplayBtn.querySelector('.material-symbols-outlined');
                 if (icon) icon.textContent = 'fast_forward';
@@ -94,12 +92,11 @@ export class SidePanelManager {
             });
         }
 
-        // Audio mute toggle
         const muteBtn = document.getElementById('audio-mute-toggle');
         if (muteBtn) {
             muteBtn.addEventListener('click', () => {
                 this.isMuted = !this.isMuted;
-                this.audioManager.toggleMute(this.isMuted);
+                this.audioManager.toggleMute(this.isMuted); // Assuming toggleMute exists in AudioManager
                 const icon = muteBtn.querySelector('.material-symbols-outlined');
                 if(icon) icon.textContent = this.isMuted ? 'volume_off' : 'volume_up';
             });
@@ -145,16 +142,16 @@ export class SidePanelManager {
         if (!stateTab) return;
         
         const renderState = () => {
-            const appStatus = this.appState.getAppStatus();
-            const theme = this.appState.getCurrentTheme();
-            const lensPower = this.appState.getTrueLensPower();
-            const dialA = this.appState.getDialState('A');
-            const dialB = this.appState.getDialState('B');
-            const shutdownStage = this.appState.getResistiveShutdownStage();
+            const currentAppStatus = appState.getAppStatus();
+            const theme = appState.getCurrentTheme();
+            const lensPower = appState.getTrueLensPower();
+            const dialA = appState.getDialState('A');
+            const dialB = appState.getDialState('B');
+            const shutdownStage = appState.getResistiveShutdownStage();
 
             stateTab.innerHTML = `
                 <ul>
-                    <li><span>App Status:</span> <span class="state-value">${appStatus}</span></li>
+                    <li><span>App Status:</span> <span class="state-value">${currentAppStatus}</span></li>
                     <li><span>Theme:</span> <span class="state-value">${theme}</span></li>
                     <li><span>Lens Power:</span> <span class="state-value">${(lensPower * 100).toFixed(2)}%</span></li>
                     <li><span>Mood Hue:</span> <span class="state-value">${dialA.hue.toFixed(2)}°</span></li>
@@ -165,15 +162,15 @@ export class SidePanelManager {
         };
 
         renderState();
-        this.appState.subscribe('appStatusChanged', renderState);
-        this.appState.subscribe('themeChanged', renderState);
-        this.appState.subscribe('trueLensPowerChanged', renderState);
-        this.appState.subscribe('dialUpdated', renderState);
-        this.appState.subscribe('resistiveShutdownStageChanged', renderState);
+        appState.subscribe('appStatusChanged', renderState);
+        appState.subscribe('themeChanged', renderState);
+        appState.subscribe('trueLensPowerChanged', renderState);
+        appState.subscribe('dialUpdated', renderState);
+        appState.subscribe('resistiveShutdownStageChanged', renderState);
     }
 
     _setupGlobalStateListeners() {
-        this.appState.subscribe('startup:phaseChanged', ({ numericPhase }) => {
+        appState.subscribe('startup:phaseChanged', ({ numericPhase }) => {
             const sequenceTab = document.getElementById('sequence-tab');
             if (sequenceTab) {
                 sequenceTab.querySelectorAll('li').forEach(li => {
@@ -184,7 +181,7 @@ export class SidePanelManager {
                 });
             }
 
-            const isComplete = this.appState.getAppStatus() === 'interactive';
+            const isComplete = appState.getAppStatus() === 'interactive';
             
             const autoplayBtn = document.getElementById('seq-autoplay-toggle');
             const nextStepBtn = document.getElementById('seq-next-step');
@@ -205,7 +202,7 @@ export class SidePanelManager {
             }
         });
 
-        this.appState.subscribe('appStatusChanged', (status) => {
+        appState.subscribe('appStatusChanged', (status) => {
             if (status === 'starting-up') {
                 document.querySelectorAll('.panel-control-button').forEach(btn => btn.disabled = false);
                 const autoplayBtn = document.getElementById('seq-autoplay-toggle');

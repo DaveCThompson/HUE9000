@@ -36,37 +36,38 @@ import { SidePanelManager } from './sidePanelManager.js';
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
 
 // --- DOM Element Collection ---
-const domElements = {
-    root: document.documentElement,
-    body: document.body,
-    appWrapper: document.querySelector('.app-wrapper'),
-    // Preloader elements
-    preloader: document.getElementById('preloader'),
-    bootSeqList: document.getElementById('boot-sequence-list'),
-    engageButtonContainer: document.getElementById('engage-button-container'),
-    engageButton: document.getElementById('engage-button'),
-    progressBar: document.getElementById('progress-bar'),
-    // Side Panel elements
-    controlDeck: document.getElementById('control-deck'),
-    deckToggle: document.getElementById('deck-toggle'),
-    // Main UI elements
-    allButtons: Array.from(document.querySelectorAll('.button-unit')),
-    dialA: document.getElementById('dial-canvas-container-A'),
-    dialB: document.getElementById('dial-canvas-container-B'),
-    lcdA: document.getElementById('hue-lcd-A'),
-    lcdB: document.getElementById('hue-lcd-B'),
-    terminalContainer: document.querySelector('.terminal-block .actual-lcd-screen-element'),
-    terminalLcdContentElement: document.getElementById('terminal-lcd-content'),
-    colorLensGradient: document.getElementById('color-lens-gradient'),
-    lensSuperGlow: document.getElementById('lens-super-glow'),
-    logoContainer: document.getElementById('logo-container'),
-    hueAssignmentColumns: Array.from(document.querySelectorAll('.hue-assignment-column[data-assignment-target]')),
-};
+const domElements = {};
 
-/**
- * Creates the buttons for the Hue Assignment Grid.
- * @param {ButtonManager} buttonManager - The button manager instance.
- */
+function collectDomElements() {
+    domElements.root = document.documentElement;
+    domElements.body = document.body;
+    domElements.appWrapper = document.querySelector('.app-wrapper');
+    
+    domElements.preloaderRoot = document.getElementById('datastream-preloader');
+    domElements.streamFonts = document.getElementById('stream-fonts');
+    domElements.streamGraphics = document.getElementById('stream-graphics');
+    domElements.streamAudio = document.getElementById('stream-audio');
+    domElements.overallProgressPercentage = document.getElementById('overall-progress-percentage');
+    domElements.overallProgressBar = document.getElementById('overall-progress-bar');
+    domElements.engageButtonContainer = document.getElementById('engage-button-container');
+    domElements.preloaderEngageBtn = document.getElementById('preloader-engage-btn');
+    domElements.criticalErrorMessageElement = document.getElementById('critical-error-message');
+
+    domElements.controlDeck = document.getElementById('control-deck');
+    domElements.deckToggle = document.getElementById('deck-toggle');
+    domElements.allButtons = Array.from(document.querySelectorAll('.button-unit'));
+    domElements.dialA = document.getElementById('dial-canvas-container-A');
+    domElements.dialB = document.getElementById('dial-canvas-container-B');
+    domElements.lcdA = document.getElementById('hue-lcd-A');
+    domElements.lcdB = document.getElementById('hue-lcd-B');
+    domElements.terminalContainer = document.querySelector('.terminal-block .actual-lcd-screen-element');
+    domElements.terminalLcdContentElement = document.getElementById('terminal-lcd-content');
+    domElements.colorLensGradient = document.getElementById('color-lens-gradient');
+    domElements.lensSuperGlow = document.getElementById('lens-super-glow');
+    domElements.logoContainer = document.getElementById('logo-container');
+    domElements.hueAssignmentColumns = Array.from(document.querySelectorAll('.hue-assignment-column[data-assignment-target]'));
+}
+
 function createGridButtons(buttonManager) {
     domElements.hueAssignmentColumns.forEach(columnEl => {
         const groupId = columnEl.dataset.assignmentTarget;
@@ -87,9 +88,6 @@ function createGridButtons(buttonManager) {
     });
 }
 
-/**
- * Sets up top-level event listeners for application side-effects.
- */
 function setupEventListeners() {
     const audioManager = serviceLocator.get('audioManager');
 
@@ -98,9 +96,21 @@ function setupEventListeners() {
         const value = button.getValue();
         const ariaLabel = button.getElement().getAttribute('aria-label');
 
-        if (groupId === 'system-power' && value === 'off') audioManager.play('powerOff');
-        else if (groupId === 'light' && button.isSelected()) audioManager.play('bigOn');
-        else audioManager.play('buttonPress');
+        if (groupId === 'system-power' && value === 'off') {
+            audioManager.play('powerOff', true); 
+        } else if (groupId === 'light' && button.isSelected()) {
+            audioManager.play('themeEngage', true); 
+        } else if (button.config.type === 'action' || ['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
+            audioManager.play('buttonPress', true);
+        } else if (groupId === 'light' && !button.isSelected()){ // For aux light turning off
+             audioManager.play('buttonPress', true); // Or a specific "aux light off" sound if desired
+        }
+        // Note: 'auxModeChange' was previously tied to buttonEnergize. If a distinct sound for aux light *selection*
+        // is still desired separate from generic buttonPress, it needs to be specifically called.
+        // The current logic plays 'themeEngage' for aux light ON, and 'buttonPress' for aux light OFF.
+        // If 'auxModeChange' is for the *act* of changing the aux light mode (either to low or high if selected),
+        // that logic would need to be re-evaluated here or in ButtonManager.
+        // For now, ButtonManager handles playing 'auxModeChange' if a button in group 'light' *becomes* selected.
 
         if (groupId === 'light') {
             appState.setTheme(value === 'on' ? 'light' : 'dark');
@@ -111,7 +121,6 @@ function setupEventListeners() {
             const hue = config.HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
             appState.setTargetColorProperties(groupId, hue);
         } 
-        // FIX: Added logic to handle action button presses and trigger terminal messages.
         else if (ariaLabel === 'Scan Button 1') {
             appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE' });
         } else if (ariaLabel === 'Scan Button 2') {
@@ -124,26 +133,20 @@ function setupEventListeners() {
     });
 
     document.body.addEventListener('click', (event) => {
-        const buttonElement = event.target.closest('.button-unit');
-        if (buttonElement) serviceLocator.get('buttonManager').handleInteraction(buttonElement);
+        const buttonElement = event.target.closest('.button-unit:not(#preloader-engage-btn)'); 
+        if (buttonElement && serviceLocator.get('buttonManager')) {
+             serviceLocator.get('buttonManager').handleInteraction(buttonElement);
+        }
     });
 }
 
-/**
- * Main application initialization function. Called after the preloader is complete.
- */
 function initializeApp() {
     if (window.HUE9000_INITIALIZED) return;
     window.HUE9000_INITIALIZED = true;
 
     console.log('[Main INIT] HUE 9000 Project Decouple Initializing...');
     
-    // --- Register Core Services FIRST ---
-    serviceLocator.register('appState', appState);
-    serviceLocator.register('domElements', domElements);
-
-    // --- Instantiate all managers ---
-    const audioManager = serviceLocator.get('audioManager');
+    const audioManager = serviceLocator.get('audioManager'); 
     const themeManager = new ThemeManager();
     const lcdUpdater = new LcdUpdater();
     const dynamicStyleManager = new DynamicStyleManager();
@@ -157,7 +160,6 @@ function initializeApp() {
     const intensityDisplayManager = new IntensityDisplayManager();
     const sidePanelManager = new SidePanelManager();
 
-    // --- Register all manager instances ---
     serviceLocator.register('themeManager', themeManager);
     serviceLocator.register('lcdUpdater', lcdUpdater);
     serviceLocator.register('dynamicStyleManager', dynamicStyleManager);
@@ -173,18 +175,12 @@ function initializeApp() {
     serviceLocator.register('resistiveShutdownController', resistiveShutdownControllerInstance);
     serviceLocator.register('terminalManager', terminalManagerInstance);
 
-
-    // --- Initialize managers IN DEPENDENCY ORDER ---
-    appState.setAppStatus('loading');
+    appState.setAppStatus('loading'); 
     
-    // Call the new subscription method now that appState is registered.
     audioManager.postInitSubscribe();
     
-    // StartupSequenceManager must be initialized first to register the proxies.
     startupSequenceManager.init();
-    // PhaseRunner depends on the proxies, so it's initialized next.
-    phaseRunner.init();
-    // The rest of the managers can be initialized.
+    phaseRunner.init(); 
     const otherManagers = [
         themeManager, lcdUpdater, dynamicStyleManager, buttonManager,
         dialManager, lensManager, ambientAnimationManager, moodMatrixManager,
@@ -195,30 +191,51 @@ function initializeApp() {
         if (typeof manager.init === 'function') manager.init();
     });
 
-    // --- Dynamic UI Generation & Event Listener Setup ---
     createGridButtons(buttonManager);
     buttonManager.discoverButtons(domElements.allButtons);
     setupEventListeners();
 
-    // --- Start the application ---
-    startupSequenceManager.start(true); // Start in step-through mode (autoplay off)
+    if (audioManager) {
+        audioManager.play('backgroundMusic');
+    }
+
+    startupSequenceManager.start(true); 
     console.log('[Main INIT] HUE 9000 Initialization Complete.');
 }
 
-// --- App Entry Point ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Register services that are needed *before* the preloader runs.
+    collectDomElements();
+
     serviceLocator.register('gsap', gsap);
     serviceLocator.register('config', { ...config, phaseConfigs });
+    
+    let domElementsService;
+    try {
+        domElementsService = serviceLocator.get('domElements');
+    } catch (e) {
+        // Service not found, so register it
+    }
+    if (!domElementsService) {
+        serviceLocator.register('domElements', domElements);
+    }
 
-    // 2. Instantiate and register the ONE TRUE AudioManager.
     const audioManager = new AudioManager();
     serviceLocator.register('audioManager', audioManager);
 
-    // 3. Initialize the AudioManager *before* the preloader runs.
-    // This only does setup and does NOT subscribe to events yet.
-    audioManager.init();
+    audioManager.init(); 
 
-    // 4. Run the preloader.
-    runPreloader(domElements, gsap).then(initializeApp);
+    const preloaderDomForRun = {
+        body: domElements.body,
+        preloaderRoot: domElements.preloaderRoot,
+        streamFonts: domElements.streamFonts,
+        streamGraphics: domElements.streamGraphics,
+        streamAudio: domElements.streamAudio,
+        overallProgressPercentage: domElements.overallProgressPercentage,
+        overallProgressBar: domElements.overallProgressBar,
+        engageButton: domElements.preloaderEngageBtn, 
+        engageButtonContainer: domElements.engageButtonContainer,
+        criticalErrorMessageElement: domElements.criticalErrorMessageElement
+    };
+
+    runPreloader(preloaderDomForRun, gsap).then(initializeApp);
 });

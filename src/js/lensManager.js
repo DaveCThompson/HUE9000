@@ -6,12 +6,13 @@
  * (Project Decouple Refactor)
  */
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // IMPORT appState directly
 import { debounce, mapRange } from './utils.js';
 
 export class LensManager {
   constructor() {
     this.gsap = null;
-    this.appState = null;
+    // this.appState = null; // REMOVED
     this.config = null;
     this.dom = {};
 
@@ -31,7 +32,7 @@ export class LensManager {
 
   init() {
     this.gsap = serviceLocator.get('gsap');
-    this.appState = serviceLocator.get('appState');
+    // this.appState = serviceLocator.get('appState'); // REMOVED
     this.config = serviceLocator.get('config');
     this.dom = serviceLocator.get('domElements');
 
@@ -42,8 +43,8 @@ export class LensManager {
       this.dom.root.style.setProperty('--lens-power', clampedPower.toFixed(3));
     }, this.config.DEBOUNCE_DELAY / 3);
 
-    const initialPower01 = this.appState.getTrueLensPower();
-    const initialDialAState = this.appState.getDialState('A');
+    const initialPower01 = appState.getTrueLensPower();
+    const initialDialAState = appState.getDialState('A');
     this.currentMasterHue = initialDialAState ? ((initialDialAState.hue % 360) + 360) % 360 : this.config.DEFAULT_DIAL_A_HUE;
     this.currentLensHueProxy.value = this.currentMasterHue;
     this.lastHueForGradientRender = this.currentMasterHue;
@@ -53,12 +54,11 @@ export class LensManager {
     this.trueLensPowerTarget = initialPower01;
     this.directUpdateLensVisuals(initialPower01);
 
-    this.appState.subscribe('trueLensPowerChanged', (p) => this._handleTrueLensPowerChange(p));
-    this.appState.subscribe('dialBInteractionChange', (s) => this._handleDialBInteractionChange(s));
-    this.appState.subscribe('dialUpdated', (p) => this._handleDialAUpdateForLensHue(p));
-    this.appState.subscribe('appStatusChanged', (s) => this._handleAppStatusChangeForLens(s));
-    // Subscribe to the master ambient pulse for synchronized oscillation
-    this.appState.subscribe('ambientPulse', ({ progress }) => this._applyOscillationVisuals(progress));
+    appState.subscribe('trueLensPowerChanged', (p) => this._handleTrueLensPowerChange(p));
+    appState.subscribe('dialBInteractionChange', (s) => this._handleDialBInteractionChange(s));
+    appState.subscribe('dialUpdated', (p) => this._handleDialAUpdateForLensHue(p));
+    appState.subscribe('appStatusChanged', (s) => this._handleAppStatusChangeForLens(s));
+    appState.subscribe('ambientPulse', ({ progress }) => this._applyOscillationVisuals(progress));
   }
 
   energizeLensCoreStartup(targetPowerPercent = null, rampDurationMs = null) {
@@ -66,7 +66,7 @@ export class LensManager {
     const effectiveRampDuration = rampDurationMs ?? this.config.LENS_STARTUP_RAMP_DURATION;
 
     const tl = this.gsap.timeline();
-    const initialPower01 = this.appState.getTrueLensPower();
+    const initialPower01 = appState.getTrueLensPower();
     const lensPowerProxy = { value: initialPower01 * 100 };
 
     if (initialPower01 <= 0.0001) this._updateLensGradientVisuals(0.0);
@@ -76,17 +76,17 @@ export class LensManager {
       duration: effectiveRampDuration / 1000,
       ease: "sine.inOut",
       onStart: () => {
-        if (this.dom.colorLensGradient.style.opacity !== '1' && this.appState.getAppStatus() !== 'loading') {
+        if (this.dom.colorLensGradient.style.opacity !== '1' && appState.getAppStatus() !== 'loading') {
           this.dom.colorLensGradient.style.opacity = '1';
         }
       },
-      onUpdate: () => this.appState.setTrueLensPower(lensPowerProxy.value),
+      onUpdate: () => appState.setTrueLensPower(lensPowerProxy.value),
       onComplete: () => {
         const finalPowerPercent = lensPowerProxy.value;
-        this.appState.setTrueLensPower(finalPowerPercent);
+        appState.setTrueLensPower(finalPowerPercent);
         const dialBHue = (finalPowerPercent / 100) * 359.999;
         const dialBRotation = dialBHue * this.config.DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG;
-        this.appState.updateDialState('B', {
+        appState.updateDialState('B', {
           hue: dialBHue,
           targetHue: dialBHue,
           rotation: dialBRotation,
@@ -120,7 +120,7 @@ export class LensManager {
   }
 
   _handleDialAUpdateForLensHue(payload) {
-    if (this.appState.getAppStatus() === 'loading' || !payload || payload.id !== 'A' || !payload.state) return;
+    if (appState.getAppStatus() === 'loading' || !payload || payload.id !== 'A' || !payload.state) return;
 
     const dialAState = payload.state;
     const newMasterHueTarget = ((dialAState.hue % 360) + 360) % 360;
@@ -140,7 +140,7 @@ export class LensManager {
 
     let duration = this.config.LENS_OSCILLATION_HUE_SMOOTHING_DURATION;
     let ease = "power1.out";
-    const shutdownStage = this.appState.getResistiveShutdownStage();
+    const shutdownStage = appState.getResistiveShutdownStage();
     if (shutdownStage > 0) {
       const stageParams = this.config.RESISTIVE_SHUTDOWN_PARAMS[`STAGE_${shutdownStage}`];
       if (stageParams) {
@@ -170,8 +170,6 @@ export class LensManager {
   }
 
   _updateLensVisualsWithCurrentState(forceLegacyUpdate = false) {
-    // This method now only updates based on the base (smoothed) power.
-    // The oscillation is additive and handled by _applyOscillationVisuals.
     const baseVisualPower01 = this.smoothedTrueLensPower.value;
     this._setLegacyLensPowerVar(baseVisualPower01, forceLegacyUpdate);
     this._updateLensGradientVisuals(baseVisualPower01);
@@ -181,10 +179,10 @@ export class LensManager {
     const lensEl = this.dom.colorLensGradient;
     if (!lensEl) return;
 
-    const appStatus = this.appState.getAppStatus();
+    const currentAppStatus = appState.getAppStatus();
     const powerIsZero = visualPower <= 0.0001;
 
-    if (appStatus === 'loading' || appStatus === 'error' || (appStatus === 'starting-up' && powerIsZero)) {
+    if (currentAppStatus === 'loading' || currentAppStatus === 'error' || (currentAppStatus === 'starting-up' && powerIsZero)) {
       if (lensEl.style.opacity !== '0') lensEl.style.opacity = '0';
       return;
     }
@@ -239,9 +237,9 @@ export class LensManager {
     this.trueLensPowerTarget = newTruePower01;
     if (this.powerSmoothingTween) this.powerSmoothingTween.kill();
 
-    const isStartingUp = this.appState.getAppStatus() === 'starting-up';
-    const isDialIdle = this.appState.getDialBInteractionState() === 'idle';
-    const shutdownStage = this.appState.getResistiveShutdownStage();
+    const isStartingUp = appState.getAppStatus() === 'starting-up';
+    const isDialIdle = appState.getDialBInteractionState() === 'idle';
+    const shutdownStage = appState.getResistiveShutdownStage();
 
     let duration = this.config.LENS_OSCILLATION_SMOOTHING_DURATION;
     let ease = "power1.out";
@@ -263,7 +261,7 @@ export class LensManager {
         onComplete: () => {
           this.powerSmoothingTween = null;
           this._updateLensVisualsWithCurrentState(true);
-          if (this.appState.getAppStatus() === 'interactive' && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
+          if (appState.getAppStatus() === 'interactive' && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
             this._startOscillation();
           }
         }
@@ -273,7 +271,7 @@ export class LensManager {
     if ((this.trueLensPowerTarget < this.config.LENS_OSCILLATION_THRESHOLD || !isDialIdle || isStartingUp) && this.isOscillating) {
       this._stopOscillation();
     }
-    if (this.appState.getAppStatus() === 'interactive' && isDialIdle && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
+    if (appState.getAppStatus() === 'interactive' && isDialIdle && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
       this._startOscillation();
     }
   }
@@ -282,10 +280,10 @@ export class LensManager {
     if (newState !== 'idle') {
       if (this.isOscillating) this._stopOscillation();
       if (this.powerSmoothingTween) this.powerSmoothingTween.kill();
-      this.smoothedTrueLensPower.value = this.appState.getTrueLensPower();
+      this.smoothedTrueLensPower.value = appState.getTrueLensPower();
       this._updateLensVisualsWithCurrentState(true);
     } else {
-      this._handleTrueLensPowerChange(this.appState.getTrueLensPower());
+      this._handleTrueLensPowerChange(appState.getTrueLensPower());
     }
   }
 
@@ -305,7 +303,7 @@ export class LensManager {
     this._updateSuperGlowHue(this.currentMasterHue);
 
     if (newStatus === 'interactive') {
-      if (this.appState.getDialBInteractionState() === 'idle' && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
+      if (appState.getDialBInteractionState() === 'idle' && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
         this._startOscillation();
       }
     } else {
@@ -314,11 +312,11 @@ export class LensManager {
   }
 
   _startOscillation() {
-    const canOscillate = this.appState.getAppStatus() === 'interactive' && 
-                         this.appState.getDialBInteractionState() === 'idle';
+    const canOscillate = appState.getAppStatus() === 'interactive' && 
+                         appState.getDialBInteractionState() === 'idle';
 
     if (this.debug) {
-        console.log(`[LensManager _startOscillation] Attempting to start. Conditions: isOscillating=${this.isOscillating}, canOscillate=${canOscillate} (appStatus: ${this.appState.getAppStatus()}, dialBState: ${this.appState.getDialBInteractionState()}, shutdownStage: ${this.appState.getResistiveShutdownStage()})`);
+        console.log(`[LensManager _startOscillation] Attempting to start. Conditions: isOscillating=${this.isOscillating}, canOscillate=${canOscillate} (appStatus: ${appState.getAppStatus()}, dialBState: ${appState.getDialBInteractionState()}, shutdownStage: ${appState.getResistiveShutdownStage()})`);
     }
 
     if (this.isOscillating || !canOscillate) return;
@@ -331,14 +329,9 @@ export class LensManager {
     if (!this.isOscillating) return;
     if (this.debug) console.log('[LensManager _stopOscillation] Oscillation STOPPED.');
     this.isOscillating = false;
-    // Reset the visuals to the non-oscillated base power
     this._updateLensVisualsWithCurrentState(true);
   }
 
-  /**
-   * Applies the visual oscillation based on the global ambient pulse.
-   * @param {number} progress - The global pulse progress (0 to 1).
-   */
   _applyOscillationVisuals(progress) {
     if (!this.isOscillating) return;
 
@@ -346,7 +339,6 @@ export class LensManager {
     const powerRatio = Math.min(1, powerAboveThreshold / (1.0 - this.config.LENS_OSCILLATION_THRESHOLD));
     const amplitude = this.config.LENS_OSCILLATION_AMPLITUDE_MIN + powerRatio * this.config.LENS_OSCILLATION_AMPLITUDE_MAX_ADDITION;
 
-    // Use the centrally-driven progress to calculate the lens-specific visual offset
     const oscillationOffset = this.gsap.utils.interpolate(-amplitude, amplitude, progress);
     const currentVisualPower01 = this.smoothedTrueLensPower.value + oscillationOffset;
     

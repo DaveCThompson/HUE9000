@@ -4,19 +4,23 @@
  * and user interaction. It dynamically recalculates and updates SVG ridge attributes
  * on each frame to create a 3D perspective rotation effect.
  */
-import { serviceLocator } from './serviceLocator.js';
+// Removed serviceLocator import as appState is passed in constructor
+// import { serviceLocator } from './serviceLocator.js';
 import { throttle } from './utils.js';
 
 class DialController {
     /**
      * @param {HTMLElement} containerElement - The main div container for the dial.
      * @param {string} dialId - 'A' or 'B'.
+     * @param {object} appStateModule - The imported appState module.
+     * @param {object} configModule - The imported config module.
+     * @param {object} gsapInstance - The GSAP instance.
      */
-    constructor(containerElement, dialId) {
+    constructor(containerElement, dialId, appStateModule, configModule, gsapInstance) {
         // Dependencies
-        this.appState = serviceLocator.get('appState');
-        this.configModule = serviceLocator.get('config');
-        this.gsap = serviceLocator.get('gsap');
+        this.appState = appStateModule; // Use passed-in appState
+        this.configModule = configModule; // Use passed-in config
+        this.gsap = gsapInstance; // Use passed-in GSAP
 
         // Element & State
         this.containerElement = containerElement;
@@ -28,14 +32,18 @@ class DialController {
             return;
         }
 
-        this.config = {
-            NUM_RIDGES: 66, // Reduced from 100 for a chunkier look
+        this.config = { // Local config for dial appearance/behavior
+            NUM_RIDGES: 66, 
             RIDGE_WIDTH_FACTOR: 1.6,
-            PIXELS_PER_DEGREE_ROTATION: 1.3,
-            PIXELS_PER_DEGREE_HUE: 0.64, // Increased again from 0.32 to further slow value changes
+            PIXELS_PER_DEGREE_ROTATION: 1.3, // From global config
+            PIXELS_PER_DEGREE_HUE: 0.64,    // From global config
             SHADOW_OFFSET_MULTIPLIER: 8,
-            THROTTLE_LIMIT_MS: 50, // Update appState at most every 50ms (20fps)
+            THROTTLE_LIMIT_MS: 50, 
         };
+        // Override with global config values if they exist
+        this.config.PIXELS_PER_DEGREE_ROTATION = this.configModule.PIXELS_PER_DEGREE_ROTATION || this.config.PIXELS_PER_DEGREE_ROTATION;
+        this.config.PIXELS_PER_DEGREE_HUE = this.configModule.PIXELS_PER_DEGREE_HUE || this.config.PIXELS_PER_DEGREE_HUE;
+
 
         // Local component state for smooth dragging
         this.isDragging = false;
@@ -81,7 +89,6 @@ class DialController {
 
         const themeChangeUnsub = this.appState.subscribe('themeChanged', newTheme => {
             if (this.debug) console.log(`[DialController ${this.dialId}] Detected themeChanged to '${newTheme}'. Forcing redraw.`);
-            // FIX: Defer redraw to next frame to ensure browser has applied new CSS variables.
             requestAnimationFrame(() => this.forceRedraw());
         });
         this.unsubscribers.push(themeChangeUnsub);
@@ -141,7 +148,6 @@ class DialController {
         this.currentPointerX = event.touches ? event.touches[0].clientX : event.clientX;
 
         if (this.dialId === 'B') this.appState.setDialBInteractionState('dragging');
-        // No need to update the main dial state here, the first throttled call will handle it.
     }
 
     _handleInteractionMove(event) {
@@ -166,9 +172,7 @@ class DialController {
         }
         this.hue = newHue;
 
-        // Immediately update local visuals for 1:1 feel
         this._draw();
-        // Update global state on a throttled interval for performance
         this.throttledUpdateAppState();
     }
 
@@ -177,7 +181,6 @@ class DialController {
         this.isDragging = false;
         this.containerElement.classList.remove('is-dragging');
 
-        // Perform one final, immediate update to ensure perfect sync
         this._updateAppState();
 
         if (this.dialId === 'B') {
@@ -188,7 +191,6 @@ class DialController {
         }
     }
     
-    /** A dedicated method for updating global state, to be used by the throttler. */
     _updateAppState() {
         this.appState.updateDialState(this.dialId, {
             isDragging: this.isDragging,
@@ -205,6 +207,7 @@ class DialController {
 
     forceRedraw() {
         if (this.debug) console.log(`[DialController ${this.dialId}] forceRedraw() called.`);
+        if (!this.svg) return; // Guard if SVG not found
         this.svgWidth = this.svg.getBoundingClientRect().width;
         this._updateAndCacheThemeStyles();
         this._draw();
@@ -212,7 +215,6 @@ class DialController {
 
     _updateAndCacheThemeStyles() {
         const style = getComputedStyle(this.containerElement);
-        // FIX: Add validation to prevent NaN poisoning from getComputedStyle during theme changes.
         const baseChroma = parseFloat(style.getPropertyValue('--dial-ridge-c'));
         const multiplier = parseFloat(style.getPropertyValue('--dial-ridge-chroma-multiplier'));
         const finalChroma = isNaN(baseChroma) || isNaN(multiplier) ? (baseChroma || 0) : baseChroma * multiplier;
@@ -227,8 +229,7 @@ class DialController {
     }
     
     _draw() {
-        // FIX: Add guard clause to prevent drawing if theme variables are invalid (NaN).
-        if (!this.svgWidth || this.ridgeElements.length === 0 || isNaN(this.themeVars.ridgeL)) return;
+        if (!this.svgWidth || this.ridgeElements.length === 0 || isNaN(this.themeVars.ridgeL) || !this.ridgesGroup) return;
 
         const rotationRadians = this.rotation * (Math.PI / 180);
         const angleStep = (2 * Math.PI) / this.config.NUM_RIDGES;

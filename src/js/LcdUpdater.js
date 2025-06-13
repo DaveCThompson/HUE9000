@@ -5,6 +5,7 @@
  * Replaces the LCD-handling portion of the old uiUpdater.js.
  */
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // IMPORT appState directly
 import { createAdvancedFlicker } from './animationUtils.js';
 
 const MANAGED_LCD_CLASSES = ['lcd--unlit', 'lcd--dimly-lit'];
@@ -12,7 +13,7 @@ const MANAGED_LCD_CLASSES = ['lcd--unlit', 'lcd--dimly-lit'];
 export class LcdUpdater {
   constructor() {
     this.gsap = null;
-    this.appState = null;
+    // this.appState = null; // REMOVED
     this.config = null;
     this.dom = {};
     this.debug = true; // Enable detailed logging
@@ -20,12 +21,12 @@ export class LcdUpdater {
 
   init() {
     this.gsap = serviceLocator.get('gsap');
-    this.appState = serviceLocator.get('appState');
+    // this.appState = serviceLocator.get('appState'); // REMOVED
     this.config = serviceLocator.get('config');
     this.dom = serviceLocator.get('domElements');
 
     if (this.debug) console.log('[LcdUpdater INIT]');
-    this.appState.subscribe('appStatusChanged', () => this.applyCurrentStateToAllLcds());
+    appState.subscribe('appStatusChanged', () => this.applyCurrentStateToAllLcds());
     this.applyCurrentStateToAllLcds();
   }
 
@@ -79,7 +80,7 @@ export class LcdUpdater {
         const targetClass = options.state === 'dimly-lit' ? 'lcd--dimly-lit' : '';
         MANAGED_LCD_CLASSES.forEach(cls => lcdContainer.classList.remove(cls));
         if (targetClass) lcdContainer.classList.add(targetClass);
-        this.appState.emit('lcdStateChanged', { lcdId: targetIdForLog, newStateKey: options.state });
+        appState.emit('lcdStateChanged', { lcdId: targetIdForLog, newStateKey: options.state });
         if (this.debug) console.groupEnd();
     });
 
@@ -93,11 +94,11 @@ export class LcdUpdater {
     MANAGED_LCD_CLASSES.forEach(cls => lcdContainer.classList.remove(cls));
     if (targetClass) lcdContainer.classList.add(targetClass);
     this._updateLcdVisibility(lcdContainer, stateName);
-    this.appState.emit('lcdStateChanged', { lcdId: targetIdForLog, newStateKey: stateName });
+    appState.emit('lcdStateChanged', { lcdId: targetIdForLog, newStateKey: stateName });
   }
 
   applyCurrentStateToAllLcds() {
-    const status = this.appState.getAppStatus();
+    const status = appState.getAppStatus();
     if (status !== 'starting-up') {
         const targetState = (status === 'interactive') ? 'active' : 'unlit';
         [this.dom.lcdA, this.dom.lcdB, this.dom.terminalContainer].forEach(lcd => {
