@@ -21,137 +21,178 @@ This document details the phased startup sequence for the HUE 9000 interface, or
     *   **During Theme Transition & `theme-dark` (Phases P10-P11):**
         *   `.is-energized` (and `.is-selected` where appropriate): Full power, styled by `theme-dark.css` variables. SCAN, FIT EVAL, HUE ASSN buttons flicker from `is-dimly-lit` to this state in P10. MAIN PWR and AUX buttons visually adapt due to CSS variable changes.
 *   **LCD/Terminal Visuals During Startup:**
-    *   **Terminal Flicker (P1):** The initial terminal message in P1 uses a special composed animation in `PhaseRunner` that flickers both the screen container and the text itself for a dramatic power-on effect.
-    *   **Subsequent Terminal Messages (P2+):** All subsequent startup messages are simply typed onto the next line by `terminalManager`, preserving the message history. No flicker is applied after P1.
+    *   **Terminal Flicker (P1):** The initial terminal message in P1 uses a special composed animation in `PhaseRunner` (via `specialTerminalFlicker: true`) that flickers both the screen container and the text itself for a dramatic power-on effect.
+    *   **Subsequent Terminal Messages (P2+):** All subsequent startup messages (triggered by `terminalMessageKey`) are simply typed onto the next line by `terminalManager`, preserving the message history. No special container/text flicker is applied after P1 for these messages.
     *   **Screen Background Flicker (P6):**
-        *   Dial LCDs (A & B) use the `lcdScreenFlickerToDimlyLit` profile. Their containers are set to `autoAlpha:0` by GSAP *before* the `.lcd--dimly-lit` class (which defines a visible background) is applied by the flicker animation logic. This prevents a "flash-on" from the class before the flicker's `autoAlpha:0` takes effect.
-        *   The Terminal screen background also flickers to `lcd--dimly-lit`, but its text content remains visible.
-    *   **Theme Transition (P10):** LCD backgrounds transition via CSS. A `background-color` fallback is used in `_lcd.css` to minimize visual glitches if the `background-image` gradient transition isn't perfectly smooth.
+        *   Dial LCDs (A & B) use the `lcdScreenFlickerToDimlyLit` profile for their visual power-on.
+        *   The Terminal screen background might also use a similar profile if targeted, but typically its content remains from previous messages.
+    *   **Theme Transition (P10):** LCD backgrounds transition via CSS. A `background-color` fallback is used in `_lcd.css` to minimize visual glitches.
 
 ## Startup Phases (FSM States & Corresponding `startupPhaseX.js` modules)
 
+*(Timing `T=` is relative to the start of that specific phase)*
+
 ### Phase 0: System Idle / Baseline Setup (`startupPhase0.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 0)
+*   **Phase Duration:** Approximately 0.5 seconds.
 *   **Conceptual Goal:** Establish initial visual state.
-*   **Key Actions:**
-    1.  `startupSequenceManager.resetVisualsAndState()` is called:
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:** `startupSequenceManager.resetVisualsAndState()` is called:
         *   `body.pre-boot` class removed.
-        *   `--startup-L-reduction-factor` set to `STARTUP_L_REDUCTION_FACTORS.P0` (e.g., 0.40).
-        *   `--startup-opacity-factor` set to `1.0 - L-reduction-factor_P0` (e.g., 0.60).
-        *   `--startup-opacity-factor-boosted` calculated.
+        *   `--startup-L-reduction-factor` set to `STARTUP_L_REDUCTION_FACTORS.P0`.
+        *   `--startup-opacity-factor` calculated.
         *   `appState` set to `starting-up`, theme to `dim`.
         *   All buttons set to `is-unlit`. Lens power to 0. LCDs to `lcd--unlit`. Logo SVG injected.
-        *   Body opacity set to 0 (for auto-play) or 1 (for step-through).
-    2.  `appStateService.setAppStatus('starting-up')` (if not already).
-*   **Visual Outcome:** UI elements extremely dim or invisible (if body opacity is 0). LCDs blank. Logo very faint.
+*   **Visual Outcome:** UI elements extremely dim. LCDs blank. Logo very faint.
 
 ### Phase 1: Initializing Emergency Subsystems (`startupPhase1.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 1)
-*   **Conceptual Goal:** Body fade-in, initial terminal message with full power-on effect.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Animate to `STARTUP_L_REDUCTION_FACTORS.P1`.
-    2.  **Body:** Fades in (opacity 0 to 1) if auto-playing.
-    3.  **Terminal:** `PhaseRunner` sees `terminalMessageKey` for P1 and executes the special composed animation: container flickers on, and text ("INITIATING STARTUP PROTOCOL") also flickers into view.
-*   **Visual Outcome:** Body visible. UI elements very dim. First terminal line visible and dimly lit.
+*   **Phase Duration:** Approximately 3.5 seconds.
+*   **Conceptual Goal:** Initial terminal power-on with precise audio-visual sync, body fade-in.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:**
+        *   **Visual:** `specialTerminalFlicker` for "INITIATING STARTUP PROTOCOL" begins (container & text flicker).
+        *   **Visual:** Dimming factors begin animating to `STARTUP_L_REDUCTION_FACTORS.P1` (duration 1.0s).
+        *   **Visual:** Body begins fading in (opacity 0 to 1, duration 0.3s).
+    2.  **`T=1.075s`:**
+        *   **Audio:** `terminalBoot` sound plays, timed to synchronize its impact with the terminal's visual appearance sequence.
+*   **Visual Outcome:** Terminal flickers on with its first message. Body becomes visible. UI elements are very dim.
 
 ### Phase 2: Activating Backup Power Systems (`startupPhase2.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 2)
+*   **Phase Duration:** Approximately 3.5 seconds.
 *   **Conceptual Goal:** Prepare main power buttons.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Animate to `STARTUP_L_REDUCTION_FACTORS.P2`.
-    2.  **Terminal:** Emits "P2_BACKUP_POWER" message, which is now typed normally by `terminalManager` onto the next line.
-    3.  **MAIN PWR Buttons (ON/OFF):** Flicker to `is-dimly-lit` state using `buttonFlickerToDimlyLit` profile.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:**
+        *   **Terminal:** Message "P2_BACKUP_POWER" requested (typed by `terminalManager`).
+        *   **Visual:** Dimming factors begin animating to `STARTUP_L_REDUCTION_FACTORS.P2` (duration 1.0s).
+    2.  **`T=0.1s`:**
+        *   **Visual:** MAIN PWR buttons (group `system-power`) begin flickering to `is-dimly-lit` state.
+    3.  **`T=1.3s`:**
+        *   **Audio:** `itemAppear` sound plays, its auditory peak timed to align with the visual stabilization of the MAIN PWR buttons' flicker.
 *   **Visual Outcome:** Main power buttons become dimly visible. A second line of text appears in the terminal.
 
 ### Phase 3: Main Power Online (`startupPhase3.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 3)
+*   **Phase Duration:** Approximately 3.5 seconds.
 *   **Conceptual Goal:** Energize main power buttons.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Animate to `STARTUP_L_REDUCTION_FACTORS.P3`.
-    2.  **Terminal:** Emits "P3_MAIN_POWER_ONLINE" message (typed).
-    3.  **MAIN PWR Buttons:**
-        *   "ON" button flickers from `is-dimly-lit` to `.is-energized.is-selected` (dark theme energized look) using `buttonFlickerFromDimlyLitToFullyLitSelectedFast`.
-        *   "OFF" button flickers from `is-dimly-lit` to `.is-energized` (dark theme energized look, unselected) using `buttonFlickerFromDimlyLitToFullyLitUnselectedFast`.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:**
+        *   **Terminal:** Message "P3_MAIN_POWER_ONLINE" requested (typed).
+        *   **Visual:** Dimming factors begin animating to `STARTUP_L_REDUCTION_FACTORS.P3` (duration 1.0s).
+    2.  **`T=0.1s`:**
+        *   **Visual:** MAIN PWR "ON" button flickers (fast profile) to `.is-energized.is-selected`.
+        *   **Visual:** MAIN PWR "OFF" button flickers (fast profile) to `.is-energized`.
+    3.  **`T=0.15s`:**
+        *   **Audio:** `buttonEnergize` sound plays, timed for its impact to align with the peak of the "Fast" button flicker.
 *   **Visual Outcome:** Main power buttons appear energized (dim theme variant).
 
 ### Phase 4: Reactivating Optical Core (`startupPhase4.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 4)
+*   **Phase Duration:** Approximately 4.5 seconds.
 *   **Conceptual Goal:** Activate central lens.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Animate to `STARTUP_L_REDUCTION_FACTORS.P4`.
-    2.  **Terminal:** Emits "P4_OPTICAL_CORE_REACTIVATE" message (typed).
-    3.  **Lens:** `lensManager.energizeLensCoreStartup()` called. Lens radial gradient becomes visible, ramping to target power (e.g., 25%). `appState` for Dial B (Intensity) is synced.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:**
+        *   **Terminal:** Message "P4_OPTICAL_CORE_REACTIVATE" requested (typed).
+        *   **Visual:** Dimming factors begin animating to `STARTUP_L_REDUCTION_FACTORS.P4` (duration 1.0s).
+    2.  **`T=0.1s`:**
+        *   **Visual:** Lens energize sequence (`lensManager.energizeLensCoreStartup()`) begins (ramp over `LENS_STARTUP_RAMP_DURATION`).
+        *   **Audio:** `lensStartup` sound plays, coinciding with the start of the lens energize sequence.
 *   **Visual Outcome:** Central lens activates and shows initial power.
 
 ### Phase 5: Initializing Diagnostic Control Interface (`startupPhase5.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 5)
+*   **Phase Duration:** Approximately 3.5 seconds.
 *   **Conceptual Goal:** Prime SCAN and FIT EVAL buttons.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Animate to `STARTUP_L_REDUCTION_FACTORS.P5`.
-    2.  **Terminal:** Emits "P5_DIAGNOSTIC_INTERFACE" message (typed).
-    3.  **Buttons (BTN1-4 for SKILL SCAN, FIT EVAL):** Flicker to `is-dimly-lit` state using `buttonFlickerToDimlyLit`.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:**
+        *   **Terminal:** Message "P5_DIAGNOSTIC_INTERFACE" requested (typed).
+        *   **Visual:** Dimming factors begin animating to `STARTUP_L_REDUCTION_FACTORS.P5` (duration 1.0s).
+    2.  **`T=0.1s`:**
+        *   **Visual:** Buttons for SKILL SCAN & FIT EVAL (BTN1-4) begin flickering to `is-dimly-lit`.
+    3.  **`T=1.3s`:**
+        *   **Audio:** `itemAppear` sound plays, its auditory peak timed to align with the visual stabilization of the buttons' flicker.
 *   **Visual Outcome:** BTN1-4 become dimly visible.
 
 ### Phase 6: Initializing Mood and Intensity Controls (`startupPhase6.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 6)
-*   **Conceptual Goal:** Activate dials and their LCDs.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Animate to `STARTUP_L_REDUCTION_FACTORS.P6`.
-    2.  **Terminal:** Emits "P6_MOOD_INTENSITY_CONTROLS" message (typed).
-    3.  **Dials (MOOD, INTENSITY):** `dialManager.setDialsActiveState(true)` called. Dials show ridges and fade in.
-    4.  **Dial LCDs (A, B):** Flicker to `lcd--dimly-lit` state using `lcdScreenFlickerToDimlyLit` profile. Dial LCDs display initial values (V2 displays are now visible).
-*   **Visual Outcome:** Dials and their LCDs become "active dim", with the Mood display showing the initial "Commanding" state corresponding to the default red hue.
+*   **Phase Duration:** Approximately 3.5 seconds.
+*   **Conceptual Goal:** Activate dials, then their LCDs, as distinct events.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:**
+        *   **Terminal:** Message "P6_MOOD_INTENSITY_CONTROLS" requested (typed).
+        *   **Visual:** Dimming factors begin animating to `STARTUP_L_REDUCTION_FACTORS.P6` (duration 1.0s).
+    2.  **`T=0.5s`:**
+        *   **Visual:** Dials (MOOD, INTENSITY) become visually active (`dialManager.setDialsActiveState(true)`).
+    3.  **`T=1.5s`:**
+        *   **Visual:** Dial LCDs (A & B) begin flickering to `lcd--dimly-lit` state.
+        *   **Audio (Commented Out):** `lcdPowerOn` sound was intended here, coinciding with LCD visual power-on.
+    4.  **`T=1.8s`:**
+        *   **Audio:** `itemAppear` sound plays, its auditory peak timed to align with the visual stabilization of the dials becoming active (which started at `T=0.5s`).
+*   **Visual Outcome:** Dials become "active dim". A second later, their LCDs also flicker to a dimly-lit state. Mood display shows initial "Commanding" state.
 
 ### Phase 7: Initializing Hue Correction Systems (`startupPhase7.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 7)
+*   **Phase Duration:** Approximately 3.5 seconds.
 *   **Conceptual Goal:** Prime Hue Assignment buttons.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Animate to `STARTUP_L_REDUCTION_FACTORS.P7`.
-    2.  **Terminal:** Emits "P7_HUE_CORRECTION_SYSTEMS" message (typed).
-    3.  **Hue Assignment Buttons (ENV, LCD, LOGO, BTN columns):** Flicker to `is-dimly-lit` state using `buttonFlickerToDimlyLit`.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:**
+        *   **Terminal:** Message "P7_HUE_CORRECTION_SYSTEMS" requested (typed).
+        *   **Visual:** Dimming factors begin animating to `STARTUP_L_REDUCTION_FACTORS.P7` (duration 1.0s).
+    2.  **`T=0.1s`:**
+        *   **Visual:** Hue Assignment buttons (ENV, LCD, LOGO, BTN columns) begin flickering to `is-dimly-lit`.
+    3.  **`T=1.3s`:**
+        *   **Audio:** `itemAppear` sound plays, its auditory peak timed to align with the visual stabilization of the buttons' flicker.
 *   **Visual Outcome:** Hue Assignment buttons become dimly visible.
 
 ### Phase 8: Initializing External Lighting Controls (`startupPhase8.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 8)
+*   **Phase Duration:** Approximately 3.5 seconds.
 *   **Conceptual Goal:** Prime Auxiliary Light buttons and finalize dimming factor animations.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Animate to `STARTUP_L_REDUCTION_FACTORS.P8` (L-factor to 0.0, O-factor to 1.0).
-    2.  **Terminal:** Emits "P8_EXTERNAL_LIGHTING_CONTROLS" message (typed).
-    3.  **AUX LIGHT Buttons (LOW, HIGH):** Flicker to `is-dimly-lit` state using `buttonFlickerToDimlyLit`.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:**
+        *   **Terminal:** Message "P8_EXTERNAL_LIGHTING_CONTROLS" requested (typed).
+        *   **Visual:** Dimming factors animate to their final value (L-factor to 0.0) (duration 1.0s).
+    2.  **`T=0.1s`:**
+        *   **Visual:** AUX LIGHT buttons (LOW, HIGH) begin flickering to `is-dimly-lit`.
+    3.  **`T=1.3s`:**
+        *   **Audio:** `itemAppear` sound plays, its auditory peak timed to align with the visual stabilization of the buttons' flicker.
 *   **Visual Outcome:** Auxiliary light buttons become dimly visible. All UI elements affected by startup factors are now at their full `theme-dim` base appearance.
 
 ### Phase 9: Activating Auxiliary Lighting: Low Intensity (`startupPhase9.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 9)
+*   **Phase Duration:** Approximately 3.5 seconds.
 *   **Conceptual Goal:** Energize Auxiliary Light buttons to default "LOW" state.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Remain at L=0.0, O=1.0.
-    2.  **Terminal:** Emits "P9_AUX_LIGHTING_LOW" message (typed).
-    3.  **AUX LIGHT Buttons:**
-        *   "LOW" button flickers from `is-dimly-lit` to `.is-energized.is-selected` (dark theme energized look) using `buttonFlickerFromDimlyLitToFullyLitSelected`.
-        *   "HIGH" button flickers from `is-dimly-lit` to `.is-energized` (dark theme energized look, unselected) using `buttonFlickerFromDimlyLitToFullyLitUnselected`.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:**
+        *   **Terminal:** Message "P9_AUX_LIGHTING_LOW" requested (typed).
+    2.  **`T=0.1s`:**
+        *   **Visual:** AUX LIGHT "LOW" button flickers (regular profile) to `.is-energized.is-selected`.
+        *   **Visual:** AUX LIGHT "HIGH" button flickers (regular profile) to `.is-energized`.
+    3.  **`T=0.25s`:**
+        *   **Audio:** `buttonEnergize` sound plays, timed for its impact to align with the peak of the regular button flicker.
 *   **Visual Outcome:** Auxiliary light buttons appear energized (dim theme variant), "LOW" selected.
 
 ### Phase 10: Engaging Ambient Theme (`startupPhase10.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 10)
+*   **Phase Duration:** Approximately 1.5 seconds.
 *   **Conceptual Goal:** Transition global theme to `theme-dark` and fully energize remaining buttons.
-*   **Key Actions:**
-    1.  **Dimming Factors:** Remain at L=0.0, O=1.0.
-    2.  **UI Preparation:**
-        *   **LCD State Cleanup:** All LCDs (`.actual-lcd-screen-element`, `.hue-lcd-display`) are explicitly set to their 'active' state by `LcdUpdater`. This removes the temporary `.lcd--dimly-lit` class, preparing them for a smooth CSS transition.
-        *   Elements matching `config.selectorsForDimExitAnimation` get `.animate-on-dim-exit` class.
-        *   `body` gets `is-transitioning-from-dim` class.
-    3.  **Theme Change:** `appStateService.setTheme('dark')` called. This triggers CSS transitions for elements with `.animate-on-dim-exit` (1s duration). MAIN PWR and AUX buttons (already `.is-energized`) visually adapt. LCD backgrounds transition.
-    4.  **Button Energizing (Concurrent):**
-        *   SCAN, FIT EVAL, and HUE ASSN buttons (which were `is-dimly-lit`) execute flicker animations to their final `.is-energized` states (HUE ASSN defaults applied for selection), now styled by `theme-dark.css`. Uses profiles `buttonFlickerFromDimlyLitToFullyLitUnselected` or `buttonFlickerFromDimlyLitToFullyLitSelected`.
+*   **Key Actions & Timing:**
+    1.  **`T=0.5s`:**
+        *   **Call:** All LCDs set to 'active' state by `LcdUpdater`.
+        *   **Call:** `body` classes updated for theme transition, `appState.setTheme('dark')` called. CSS theme transitions (1.0s duration via `config.THEME_TRANSITION_DURATION`) begin.
+    2.  **`T=0.6s`:**
+        *   **Visual:** SCAN, FIT EVAL, and HUE ASSN buttons (which were `is-dimly-lit`) begin flickering to their final `.is-energized` states.
+        *   **Audio:** `themeEngage` sound plays, coinciding with button energizing and theme transition start.
 *   **Visual Outcome:** Global theme transitions from dim to dark. SCAN, FIT EVAL, HUE ASSN buttons flicker to full power.
 
 ### Phase 11: HUE 9000 Operational (`startupPhase11.js`)
-*   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 11)
+*   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 11), then `COMPLETE`.
+*   **Phase Duration:** Approximately 0.5 seconds.
 *   **Conceptual Goal:** Finalize UI and declare system ready.
-*   **Key Actions (FSM entry action `performThemeTransitionCleanupIfNeeded` runs first):**
-    1.  **Theme Transition Cleanup:** `_performThemeTransitionCleanupLocal()` in `startupSequenceManager.js` removes `.animate-on-dim-exit` and `body.is-transitioning-from-dim`.
-    2.  **Terminal:** Emits "P11_SYSTEM_OPERATIONAL" message (typed).
-    3.  **Button Groups:** Default selected states for MAIN PWR, AUX LIGHT, and HUE ASSN groups are confirmed/set by `buttonManager.setGroupSelected()`.
-    4.  **App Status:** `appStateService.setAppStatus('interactive')`.
-    5.  **Dials:** `dialManager.resizeAllCanvases(true)` to ensure correct rendering in the new theme.
+*   **Key Actions & Timing (FSM entry action `_performThemeTransitionCleanup` runs first):**
+    1.  **`T=0.0s`:**
+        *   **Terminal:** Message "P11_SYSTEM_OPERATIONAL" requested (typed).
+        *   **Call:** Default selected states for MAIN PWR, AUX LIGHT, and HUE ASSN groups are confirmed/set by `buttonManager.setGroupSelected()`.
+    2.  *(Shortly after, on FSM transition to `COMPLETE`)*: `appState.setAppStatus('interactive')`.
 *   **Visual Outcome:** All systems online. UI fully interactive and styled by `theme-dark`.

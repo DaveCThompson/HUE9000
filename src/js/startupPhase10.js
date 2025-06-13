@@ -5,8 +5,9 @@
  */
 export const phase10Config = {
   phase: 10,
-  name: "THEME_TRANSITION",
-  duration: 2.0,
+  name: "ENGAGING_AMBIENT_THEME", 
+  // terminalMessageKey: "P10_ENGAGING_AMBIENT_THEME", // No terminal message specified for this phase.
+  duration: 1.5, // Phase duration.
   animations: [
     {
       type: 'call',
@@ -19,7 +20,7 @@ export const phase10Config = {
         });
       },
       deps: ['lcdUpdater', 'domElements'],
-      position: 0
+      position: 0.5 // LCD state cleanup call at T=0.5s. Note: was T=0 in original map, you set to 0.5.
     },
     {
       type: 'call',
@@ -28,24 +29,26 @@ export const phase10Config = {
           el.classList.add('animate-on-dim-exit');
         });
         dom.body.classList.add('is-transitioning-from-dim');
-        appState.setTheme('dark');
+        appState.setTheme('dark'); // CSS theme transition (1.0s duration) begins.
       },
       deps: ['domElements', 'config', 'appState'],
-      position: 0.5 // Slightly delay theme change to ensure LCD state is set first
+      position: 0.5 // Theme change call at T=0.5s.
+    },
+    {
+      type: 'flicker', // Energizing remaining buttons.
+      target: 'buttonGroup',
+      groups: ['env', 'lcd', 'logo', 'btn', 'skill-scan-group', 'fit-eval-group'],
+      state: 'is-energized', 
+      profile: 'buttonFlickerFromDimlyLitToFullyLit', 
+      stagger: 0.03, 
+      position: 0.6 // Visual flicker for button energizing starts at T=0.6s.
     },
     {
       type: 'audio',
-      soundKey: 'lightsOn',
-      position: 0.61 // Play sound concurrently with theme change
-    },
-    {
-      type: 'flicker',
-      target: 'buttonGroup',
-      groups: ['env', 'lcd', 'logo', 'btn', 'skill-scan-group', 'fit-eval-group'],
-      state: 'is-energized', // This will be split into selected/unselected by buttonManager
-      profile: 'buttonFlickerFromDimlyLitToFullyLit', // A generic key, buttonManager will pick correct profile
-      stagger: 0.03,
-      position: 0.6
+      soundKey: 'themeEngage', 
+      // Sound plays at T=0.6s, coinciding with the start of final button energizing
+      // and shortly after the theme transition begins.
+      position: 0.6 
     }
   ]
 };

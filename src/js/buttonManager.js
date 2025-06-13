@@ -26,6 +26,7 @@ export class ButtonManager {
         this.appState = null;
         this.config = null;
         this.aam = null; // AmbientAnimationManager
+        this.audioManager = null; // Added for easier access
 
         this._buttons = new Map();
         this._buttonGroups = new Map();
@@ -41,6 +42,7 @@ export class ButtonManager {
         this.appState = serviceLocator.get('appState');
         this.config = serviceLocator.get('config');
         this.aam = serviceLocator.get('ambientAnimationManager');
+        this.audioManager = serviceLocator.get('audioManager'); // Get AudioManager instance
 
         this.appState.subscribe('resistiveShutdownStageChanged', this.handleResistiveShutdownStageChange.bind(this));
         this.appState.subscribe('mainPowerOffButtonDisabledChanged', this.handleMainPowerOffButtonDisabledChange.bind(this));
@@ -116,11 +118,6 @@ export class ButtonManager {
         return this._buttons.get(element);
     }
 
-    /**
-     * Finds a button instance by its aria-label.
-     * @param {string} label The aria-label to search for.
-     * @returns {Button|null} The button instance or null if not found.
-     */
     getButtonByAriaLabel(label) {
         for (const button of this._buttons.values()) {
             if (button.element.ariaLabel === label) {
@@ -141,13 +138,13 @@ export class ButtonManager {
         const buttonInstance = this._buttons.get(buttonElement);
         if (!buttonInstance) return;
 
-        // --- REVISED LOGIC START ---
         const buttonId = buttonInstance.getIdentifier();
         const groupId = buttonInstance.getGroupId();
         const value = buttonInstance.getValue();
+        const wasSelected = buttonInstance.isSelected(); // Capture state BEFORE interaction
 
         if (this.debugResistive) {
-            console.log(`[BM handleInteraction] Clicked: ${buttonId}, Group: ${groupId}, Value: ${value}, IsSelected: ${buttonInstance.isSelected()}, AppStatus: ${this.appState.getAppStatus()}`);
+            console.log(`[BM handleInteraction] Clicked: ${buttonId}, Group: ${groupId}, Value: ${value}, WasSelected: ${wasSelected}, AppStatus: ${this.appState.getAppStatus()}`);
         }
 
         if (this.appState.getAppStatus() !== 'interactive' && groupId !== 'system-power') {
@@ -155,24 +152,21 @@ export class ButtonManager {
             return;
         }
 
-        // FIX FOR ISSUE #1: "Off" Button should not change state, only give feedback.
         if (groupId === 'system-power' && value === 'off') {
-            buttonInstance.setPressedVisuals(true); // Give press feedback
-            this.appState.emit('buttonInteracted', { button: buttonInstance }); // Let controller handle it
+            buttonInstance.setPressedVisuals(true); 
+            this.appState.emit('buttonInteracted', { button: buttonInstance }); 
             if (this.debugResistive) console.log(`[BM handleInteraction] Intercepted "off" button press. Emitting event only.`);
-            return; // Stop further processing
+            return; 
         }
 
-        // FIX FOR ISSUES #2 & #3: Prevent deselection of already-selected buttons.
         if ((buttonInstance.config.type === 'toggle' || buttonInstance.config.type === 'radio') && buttonInstance.isSelected()) {
-            buttonInstance.setPressedVisuals(true); // Still give press feedback
+            buttonInstance.setPressedVisuals(true); 
             if (this.debugResistive) console.log(`[BM handleInteraction] Blocked deselection for already-selected button: ${buttonId}`);
-            return; // Stop further processing
+            return; 
         }
-        // --- REVISED LOGIC END ---
-
+        
         this.emit('beforeButtonTransition', buttonInstance);
-        buttonInstance.handleInteraction();
+        buttonInstance.handleInteraction(); // This internally updates buttonInstance.isSelected()
 
         if (groupId && (buttonInstance.config.type === 'toggle' || buttonInstance.config.type === 'radio')) {
             if (buttonInstance.isSelected()) {
@@ -187,6 +181,25 @@ export class ButtonManager {
         }
         this.appState.emit('buttonInteracted', { button: buttonInstance });
         this.emit('afterButtonTransition', buttonInstance);
+
+        // Play auxModeChange sound if an AUX button's selection state changed to selected
+        if (groupId === 'light' && this.appState.getAppStatus() === 'interactive') {
+            if (buttonInstance.isSelected() && !wasSelected) { // Check if it *became* selected
+                if (this.audioManager) {
+                    this.audioManager.play('auxModeChange');
+                    if (this.debug) console.log(`[BM handleInteraction] Played 'auxModeChange' for ${buttonId}`);
+                }
+            }
+        } else if (this.appState.getAppStatus() === 'interactive' && buttonInstance.config.type !== 'radio' && buttonInstance.config.type !== 'toggle') {
+            // Play generic button press for action buttons if app is interactive
+            // This avoids playing it for radio/toggle buttons that have specific sounds (like auxModeChange)
+            // or for buttons during startup.
+            if (this.audioManager) {
+                 this.audioManager.play('buttonPress');
+                 if (this.debug) console.log(`[BM handleInteraction] Played 'buttonPress' for action button ${buttonId}`);
+            }
+        }
+
     }
 
     setGroupSelected(groupId, selectedValue) {

@@ -21,7 +21,7 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **Key Interactions:** Interacted with by almost every module.
 
 #### `config.js`
-*   **@module config:** Defines shared, static configuration constants (animation parameters, audio settings, flicker profiles, etc.).
+*   **@module config:** Defines shared, static configuration constants (animation parameters, audio settings including volumes and cooldowns, flicker profiles, startup phase L-reduction factors, etc.).
 *   **Key Interactions:** Imported by nearly every module to retrieve constant values.
 
 #### `serviceLocator.js`
@@ -57,11 +57,11 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `AudioManager.js`
 *   **@module AudioManager:** Manages all application audio using Howler.js.
-*   **Core Responsibilities:** Preloads sounds, handles playback for UI interactions and background music, manages looping sounds, and responds to application state changes. Unlocks the audio context on first user interaction.
+*   **Core Responsibilities:** Preloads sounds (using conceptual keys like `terminalBoot`, `itemAppear`, `buttonEnergize`, `lcdPowerOn`, `lensStartup`, `themeEngage`, `auxModeChange`, `buttonPress`, etc., which map to actual MP3 files). Handles playback for UI interactions and background music, respects volume settings from `config.js`, manages looping sounds, and responds to application state changes. Unlocks the audio context on first user interaction.
 
 #### `buttonManager.js`
 *   **@module buttonManager:** Orchestrates all `Button` instances.
-*   **Core Responsibilities:** Discovers buttons, creates `Button` instances, manages group behaviors (radio/toggle deselection), and provides an API for complex animations (`playFlickerToState`). Emits `buttonInteracted` to `appState`.
+*   **Core Responsibilities:** Discovers buttons, creates `Button` instances, manages group behaviors (radio/toggle deselection), triggers interactive sounds (e.g., `auxModeChange`, `buttonPress` via `AudioManager`), and provides an API for complex animations (`playFlickerToState`). Emits `buttonInteracted` to `appState`.
 
 #### `dialManager.js`
 *   **@module dialManager:** Orchestrates all `DialController` instances.
@@ -88,7 +88,7 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `terminalManager.js`
 *   **@module terminalManager:** Manages the terminal display.
-*   **Core Responsibilities:** Manages a message queue, handles the "typing" effect, manages the cursor, and scrolls content.
+*   **Core Responsibilities:** Manages a message queue, handles the "typing" effect, manages the cursor, and scrolls content. `playStartupFlicker()` method provides the special flicker animation for Phase 1.
 
 #### `AmbientAnimationManager.js`
 *   **@module AmbientAnimationManager:** Manages continuous, ambient animations for UI elements.
@@ -125,9 +125,10 @@ This document provides a high-level overview of each JavaScript module in the re
 #### `PhaseRunner.js`
 *   **@module PhaseRunner:** A generic executor for declarative startup phase configurations.
 *   **Core Responsibilities:**
-    *   Parses a phase config object and builds a GSAP timeline dynamically from it.
+    *   Parses a phase config object and builds a GSAP timeline dynamically from it. Handles timing of animations (including sounds via `type: 'audio'`) based on their `position` property.
+    *   Manages `specialTerminalFlicker` for Phase 1, ensuring its visual timeline starts at T=0 of the phase.
     *   Orchestrates all procedural state changes for components during the startup sequence.
     *   Returns a promise that resolves on completion of the phase timeline.
 
 #### `startupPhase[0-11].js`
-*   **@module startupPhaseX:** A series of modules, each exporting a single, declarative configuration object that defines all animations and actions for that phase.
+*   **@module startupPhaseX:** A series of modules, each exporting a single, declarative configuration object that defines all animations (including sound triggers with specific `position` values for timing) and actions for that phase. Durations are set to achieve a rhythmic overall sequence.

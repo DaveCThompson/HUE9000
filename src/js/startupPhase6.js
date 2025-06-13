@@ -6,36 +6,48 @@
 export const phase6Config = {
   phase: 6,
   name: "MOOD_INTENSITY_CONTROLS",
-  terminalMessageKey: "P6_MOOD_INTENSITY_CONTROLS",
-  duration: 2.5,
+  terminalMessageKey: "P6_MOOD_INTENSITY_CONTROLS", // Terminal message requested at T=0.
+  duration: 3.5, // Phase duration.
   animations: [
     {
       type: 'tween',
       target: 'dimmingFactors',
       vars: {
-        value: 0.225,
+        value: 0.225, 
         duration: 1.0,
         ease: 'power1.inOut'
       },
-      position: 0
+      position: 0 // Dimming factor animation starts at T=0.
     },
-    // REMOVED: The tween that made the dials appear too brightly and out of sync
-    // with the global startup opacity has been removed. Their visibility is now
-    // correctly handled by the main startup dimming factors.
     {
-      // This single declarative action triggers the coordinated animation
-      // in LcdUpdater.js for both the container flicker and content fade-in.
-      type: 'lcdPowerOn',
-      target: ['lcdA', 'lcdB'],
-      state: 'dimly-lit',
-      profile: 'lcdScreenFlickerToDimlyLit', // Profile for the containers
-      stagger: 0.05,
-      position: 0.2
+      type: 'call',
+      function: (dialManager) => {
+        if (dialManager && typeof dialManager.setDialsActiveState === 'function') {
+          dialManager.setDialsActiveState(true); 
+        }
+      },
+      deps: ['dialManager'],
+      position: 0.5 // Dials (Mood & Intensity) become visually active at T=0.5s.
     },
     {
       type: 'audio',
-      soundKey: 'lcdOn',
-      position: 0.2
-    }
+      soundKey: 'itemAppear', 
+      // Sound for dial appearance plays at T=1.8s. This explicit delay is timed for its auditory
+      // peak to align with the visual stabilization of the dials becoming active (which starts at T=0.5s).
+      position: 1.8 
+    },
+    {
+      type: 'lcdPowerOn',
+      target: ['lcdA', 'lcdB'], // Dial LCDs
+      state: 'dimly-lit',
+      profile: 'lcdScreenFlickerToDimlyLit',
+      stagger: 0.05, 
+      position: 1.5 // Dial LCDs' visual flicker to dimly-lit starts at T=1.5s.
+    },
+    //{ // This sound was commented out in your provided file.
+    //  type: 'audio',
+    //  soundKey: 'lcdPowerOn', 
+    //  position: 1.5 // Intended to coincide with LCD visual power-on start.
+    //}
   ]
 };

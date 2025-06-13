@@ -6,7 +6,7 @@
 export const phase0Config = {
   phase: 0,
   name: "IDLE_BASELINE",
-  duration: 0.5, // Minimum duration for auto-play pause
+  duration: 0.5, // Phase duration.
   animations: [
     // No visual animations in this phase.
     // The initial state is set by startupSequenceManager._resetVisualsAndState()

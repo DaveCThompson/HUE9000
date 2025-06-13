@@ -58,8 +58,8 @@ export const BODY_FADE_IN_DURATION = 0.3; // For initial body opacity fade-in in
 export const LENS_STARTUP_TARGET_POWER = 25;
 export const LENS_STARTUP_RAMP_DURATION = 1500; // ms
 export const P3_LENS_RAMP_DURATION_S = LENS_STARTUP_RAMP_DURATION / 1000;
-export const THEME_TRANSITION_DURATION = 1.0;
-export const SYSTEM_READY_PHASE_DURATION = 0.1;
+export const THEME_TRANSITION_DURATION = 1.0; // Duration of the CSS transition for theme change
+export const SYSTEM_READY_PHASE_DURATION = 0.1; // Should be very short
 export const MIN_PHASE_DURATION_FOR_STEPPING = 0.05;
 export const LCD_TEXT_FADE_IN_DURATION = 0.3; 
 
@@ -67,7 +67,7 @@ export const STARTUP_L_REDUCTION_FACTORS = {
     P0: 0.40, P1: 0.39, P2: 0.35, P3: 0.325, P4: 0.325, 
     P5: 0.275, P6: 0.225, P7: 0.075, P8: 0.00
 };
-export const STARTUP_DIM_FACTORS_ANIMATION_DURATION = 1;
+export const STARTUP_DIM_FACTORS_ANIMATION_DURATION = 1.0; // Standard duration for dim factor tweens
 
 // --- Startup Animation Staggers ---
 export const STARTUP_BUTTON_GROUP_APPEAR_STAGGER = 0.04;
@@ -407,25 +407,29 @@ export const RESISTIVE_SHUTDOWN_PARAMS = {
 };
 
 // --- Audio Configuration ---
-// NOTE: `src` paths are removed as they are now handled by direct imports in AudioManager.js
 export const AUDIO_CONFIG = {
-  masterVolume: 1.0,
+  masterVolume: 1.0, 
   musicCrossfadeDuration: 2.0,
   soundCooldowns: {
-    flickerToDim: 250,
-    terminalOn: 4000,
-    lcdOn: 6000,
+    itemAppear: 250,      
+    terminalBoot: 4000,   
+    lcdPowerOn: 6000,     
+    // buttonEnergize: 100, // Example if needed
+    // auxModeChange: 100, // Example if needed
   },
-  sounds: { // Only non-path properties remain
+  sounds: { 
     backgroundMusic: { loop: true, volume: 0.35 },
-    dialLoop: { loop: true, volume: 0.7 },
+    dialLoop: { loop: true, volume: 0.35 },
     buttonPress: { loop: false, volume: 0.8 },
-    flickerToDim: { loop: false, volume: 0.6 },
-    terminalOn: { loop: false, volume: 0.8, fadeOutDuration: 4000 },
-    lcdOn: { loop: false, volume: 0.7, fadeOutDuration: 6000 },
-    lensStartup: { loop: false, volume: 0.9 },
-    powerOff: { loop: false, volume: 1.0 },
-    bigOn: { loop: false, volume: 1.0 },
-    lightsOn: { loop: false, volume: 0.9 },
+    
+    // Conceptual Keys for clarity, matching AudioManager usage
+    itemAppear: { loop: false, volume: 0.6 },        // Formerly flickerToDim
+    terminalBoot: { loop: false, volume: 0.9, fadeOutDuration: 4000 }, // Formerly terminalOn
+    lcdPowerOn: { loop: false, volume: 0.8, fadeOutDuration: 6000 },   // Formerly lcdOn
+    lensStartup: { loop: false, volume: 0.9 },       
+    powerOff: { loop: false, volume: 1.0 },          // Formerly off
+    buttonEnergize: { loop: false, volume: 0.2 },    // Formerly bigOn, volume set to 20%
+    themeEngage: { loop: false, volume: 0.9 },       // Formerly lightsOn
+    auxModeChange: { loop: false, volume: 0.7 },     // Settings for auxModeChange
   },
 };

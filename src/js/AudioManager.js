@@ -8,16 +8,18 @@ import { Howl, Howler } from 'howler';
 import { serviceLocator } from './serviceLocator.js';
 
 // Import audio files - Vite will handle these paths
+// Corrected to match screenshot filenames
 import backgroundMusicUrl from '../assets/audio/background.mp3';
 import dialLoopUrl from '../assets/audio/dial.mp3';
 import buttonPressUrl from '../assets/audio/button-press.mp3';
-import flickerToDimUrl from '../assets/audio/flicker-to-dim.wav';
-import terminalOnUrl from '../assets/audio/terminal-on.wav';
-import lcdOnUrl from '../assets/audio/lcd-on.wav';
-import lensStartupUrl from '../assets/audio/lens-startup.wav';
-import powerOffUrl from '../assets/audio/off.wav';
-import bigOnUrl from '../assets/audio/big-on.wav';
-import lightsOnUrl from '../assets/audio/lights-on.wav';
+import itemAppearUrl from '../assets/audio/itemAppear.mp3'; 
+import terminalBootUrl from '../assets/audio/terminalBoot.mp3'; 
+import lcdPowerOnUrl from '../assets/audio/lcdPowerOn.mp3'; 
+import lensStartupUrl from '../assets/audio/lensStartup.mp3';
+import powerOffUrl from '../assets/audio/off.mp3';
+import buttonEnergizeUrl from '../assets/audio/buttonEnergize.mp3';
+import themeEngageUrl from '../assets/audio/lights-on.mp3'; // Corrected: lights-on.mp3 for themeEngage
+import auxModeChangeUrl from '../assets/audio/auxModeChange.mp3';
 
 
 export class AudioManager {
@@ -43,17 +45,23 @@ export class AudioManager {
             const audioConfigBase = configModule.AUDIO_CONFIG;
             const soundSettings = audioConfigBase.sounds;
 
+            // Map conceptual keys to actual file URLs and settings
             this.sounds = {
                 backgroundMusic: new Howl({ ...soundSettings.backgroundMusic, src: [backgroundMusicUrl] }),
                 dialLoop: new Howl({ ...soundSettings.dialLoop, src: [dialLoopUrl] }),
                 buttonPress: new Howl({ ...soundSettings.buttonPress, src: [buttonPressUrl] }),
-                flickerToDim: new Howl({ ...soundSettings.flickerToDim, src: [flickerToDimUrl] }),
-                terminalOn: new Howl({ ...soundSettings.terminalOn, src: [terminalOnUrl] }),
-                lcdOn: new Howl({ ...soundSettings.lcdOn, src: [lcdOnUrl] }),
-                lensStartup: new Howl({ ...soundSettings.lensStartup, src: [lensStartupUrl] }),
-                powerOff: new Howl({ ...soundSettings.powerOff, src: [powerOffUrl] }),
-                bigOn: new Howl({ ...soundSettings.bigOn, src: [bigOnUrl] }),
-                lightsOn: new Howl({ ...soundSettings.lightsOn, src: [lightsOnUrl] }),
+                
+                // Startup sequence sounds (using conceptual names)
+                itemAppear: new Howl({ ...(soundSettings.itemAppear || soundSettings.flickerToDim), src: [itemAppearUrl] }),
+                terminalBoot: new Howl({ ...(soundSettings.terminalBoot || soundSettings.terminalOn), src: [terminalBootUrl] }),
+                lcdPowerOn: new Howl({ ...(soundSettings.lcdPowerOn || soundSettings.lcdOn), src: [lcdPowerOnUrl] }),
+                lensStartup: new Howl({ ...(soundSettings.lensStartup), src: [lensStartupUrl] }),
+                powerOff: new Howl({ ...(soundSettings.powerOff || soundSettings.off), src: [powerOffUrl] }),
+                buttonEnergize: new Howl({ ...(soundSettings.buttonEnergize || soundSettings.bigOn), src: [buttonEnergizeUrl] }),
+                themeEngage: new Howl({ ...(soundSettings.themeEngage || soundSettings.lightsOn), src: [themeEngageUrl] }),
+
+                // Interactive sounds
+                auxModeChange: new Howl({ ...(soundSettings.auxModeChange || soundSettings.buttonPress), src: [auxModeChangeUrl] })
             };
         } else {
             console.error('[AudioManager] AUDIO_CONFIG not found during construction. Sounds will not be loaded.');
@@ -108,7 +116,9 @@ export class AudioManager {
 
         const now = Date.now();
         const cooldowns = this.config.AUDIO_CONFIG.soundCooldowns || {};
-        const cooldown = cooldowns[soundKey];
+        const conceptualCooldownKey = soundKey; 
+        const cooldown = cooldowns[conceptualCooldownKey];
+
 
         if (cooldown) {
             const lastPlayed = this.lastPlayedTimestamps[soundKey] || 0;
@@ -119,7 +129,9 @@ export class AudioManager {
         }
 
         const sound = this.sounds[soundKey];
-        const soundConfigFromMain = this.config.AUDIO_CONFIG.sounds[soundKey];
+        const soundConfigFromMain = this.config.AUDIO_CONFIG.sounds[soundKey] || 
+                                    this.config.AUDIO_CONFIG.sounds[this._getOriginalKeyForConceptual(soundKey)];
+
 
         if (sound && this.isReady) {
             if (this.debug) console.log(`[AudioManager] Playing sound: '${soundKey}'`);
@@ -143,6 +155,19 @@ export class AudioManager {
             console.warn(`[AudioManager] Sound not found or not ready.`, debugInfo);
         }
     }
+    
+    _getOriginalKeyForConceptual(conceptualKey) {
+        const map = {
+            itemAppear: 'flickerToDim',
+            terminalBoot: 'terminalOn',
+            lcdPowerOn: 'lcdOn',
+            buttonEnergize: 'bigOn',
+            themeEngage: 'lightsOn', // This original key matches the corrected filename base
+            powerOff: 'off',
+        };
+        return map[conceptualKey] || conceptualKey;
+    }
+
 
     startLoop(soundKey) {
         if (!this.isUnlocked) return;
@@ -163,7 +188,17 @@ export class AudioManager {
             setTimeout(() => {
                 if (this.activeLoops[soundKey]) {
                     this.sounds[soundKey].stop(this.activeLoops[soundKey]);
-                    const originalVolume = this.config.AUDIO_CONFIG.sounds[soundKey]?.volume;
+                    const originalSoundConfigKey = this._getOriginalKeyForConceptual(soundKey);
+                    
+                    let originalVolume = this.config.AUDIO_CONFIG.sounds[soundKey]?.volume;
+                    if (typeof originalVolume !== 'number') {
+                        originalVolume = this.config.AUDIO_CONFIG.sounds[originalSoundConfigKey]?.volume;
+                    }
+                     if (soundKey === 'auxModeChange' && typeof originalVolume !== 'number') {
+                        originalVolume = this.config.AUDIO_CONFIG.sounds['buttonPress']?.volume; 
+                    }
+
+
                     if (typeof originalVolume === 'number') {
                         this.sounds[soundKey].volume(originalVolume);
                     }

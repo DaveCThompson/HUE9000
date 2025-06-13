@@ -59,9 +59,11 @@ export class PhaseRunner {
           }
         });
 
+        // --- REVERTED P1 DELAY LOGIC ---
+        // specialTerminalFlicker visual will now be added at position 0 by default.
         if (phaseConfig.specialTerminalFlicker && phaseConfig.message) {
             const terminalFlickerTl = this.managers.terminalManager.playStartupFlicker(phaseConfig.message);
-            masterTl.add(terminalFlickerTl, 0);
+            masterTl.add(terminalFlickerTl, 0); // Add at T=0
         } else if (phaseConfig.terminalMessageKey) {
             masterTl.call(() => {
                 this.appState.emit('requestTerminalMessage', {
@@ -69,11 +71,12 @@ export class PhaseRunner {
                     source: phaseConfig.name,
                     messageKey: phaseConfig.terminalMessageKey,
                 });
-            }, [], 0);
+            }, [], 0); 
         }
+        // --- END REVERTED P1 DELAY LOGIC ---
 
         if (phaseConfig.animations && Array.isArray(phaseConfig.animations)) {
-          phaseConfig.animations.forEach(anim => this._buildAnimation(masterTl, anim));
+          phaseConfig.animations.forEach(anim => this._buildAnimation(masterTl, anim, phaseConfig));
         }
 
         let minDuration = phaseConfig.duration || this.config.MIN_PHASE_DURATION_FOR_STEPPING;
@@ -82,7 +85,8 @@ export class PhaseRunner {
         }
 
         masterTl.play();
-      } catch (error) {
+      } catch (error)
+      {
         console.error(`[PhaseRunner RUN] Error setting up Phase ${phaseConfig.phase}:`, error);
         if (this.debug) console.groupEnd();
         reject(error);
@@ -90,9 +94,9 @@ export class PhaseRunner {
     });
   }
 
-  _buildAnimation(tl, anim) {
-    const position = anim.position || '>';
-    if (this.debug) console.log(`[PhaseRunner] Building animation:`, anim);
+  _buildAnimation(tl, anim, currentPhaseConfig) { 
+    const position = anim.position || '>'; // Default to '>', but phase configs should be explicit.
+    if (this.debug) console.log(`[PhaseRunner] Building animation:`, anim, `at position: ${position}`);
 
     switch (anim.type) {
       case 'tween':
@@ -105,17 +109,29 @@ export class PhaseRunner {
         this._handleLcdPowerOn(tl, anim, position);
         break;
       case 'call':
-        const deps = anim.deps ? anim.deps.map(dep => serviceLocator.get(dep)) : [];
+        const deps = anim.deps ? anim.deps.map(depName => {
+            if (depName === 'self') {
+                return currentPhaseConfig; 
+            }
+            try {
+                return serviceLocator.get(depName);
+            } catch (e) {
+                console.error(`[PhaseRunner] Error resolving dependency "${depName}" for 'call' animation in phase ${currentPhaseConfig.name}:`, e.message);
+                return null; 
+            }
+        }).filter(Boolean) : []; 
         tl.call(anim.function, deps, position);
         break;
       case 'lensEnergize':
         const lensTl = this.managers.lensManager.energizeLensCoreStartup(anim.targetPower, anim.durationMs);
         if (lensTl) tl.add(lensTl, position);
         break;
-      // FIX: Re-introduced the 'audio' case to handle declarative sound playback.
       case 'audio':
         if (this.managers.audioManager && anim.soundKey) {
+            // --- REVERTED P1 SOUND POSITION OVERRIDE ---
+            // Sound will now play at its defined anim.position from the phase config.
             tl.call(() => this.managers.audioManager.play(anim.soundKey), [], position);
+            // --- END REVERTED ---
         }
         break;
       default:
