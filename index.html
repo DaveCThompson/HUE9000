@@ -9,124 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- Critical Preloader CSS (Inlined) -->
-    <style id="critical-preloader-css">
-        #datastream-preloader {
-            --preloader-display-font: 'IBM Plex Mono', monospace; /* Fallback, preload preferred */
-            --preloader-panel-bezel-bg: oklch(0.12 0.002 240 / 0.75);
-            --preloader-panel-section-bg: oklch(0.10 0.002 240 / 0.85);
-            --preloader-text-primary: oklch(0.9 0.005 240);
-            --preloader-text-secondary: oklch(0.8 0.008 240);
-            --preloader-space-xl: 0.75rem;
-            --preloader-space-2xl: 1rem;
-            --preloader-radius-panel-tight: 0.1rem;
-
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--preloader-text-primary);
-            font-family: var(--preloader-display-font);
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            z-index: 10001;
-            opacity: 0; /* Will be faded in by JS or full CSS */
-            box-sizing: border-box;
-            transition: opacity 0.5s ease-out;
-        }
-        #datastream-preloader.preloader-main-bezel {
-            width: 100%;
-            max-width: 900px;
-            padding: var(--preloader-space-xl);
-            background-color: var(--preloader-panel-bezel-bg);
-            border-radius: var(--preloader-radius-panel-tight);
-            box-sizing: border-box;
-        }
-        .preloader-content-section {
-            background-color: var(--preloader-panel-section-bg);
-            padding: var(--preloader-space-2xl);
-            border-radius: var(--preloader-radius-panel-tight);
-            display: flex;
-            flex-direction: column;
-            gap: var(--preloader-space-2xl);
-            box-sizing: border-box;
-            width: 100%;
-        }
-        .preloader-stream-columns { display: flex; gap: 0.5rem; justify-content: space-around; flex-wrap: wrap; box-sizing: border-box; }
-        .preloader-data-stream { width: 250px; flex-shrink: 0; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; opacity: 0.9; }
-        .preloader-stream-header { font-size: 0.85em; text-align: center; padding-bottom: 0.25rem; margin-bottom: 0.375rem; color: var(--preloader-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .preloader-stream-output { height: 90px; background-color: oklch(0.03 0 0 / 0.5); border: 1px solid oklch(0.08 0 0 / 0.2); padding: 0.25rem; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .preloader-stream-output-text { font-size: 0.75em; width:100%; height:100%; overflow:hidden; color: var(--preloader-text-primary); }
-        .preloader-stream-status { font-size: 0.75em; text-align: center; margin-top: 0.375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* Stream status text colors */
-        .preloader-data-stream.is-verified .preloader-stream-status,
-        .preloader-data-stream.is-verified .preloader-stream-output-text {
-            color: oklch(0.88 0.04 240 / 0.95); /* Brighter, distinct blueish-white */
-        }
-        .preloader-data-stream.is-error .preloader-stream-status,
-        .preloader-data-stream.is-error .preloader-stream-output-text {
-            color: oklch(0.75 0.18 25); /* Noticeable, clear red for errors */
-        }
-        
-        .preloader-overall-progress { text-align: center; margin-top: 0.5rem; }
-        .preloader-progress-bar-container { height: 0.25rem; border: 1px solid oklch(0.4 0.001 240 / 0.12); padding: 0.0625rem; margin-top: 0.25rem; }
-        .preloader-progress-bar-fill { 
-            height: 100%; 
-            width: 0%; 
-            background-color: oklch(0.75 0.06 240); /* CORRECTED: Blue color for progress */
-            transition: width 0.3s ease-out; /* ADDED: Smooth progress animation */
-        }
-        
-        .preloader-engage-container {
-            /* CORRECTED: Use flex for reliable centering */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 0.75rem;
-            opacity: 0;
-            transform: translateY(0.375rem);
-            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-        }
-        .preloader-engage-container.is-visible { opacity: 1; transform: translateY(0); }
-        
-        #datastream-preloader #preloader-engage-btn {
-            min-width: 220px; 
-        }
-
-        /* --- ADDED: Specific Preloader Button Styling Overrides --- */
-        /* This directly targets the button in the preloader to override any external styles */
-        #datastream-preloader .button-unit.is-energized {
-            border-color: oklch(0.30 0.02 240 / 0.85) !important;
-            color: var(--preloader-text-primary) !important;
-            text-shadow: 0px 0.5px 1px oklch(0% 0 0 / 0.4) !important;
-            box-shadow: 0 0 6px 0px oklch(0.8 0.06 240 / 0.3) !important;
-        }
-        #datastream-preloader .button-unit.is-energized::before {
-            background-color: oklch(0.22 0.02 240 / 0.75) !important;
-        }
-        #datastream-preloader .button-unit.is-energized .light {
-            background-color: oklch(0.75 0.06 240) !important;
-            opacity: 0.65 !important;
-        }
-        #datastream-preloader .button-unit.is-energized:not(:disabled):hover {
-            box-shadow: 0 0 8px 1px oklch(0.85 0.08 240 / 0.45) !important;
-        }
-        #datastream-preloader .button-unit.is-energized:not(:disabled):hover .light {
-            opacity: 0.85 !important;
-            transform: scale(1.1);
-        }
-        /* --- End of Specific Overrides --- */
-
-        #critical-error-message { display: none; color: oklch(0.65 0.25 25); text-align: center; margin-top: 1rem; font-weight: bold; }
-        .pre-boot { opacity: 0; }
-    </style>
-
-    <!-- Full Preloader Stylesheet (loaded early) -->
-    <link rel="stylesheet" href="./src/css/2-components/_preloader-v2.css">
-    
-    <!-- Main Application Stylesheet (Imports all other CSS partials) -->
+    <!-- Main Application Stylesheet (Imports all other CSS partials, including preloader) -->
     <link rel="stylesheet" href="./src/css/main.css">
 
     <!-- Google Fonts API CSS (display=swap is good for fallback) -->
@@ -135,6 +18,9 @@
 
 </head>
 <body class="theme-dim pre-boot">
+
+    <!-- Preloader Mask (Hides main UI during preloading) -->
+    <div id="preloader-mask"></div>
 
     <div id="datastream-preloader" class="panel-bezel preloader-main-bezel">
         <div class="panel-section preloader-content-section">
@@ -165,6 +51,7 @@
             </div>
 
             <div class="preloader-engage-container" id="engage-button-container">
+                <!-- Corrected Button Structure -->
                 <button id="preloader-engage-btn" class="button-unit button-unit--l" disabled>
                     <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div>
                     <div class="button-bg-frame"></div>

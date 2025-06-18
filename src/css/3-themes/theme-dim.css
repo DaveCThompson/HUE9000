@@ -171,3 +171,26 @@ body.theme-dim {
     --theme-terminal-glow-opacity-factor: 1.0;
     --theme-terminal-glow-size-factor: 1.0;
 }
+
+/* --- Non-Interactive States --- */
+/* In dim mode, main app controls are visually non-interactive. */
+body.theme-dim .dial-canvas-container,
+body.theme-dim .dial-canvas-container.is-dragging {
+    cursor: default;
+}
+
+body.theme-dim .app-wrapper .button-unit {
+    cursor: not-allowed;
+}
+
+/* Disable hover effects on any selected button (like Main Power) in the app area */
+body.theme-dim .app-wrapper .button-unit.is-selected:hover::after {
+    transform: scale(1);
+    opacity: var(--btn-selected-glow-base-opacity);
+}
+
+/* Disable the hover glow on unselected energized buttons, just in case */
+body.theme-dim .app-wrapper .button-unit.is-energized:not(.is-selected):hover {
+    /* Reset box-shadow to its non-hover state for this button type */
+    box-shadow: 0 0 var(--btn-unselected-glow-base-size) var(--btn-glow-spread) var(--btn-glow-color);
+}

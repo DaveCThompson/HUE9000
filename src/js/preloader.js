@@ -55,6 +55,9 @@ export function runPreloader(preloaderDomElements, gsap) {
 
     const audioManager = serviceLocator.get('audioManager');
     
+    // Add the isolation class
+    body.classList.add('preloader-active');
+    
     body.classList.remove('pre-boot');
     gsap.to(preloaderRoot, { opacity: 1, duration: PRELOADER_CONFIG.preloaderInitialFadeInDurationMs / 1000, onComplete: () => {
         preloaderRoot.classList.add('is-visible');
@@ -65,7 +68,6 @@ export function runPreloader(preloaderDomElements, gsap) {
         const totalStreams = 3; 
         const streamIntervals = {};
         let criticalErrorOccurred = false;
-        // preloaderSoundPlayed flag is removed, as we won't autoplay the sound.
 
         const generateRandomChars = (length) => {
             const chars = PRELOADER_CONFIG.randomCharSet;
@@ -89,8 +91,7 @@ export function runPreloader(preloaderDomElements, gsap) {
             if (isActive) {
                 streamEl.classList.remove('is-inactive');
                 streamEl.classList.add('is-active');
-                statusEl.textContent = assetConf.initialStatus;
-                // DO NOT AUTOPLAY SOUND HERE to avoid browser restrictions
+                if (statusEl) statusEl.textContent = assetConf.initialStatus;
                 streamIntervals[streamId] = setInterval(() => {
                     if (contentEl) contentEl.textContent = generateRandomChars(PRELOADER_CONFIG.streamTextLength);
                 }, PRELOADER_CONFIG.streamCharScrollIntervalMs);
@@ -112,7 +113,6 @@ export function runPreloader(preloaderDomElements, gsap) {
                 engageButton.disabled = true;
                 engageButtonContainer.classList.remove('is-visible');
                 gsap.to(criticalErrorMessageElement, { autoAlpha: 1, duration: 0.3 });
-                // No sound to stop here as we are not autoplaying
                 return; 
             }
 
@@ -121,7 +121,6 @@ export function runPreloader(preloaderDomElements, gsap) {
                     engageButton.disabled = false;
                     engageButton.classList.add('is-energized');
                     engageButtonContainer.classList.add('is-visible');
-                    // No sound to fade out here
                  }, PRELOADER_CONFIG.engageButtonAppearDelayMs);
             }
         };
@@ -165,7 +164,6 @@ export function runPreloader(preloaderDomElements, gsap) {
                 case 'audioManager': 
                     loadPromise = new Promise(async (resolveAudio, rejectAudio) => {
                         if (!audioManager || !audioManager.isReady()) {
-                            // This case should ideally be caught before calling loadStream for audio
                             return rejectAudio(new Error("AudioManager not ready for audio stream."));
                         }
                         const audioPromises = assetConfig.assets.map(audioAsset => {
@@ -176,21 +174,18 @@ export function runPreloader(preloaderDomElements, gsap) {
                                 const unsub = audioManager.subscribeToSoundLoad(audioAsset.keyInAudioManager, (loadedKey) => {
                                     if (loadedKey === audioAsset.keyInAudioManager) { unsub(); resAsset(audioAsset.name); }
                                 });
-                                // Timeout for individual sound loading
                                 setTimeout(() => { 
                                     unsub(); 
-                                    // Check again, as load might have just completed
                                     if (!audioManager.isSoundLoaded(audioAsset.keyInAudioManager)) {
                                         rejAsset(new Error(`Timeout loading ${audioAsset.name}`)); 
                                     } else {
-                                        resAsset(audioAsset.name); // Loaded just in time
+                                        resAsset(audioAsset.name);
                                     }
                                 }, 15000); 
                             });
                         });
                         try {
                             await Promise.all(audioPromises);
-                            // Sound is loaded, but DO NOT play it here.
                             const duration = Date.now() - startTime;
                             setTimeout(() => resolveAudio(assetConfig.successMessage), Math.max(0, baseDuration - duration));
                         } catch (audioError) { rejectAudio(audioError); }
@@ -222,7 +217,6 @@ export function runPreloader(preloaderDomElements, gsap) {
         } else {
             console.error("AudioManager not ready during preloader init, cannot load audio stream.");
             criticalErrorOccurred = true;
-            // Ensure streamAudio element exists before trying to update it
             if(streamAudio) {
                 updateStreamVisuals(streamAudio, 'audio', PRELOADER_ASSETS.audio, false, false, PRELOADER_ASSETS.audio.errorMessage);
             }
@@ -232,16 +226,21 @@ export function runPreloader(preloaderDomElements, gsap) {
         engageButton.addEventListener('click', () => {
             if (engageButton.disabled || criticalErrorOccurred) return;
             
-            audioManager.unlockAudioContext(); // Crucial for subsequent sounds
-            // No preloader sound to stop or fade here
+            audioManager.unlockAudioContext();
             
             preloaderRoot.classList.add('is-hiding');
             preloaderRoot.classList.remove('is-visible');
 
-            setTimeout(() => {
-                preloaderRoot.style.display = 'none';
-                resolveMainPreloaderPromise();
-            }, PRELOADER_CONFIG.preloaderFadeOutDurationMs);
+            gsap.to(preloaderRoot, {
+                opacity: 0,
+                duration: PRELOADER_CONFIG.preloaderFadeOutDurationMs / 1000,
+                onComplete: () => {
+                    preloaderRoot.style.display = 'none';
+                    // Remove the isolation class so the main theme can take over
+                    body.classList.remove('preloader-active');
+                    resolveMainPreloaderPromise();
+                }
+            });
         }, { once: true });
     });
 }
