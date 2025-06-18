@@ -38,7 +38,6 @@ class DialController {
             PIXELS_PER_DEGREE_ROTATION: 1.3, // From global config
             PIXELS_PER_DEGREE_HUE: 0.64,    // From global config
             SHADOW_OFFSET_MULTIPLIER: 8,
-            THROTTLE_LIMIT_MS: 50, 
         };
         // Override with global config values if they exist
         this.config.PIXELS_PER_DEGREE_ROTATION = this.configModule.PIXELS_PER_DEGREE_ROTATION || this.config.PIXELS_PER_DEGREE_ROTATION;
@@ -58,9 +57,9 @@ class DialController {
         this.unsubscribers = [];
         this.themeVars = {};
         this.debug = false;
-
-        // Throttled function for real-time but performant app state updates
-        this.throttledUpdateAppState = throttle(this._updateAppState.bind(this), this.config.THROTTLE_LIMIT_MS);
+        
+        // Bound method for the GSAP ticker
+        this.updateLoop = this._updateLoop.bind(this);
 
         this._createRidges();
         this._addDragListeners();
@@ -140,6 +139,7 @@ class DialController {
         
         if (this.gsapTween) this.gsapTween.kill();
 
+        // Sync with appState before starting drag to prevent jumps
         const currentState = this.appState.getDialState(this.dialId);
         this.rotation = currentState.rotation;
         this.hue = currentState.hue;
@@ -147,7 +147,13 @@ class DialController {
         
         this.currentPointerX = event.touches ? event.touches[0].clientX : event.clientX;
 
-        if (this.dialId === 'B') this.appState.setDialBInteractionState('dragging');
+        this.appState.updateDialState(this.dialId, { isDragging: true });
+        if (this.dialId === 'B') {
+            this.appState.setDialBInteractionState('dragging');
+        }
+        
+        // Start broadcasting state on every animation frame
+        this.gsap.ticker.add(this.updateLoop);
     }
 
     _handleInteractionMove(event) {
@@ -172,8 +178,8 @@ class DialController {
         }
         this.hue = newHue;
 
+        // Only update the local SVG visual instantly. State is broadcast by the ticker.
         this._draw();
-        this.throttledUpdateAppState();
     }
 
     _handleInteractionEnd() {
@@ -181,16 +187,30 @@ class DialController {
         this.isDragging = false;
         this.containerElement.classList.remove('is-dragging');
 
+        // Stop broadcasting state on every frame
+        this.gsap.ticker.remove(this.updateLoop);
+
+        // Send one final, definitive state update
         this._updateAppState();
 
         if (this.dialId === 'B') {
             this.appState.setDialBInteractionState('settling');
             this.gsap.delayedCall(0.2, () => {
-                if (!this.isDragging) this.appState.setDialBInteractionState('idle');
+                // Only set to idle if we haven't started a new drag in the meantime
+                if (!this.isDragging) {
+                    this.appState.setDialBInteractionState('idle');
+                }
             });
         }
     }
     
+    /**
+     * This method is called by the GSAP ticker during a drag.
+     */
+    _updateLoop() {
+        this._updateAppState();
+    }
+
     _updateAppState() {
         this.appState.updateDialState(this.dialId, {
             isDragging: this.isDragging,
