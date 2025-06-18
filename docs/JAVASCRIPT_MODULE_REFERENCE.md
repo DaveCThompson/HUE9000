@@ -1,3 +1,7 @@
+Of course. Here is the fully updated `JAVASCRIPT_MODULE_REFERENCE.md` file, incorporating all the identified gaps and clarifications.
+
+---
+
 # HUE 9000 JavaScript Module Reference (Project Decouple - V2.3 Refined)
 
 This document provides a high-level overview of each JavaScript module in the refactored HUE 9000 project.
@@ -10,14 +14,18 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **@module main:** Entry point and application orchestrator.
 *   **Core Responsibilities:**
     *   Orchestrates the `preloader` sequence.
+    *   Dynamically creates the buttons for the Hue Assignment grid and registers them with the `buttonManager`.
     *   Initializes and registers all managers with the `serviceLocator`.
-    *   Sets up top-level event listeners (e.g., for `buttonInteracted`, ensuring sounds like `buttonPress` use `forceRestart: true` for responsiveness).
+    *   Sets up top-level event listeners, most notably for `buttonInteracted`. This listener acts as a central hub, translating UI interactions into `appState` changes (e.g., setting the theme, updating target color properties, initiating the resistive shutdown sequence) and triggering context-appropriate sounds. For direct interactions, it ensures sounds like `buttonPress` use `forceRestart: true` for responsiveness.
     *   Starts the `startupSequenceManager` after the preloader completes.
 *   **Key Interactions:** Instantiates and initializes nearly every other manager.
 
 #### `appState.js`
 *   **@module appState:** Manages the central, authoritative application state.
-*   **Core Responsibilities:** Holds all shared state data, provides getters/setters, and emits events on state changes.
+*   **Core Responsibilities:**
+    *   Holds all shared state data, provides getters/setters, and emits events on state changes.
+    *   Manages the state for the resistive shutdown sequence via `resistiveShutdownStage` and `isMainPowerOffButtonDisabled`.
+    *   Provides a global event bus via exported `subscribe` and `emit` functions, which wrap an internal `EventEmitter`.
 *   **Key Interactions:** Interacted with by almost every module.
 
 #### `config.js`
@@ -29,8 +37,32 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **Core Responsibilities:** Provides `register(name, service)` and `get(name)` methods to manage and provide access to shared manager instances, breaking direct import dependencies.
 *   **Key Interactions:** Used by `main.js` to register all services and by all managers in their `init()` methods to retrieve dependencies.
 
+#### `EventEmitter.js`
+*   **@module EventEmitter:** A simple, generic event emitter (pub/sub) class.
+*   **Core Responsibilities:** Provides `subscribe(eventName, listener)` and `emit(eventName, payload)` methods for event-driven communication.
+*   **Key Interactions:** Used internally by `AudioManager` (to announce `soundLoaded`) and `appState` (as its core eventing mechanism).
+
+---
+
+### Utilities
+
 #### `utils.js`
 *   **@module utils:** Provides common, reusable utility functions (`debounce`, `clamp`, etc.).
+
+#### `animationUtils.js`
+*   **@module animationUtils:** A utility module for creating complex, reusable animations.
+*   **Core Responsibilities:**
+    *   Exports `createAdvancedFlicker`, a powerful function for generating detailed flicker and glow effects.
+    *   Animations are defined by named profiles in `config.js` or by passing a parameter object.
+*   **Key Interactions:** Used by `buttonManager`, `LcdUpdater`, and `terminalManager` to create their flicker effects. Reads animation profiles from `config.js`.
+
+#### `terminalMessages.js`
+*   **@module terminalMessages:** Central repository for all terminal message content and logic.
+*   **Core Responsibilities:**
+    *   Exports the `getMessage` function, which retrieves message strings.
+    *   Can generate dynamic messages by substituting placeholders with data from the current `appState` (e.g., `{dialAHue}`, `{currentTheme}`).
+    *   Manages verbosity logic for repeated interactions to provide varied responses.
+*   **Key Interactions:** Used exclusively by `terminalManager`. Reads data from `appState` and `config.js` to populate dynamic messages.
 
 ---
 
@@ -41,7 +73,7 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **Core Responsibilities:**
     *   Manages its own state (`_isSelected`), applies CSS classes to reflect its visual state.
     *   Its `setState` method carefully handles GSAP's `clearProps` when called from flicker animation completions (especially for P7 Hue Assignment buttons during startup). This is to preserve GSAP-set opacity on light elements for a consistent appearance, using selective clearing like `clearProps: "transform,filter"` instead of `clearProps: "all"` on lights in specific contexts.
-    *   Conditionally skips its `playStateTransitionEcho` method (e.g., for the P7 Hue Assignment button grid during startup) to prevent visual clutter from many overlapping echo animations.
+    *   Its `playStateTransitionEcho` method can be invoked to create a ripple effect, but `buttonManager` may conditionally **skip calling it** (e.g., for the P7 Hue Assignment button grid during startup) to prevent visual clutter.
 *   **Key Interactions:** Instantiated and managed by `buttonManager`. Directly uses `appStateService` and `configModule` passed via its constructor.
 *   **Troubleshooting Tip:** If buttons appear visually inconsistent after a flicker animation, investigate the `clearProps` logic in `setState` for that context and ensure the final CSS state aligns with the GSAP animation's end-state, particularly for opacity and glow.
 
@@ -78,11 +110,14 @@ This document provides a high-level overview of each JavaScript module in the re
 #### `buttonManager.js`
 *   **@module buttonManager:** Orchestrates all `Button` instances.
 *   **Core Responsibilities:** Discovers buttons, creates `Button` instances, manages group behaviors. Triggers interactive sounds (e.g., `auxModeChange`, `buttonPress` via `AudioManager`), ensuring `forceRestart: true` is used for `buttonPress` from `main.js` for better responsiveness. Provides `playFlickerToState` for complex animations, which now conditionally manages whether `Button.playStateTransitionEcho` is invoked (e.g., skipping it for P7 Hue Assignment buttons during startup to prevent visual overload). Emits `buttonInteracted` to `appState`.
-*   **Key Interactions:** Uses `appState` (imported directly) for some internal logic checks (like `getCurrentStartupPhaseNumber` for conditional echo logic within `playFlickerToState`'s `onTimelineComplete` callback).
+*   **Key Interactions:**
+    *   Uses `appState` (imported directly) for some internal logic checks (like `getCurrentStartupPhaseNumber` for conditional echo logic within `playFlickerToState`'s `onTimelineComplete` callback).
+    *   Subscribes to `resistiveShutdownStageChanged` and `mainPowerOffButtonDisabledChanged` from `appState` to manage the main power button's state and flicker effects.
 
 #### `dialManager.js`
 *   **@module dialManager:** Orchestrates all `DialController` instances.
 *   **Core Responsibilities:** Discovers dial containers, injects the base SVG markup, and creates `DialController` instances.
+*   **Build Note:** This module relies on Vite's `?raw` import syntax (e.g., `import svgString from './asset.svg?raw'`) to load the dial's SVG file content as a string at build time, avoiding a runtime `fetch` request.
 
 #### `ThemeManager.js`
 *   **@module ThemeManager:** Manages global UI theme changes.
@@ -99,6 +134,7 @@ This document provides a high-level overview of each JavaScript module in the re
 #### `DynamicStyleManager.js`
 *   **@module DynamicStyleManager:** Manages dynamic CSS custom properties.
 *   **Core Responsibilities:** Updates CSS variables for hue assignments (`--dynamic-env-hue`, etc.) and the UI accent color. Also handles injecting the logo SVG.
+*   **Build Note:** This module relies on Vite's `?raw` import syntax (e.g., `import svgString from './asset.svg?raw'`) to load the logo's SVG file content as a string at build time, avoiding a runtime `fetch` request.
 
 #### `lensManager.js`
 *   **@module lensManager:** Manages all aspects of the central lens visual.
@@ -106,7 +142,7 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `terminalManager.js`
 *   **@module terminalManager:** Manages the terminal display.
-*   **Core Responsibilities:** Manages a message queue, handles the "typing" effect, manages the cursor, and scrolls content. `playStartupFlicker()` method provides the special flicker animation for Phase 1.
+*   **Core Responsibilities:** Manages a message queue, handles the "typing" effect, manages the cursor, and scrolls content. `playStartupFlicker()` method provides the special flicker animation for Phase 1. Uses the `terminalMessages` module to retrieve content.
 
 #### `AmbientAnimationManager.js`
 *   **@module AmbientAnimationManager:** Manages continuous, ambient animations for UI elements.
@@ -118,7 +154,7 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `resistiveShutdownController.js`
 *   **@module resistiveShutdownController:** Orchestrates the resistive shutdown sequence.
-*   **Core Responsibilities:** Listens for `resistiveShutdownStage` changes in `appState` and triggers all corresponding UI effects (terminal messages, lens animations, button flickers).
+*   **Core Responsibilities:** Exposes a `handlePowerOffClick` method—called from `main.js`—to initiate or advance the shutdown sequence. It then listens for `resistiveShutdownStage` changes in `appState` to trigger all corresponding UI effects (terminal messages, lens animations, button flickers).
 
 #### `sidePanelManager.js`
 *   **@module sidePanelManager:** Manages the UI and interactions for the left and right side panels.
@@ -134,7 +170,10 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `startupSequenceManager.js`
 *   **@module startupSequenceManager:** Manages the application startup sequence using an XState machine.
-*   **Core Responsibilities:** Initializes and runs the `startupMachine`, provides dependencies (GSAP, managers, config, etc.) to the FSM's context, and exposes an API for debug controls. Calls `_resetVisualsAndState` to set the initial P0 state.
+*   **Core Responsibilities:**
+    *   Initializes and runs the `startupMachine`, provides dependencies (GSAP, managers, config, etc.) to the FSM's context, and exposes an API for debug controls.
+    *   Calls `_resetVisualsAndState` to set the initial P0 state.
+    *   Calls `_performThemeTransitionCleanup` before Phase 11 to remove temporary classes used during the P10 theme change animation, ensuring a clean final state.
 *   **XState v5 Critical Note:** This manager (and `startupMachine.js`) uses XState v5. Refer to v5 documentation for API details (e.g., `fromPromise`, actor subscription, event/context signatures in guards/actions).
 
 #### `startupMachine.js`

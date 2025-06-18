@@ -6,35 +6,35 @@
 export const phase7Config = {
   phase: 7,
   name: "HUE_CORRECTION_SYSTEMS",
-  terminalMessageKey: "P7_HUE_CORRECTION_SYSTEMS", // Terminal message requested at T=0.
-  duration: 3.5, // Phase duration.
+  terminalMessageKey: "P7_HUE_CORRECTION_SYSTEMS",
+  duration: 3.5, // Can likely be reduced now
   animations: [
     {
       type: 'tween',
       target: 'dimmingFactors',
       vars: {
-        value: 0.075, 
+        value: 0.075,
         duration: 1.0,
         ease: 'power1.inOut'
       },
-      position: 0 // Dimming factor animation starts at T=0.
+      position: 0
     },
     {
       type: 'flicker',
       target: 'buttonGroup',
       groups: ['env', 'lcd', 'logo', 'btn'], // Hue Assignment buttons
       state: 'is-dimly-lit',
-      profile: 'buttonFlickerToDimlyLit',
-      stagger: 0.008, 
-      position: 0.1 // Visual flicker for Hue Assignment buttons to dimly-lit starts at T=0.1s.
+      profile: 'buttonFlickerToDimlyLit', // Approx 0.79s to completion now
+      stagger: 0.008,
+      // Target completion for this large group slightly later, e.g., 0.90s
+      // New position: 0.90 - 0.79 = 0.11s
+      position: 0.11
     },
     {
       type: 'audio',
-      soundKey: 'itemAppear', 
-      forceRestart: true, // Added forceRestart
-      // Sound for button appearance plays at T=1.3s. This explicit delay is timed
-      // for its auditory peak to align with the visual stabilization of the flicker effect.
-      position: 1.3 
+      soundKey: 'itemAppear',
+      forceRestart: true,
+      position: 0.90 // Sound at target completion time
     }
   ]
 };

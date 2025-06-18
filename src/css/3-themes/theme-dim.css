@@ -104,16 +104,15 @@ body.theme-dim {
     --dial-face-bg-c: 0;
     --dial-face-bg-h: var(--dynamic-env-hue);
     --dial-ridge-l: 0.15;
-    --dial-ridge-c: 0; /* Base chroma is 0 for dim theme */
-    --dial-ridge-h: var(--dynamic-env-hue);
     --dial-ridge-highlight-l: 0.20;
-    --dial-ridge-chroma-multiplier: 1.0; /* No modification needed */
+    --dial-ridge-chroma-multiplier: 0.0; /* JS will multiply base chroma by this */
     --dial-shading-top-highlight-color: oklch(100% 0 0 / 0.04);
     --dial-shading-bottom-shadow-color: oklch(0% 0 0 / 0.2);
 }
 
 body.theme-dim {
     /* --- Component: Logo --- */
+    --logo-opacity: calc(0.075 * var(--startup-opacity-factor-boosted, 0));
 
     /* --- Component: Lens Container & Core --- */
     --lens-bezel-opacity: 0.86; 

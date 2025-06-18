@@ -56,10 +56,15 @@
         inset 0 -1px 1px var(--panel-section-inner-highlight-color);
 
     /* --- Component: Button Unit --- */
+    --button-unit-light-opacity-initial-dim-unlit: 0.1; /* DEBUG: Adjusted for very dim base */
+
     --btn-unlit-bg-l: 0.12;  --btn-unlit-bg-c: 0; --btn-unlit-bg-h: 0;     --btn-unlit-bg-a: 0.6;
     --btn-unlit-border-l: 0.15;--btn-unlit-border-c: 0; --btn-unlit-border-h: 0; --btn-unlit-border-a: 0.7;
     --btn-unlit-text-l: 0.1;   --btn-unlit-text-c: 0; --btn-unlit-text-h: 0;   --btn-unlit-text-a: 0.9; 
-    --btn-unlit-light-l: 0;    --btn-unlit-light-c: 0;    --btn-unlit-light-h: 0;    --btn-unlit-light-a: var(--button-unit-light-opacity-initial-dim-unlit);
+    --btn-unlit-light-l: 0.2;  /* DEBUG: Very dark gray, not black (was 0) */
+    --btn-unlit-light-c: 0;
+    --btn-unlit-light-h: 0;
+    --btn-unlit-light-a: var(--button-unit-light-opacity-initial-dim-unlit);
 
     --btn-energized-unselected-bg-l: 0.72;     --btn-energized-unselected-bg-c: var(--dynamic-btn-chroma); --btn-energized-unselected-bg-h: var(--dynamic-btn-hue); --btn-energized-unselected-bg-a: 0.7;
     --btn-energized-unselected-border-l: 0.62; --btn-energized-unselected-border-c: var(--dynamic-btn-chroma); --btn-energized-unselected-border-h: var(--dynamic-btn-hue); --btn-energized-unselected-border-a: 0.8;

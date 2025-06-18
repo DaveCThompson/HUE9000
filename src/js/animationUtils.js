@@ -30,21 +30,21 @@ function getGlowParam(glowProfile, paramName, defaultValue = 0) {
 export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     // Prefer options.gsap if provided (from a manager that has the main instance), else use imported globalGsap
     const gsap = options.gsapInstance || globalGsap; 
+    const profileNameForLog = typeof profileOrParams === 'string' ? profileOrParams : 'CustomProfile';
+    const targetElementsForLog = Array.isArray(targets) ? targets : [targets];
+    const targetIdForLog = targetElementsForLog && targetElementsForLog.length > 0 && targetElementsForLog[0] ? (targetElementsForLog[0].id || targetElementsForLog[0].ariaLabel || (targetElementsForLog[0].className && targetElementsForLog[0].className.split ? targetElementsForLog[0].className.split(' ')[0] : 'unknown') || targetElementsForLog[0].tagName) : 'unknownTarget';
+    
+    console.log(`[CAF_ENTRY | ${performance.now().toFixed(2)}ms] Flicker requested for: ${targetIdForLog}, Profile: ${profileNameForLog}, GSAP valid: ${!!(gsap && gsap.timeline)}`);
+    if (!profileOrParams || (typeof profileOrParams === 'string' && !ADVANCED_FLICKER_PROFILES[profileOrParams])) {
+        console.error(`[CAF_ERROR | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}' NOT FOUND or invalid! For target: ${targetIdForLog}`);
+    }
+
     if (!gsap || typeof gsap.timeline !== 'function') {
-        console.error("[CAF] GSAP instance is not valid!", {optionsGsap: options.gsapInstance, globalGsap});
-        // Fallback to a dummy timeline to prevent crashes, though animation won't work
+        console.error(`[CAF | ${performance.now().toFixed(2)}ms] GSAP instance is not valid! For ${targetIdForLog}`, {optionsGsap: options.gsapInstance, globalGsap});
         const dummyTimeline = globalGsap.timeline();
         dummyTimeline.to({}, {duration: 0.001});
         return { timeline: dummyTimeline, completionPromise: Promise.resolve() };
     }
-
-
-    const profileNameForLog = typeof profileOrParams === 'string' ? profileOrParams : 'CustomProfile';
-    const targetIdForLog = targets && targets.length > 0 && targets[0] ? (targets[0].id || targets[0].ariaLabel || targets[0].className.split(' ')[0] || targets[0].tagName) : 'unknownTarget';
-    const debugFlicker = false; // Set to true to enable detailed logging for this function
-
-    if (debugFlicker) console.log(`[CAF START - ${profileNameForLog} for ${targetIdForLog}]`);
-
 
     const defaults = {
         lightTargetSelector: '.light',
@@ -61,19 +61,19 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
 
     const completionPromise = new Promise(resolve => {
         config.gsapInternalOnComplete = () => {
-            if (debugFlicker) console.log(`[CAF INTERNAL PROMISE RESOLVED - ${profileNameForLog} for ${targetIdForLog}]`);
             resolve();
         };
     });
 
     if (!profile || Object.keys(profile).length === 0) {
-        console.warn(`[CAF - ${profileNameForLog} for ${targetIdForLog}] Profile not found or empty. Returning empty, resolved flicker.`);
+        console.warn(`[CAF | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}' for ${targetIdForLog} not found or empty. Returning empty, resolved flicker.`);
         const tl = gsap.timeline();
         tl.eventCallback("onComplete", () => {
             if (config.onTimelineComplete) config.onTimelineComplete();
             config.gsapInternalOnComplete();
         });
-        tl.to({}, { duration: 0.001 });
+        tl.to({}, { duration: 0.001 }); 
+        console.log(`[CAF_RETURN_EMPTY_PROFILE | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${tl.duration().toFixed(3)}s.`);
         return { timeline: tl, completionPromise };
     }
 
@@ -84,46 +84,114 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     
     const elementsToAnimate = Array.isArray(targets) ? targets.filter(t => t) : (targets ? [targets] : []);
     if (elementsToAnimate.length === 0) {
-        console.warn(`[CAF - ${profileNameForLog}] No valid target elements. Returning empty, resolved flicker.`);
+        console.warn(`[CAF | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}': No valid target elements. Returning empty, resolved flicker.`);
         const tl = gsap.timeline();
         tl.eventCallback("onComplete", () => { if (config.onTimelineComplete) config.onTimelineComplete(); config.gsapInternalOnComplete(); });
         tl.to({}, { duration: 0.001 });
+        console.log(`[CAF_RETURN_NO_TARGETS | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${tl.duration().toFixed(3)}s.`);
         return { timeline: tl, completionPromise };
     }
 
+    // Declare baseTargetsForOpacity here to be accessible in onUpdate
+    let baseTargetsForOpacity = elementsToAnimate;
+    let lightElements = []; 
+
     const tl = gsap.timeline({
         onStart: () => {
-            if (debugFlicker) console.log(`[CAF GSAP TL START - ${profileNameForLog} for ${targetIdForLog}]`);
+            console.log(`[CAF_TL_START | ${performance.now().toFixed(2)}ms] GSAP TL START for '${profileNameForLog}' on '${targetIdForLog}'`);
             if (config.onStart) config.onStart();
         },
         onComplete: () => {
-            if (debugFlicker) console.log(`[CAF GSAP TL COMPLETE - ${profileNameForLog} for ${targetIdForLog}]. Calling user's onTimelineComplete and resolving promise.`);
+            console.log(`[CAF_TL_COMPLETE | ${performance.now().toFixed(2)}ms] GSAP TL COMPLETE for '${profileNameForLog}' on '${targetIdForLog}'. Calling user's onTimelineComplete.`);
             if (config.onTimelineComplete) config.onTimelineComplete();
             config.gsapInternalOnComplete();
         },
-        onUpdate: config.onUpdate,
+        // **** NEW DEBUG: onUpdate ****
+        onUpdate: function() {
+            // Ensure elementsToAnimate and baseTargetsForOpacity are populated and valid before accessing.
+            // This check is important because onUpdate can fire very early.
+            if (!elementsToAnimate[0] || (baseTargetsForOpacity !== elementsToAnimate && !baseTargetsForOpacity[0])) {
+                 // If baseTargetsForOpacity was changed to lightElements, it might not be populated yet on the very first tick.
+                if (profile.targetProperty === 'button-lights-and-frame' && lightElements.length > 0 && lightElements[0]) {
+                    // use lightElements if available and appropriate
+                } else {
+                    return; 
+                }
+            }
+
+            const time = this.time().toFixed(3);
+            const lightTarget = (profile.targetProperty === 'button-lights-and-frame' && lightElements.length > 0) ? lightElements[0] : baseTargetsForOpacity[0];
+            const buttonElement = elementsToAnimate[0];
+
+            if (!lightTarget || !buttonElement) return; // Extra safety
+
+            const lightOpacity = gsap.getProperty(lightTarget, "opacity");
+            const lightVisibility = gsap.getProperty(lightTarget, "visibility");
+            
+            let glowOpacityVal = "N/A";
+            let glowSizeVal = "N/A";
+
+            if (profile.glow) {
+                if (profile.glow.opacityVar) {
+                    glowOpacityVal = getComputedStyle(buttonElement).getPropertyValue(profile.glow.opacityVar).trim();
+                } else if (profile.glow.animatedProperties?.opacity) {
+                    glowOpacityVal = getComputedStyle(buttonElement).getPropertyValue(profile.glow.animatedProperties.opacity).trim();
+                }
+
+                if (profile.glow.sizeVar) {
+                    glowSizeVal = getComputedStyle(buttonElement).getPropertyValue(profile.glow.sizeVar).trim();
+                } else if (profile.glow.animatedProperties?.blur) {
+                    glowSizeVal = getComputedStyle(buttonElement).getPropertyValue(profile.glow.animatedProperties.blur).trim();
+                }
+            }
+            
+            const duration = this.duration();
+            // Log more frequently initially, then spread out
+            if (time === "0.000" ||
+                (duration > 0 && Math.abs(this.time() - duration * 0.01) < 0.016) || // Approx 1%
+                (duration > 0 && Math.abs(this.time() - duration * 0.05) < 0.016) || // Approx 5%
+                (duration > 0 && Math.abs(this.time() - duration * 0.15) < 0.016) || // Approx 15%
+                (duration > 0 && Math.abs(this.time() - duration * 0.30) < 0.016) || // Approx 30%
+                (duration > 0 && Math.abs(this.time() - duration * 0.50) < 0.016) || 
+                (duration > 0 && Math.abs(this.time() - duration * 0.75) < 0.016)) { 
+                console.log(`[CAF_ONUPDATE | ${performance.now().toFixed(2)}ms] ${targetIdForLog} @ ${time}s (of ${duration.toFixed(3)}s): Light Opacity=${Number(lightOpacity).toFixed(3)}, Vis=${lightVisibility}, Glow Opacity='${glowOpacityVal}', Glow Size='${glowSizeVal}'`);
+            }
+        }
+        // **** END NEW DEBUG ****
     });
 
-    let baseTargetsForOpacity = elementsToAnimate;
     if (profile.targetProperty === 'button-lights-and-frame') {
-        const lightElements = [];
         elementsToAnimate.forEach(el => {
             const lights = el.querySelectorAll(config.lightTargetSelector);
             if (lights.length > 0) lightElements.push(...Array.from(lights));
         });
 
         if (lightElements.length > 0) {
-            baseTargetsForOpacity = lightElements;
-            gsap.killTweensOf(baseTargetsForOpacity);
-            gsap.set(baseTargetsForOpacity, {clearProps: "all", overwrite: true});
+            baseTargetsForOpacity = lightElements; // Now baseTargetsForOpacity refers to lightElements
+            gsap.killTweensOf(baseTargetsForOpacity); 
+            gsap.set(baseTargetsForOpacity, {clearProps: "all", overwrite: true}); 
         }
+        gsap.killTweensOf(elementsToAnimate, "css");
     } else if (profile.targetProperty === 'text-shadow-opacity-and-blur' || profile.targetProperty === 'element-opacity-and-box-shadow') {
         baseTargetsForOpacity = elementsToAnimate; 
-        gsap.killTweensOf(baseTargetsForOpacity);
+        gsap.killTweensOf(baseTargetsForOpacity); 
+    }
+    
+    console.log(`[CAF_TARGETS | ${performance.now().toFixed(2)}ms] Profile: ${profileNameForLog}, TargetProp: ${profile.targetProperty} for ${targetIdForLog}`);
+    if (profile.targetProperty === 'button-lights-and-frame') {
+        console.log(`  Light elements for opacity: ${lightElements.length}`, lightElements.map(l => l.outerHTML.substring(0,50) + "..."));
+        console.log(`  Main button elements for CSS vars: ${elementsToAnimate.length}`, elementsToAnimate.map(el => el.id || el.ariaLabel));
+    } else {
+        console.log(`  Base targets for opacity/effects: ${baseTargetsForOpacity.length}`, baseTargetsForOpacity.map(el => el.id || el.ariaLabel));
+    }
+    if (profile.glow) {
+        console.log(`  Glow vars to be animated: OpacityVar='${profile.glow.opacityVar}', SizeVar='${profile.glow.sizeVar}', AnimatedProps=`, profile.glow.animatedProperties);
     }
 
     const isTransitioningFromEffectivelyUnlit = (profile.amplitudeStart !== undefined && profile.amplitudeStart <= 0.01) &&
                                              (!profile.glow || getGlowParam(profile.glow, 'initialOpacity', 0) <= 0.01);
+    
+    console.log(`[CAF_INITIAL_SET | ${performance.now().toFixed(2)}ms] For ${targetIdForLog}, isTransitioningFromEffectivelyUnlit: ${isTransitioningFromEffectivelyUnlit}. AmplitudeStart: ${profile.amplitudeStart}, GlowInitialOpacity: ${profile.glow ? getGlowParam(profile.glow, 'initialOpacity', 0) : 'N/A'}`);
 
     if (isTransitioningFromEffectivelyUnlit) {
         if (baseTargetsForOpacity.length > 0) {
@@ -139,9 +207,10 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
                 tl.set(elementsToAnimate, { css: initialGlowCSS, immediateRender: true });
             }
         }
-    } else {
+    } else { 
         if (baseTargetsForOpacity.length > 0) {
             const initialAutoAlpha = profile.amplitudeStart !== undefined ? profile.amplitudeStart : 0;
+            console.log(`[CAF_INITIAL_SET_ELSE | ${performance.now().toFixed(2)}ms] Setting baseTargetsForOpacity (${baseTargetsForOpacity.length}) to autoAlpha: ${initialAutoAlpha} for ${targetIdForLog}`);
             tl.set(baseTargetsForOpacity, { autoAlpha: initialAutoAlpha, immediateRender: true });
         }
         if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
@@ -153,7 +222,10 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             if (profile.glow.sizeVar) initialGlowCSS[profile.glow.sizeVar] = typeof initialGlowSize === 'number' ? `${initialGlowSize}px` : initialGlowSize;
             if (profile.glow.animatedProperties?.opacity) initialGlowCSS[profile.glow.animatedProperties.opacity] = initialGlowOpacity;
             if (profile.glow.animatedProperties?.blur) initialGlowCSS[profile.glow.animatedProperties.blur] = typeof initialGlowSize === 'number' ? `${initialGlowSize}px` : initialGlowSize;
-
+            
+            if (Object.keys(initialGlowCSS).length > 0) {
+                 console.log(`[CAF_INITIAL_SET_ELSE_GLOW | ${performance.now().toFixed(2)}ms] Setting initialGlowCSS on elementsToAnimate (${elementsToAnimate.length}) for ${targetIdForLog}:`, JSON.stringify(initialGlowCSS));
+            }
             if (Object.keys(initialGlowCSS).length > 0) {
                 tl.set(elementsToAnimate, { css: initialGlowCSS, immediateRender: true });
             }
@@ -190,11 +262,21 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         if (Object.keys(onGlowCSS).length > 0) {
             tl.to(elementsToAnimate, { css: onGlowCSS, duration: onDuration, ease: "power1.inOut" }, currentTime);
         }
+        // **** NEW DEBUG: Log what GSAP is *tweening to* in the first "on" cycle ****
+        if (i === 0) {
+            console.log(`[CAF_CYCLE_0_ON_TARGETS | ${performance.now().toFixed(2)}ms] ${targetIdForLog} Cycle 0 "ON" targets: Light autoAlpha=${onState.autoAlpha.toFixed(3)}, GlowCSS=`, JSON.stringify(onGlowCSS));
+        }
+        // **** END NEW DEBUG ****
 
         currentTime += onDuration;
 
         if (i < profile.numCycles - 1) {
-            const offStateAmplitude = profile.amplitudeStart > 0 ? profile.amplitudeStart * 0.3 : 0;
+            let offStateAmplitude;
+            if (profile.amplitudeStart > 0.01) {
+                offStateAmplitude = profile.amplitudeStart * 0.1; // e.g., 0.25 * 0.1 = 0.025. Very dim.
+            } else {
+                offStateAmplitude = 0; 
+            }
             const offState = { autoAlpha: offStateAmplitude, duration: offDuration, ease: "power1.inOut" };
 
             const offGlowCSS = {};
@@ -202,10 +284,12 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             const baseGlowSizeOff = getGlowParam(profile.glow, 'initialSize', '0px');
 
             if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
-                if (profile.glow.opacityVar) offGlowCSS[profile.glow.opacityVar] = baseGlowOpacityOff;
-                if (profile.glow.sizeVar) offGlowCSS[profile.glow.sizeVar] = typeof baseGlowSizeOff === 'number' ? `${baseGlowSizeOff}px` : baseGlowSizeOff;
+                const offGlowOpacityTarget = offStateAmplitude > 0.01 && profile.amplitudeStart > 0.01 ? baseGlowOpacityOff * (offStateAmplitude / profile.amplitudeStart) : baseGlowOpacityOff;
+
+                if (profile.glow.opacityVar) offGlowCSS[profile.glow.opacityVar] = offGlowOpacityTarget;
+                if (profile.glow.sizeVar) offGlowCSS[profile.glow.sizeVar] = typeof baseGlowSizeOff === 'number' ? `${baseGlowSizeOff}px` : baseGlowSizeOff; 
                 if (profile.glow.animatedProperties) {
-                    if (profile.glow.animatedProperties.opacity) offGlowCSS[profile.glow.animatedProperties.opacity] = baseGlowOpacityOff;
+                    if (profile.glow.animatedProperties.opacity) offGlowCSS[profile.glow.animatedProperties.opacity] = offGlowOpacityTarget;
                     if (profile.glow.animatedProperties.blur) offGlowCSS[profile.glow.animatedProperties.blur] = typeof baseGlowSizeOff === 'number' ? `${baseGlowSizeOff}px` : baseGlowSizeOff;
                 }
             }
@@ -213,6 +297,11 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             if (Object.keys(offGlowCSS).length > 0) {
                 tl.to(elementsToAnimate, { css: offGlowCSS, duration: offDuration, ease: "power1.inOut" }, currentTime);
             }
+            // **** NEW DEBUG: Log what GSAP is *tweening to* in the first "off" cycle ****
+             if (i === 0) {
+                console.log(`[CAF_CYCLE_0_OFF_TARGETS | ${performance.now().toFixed(2)}ms] ${targetIdForLog} Cycle 0 "OFF" targets: Light autoAlpha=${offState.autoAlpha.toFixed(3)}, GlowCSS=`, JSON.stringify(offGlowCSS));
+            }
+            // **** END NEW DEBUG ****
             currentTime += offDuration;
         }
     }
@@ -238,8 +327,15 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         tl.to(elementsToAnimate, { css: finalGlowCSS, duration: finalSettleDuration, ease: "sine.out" }, "<"); 
     }
 
-    if (tl.duration() === 0) { 
+    if (tl.duration() === 0 && profile.numCycles === 0) { 
+        console.warn(`[CAF_WARN | ${performance.now().toFixed(2)}ms] Timeline for ${targetIdForLog} had 0 duration with 0 cycles. Adding minimal duration.`);
         tl.to({}, {duration: 0.001});
+    }
+    
+    const finalDuration = tl.duration();
+    console.log(`[CAF_RETURN | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${finalDuration.toFixed(3)}s. Timeline has children: ${tl.getChildren().length > 0}`);
+    if (finalDuration <= 0.01 && profile.numCycles > 0) { 
+        console.warn(`[CAF_WARN | ${performance.now().toFixed(2)}ms] Timeline for ${targetIdForLog} is very short or empty despite having cycles! Profile:`, JSON.stringify(profile));
     }
     return { timeline: tl, completionPromise };
 }

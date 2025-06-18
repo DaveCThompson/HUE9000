@@ -25,10 +25,11 @@ class Button {
 
 
         this.currentClasses = new Set();
-        this.currentFlickerAnim = null;
+        this.currentFlickerAnim = null; // For internally managed flickers, if any
         this._pressTimeoutId = null;
         this._isSelected = config.isSelectedByDefault || false;
         this._isPermanentlyDisabled = false;
+        this._isUndergoingManagedFlicker = false; // New flag
 
         this._isResonating = false;
         this.stateTransitionEchoTween = null;
@@ -41,9 +42,26 @@ class Button {
     }
 
     setState(newStateClassesStr, options = {}) {
-        const { skipAria = false, internalFlickerCall = false, forceState = false, phaseContext } = options;
+        const { 
+            skipAria = false, 
+            internalFlickerCall = false, // From Button's own internal flicker logic (if any)
+            forceState = false, 
+            phaseContext,
+            isFlickerCompletion = false // New: From ButtonManager's onFlickerComplete
+        } = options;
+
         const effectivePhaseContext = phaseContext || 'UnknownPhase_ButtonSetState';
         const buttonId = this.getIdentifier();
+        
+        const currentFlickerActive = this.currentFlickerAnim ? this.currentFlickerAnim.isActive() : 'N/A_ButtonJSLocalFlicker';
+        console.log(`[BTN_SETSTATE | ${performance.now().toFixed(2)}ms] ID: ${buttonId}, NewState: '${newStateClassesStr}', Opts: ${JSON.stringify(options)}, _isUndergoingManagedFlicker: ${this._isUndergoingManagedFlicker}, CurrentInternalFlickerActive: ${currentFlickerActive}`);
+
+
+        if (this._isUndergoingManagedFlicker && !isFlickerCompletion && !internalFlickerCall) {
+            console.warn(`[BTN_SETSTATE_INTERFERENCE | ${performance.now().toFixed(2)}ms] ID: ${buttonId} received setState WHILE _isUndergoingManagedFlicker. NewState: '${newStateClassesStr}'. Opts: ${JSON.stringify(options)}. Flicker might be cut short or visuals reset.`);
+            // Decide if we should return, or apply a very minimal state change (e.g. only classes)
+            // For now, proceeding but this log is key. The clearProps logic below will be affected.
+        }
         
         // Check if this specific setState call is the one immediately following a P7 flicker to dimly-lit
         const isFinalSetAfterP7DimlyLitFlicker = effectivePhaseContext.endsWith('_FinalSet') && 
@@ -87,25 +105,44 @@ class Button {
             return;
         }
 
+        // This currentFlickerAnim is for Button.js's *own* flickers, not those from ButtonManager.
         if (!internalFlickerCall && this.currentFlickerAnim && this.currentFlickerAnim.isActive()) {
+            console.log(`[BTN_SETSTATE | ${performance.now().toFixed(2)}ms] ID: ${buttonId} killing its OWN internal flicker due to non-internal setState call.`);
             this.currentFlickerAnim.kill(); this.currentFlickerAnim = null;
         }
 
         const lights = Array.from(this.element.querySelectorAll('.light'));
-        if (!internalFlickerCall) { 
-            this.element.classList.remove(ButtonStates.FLICKERING);
-            
-            if (isFinalSetAfterP7DimlyLitFlicker) {
-                // For the final setState after P7's dimly-lit flicker, be selective with clearProps on lights
-                // to preserve the opacity set by the flicker animation (target 0.8).
-                if (lights.length > 0) this.gsap.set(lights, { clearProps: "transform,filter" }); // Keep opacity, clear others
-                console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS] Button: ${buttonId}. Used selective clearProps for lights. AppTime: ${performance.now().toFixed(2)}`);
+        
+        // Revised clearProps logic
+        if (!internalFlickerCall) { // This is true for flicker's final setState and for "hostile" setStates
+            this.element.classList.remove(ButtonStates.FLICKERING); // Remove if this class is managed by Button.js
+
+            if (isFlickerCompletion) {
+                // Flicker's own final setState: Be very gentle.
+                // Preserve inline styles set by the flicker (opacity on lights, glow CSS vars).
+                console.log(`[BTN_SETSTATE_FLICKER_COMPLETION_SKIP_CLEARPROPS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Flicker self-completing. Minimal/No clearProps. AppTime: ${performance.now().toFixed(2)}`);
+                if (isFinalSetAfterP7DimlyLitFlicker) { // P7 still needs its special handling if it's also a flicker completion
+                     if (lights.length > 0) this.gsap.set(lights, { clearProps: "transform,filter" });
+                     console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Used selective clearProps for lights (FlickerCompletion + P7). AppTime: ${performance.now().toFixed(2)}`);
+                }
+                // For other flicker completions, no specific clearProps on lights or element CSS vars.
+            } else if (this._isUndergoingManagedFlicker) {
+                // A "hostile" setState call happened WHILE a ButtonManager-initiated flicker was running.
+                // Avoid aggressive clearProps to not destroy the ongoing flicker.
+                console.warn(`[BTN_SETSTATE_FLICKER_INTERRUPTED_CLEARPROPS_AVOIDED | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. setState during managed flicker. Avoiding aggressive clearProps. NewState: ${newStateClassesStr}. AppTime: ${performance.now().toFixed(2)}`);
+                // Potentially do nothing here regarding clearProps, or be extremely selective.
+                // This path means the flicker was likely cut short by this setState call's class changes.
             } else {
-                // For all other setState calls, or initial flicker setup, clear all from lights.
-                if (lights.length > 0) this.gsap.set(lights, { clearProps: "all" });
+                // Standard setState, not a flicker completion, and no flicker currently managed by ButtonManager.
+                // This is also the path for the _BaseSet call in ButtonManager.playFlickerToState.
+                if (isFinalSetAfterP7DimlyLitFlicker) { // This case should ideally not be hit if isFlickerCompletion handles P7 correctly.
+                    if (lights.length > 0) this.gsap.set(lights, { clearProps: "transform,filter" });
+                    console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Used selective clearProps for lights (Standard + P7). AppTime: ${performance.now().toFixed(2)}`);
+                } else {
+                    if (lights.length > 0) this.gsap.set(lights, { clearProps: "all" });
+                }
+                this.gsap.set(this.element, { clearProps: "css" });
             }
-            // Always clear CSS variables from the main button element for glow management.
-            this.gsap.set(this.element, { clearProps: "css" }); 
         }
 
 
@@ -127,8 +164,6 @@ class Button {
 
         if (isFinalSetAfterP7DimlyLitFlicker && buttonId.includes('Assign')) {
             const finalClasses = Array.from(this.element.classList).join(' ');
-            // Log GSAP's inline style for opacity IF it exists, otherwise computed.
-            // This helps see if GSAP's 0.8 "stuck" or if CSS immediately took over.
             const finalLightOpacities = lights.map(l => l.style.opacity || getComputedStyle(l).opacity ).join(', ');
             console.log(`[BTN_SETSTATE_END P7_VISUALS_FINAL_DIM] Button: ${buttonId}. FinalClasses: '${finalClasses}'. Final Light Opacities (inline||computed): [${finalLightOpacities}]. AppTime: ${performance.now().toFixed(2)}`);
         } else if (effectivePhaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && buttonId.includes('Assign')) {

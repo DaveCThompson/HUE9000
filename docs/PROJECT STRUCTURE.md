@@ -80,7 +80,7 @@ HUE9000_Project/
 │       │   └── _utilities.css
 │       │
 │       ├── 2-components/
-│       │   ├── _preloader.css
+│       │   ├── _preloader-v2.css
 │       │   ├── _side-panels.css
 │       │   ├── _panel-bezel.css
 │       │   ├── _button-unit.css

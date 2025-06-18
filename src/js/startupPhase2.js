@@ -6,35 +6,33 @@
 export const phase2Config = {
   phase: 2,
   name: "BACKUP_POWER",
-  terminalMessageKey: "P2_BACKUP_POWER", // Terminal message requested at T=0 by PhaseRunner.
-  duration: 3.5, // Phase duration.
+  terminalMessageKey: "P2_BACKUP_POWER",
+  duration: 3.5, // Can likely be reduced now
   animations: [
     {
       type: 'tween',
       target: 'dimmingFactors',
       vars: {
-        value: 0.35, 
-        duration: 1.0, 
+        value: 0.35,
+        duration: 1.0,
         ease: 'power1.inOut'
       },
-      position: 0 // Dimming factor animation starts at T=0.
+      position: 0
     },
     {
       type: 'flicker',
       target: 'buttonGroup',
-      groups: ['system-power'],
+      groups: ['system-power'], // Main Power On/Off
       state: 'is-dimly-lit',
-      profile: 'buttonFlickerToDimlyLit',
-      stagger: 0.05, 
-      position: 0.1 // Main Power buttons' visual flicker to dimly-lit starts at T=0.1s.
+      profile: 'buttonFlickerToDimlyLit', // Approx 0.79s to completion now
+      stagger: 0.05,
+      position: 0.01 // Target completion at 0.80s (0.80 - 0.79 = 0.01)
     },
     {
       type: 'audio',
-      soundKey: 'itemAppear', 
-      forceRestart: true, // Added forceRestart
-      // Sound for button appearance plays at T=1.3s. This explicit delay is timed
-      // for its auditory peak to align with the visual stabilization of the flicker effect.
-      position: 1.3 
+      soundKey: 'itemAppear',
+      forceRestart: true,
+      position: 0.80 // Sound at target completion time
     }
   ]
 };

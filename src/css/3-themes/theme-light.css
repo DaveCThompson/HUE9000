@@ -105,8 +105,6 @@ body.theme-light {
     --dial-face-bg-c: var(--dynamic-env-chroma);
     --dial-face-bg-h: var(--dynamic-env-hue);
     --dial-ridge-l: 0.55;
-    --dial-ridge-c: var(--dynamic-env-chroma); /* Base chroma from env */
-    --dial-ridge-h: var(--dynamic-env-hue);
     --dial-ridge-highlight-l: 0.72;
     --dial-ridge-chroma-multiplier: 0.5; /* JS will multiply base chroma by this */
     --dial-shading-top-highlight-color: oklch(100% 0 0 / 0.25);
@@ -114,6 +112,7 @@ body.theme-light {
 
 
     /* --- Component: Logo --- */
+    --logo-opacity: 1;
     --logo-bg-l: 0.705; 
     --logo-text-l: 1; 
     --logo-dynamic-stroke-a: 0.3;

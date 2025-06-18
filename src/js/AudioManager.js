@@ -32,9 +32,10 @@ export class AudioManager extends EventEmitter {
         }
 
         Howler.volume(this.config.AUDIO_CONFIG.masterVolume);
+        console.log(`[AM | ${performance.now().toFixed(2)}ms] AudioManager INIT. MasterVol: ${this.config.AUDIO_CONFIG.masterVolume}`);
         this._loadAllSounds();
         this.isReadyState = true;
-        if (this.debug) console.log('[AudioManager INIT] Initialized and loading sounds.');
+        // if (this.debug) console.log('[AudioManager INIT] Initialized and loading sounds.'); // Replaced by specific log above
     }
 
     postInitSubscribe() {
@@ -50,7 +51,7 @@ export class AudioManager extends EventEmitter {
         for (const key in soundConfigs) {
             if (Object.prototype.hasOwnProperty.call(soundConfigs, key) && soundConfigs[key].src) {
                 this.soundLoadStates[key] = 'loading';
-                if (this.debug) console.log(`[AudioManager] Attempting to load sound: ${key}, src: ${soundConfigs[key].src}, html5: ${!!soundConfigs[key].html5}`);
+                // if (this.debug) console.log(`[AudioManager] Attempting to load sound: ${key}, src: ${soundConfigs[key].src}, html5: ${!!soundConfigs[key].html5}`);
                 
                 if (key === 'itemAppear') {
                     console.warn(`[A_LOAD_INIT P7_SOUND] itemAppear: Howl instance creation initiated. Time: ${performance.now().toFixed(2)}`);
@@ -73,7 +74,7 @@ export class AudioManager extends EventEmitter {
                             console.warn(`[A_LOAD_DONE P6_SOUND_LCDPOWERON] lcdPowerOn: LOADED and READY. Time: ${performance.now().toFixed(2)}`);
                         }
                         this.soundLoadStates[key] = 'loaded';
-                        if (this.debug) console.log(`[AudioManager] Sound LOADED and READY: ${key}`);
+                        console.log(`[AM | ${performance.now().toFixed(2)}ms] Sound LOADED and READY: ${key}`);
                         this.emit('soundLoaded', key); 
                         this._processQueuedPlayCalls(key);
                     },
@@ -85,7 +86,7 @@ export class AudioManager extends EventEmitter {
                             console.error(`[A_LOAD_ERR P6_SOUND_LCDPOWERON] lcdPowerOn: FAILED to load. Error: `, err, `Time: ${performance.now().toFixed(2)}`);
                         }
                         this.soundLoadStates[key] = 'error';
-                        console.error(`[AudioManager] Error loading sound ${key}:`, err);
+                        console.error(`[AM | ${performance.now().toFixed(2)}ms] Error loading sound ${key} (id: ${id}):`, err);
                         this.emit('soundLoadError', { key, error: err });
                     },
                     onplayerror: (id, err) => {
@@ -93,7 +94,8 @@ export class AudioManager extends EventEmitter {
                         this.unlockAudioContext(); 
                     },
                     onplay: (id) => { // Added id parameter
-                        if (this.debug) console.log(`[AudioManager] Playing sound: ${key} (ID: ${id}, Current Volume: ${this.sounds[key].volume(id)})`);
+                        console.log(`[AM | ${performance.now().toFixed(2)}ms] Howler ONPLAY for sound: ${key} (ID: ${id}, Current HowlerVol: ${this.sounds[key].volume(id)})`);
+                        // if (this.debug) console.log(`[AudioManager] Playing sound: ${key} (ID: ${id}, Current Volume: ${this.sounds[key].volume(id)})`); // Covered by new log
                     },
                     onstop: (id) => { // Added id parameter
                         if (this.debug) console.log(`[AudioManager] Stopped sound: ${key} (ID: ${id})`);
@@ -181,6 +183,8 @@ export class AudioManager extends EventEmitter {
             const isQueued = this.queuedPlayCalls.some(call => call.key === key);
             console.warn(`[A_PLAY_ATTEMPT P6_SOUND_LCDPOWERON] lcdPowerOn: Play called. LoadState: ${loadState}. IsAlreadyQueued: ${isQueued}. App Time: ${performance.now().toFixed(2)}`);
         }
+        console.log(`[AM | ${performance.now().toFixed(2)}ms] Play called for '${key}'. LoadState: ${this.soundLoadStates[key]}, ForceRestart: ${forceRestart}, SpecificVol: ${specificVolume === null ? 'default' : specificVolume}`);
+
 
         this.unlockAudioContext(); 
 
@@ -189,9 +193,9 @@ export class AudioManager extends EventEmitter {
             return null;
         }
 
-        if (this.debug) {
-            console.log(`[AudioManager PLAY Attempt] Key: '${key}', LoadState: ${this.soundLoadStates[key]}, ForceRestart: ${forceRestart}, Volume: ${specificVolume === null ? 'default' : specificVolume}`);
-        }
+        // if (this.debug) { // Covered by the new log above
+        //     console.log(`[AudioManager PLAY Attempt] Key: '${key}', LoadState: ${this.soundLoadStates[key]}, ForceRestart: ${forceRestart}, Volume: ${specificVolume === null ? 'default' : specificVolume}`);
+        // }
 
         if (this.soundLoadStates[key] === 'loading') {
             if (key === 'itemAppear') {
@@ -200,8 +204,9 @@ export class AudioManager extends EventEmitter {
             if (key === 'lcdPowerOn') { // P6 logging
                 console.warn(`[A_PLAY_QUEUE P6_SOUND_LCDPOWERON] lcdPowerOn: Queuing play because LoadState is 'loading'. App Time: ${performance.now().toFixed(2)}`);
             }
+            console.log(`[AM | ${performance.now().toFixed(2)}ms] Sound "${key}" is loading. Queuing play call.`);
             if (!this.queuedPlayCalls.find(call => call.key === key && call.forceRestart === forceRestart && call.specificVolume === specificVolume)) {
-                 if (this.debug) console.log(`[AudioManager PLAY] Sound "${key}" is still loading. Queuing play call.`);
+                 // if (this.debug) console.log(`[AudioManager PLAY] Sound "${key}" is still loading. Queuing play call.`); // Covered
                  this.queuedPlayCalls.push({ key, forceRestart, specificVolume });
             } else {
                 if (this.debug) console.log(`[AudioManager PLAY] Sound "${key}" is loading, identical play call already queued.`);
@@ -225,6 +230,7 @@ export class AudioManager extends EventEmitter {
              if (key === 'lcdPowerOn') { // P6 logging
                 console.warn(`[A_HOWLER_PLAY P6_SOUND_LCDPOWERON] lcdPowerOn: Calling Howler's .play(). App Time: ${performance.now().toFixed(2)}`);
             }
+            console.log(`[AM | ${performance.now().toFixed(2)}ms] Calling Howler's .play() for '${key}'.`);
             const soundId = this.sounds[key].play();
             // Check if play returned a valid ID (it might not if context is locked, etc.)
             if (typeof soundId === 'number') {

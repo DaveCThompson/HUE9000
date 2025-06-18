@@ -188,6 +188,7 @@
 }
 .button-unit.is-unlit .light {
     --_current-light-opacity: var(--btn-unlit-light-a);
+    /* Color is now defined by --btn-unlit-light-* variables from _variables-theme-contract.css */
     background-color: oklch(var(--btn-unlit-light-l) var(--btn-unlit-light-c) var(--btn-unlit-light-h));
     opacity: var(--_current-light-opacity);
 }

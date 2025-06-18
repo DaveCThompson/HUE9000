@@ -38,7 +38,7 @@ class TerminalManager {
 
         this._setupDOM();
         appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
-        if (this.debug) console.log('[TerminalManager INIT]');
+        if (this.debug) console.log(`[TM | ${performance.now().toFixed(2)}ms] TerminalManager INIT`);
     }
 
     reset() {
@@ -125,7 +125,7 @@ class TerminalManager {
     }
 
     _handleRequestTerminalMessage(payload) {
-        if (this.debug) console.log(`[TerminalManager] Received message request:`, payload);
+        console.log(`[TM | ${performance.now().toFixed(2)}ms] Received request: ${payload.messageKey || payload.source}`);
         // Pass the imported appState module to getMessage
         const messageData = getMessage(payload, appState, this._configModule);
         this._messageQueue.push({ ...payload, ...messageData });
@@ -145,8 +145,11 @@ class TerminalManager {
             this._configModule.TERMINAL_THINKING_DELAY_MIN_MS,
             this._configModule.TERMINAL_THINKING_DELAY_MAX_MS
         );
+        console.log(`[TM | ${performance.now().toFixed(2)}ms] Queued msg '${messageObject.messageKey || messageObject.source}', calculated thinking delay: ${delay.toFixed(0)}ms`);
+
 
         setTimeout(async () => {
+            console.log(`[TM | ${performance.now().toFixed(2)}ms] Post-think, starting processing for '${messageObject.messageKey || messageObject.source}'`);
             this._setCursorState('typing');
             
             if (!this._isFirstLine && messageObject.formatting.spacingBefore > 0) {
@@ -166,6 +169,7 @@ class TerminalManager {
     }
 
     _addNewLineAndPrepareForTyping(isSpacer = false) {
+        console.log(`[TM | ${performance.now().toFixed(2)}ms] Adding new line ${isSpacer ? "(spacer)" : "(for text)"}`);
         this._currentLineElement = document.createElement('div');
         this._currentLineElement.className = 'terminal-line';
         
@@ -182,6 +186,7 @@ class TerminalManager {
     }
 
     _typeLine(text, messageType = 'status') {
+        console.log(`[TM | ${performance.now().toFixed(2)}ms] Typing line (type: ${messageType}): "${text.substring(0, 30)}..."`);
         return new Promise(resolve => {
             const speedPerChar = messageType === 'block' 
                 ? this._configModule.TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR 
@@ -193,6 +198,7 @@ class TerminalManager {
                 text: { value: text, delimiter: "" },
                 ease: "none",
                 onComplete: () => {
+                    console.log(`[TM | ${performance.now().toFixed(2)}ms] FINISHED typing line: "${text.substring(0, 30)}..."`);
                     resolve();
                 }
             });

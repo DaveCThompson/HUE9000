@@ -215,16 +215,23 @@ class DialController {
 
     _updateAndCacheThemeStyles() {
         const style = getComputedStyle(this.containerElement);
-        const baseChroma = parseFloat(style.getPropertyValue('--dial-ridge-c'));
-        const multiplier = parseFloat(style.getPropertyValue('--dial-ridge-chroma-multiplier'));
-        const finalChroma = isNaN(baseChroma) || isNaN(multiplier) ? (baseChroma || 0) : baseChroma * multiplier;
+        // JS will now read the base dynamic values directly
+        const dynamicEnvHue = parseFloat(style.getPropertyValue('--dynamic-env-hue'));
+        const dynamicEnvChroma = parseFloat(style.getPropertyValue('--dynamic-env-chroma'));
         
+        // And the theme-specific multiplier
+        const multiplier = parseFloat(style.getPropertyValue('--dial-ridge-chroma-multiplier'));
+
+        // Calculate final chroma in JS, with fallbacks
+        const finalChroma = (isNaN(dynamicEnvChroma) || isNaN(multiplier)) ? 0 : dynamicEnvChroma * multiplier;
+        const finalHue = isNaN(dynamicEnvHue) ? 0 : dynamicEnvHue;
+
         this.themeVars = {
-            ridgeL: parseFloat(style.getPropertyValue('--dial-ridge-l')),
+            ridgeL: parseFloat(style.getPropertyValue('--dial-ridge-l')) || 0,
             ridgeC: finalChroma,
-            ridgeH: parseFloat(style.getPropertyValue('--dial-ridge-h')),
-            ridgeHighlightL: parseFloat(style.getPropertyValue('--dial-ridge-highlight-l')),
-            highlightExponent: parseFloat(style.getPropertyValue('--dial-highlight-exponent')),
+            ridgeH: finalHue, // Use the calculated final hue
+            ridgeHighlightL: parseFloat(style.getPropertyValue('--dial-ridge-highlight-l')) || 0,
+            highlightExponent: parseFloat(style.getPropertyValue('--dial-highlight-exponent')) || 10,
         };
     }
     

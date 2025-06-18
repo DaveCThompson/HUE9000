@@ -12,17 +12,9 @@
    position: relative;
    flex-shrink: 0;
    flex-grow: 0;
-   /* Opacity is controlled by --startup-opacity-factor-boosted, targeting a base of 0.075 (previously 0.15) in theme-dim */
-   /* This rule applies during startup when theme-dim is active */
-   opacity: var(--logo-opacity, calc(0.075 * var(--startup-opacity-factor-boosted, 0)));
-   transition: opacity var(--transition-duration-medium) ease; /* For theme changes */
+   opacity: var(--logo-opacity, 1); /* Default to 1 if var is not set */
+   transition: opacity var(--transition-duration-medium) ease;
 }
-
-/* When not in theme-dim (i.e., theme-dark or theme-light is active), logo should be fully opaque */
-body:not(.theme-dim) #logo-container {
-    opacity: var(--logo-opacity, 1);
-}
-
 
 #logo-container svg {
    width: 100%;

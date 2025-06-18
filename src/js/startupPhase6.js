@@ -3,11 +3,12 @@
  * @description Declarative configuration for Phase 6 (Initializing Mood and Intensity Controls)
  * of the HUE 9000 startup sequence.
  */
+
 export const phase6Config = {
   phase: 6,
   name: "MOOD_INTENSITY_CONTROLS",
-  terminalMessageKey: "P6_MOOD_INTENSITY_CONTROLS", // Terminal message requested at T=0.
-  duration: 3.5, // Phase duration.
+  terminalMessageKey: "P6_MOOD_INTENSITY_CONTROLS", 
+  duration: 3.5, 
   animations: [
     {
       type: 'tween',
@@ -17,39 +18,34 @@ export const phase6Config = {
         duration: 1.0,
         ease: 'power1.inOut'
       },
-      position: 0 // Dimming factor animation starts at T=0.
+      position: 0 
     },
     {
-      type: 'call',
+      type: 'call', // Dial activation visual (if any immediate effect)
       function: (dialManager) => {
         if (dialManager && typeof dialManager.setDialsActiveState === 'function') {
           dialManager.setDialsActiveState(true); 
         }
       },
       deps: ['dialManager'],
-      position: 0.5 // Dials (Mood & Intensity) become visually active at T=0.5s.
+      position: 0.1 // Early dial activation
     },
     {
-      type: 'audio',
-      soundKey: 'itemAppear', 
-      forceRestart: true, // Added forceRestart
-      // Sound for dial appearance plays at T=1.8s. This explicit delay is timed for its auditory
-      // peak to align with the visual stabilization of the dials becoming active (which starts at T=0.5s).
-      position: 1.8 
-    },
-    {
-      type: 'lcdPowerOn',
-      target: ['lcdA', 'lcdB'], // Dial LCDs
+      type: 'lcdPowerOn', // Visual for LCDs
+      target: ['lcdA', 'lcdB'], 
       state: 'dimly-lit',
-      profile: 'lcdScreenFlickerToDimlyLit',
+      profile: 'lcdScreenFlickerToDimlyLit', // Takes ~1.35s
       stagger: 0.05, 
-      position: 1.5 // Dial LCDs' visual flicker to dimly-lit starts at T=1.5s.
+      position: 0.2 // Start LCD visuals slightly after dial activation call
     },
     { 
-      type: 'audio',
+      type: 'audio', // Sound for LCDs
       soundKey: 'lcdPowerOn', 
-      forceRestart: true, // Added forceRestart
-      position: 1.5 // Intended to coincide with LCD visual power-on start.
+      forceRestart: true,
+      position: 0.2 // Sound concurrent with LCD visual start
     }
+    // The original 'itemAppear' at 1.8s is removed. If a sound for the earlier
+    // 'dialManager.setDialsActiveState(true)' at 0.1s is desired, it would be 'itemAppear' at 0.1s.
+    // For now, focusing on LCDs having their own dedicated sound.
   ]
 };

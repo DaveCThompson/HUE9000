@@ -180,7 +180,10 @@ const VISUAL_STATES = {
 // --- Advanced Flicker & Glow Profiles (Refactored for Semantics) ---
 export const ADVANCED_FLICKER_PROFILES = {
     textFlickerToDimlyLit: { 
-        numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
+        numCycles: 9, 
+        periodStart: 0.12, 
+        periodEnd: 0.04, 
+        onDurationRatio: 0.45,
         amplitudeStart: 0.0, 
         amplitudeEnd: 1.0, 
         glow: { 
@@ -192,7 +195,10 @@ export const ADVANCED_FLICKER_PROFILES = {
         targetProperty: 'text-shadow-opacity-and-blur' 
     },
     lcdScreenFlickerToDimlyLit: { 
-        numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
+        numCycles: 8, 
+        periodStart: 0.13, 
+        periodEnd: 0.04, 
+        onDurationRatio: 0.45,
         amplitudeStart: 0.0, amplitudeEnd: VISUAL_STATES.DIMLY_LIT.amplitudeEnd,
         glow: {
             initialOpacity: 0.0, peakOpacity: 0.4, finalOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity,
@@ -202,7 +208,10 @@ export const ADVANCED_FLICKER_PROFILES = {
         }, targetProperty: 'element-opacity-and-box-shadow'
     },
     terminalScreenFlickerToDimlyLit: { 
-        numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
+        numCycles: 8, 
+        periodStart: 0.13, 
+        periodEnd: 0.04, 
+        onDurationRatio: 0.45,
         amplitudeStart: 0.0, 
         amplitudeEnd: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, 
         glow: { 
@@ -213,66 +222,91 @@ export const ADVANCED_FLICKER_PROFILES = {
         }, targetProperty: 'element-opacity-and-box-shadow' 
     },
     buttonFlickerToDimlyLit: {
-        numCycles: 12, periodStart: 0.15, periodEnd: 0.05, onDurationRatio: 0.45,
-        amplitudeStart: 0.0, amplitudeEnd: VISUAL_STATES.DIMLY_LIT.amplitudeEnd,
+        numCycles: 7, 
+        periodStart: 0.12, 
+        periodEnd: 0.04, 
+        onDurationRatio: 0.4, 
+        amplitudeStart: 0.1, 
+        amplitudeEnd: VISUAL_STATES.DIMLY_LIT.amplitudeEnd,
         glow: {
-            initialOpacity: 0.0, peakOpacity: 0.35, finalOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity,
-            initialSize: '0px', peakSize: '6px', finalSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize,
-            colorVar: '--btn-dimly-lit-glow-color', sizeVar: '--btn-dimly-lit-glow-size',
-            opacityVar: '--btn-dimly-lit-glow-opacity', scaleWithAmplitude: true
-        }, targetProperty: 'button-lights-and-frame'
+            initialOpacity: 0.0, 
+            peakOpacity: 0.35,    
+            finalOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity,
+            initialSize: '0px',   
+            peakSize: '5px',     
+            finalSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize,
+            colorVar: '--btn-dimly-lit-glow-color', 
+            sizeVar: '--btn-dimly-lit-glow-size',
+            opacityVar: '--btn-dimly-lit-glow-opacity', 
+            scaleWithAmplitude: true
+        }, 
+        targetProperty: 'button-lights-and-frame'
     },
-    buttonFlickerFromDimlyLitToFullyLitUnselected: {
-        numCycles: 12, periodStart: 0.1, periodEnd: 0.04, onDurationRatio: 0.4,
-        amplitudeStart: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, amplitudeEnd: VISUAL_STATES.FULLY_LIT_UNSELECTED.amplitudeEnd,
+    buttonFlickerFromDimlyLitToFullyLitUnselected: { // Reverted to more complex, but faster
+        numCycles: 10, // Was 12 originally, then 3, now 10 for more activity
+        periodStart: 0.08, // Faster than original 0.1
+        periodEnd: 0.03,   // Faster than original 0.04
+        onDurationRatio: 0.55, // Slightly shorter on-time than original 0.6 for quicker feel
+        amplitudeStart: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, 
+        amplitudeEnd: VISUAL_STATES.FULLY_LIT_UNSELECTED.amplitudeEnd,
         glow: {
-            initialOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity, peakOpacity: 0.8, finalOpacity: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalOpacity,
-            initialSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize, peakSize: '12px', finalSize: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalSize,
+            initialOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity, 
+            peakOpacity: 0.75, // Closer to original peak (0.8)
+            finalOpacity: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalOpacity,
+            initialSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize, 
+            peakSize: '11px', // Closer to original peak ('12px')
+            finalSize: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalSize,
             colorVar: '--btn-glow-color', sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity', scaleWithAmplitude: false
         }, targetProperty: 'button-lights-and-frame'
     },
-    buttonFlickerFromDimlyLitToFullyLitSelected: {
-        numCycles: 12, periodStart: 0.1, periodEnd: 0.04, onDurationRatio: 0.4,
-        amplitudeStart: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, amplitudeEnd: VISUAL_STATES.FULLY_LIT_SELECTED.amplitudeEnd,
+    buttonFlickerFromDimlyLitToFullyLitSelected: { // Reverted to more complex, but faster
+        numCycles: 10, // Was 12 originally, then 3, now 10
+        periodStart: 0.08, // Faster than original 0.1
+        periodEnd: 0.03,   // Faster than original 0.04
+        onDurationRatio: 0.55, // Slightly shorter on-time than original 0.6
+        amplitudeStart: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, 
+        amplitudeEnd: VISUAL_STATES.FULLY_LIT_SELECTED.amplitudeEnd,
         glow: {
-            initialOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity, peakOpacity: 1.0, finalOpacity: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalOpacity,
-            initialSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize, peakSize: '20px', finalSize: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalSize,
+            initialOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity, 
+            peakOpacity: 0.9, // Closer to original peak (1.0)
+            finalOpacity: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalOpacity,
+            initialSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize, 
+            peakSize: '18px', // Closer to original peak ('20px')
+            finalSize: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalSize,
             colorVar: '--btn-glow-color', sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity', scaleWithAmplitude: false
         }, targetProperty: 'button-lights-and-frame'
     },
-    buttonFlickerFromDimlyLitToFullyLitUnselectedFast: {
-        numCycles: 12, periodStart: 0.08, periodEnd: 0.03, onDurationRatio: 0.4,
-        amplitudeStart: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, amplitudeEnd: VISUAL_STATES.FULLY_LIT_UNSELECTED.amplitudeEnd,
+    buttonFlickerFromDimlyLitToFullyLitUnselectedFast: { // Reverted to more complex, but faster
+        numCycles: 8, // Was 12 originally, then 2, now 8
+        periodStart: 0.06, // Faster than original 0.08
+        periodEnd: 0.02, // Faster than original 0.03
+        onDurationRatio: 0.55, // Slightly shorter on-time than original 0.6
+        amplitudeStart: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, 
+        amplitudeEnd: VISUAL_STATES.FULLY_LIT_UNSELECTED.amplitudeEnd,
         glow: {
-            initialOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity, peakOpacity: 0.8, finalOpacity: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalOpacity,
-            initialSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize, peakSize: '10px', finalSize: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalSize,
+            initialOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity, 
+            peakOpacity: 0.75, // Closer to original peak (0.8)
+            finalOpacity: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalOpacity,
+            initialSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize, 
+            peakSize: '9px', // Closer to original peak ('10px')
+            finalSize: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalSize,
             colorVar: '--btn-glow-color', sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity', scaleWithAmplitude: false
         }, targetProperty: 'button-lights-and-frame'
     },
-    buttonFlickerFromDimlyLitToFullyLitSelectedFast: {
-        numCycles: 12, periodStart: 0.08, periodEnd: 0.03, onDurationRatio: 0.4,
-        amplitudeStart: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, amplitudeEnd: VISUAL_STATES.FULLY_LIT_SELECTED.amplitudeEnd,
+    buttonFlickerFromDimlyLitToFullyLitSelectedFast: { // Reverted to more complex, but faster
+        numCycles: 8, // Was 12 originally, then 2, now 8
+        periodStart: 0.06, // Faster than original 0.08
+        periodEnd: 0.02, // Faster than original 0.03
+        onDurationRatio: 0.55, // Slightly shorter on-time than original 0.6
+        amplitudeStart: VISUAL_STATES.DIMLY_LIT.amplitudeEnd, 
+        amplitudeEnd: VISUAL_STATES.FULLY_LIT_SELECTED.amplitudeEnd,
         glow: {
-            initialOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity, peakOpacity: 0.9, finalOpacity: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalOpacity,
-            initialSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize, peakSize: '18px', finalSize: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalSize,
-            colorVar: '--btn-glow-color', sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity', scaleWithAmplitude: false
-        }, targetProperty: 'button-lights-and-frame'
-    },
-    buttonFlickerFromUnlitToFullyLitUnselected: {
-        numCycles: 12, periodStart: 0.18, periodEnd: 0.07, onDurationRatio: 0.35,
-        amplitudeStart: 0.0, amplitudeEnd: VISUAL_STATES.FULLY_LIT_UNSELECTED.amplitudeEnd,
-        glow: {
-            initialOpacity: 0.0, peakOpacity: 0.9, finalOpacity: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalOpacity,
-            initialSize: '0px', peakSize: '16px', finalSize: VISUAL_STATES.FULLY_LIT_UNSELECTED.glowFinalSize,
-            colorVar: '--btn-glow-color', sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity', scaleWithAmplitude: false
-        }, targetProperty: 'button-lights-and-frame'
-    },
-    buttonFlickerFromUnlitToFullyLitSelected: {
-        numCycles: 12, periodStart: 0.18, periodEnd: 0.07, onDurationRatio: 0.35,
-        amplitudeStart: 0.0, amplitudeEnd: VISUAL_STATES.FULLY_LIT_SELECTED.amplitudeEnd,
-        glow: {
-            initialOpacity: 0.0, peakOpacity: 1.0, finalOpacity: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalOpacity,
-            initialSize: '0px', peakSize: '20px', finalSize: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalSize,
+            initialOpacity: VISUAL_STATES.DIMLY_LIT.glowFinalOpacity, 
+            peakOpacity: 0.85, // Closer to original peak (0.9)
+            finalOpacity: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalOpacity,
+            initialSize: VISUAL_STATES.DIMLY_LIT.glowFinalSize, 
+            peakSize: '16px', // Closer to original peak ('18px')
+            finalSize: VISUAL_STATES.FULLY_LIT_SELECTED.glowFinalSize,
             colorVar: '--btn-glow-color', sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity', scaleWithAmplitude: false
         }, targetProperty: 'button-lights-and-frame'
     },
@@ -312,10 +346,10 @@ export const ADVANCED_FLICKER_PROFILES = {
         glow: {
             initialOpacity: { selected: 0.7, unselected: 0.7 }, 
             peakOpacity: { selected: 1.0, unselected: 1.0 },    
-            finalOpacity: { selected: 0.8, unselected: 0.8 },   // Final solid red glow opacity
+            finalOpacity: { selected: 0.8, unselected: 0.8 },
             initialSize: { selected: '10px', unselected: '10px' },
             peakSize: { selected: '16px', unselected: '16px' },
-            finalSize: { selected: '10px', unselected: '10px' }, // Final solid red glow size
+            finalSize: { selected: '10px', unselected: '10px' },
             colorVar: '--btn-glow-color', 
             sizeVar: '--btn-glow-size', opacityVar: '--btn-glow-opacity',
             scaleWithAmplitude: false
@@ -325,17 +359,20 @@ export const ADVANCED_FLICKER_PROFILES = {
 
 export function estimateFlickerDuration(profileName) {
     const profile = ADVANCED_FLICKER_PROFILES[profileName];
-    if (!profile) return 0.2;
+    if (!profile) return 0.2; 
+    if (profile.numCycles === 0) return Math.max(0.01, profile.periodStart || 0.01);
+
     let totalDuration = 0;
     for (let i = 0; i < profile.numCycles; i++) {
-        const cycleProgress = profile.numCycles > 1 ? i / (profile.numCycles - 1) : 1;
+        const cycleProgress = profile.numCycles > 1 ? i / (profile.numCycles - 1) : 1; 
         const currentPeriod = profile.periodStart + cycleProgress * (profile.periodEnd - profile.periodStart);
         totalDuration += currentPeriod;
     }
-    const finalSettleDuration = Math.max(0.15, profile.periodEnd * 1.5);
-    totalDuration += finalSettleDuration;
-    return totalDuration;
+    
+    const finalSettleDuration = Math.max(0.15, (profile.periodEnd || 0.1) * 1.5); 
+    return totalDuration + finalSettleDuration;
 }
+
 
 // --- Ambient Animation Parameters ---
 export const HARMONIC_RESONANCE_PARAMS = {
@@ -438,7 +475,6 @@ export const AUDIO_CONFIG = {
     backgroundMusic: { src: backgroundMusicSrc, loop: true, volume: 0.35, html5: true },
     dialLoop:        { src: dialLoopSrc, loop: true, volume: 0.35, html5: false },
     buttonPress:     { src: buttonPressSrc,loop: false, volume: 0.8, html5: false },
-    // preloaderStreamData entry removed
     itemAppear:      { src: itemAppearSrc, loop: false, volume: 0.6, html5: false },
     terminalBoot:    { src: terminalBootSrc, loop: false, volume: 0.9, fadeOutDuration: 4000, html5: false },
     lcdPowerOn:      { src: lcdPowerOnSrc, loop: false, volume: 0.8, fadeOutDuration: 6000, html5: false },
@@ -480,14 +516,12 @@ export const PRELOADER_ASSETS = {
         streamOutputError: 'ERROR: GRAPHICS DATA CORRUPTION DETECTED',
         individualAssetStatusTemplate: (name, status) => `LOAD GFX MODULE: ${name}... ${status}`
     },
-    audio: { // Reduced to truly critical audio for preloader
+    audio: { 
         id: 'coreAudio',
         name: 'AUDIO_IO_BUFFER',
         type: 'audioManager', 
         assets: [ 
-            // preloaderStreamData asset removed
             { id: 'buttonPressSfx', keyInAudioManager: 'buttonPress', name: 'button-press.mp3' },
-            // backgroundMusicTrack asset removed
         ],
         initialStatus: '[ESTABLISHING AUDIO SYNC...]',
         successMessage: '[AUDIO_IO_BUFFER: SYNC CONFIRMED ✓]',
@@ -509,8 +543,8 @@ export const PRELOADER_CONFIG = {
     },
     baseDurationMs: { 
         fonts: 700,
-        graphics: 1000, // Will be dominated by actual asset load times
-        audio: 900    // Will be dominated by actual asset load times
+        graphics: 1000, 
+        audio: 900    
     },
     engageButtonAppearDelayMs: 300, 
     preloaderFadeOutDurationMs: 500, 
