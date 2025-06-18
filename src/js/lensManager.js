@@ -238,9 +238,19 @@ export class LensManager {
     if (this.powerSmoothingTween) this.powerSmoothingTween.kill();
 
     const isStartingUp = appState.getAppStatus() === 'starting-up';
-    const isDialIdle = appState.getDialBInteractionState() === 'idle';
+    const dialBInteraction = appState.getDialBInteractionState();
+    const isDialDragging = dialBInteraction === 'dragging';
+    const isDialIdle = dialBInteraction === 'idle';
     const shutdownStage = appState.getResistiveShutdownStage();
 
+    // If the user is actively dragging the dial, bypass all smoothing for instant feedback.
+    if (isDialDragging) {
+      this.smoothedTrueLensPower.value = this.trueLensPowerTarget;
+      this._updateLensVisualsWithCurrentState(true); // Force immediate visual update
+      return; // Exit early, no smoothing needed.
+    }
+
+    // --- Logic for programmatic changes, settling, or startup ---
     let duration = this.config.LENS_OSCILLATION_SMOOTHING_DURATION;
     let ease = "power1.out";
     if (shutdownStage > 0) {
@@ -251,7 +261,7 @@ export class LensManager {
       }
     }
 
-    if (isStartingUp || !isDialIdle) {
+    if (isStartingUp) {
       this.smoothedTrueLensPower.value = this.trueLensPowerTarget;
       this._updateLensVisualsWithCurrentState(true);
     } else {
@@ -283,6 +293,7 @@ export class LensManager {
       this.smoothedTrueLensPower.value = appState.getTrueLensPower();
       this._updateLensVisualsWithCurrentState(true);
     } else {
+      // When interaction ends and state becomes idle, re-evaluate smoothing.
       this._handleTrueLensPowerChange(appState.getTrueLensPower());
     }
   }
