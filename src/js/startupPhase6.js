@@ -35,7 +35,7 @@ export const phase6Config = {
       target: ['lcdA', 'lcdB'], 
       state: 'dimly-lit',
       profile: 'lcdScreenFlickerToDimlyLit', // Takes ~1.35s
-      stagger: 0.05, 
+      stagger: 0.00, 
       position: 0.2 // Start LCD visuals slightly after dial activation call
     },
     { 

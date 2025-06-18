@@ -25,7 +25,7 @@ export const phase2Config = {
       groups: ['system-power'], // Main Power On/Off
       state: 'is-dimly-lit',
       profile: 'buttonFlickerToDimlyLit', // Approx 0.79s to completion now
-      stagger: 0.05,
+      stagger: 0.00,
       position: 0.01 // Target completion at 0.80s (0.80 - 0.79 = 0.01)
     },
     {

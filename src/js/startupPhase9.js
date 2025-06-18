@@ -8,7 +8,7 @@ export const phase9Config = {
   phase: 9,
   name: "AUX_LIGHTING_LOW",
   terminalMessageKey: "P9_AUX_LIGHTING_LOW", 
-  duration: 3.5, 
+  duration: 1.0, 
   animations: [
     {
       type: 'flicker',

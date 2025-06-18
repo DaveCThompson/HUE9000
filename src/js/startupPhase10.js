@@ -40,7 +40,7 @@ export const phase10Config = {
       groups: ['env', 'lcd', 'logo', 'btn', 'skill-scan-group', 'fit-eval-group'],
       state: 'is-energized', 
       profile: 'buttonFlickerFromDimlyLitToFullyLit', 
-      stagger: 0.03, 
+      stagger: 0.00, 
       position: 0.6 // Visual flicker for button energizing starts at T=0.6s.
     },
     {
