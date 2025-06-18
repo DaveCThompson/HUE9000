@@ -1,11 +1,11 @@
-# HUE 9000 Startup Sequence Detailed Breakdown (XState Orchestrated - P0-P11)
+# HUE 9000 Startup Sequence Detailed Breakdown (XState Orchestrated - P0-P12)
 
 This document details the phased startup sequence for the HUE 9000 interface, orchestrated by an XState Finite State Machine (FSM) as of the XState Refactor (SSR-V1.0). Each FSM phase invokes a corresponding `startupPhaseX.js` module executed by `PhaseRunner.js`.
 
 ## Core Principles During Startup
 
 *   **Initial Theme:** `body.theme-dim` is active. `body` also starts with `pre-boot` class (removed by `startupSequenceManager.js` during P0 setup).
-*   **Procedural Control:** During the startup sequence (Phases P0-P10), the declarative `startupPhaseX.js` configurations, executed by `PhaseRunner`, are the **single source of truth** for all component state changes and animations. Reactive managers (like `LcdUpdater` reacting to `appStatus`) are intentionally passive or have their startup-related reactions carefully managed to prevent race conditions with the procedural sequence.
+*   **Procedural Control:** During the startup sequence (Phases P0-P11), the declarative `startupPhaseX.js` configurations, executed by `PhaseRunner`, are the **single source of truth** for all component state changes and animations. Reactive managers (like `LcdUpdater` reacting to `appStatus`) are intentionally passive or have their startup-related reactions carefully managed to prevent race conditions with the procedural sequence.
 *   **Progressive Reveal & Dimming Factors:**
     *   Elements activate in stages. Their visual appearance during startup is heavily influenced by two CSS custom properties animated by GSAP within each phase module:
         *   `--startup-L-reduction-factor`: Ranges from a high value (e.g., 0.40) down to 0.0 (no lightness reduction). Affects `oklch()` L-values.
@@ -13,19 +13,19 @@ This document details the phased startup sequence for the HUE 9000 interface, or
     *   The `config.js` file (`STARTUP_L_REDUCTION_FACTORS`) defines the target L-reduction factor for each phase.
 *   **Button States (CSS Classes applied by `Button.js` components, managed by `buttonManager.js`):**
     *   **Initial (P0):** All buttons are set to `is-unlit` by `buttonManager.setInitialDimStates()`.
-    *   **During `theme-dim` (Phases P0-P9):**
+    *   **During `theme-dim` (Phases P0-P10):**
         *   `is-unlit`: Default for unpowered buttons. Extremely faint, achromatic.
         *   `is-dimly-lit`: For buttons that need to be more prominent but are not fully energized in `theme-dim`. Achieved by flickering from `is-unlit` using `buttonFlickerToDimlyLit` profile.
-            *   MAIN PWR (P2), SCAN/FIT EVAL (P5), HUE ASSN (P7), AUX (P8) buttons transition to this state.
-            *   **Note on P7 Hue Assignment Buttons:** The typical `playStateTransitionEcho` animation is conditionally skipped for these buttons when they transition to `is-dimly-lit` in P7. This is to prevent visual clutter from ~48 massively overlapping echo effects. Their final light opacity (`0.8`) is preserved directly from the flicker animation's end state by careful `clearProps` management in `Button.setState`.
-        *   `.is-energized` (and `.is-selected` for ON): Applied to MAIN PWR buttons in P3, and AUX LIGHT "LOW" button in P9. Within `theme-dim`, CSS variable overrides ensure these adopt a "dark theme energized" visual appearance. They flicker to this state from `is-dimly-lit`.
-    *   **During Theme Transition & `theme-dark` (Phases P10-P11):**
-        *   `.is-energized` (and `.is-selected` where appropriate): Full power, styled by `theme-dark.css` variables. SCAN, FIT EVAL, HUE ASSN buttons flicker from `is-dimly-lit` to this state in P10.
+            *   MAIN PWR (P2), SCAN/FIT EVAL (P5), HUE ASSN (P7), AUX (P9) buttons transition to this state.
+            *   **Note on P7 Hue Assignment Buttons:** The `playStateTransitionEcho` animation is conditionally skipped for these buttons when they transition to `is-dimly-lit` in P7 to prevent visual clutter. However, the echo effect **is intentionally played** in Phase 8 when they are fully energized.
+        *   `.is-energized` (and `.is-selected` for ON): Applied to MAIN PWR buttons in P3, HUE ASSN buttons in P8, and AUX LIGHT "LOW" button in P10. Within `theme-dim`, CSS variable overrides ensure these adopt a "dark theme energized" visual appearance. They flicker to this state from `is-dimly-lit`.
+    *   **During Theme Transition & `theme-dark` (Phases P11-P12):**
+        *   `.is-energized` (and `.is-selected` where appropriate): Full power, styled by `theme-dark.css` variables. SCAN, FIT EVAL buttons flicker from `is-dimly-lit` to this state in P11.
 *   **LCD/Terminal Visuals During Startup:**
     *   **Terminal Flicker (P1):** The initial terminal message in P1 uses a special composed animation (`specialTerminalFlicker: true` in phase config) that flickers both the screen container and the text itself.
     *   **Subsequent Terminal Messages (P2+):** Startup messages (triggered by `terminalMessageKey`) are typed onto the next line by `terminalManager`.
     *   **Screen Background Flicker (P6):** Dial LCDs (A & B) use the `lcdScreenFlickerToDimlyLit` profile for their visual power-on. The `lcdPowerOn` sound is timed to play concurrently with the start of this visual flicker.
-    *   **Theme Transition (P10):** LCD backgrounds transition via CSS. A `background-color` fallback in `_lcd.css` helps minimize visual glitches.
+    *   **Theme Transition (P11):** LCD backgrounds transition via CSS. A `background-color` fallback in `_lcd.css` helps minimize visual glitches.
 
 ## Startup Phases (FSM States & Corresponding `startupPhaseX.js` modules)
 
@@ -95,41 +95,51 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.0s`:** Terminal message "P7_HUE_CORRECTION_SYSTEMS", dimming factors animate.
-    2.  **`T=0.1s`:** Hue Assignment buttons flicker to `is-dimly-lit`. (Note: `playStateTransitionEcho` is skipped for these to maintain visual clarity).
+    2.  **`T=0.1s`:** Hue Assignment buttons flicker to `is-dimly-lit`. (Note: `playStateTransitionEcho` is skipped).
     3.  **`T=1.3s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
 *   **Visual Outcome:** Hue Assignment buttons dimly visible and stable.
 
-### Phase 8: Initializing External Lighting Controls (`startupPhase8.js`)
+### Phase 8: Energizing Hue Assignment Matrix (`startupPhase8.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 8)
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
-    1.  **`T=0.0s`:** Terminal message "P8_EXTERNAL_LIGHTING_CONTROLS", dimming factors animate to final (0.0 L-reduction).
+    1.  **`T=0.0s`:** Terminal message "P8_HUE_ASSIGNMENT_MATRIX", dimming factors animate.
+    2.  **`T=0.1s`:** Hue Assignment buttons flicker to `.is-energized`.
+    3.  **`T=0.15s`:** **Audio:** `buttonEnergize` sound.
+    4.  **`T=1.2s`:** Default selected state (top row) is applied to Hue Assignment buttons.
+*   **Visual Outcome:** Hue Assignment grid energizes and sets its default state.
+
+### Phase 9: Initializing External Lighting Controls (`startupPhase9.js`)
+*   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 9)
+*   **Phase Duration:** Approx 3.5s.
+*   **Key Actions & Timing:**
+    1.  **`T=0.0s`:** Terminal message "P9_EXTERNAL_LIGHTING_CONTROLS", dimming factors animate to final (0.0 L-reduction).
     2.  **`T=0.1s`:** AUX LIGHT buttons flicker to `is-dimly-lit`.
     3.  **`T=1.3s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
 *   **Visual Outcome:** Aux light buttons dimly visible. UI at full `theme-dim` base appearance.
 
-### Phase 9: Activating Auxiliary Lighting: Low Intensity (`startupPhase9.js`)
-*   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 9)
+### Phase 10: Activating Auxiliary Lighting: Low Intensity (`startupPhase10.js`)
+*   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 10)
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
-    1.  **`T=0.0s`:** Terminal message "P9_AUX_LIGHTING_LOW".
+    1.  **`T=0.0s`:** Terminal message "P10_AUX_LIGHTING_LOW".
     2.  **`T=0.1s`:** AUX LIGHT "LOW" flickers to `.is-energized.is-selected`; "HIGH" to `.is-energized`.
     3.  **`T=0.25s`:** **Audio:** `buttonEnergize` sound.
 *   **Visual Outcome:** Aux lights energized, "LOW" selected (dim theme variant).
 
-### Phase 10: Engaging Ambient Theme (`startupPhase10.js`)
-*   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 10)
+### Phase 11: Engaging Ambient Theme (`startupPhase11.js`)
+*   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 11)
 *   **Phase Duration:** Approx 1.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.5s`:** LCDs set to 'active'. `appState.setTheme('dark')`; CSS theme transition begins.
-    2.  **`T=0.6s`:** SCAN, FIT EVAL, HUE ASSN buttons flicker to `.is-energized` (with default selections). **Audio:** `themeEngage` sound.
-*   **Visual Outcome:** Global theme transitions to dark. Remaining interactive buttons energize.
+    2.  **`T=0.6s`:** SCAN, FIT EVAL buttons flicker to `.is-energized`. **Audio:** `themeEngage` sound.
+*   **Visual Outcome:** Global theme transitions to dark. Remaining diagnostic buttons energize.
 
-### Phase 11: HUE 9000 Operational (`startupPhase11.js`)
-*   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 11), then `COMPLETE`.
+### Phase 12: HUE 9000 Operational (`startupPhase12.js`)
+*   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 12), then `COMPLETE`.
 *   **Phase Duration:** Approx 0.5s.
-*   **Key Actions (FSM entry action `_performThemeTransitionCleanup` for P11 runs first):**
-    1.  **`T=0.0s`:** Terminal message "P11_SYSTEM_OPERATIONAL". Default selected states for button groups confirmed.
+*   **Key Actions (FSM entry action `_performThemeTransitionCleanup` for P12 runs first):**
+    1.  **`T=0.0s`:** Terminal message "P12_SYSTEM_OPERATIONAL". Default selected states for power/light buttons confirmed.
     2.  *(On FSM transition to `COMPLETE`)*: `appState.setAppStatus('interactive')`.
 *   **Visual Outcome:** All systems online. UI fully interactive in `theme-dark`.
 

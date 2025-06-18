@@ -11,7 +11,7 @@
 **Key Visual Centerpiece:** The dynamic "lens" display. Its appearance, including a complex radial gradient and an outer glow, changes dramatically based on an "intensity" or "power" value (controlled by Dial B). Its core color (hue) is controlled by the "MOOD" dial (Dial A).
 
 **Startup Sequence:**
-The interface "powers on" with a choreographed, multi-phase sequence (P0-P11), orchestrated by an XState Finite State Machine executing declarative phase configurations. `body` starts with `theme-dim` active. Elements are progressively revealed and energized, with their appearance during startup controlled by animated CSS variables (`--startup-L-reduction-factor`, `--startup-opacity-factor`). The sequence culminates in a transition to the main `theme-dark`.
+The interface "powers on" with a choreographed, multi-phase sequence (P0-P12), orchestrated by an XState Finite State Machine executing declarative phase configurations. `body` starts with `theme-dim` active. Elements are progressively revealed and energized, with their appearance during startup controlled by animated CSS variables (`--startup-L-reduction-factor`, `--startup-opacity-factor`). The sequence culminates in a transition to the main `theme-dark`.
 (Full details in `STARTUP_SEQUENCE.md`)
 
 ## 2. Architecture & Key Technologies (Project Decouple - V2.0)

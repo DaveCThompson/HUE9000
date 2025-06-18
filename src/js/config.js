@@ -84,7 +84,7 @@ export const LCD_TEXT_FADE_IN_DURATION = 0.3;
 
 export const STARTUP_L_REDUCTION_FACTORS = {
     P0: 0.40, P1: 0.39, P2: 0.35, P3: 0.325, P4: 0.325, 
-    P5: 0.275, P6: 0.225, P7: 0.075, P8: 0.00
+    P5: 0.275, P6: 0.225, P7: 0.075, P8: 0.05, P9: 0.00
 };
 export const STARTUP_DIM_FACTORS_ANIMATION_DURATION = 1.0; // Standard duration for dim factor tweens
 

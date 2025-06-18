@@ -21,11 +21,12 @@ import { phase8Config } from './startupPhase8.js';
 import { phase9Config } from './startupPhase9.js';
 import { phase10Config } from './startupPhase10.js';
 import { phase11Config } from './startupPhase11.js';
+import { phase12Config } from './startupPhase12.js';
 
 export const phaseConfigs = [
   phase0Config, phase1Config, phase2Config, phase3Config, phase4Config,
   phase5Config, phase6Config, phase7Config, phase8Config, phase9Config,
-  phase10Config, phase11Config
+  phase10Config, phase11Config, phase12Config
 ];
 
 // A single, reusable service that runs a phase based on the config passed in its context.
@@ -70,18 +71,18 @@ export const startupMachine = createMachine({
     RUNNING_PHASE: {
       entry: [
         ({ context }) => {
-            if (context.currentPhase === 11 && !context.themeTransitionCleanupPerformed) {
+            if (context.currentPhase === 12 && !context.themeTransitionCleanupPerformed) {
                 // Assuming StartupSequenceManager instance is on serviceLocator
                 const ssm = serviceLocator.get('startupSequenceManager');
                 if (ssm && typeof ssm._performThemeTransitionCleanup === 'function') {
                     ssm._performThemeTransitionCleanup();
                 } else {
-                    console.warn("[FSM] Could not find startupSequenceManager or _performThemeTransitionCleanup for P11 cleanup.");
+                    console.warn("[FSM] Could not find startupSequenceManager or _performThemeTransitionCleanup for P12 cleanup.");
                 }
             }
         },
         assign({
-            themeTransitionCleanupPerformed: ({context}) => context.currentPhase === 11 ? true : context.themeTransitionCleanupPerformed
+            themeTransitionCleanupPerformed: ({context}) => context.currentPhase === 12 ? true : context.themeTransitionCleanupPerformed
         })
       ],
       invoke: {

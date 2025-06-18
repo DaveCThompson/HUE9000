@@ -1,28 +1,51 @@
 /**
  * @module startupPhase11
- * @description Declarative configuration for Phase 11 (HUE 9000 Operational)
- * of the HUE 9000 startup sequence.
+ * @description Declarative configuration for Phase 11 (Engaging Ambient Theme)
+ * of the HUE 9000 startup sequence. (Formerly P10)
  */
 export const phase11Config = {
   phase: 11,
-  name: "SYSTEM_OPERATIONAL",
-  terminalMessageKey: "P11_SYSTEM_OPERATIONAL", // Terminal message requested at T=0.
-  duration: 0.5, // Phase duration (short, for finalization).
+  name: "ENGAGING_AMBIENT_THEME", 
+  duration: 1.5,
   animations: [
-    // FSM entry action `_performThemeTransitionCleanup` runs before these animations.
     {
       type: 'call',
-      function: (buttonManager, config) => {
-        buttonManager.setGroupSelected('system-power', 'on');
-        buttonManager.setGroupSelected('light', 'off');
-        Object.keys(config.DEFAULT_ASSIGNMENT_SELECTIONS).forEach(targetKey => {
-          buttonManager.setGroupSelected(targetKey, config.DEFAULT_ASSIGNMENT_SELECTIONS[targetKey].toString());
+      function: (lcdUpdater, dom) => {
+        const lcds = [dom.lcdA, dom.lcdB, dom.terminalContainer];
+        lcds.forEach(lcd => {
+          if (lcd) {
+            lcdUpdater.setLcdState(lcd, 'active', { phaseContext: 'P11_ThemeTransition' });
+          }
         });
-        // appState.setAppStatus('interactive') is handled by the FSM 'COMPLETE' state's entry action.
       },
-      deps: ['buttonManager', 'config'],
-      position: 0 // Button state confirmation call at T=0.
+      deps: ['lcdUpdater', 'domElements'],
+      position: 0.5
+    },
+    {
+      type: 'call',
+      function: (dom, config, appState) => {
+        document.querySelectorAll(config.selectorsForDimExitAnimation).forEach(el => {
+          el.classList.add('animate-on-dim-exit');
+        });
+        dom.body.classList.add('is-transitioning-from-dim');
+        appState.setTheme('dark');
+      },
+      deps: ['domElements', 'config', 'appState'],
+      position: 0.5
+    },
+    {
+      type: 'flicker',
+      target: 'buttonGroup',
+      groups: ['skill-scan-group', 'fit-eval-group'],
+      state: 'is-energized', 
+      profile: 'buttonFlickerFromDimlyLitToFullyLit', 
+      stagger: 0.03, 
+      position: 0.6
+    },
+    {
+      type: 'audio',
+      soundKey: 'themeEngage', 
+      position: 0.6 
     }
-    // Dial resize is handled by DialController's subscription to theme/appStatus changes.
   ]
 };

@@ -64,6 +64,7 @@ HUE9000_Project/
 │   │   ├── startupPhase9.js
 │   │   ├── startupPhase10.js
 │   │   ├── startupPhase11.js
+│   │   ├── startupPhase12.js
 │   │   ├── terminalManager.js         # Manages terminal display
 │   │   ├── terminalMessages.js        # Terminal message content
 │   │   ├── ThemeManager.js            # Manages global theme changes

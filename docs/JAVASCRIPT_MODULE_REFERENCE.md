@@ -109,7 +109,7 @@ This document provides a high-level overview of each JavaScript module in the re
 
 #### `buttonManager.js`
 *   **@module buttonManager:** Orchestrates all `Button` instances.
-*   **Core Responsibilities:** Discovers buttons, creates `Button` instances, manages group behaviors. Triggers interactive sounds (e.g., `auxModeChange`, `buttonPress` via `AudioManager`), ensuring `forceRestart: true` is used for `buttonPress` from `main.js` for better responsiveness. Provides `playFlickerToState` for complex animations, which now conditionally manages whether `Button.playStateTransitionEcho` is invoked (e.g., skipping it for P7 Hue Assignment buttons during startup to prevent visual overload). Emits `buttonInteracted` to `appState`.
+*   **Core Responsibilities:** Discovers buttons, creates `Button` instances, manages group behaviors. Triggers interactive sounds (e.g., `auxModeChange`, `buttonPress` via `AudioManager`), ensuring `forceRestart: true` is used for `buttonPress` from `main.js` for better responsiveness. Provides `playFlickerToState` for complex animations, which now conditionally manages whether `Button.playStateTransitionEcho` is invoked (e.g., skipping it for P7 Hue Assignment buttons but allowing it for them in P8). Emits `buttonInteracted` to `appState`.
 *   **Key Interactions:**
     *   Uses `appState` (imported directly) for some internal logic checks (like `getCurrentStartupPhaseNumber` for conditional echo logic within `playFlickerToState`'s `onTimelineComplete` callback).
     *   Subscribes to `resistiveShutdownStageChanged` and `mainPowerOffButtonDisabledChanged` from `appState` to manage the main power button's state and flicker effects.
@@ -173,7 +173,7 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **Core Responsibilities:**
     *   Initializes and runs the `startupMachine`, provides dependencies (GSAP, managers, config, etc.) to the FSM's context, and exposes an API for debug controls.
     *   Calls `_resetVisualsAndState` to set the initial P0 state.
-    *   Calls `_performThemeTransitionCleanup` before Phase 11 to remove temporary classes used during the P10 theme change animation, ensuring a clean final state.
+    *   Calls `_performThemeTransitionCleanup` before Phase 12 to remove temporary classes used during the P11 theme change animation, ensuring a clean final state.
 *   **XState v5 Critical Note:** This manager (and `startupMachine.js`) uses XState v5. Refer to v5 documentation for API details (e.g., `fromPromise`, actor subscription, event/context signatures in guards/actions).
 
 #### `startupMachine.js`
@@ -193,7 +193,7 @@ This document provides a high-level overview of each JavaScript module in the re
 *   **Key Interactions:** Uses `appStateModule` (imported directly) for some logging. Invokes methods on various managers (`buttonManager`, `lcdUpdater`, `audioManager`, etc.) as defined by phase configs.
 *   **Troubleshooting Tip:** If a startup phase seems to hang or sounds within it don't play, check the `[PhaseRunner ... P6_TL_DEBUG]` (or similar for other phases) logs to ensure the phase timeline duration is as expected and that sound scheduling logs appear.
 
-#### `startupPhase[0-11].js`
+#### `startupPhase[0-12].js`
 *   **@module startupPhaseX:** A series of modules, each exporting a single, declarative configuration object that defines all animations and actions for that phase.
 *   **Key Properties:**
     *   `phase`: Numeric identifier.
