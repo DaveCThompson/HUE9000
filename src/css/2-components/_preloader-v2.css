@@ -1,5 +1,5 @@
 /* src/css/2-components/_preloader-v2.css */
-/* REFACTORED V2: Enhanced legibility and state indication. */
+/* REFACTORED V5: Definitive fix for layout stability and legibility. */
 
 /* --- Preloader Mask (Hides main UI) --- */
 #preloader-mask {
@@ -44,7 +44,7 @@ body.preloader-active #preloader-mask {
 /* --- Preloader Panel & Section Styling (Mimics main app) --- */
 .preloader-main-bezel {
     width: 100%;
-    max-width: 900px;
+    max-width: 960px; /* Increased width for more space */
     padding: var(--bezel-thickness);
     border-radius: var(--radius-panel-tight);
     box-sizing: border-box;
@@ -80,25 +80,23 @@ body.preloader-active #preloader-mask {
 }
 
 .preloader-stream-columns {
-    display: flex;
+    display: grid;
     gap: var(--space-lg);
-    justify-content: space-around;
-    flex-wrap: wrap;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Increased min width */
     box-sizing: border-box;
 }
 
+/* DEFINITIVE FIX: Convert to flexbox and set fixed height for stability */
 .preloader-data-stream.control-block {
-    width: 250px;
-    flex-shrink: 0;
-    min-height: 200px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: var(--space-md);
     padding: var(--space-xl);
     border-radius: var(--control-section-radius);
     box-sizing: border-box;
     border: var(--control-section-border-width) solid oklch(var(--panel-section-border-l) var(--panel-section-border-c) var(--panel-section-border-h) / var(--panel-section-border-a));
     transition: border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+    height: 200px; /* CRITICAL: Stabilizes the layout */
 }
 
 /* State: Inactive / Active */
@@ -112,18 +110,18 @@ body.preloader-active #preloader-mask {
     text-transform: uppercase;
     text-align: center;
     padding-bottom: var(--space-sm);
-    margin-bottom: var(--space-md);
+    border-bottom: 1px dashed oklch(0.85 0.008 240 / 0.25);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     box-sizing: border-box;
     color: oklch(0.85 0.008 240);
-    border-bottom: 1px dashed oklch(0.85 0.008 240 / 0.25);
     transition: color 0.3s ease, border-color 0.3s ease;
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
+/* DEFINITIVE FIX: Make content area flexible */
 .preloader-stream-output {
-    height: 90px;
     padding: var(--space-sm);
     display: flex;
     align-items: center;
@@ -134,16 +132,17 @@ body.preloader-active #preloader-mask {
     background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
     border: 1px solid oklch(var(--lcd-unlit-border-l) var(--lcd-unlit-border-c) var(--lcd-unlit-border-h) / var(--lcd-unlit-border-a));
     box-shadow: var(--lcd-unlit-shadow);
+    flex-grow: 1; /* Allow this element to fill available space */
 }
 .preloader-stream-output-text {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.75em;
     line-height: 1.35;
-    word-break: break-all;
+    overflow-wrap: break-word; /* Better than break-all */
     white-space: pre-wrap;
     width: 100%;
-    height: 100%;
-    overflow: hidden;
+    /* height: 100%; */ /* REMOVED: This prevented vertical centering */
+    overflow: hidden; /* CHANGED: This clips overflow and prevents scrollbars */
     box-sizing: border-box;
     color: oklch(var(--lcd-dimly-lit-text-l) var(--lcd-dimly-lit-text-c) var(--lcd-dimly-lit-text-h) / var(--lcd-dimly-lit-text-a));
     text-shadow: 0 0 3px oklch(from oklch(var(--lcd-dimly-lit-text-l) var(--lcd-dimly-lit-text-c) var(--lcd-dimly-lit-text-h)) l c h / 0.2);
@@ -154,43 +153,46 @@ body.preloader-active #preloader-mask {
     text-align: center;
     font-weight: 500;
     font-size: 0.8em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* CRITICAL FIX: The properties causing truncation are now removed. */
 }
 
 .preloader-stream-status {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.75em;
     text-align: center;
-    margin-top: var(--space-md);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     box-sizing: border-box;
     color: oklch(0.65 0.01 240);
     transition: color 0.3s ease;
+    flex-shrink: 0; /* Prevent status from shrinking */
 }
 .preloader-data-stream.is-verified .preloader-stream-status,
 .preloader-data-stream.is-error .preloader-stream-status {
     font-weight: 500;
 }
 
-/* --- Overall Progress (FIXED) --- */
+/* --- Overall Progress --- */
 .preloader-overall-progress {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 1.0em;
     text-align: center;
     margin-top: var(--space-lg);
     box-sizing: border-box;
-    color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
-    /* ADDED: Text shadow to mimic terminal glow and improve legibility */
-    text-shadow: 0 0 5px oklch(var(--theme-text-primary-l) 0.01 240 / 0.25);
+}
+/* DEFINITIVE FIX: Forceful legibility for progress text */
+.preloader-progress-label,
+.preloader-progress-value {
+    color: oklch(1 0 0); /* Max brightness white */
+    text-shadow:
+        0 0 3px oklch(1 0 0 / 0.7),
+        0 0 10px oklch(1 0 0 / 0.35);
 }
 .preloader-progress-value {
-    color: oklch(calc(var(--theme-text-primary-l) + 0.1) var(--theme-text-primary-c) var(--theme-text-primary-h));
-    font-weight: 500;
+    font-weight: 600; /* Bolder for emphasis */
 }
+
 .preloader-progress-bar-container {
     height: var(--space-lg);
     padding: var(--space-xs);
@@ -247,53 +249,75 @@ body.preloader-active #preloader-mask {
     background-color: oklch(var(--btn-energized-unselected-light-l) var(--btn-energized-unselected-light-c) var(--btn-energized-unselected-light-h));
     opacity: var(--btn-energized-unselected-light-a);
 }
+
+/* --- HOVER/ACTIVE STATES: Make hover match the '.is-selected' state --- */
 #datastream-preloader .button-unit.is-energized:not(:disabled):hover {
-    box-shadow: 0 0 calc(var(--btn-unselected-glow-base-size) * 1.2) var(--btn-glow-spread) oklch(var(--btn-energized-unselected-glow-hover-l) var(--btn-energized-unselected-glow-hover-c) var(--btn-energized-unselected-glow-hover-h) / var(--btn-energized-unselected-glow-hover-a));
+    border-color: oklch(var(--btn-energized-selected-border-l) var(--btn-energized-selected-border-c) var(--btn-energized-selected-border-h) / var(--btn-energized-selected-border-a));
+    color: oklch(var(--btn-energized-selected-text-l) var(--btn-energized-selected-text-c) var(--btn-energized-selected-text-h) / var(--btn-energized-selected-text-a));
+    box-shadow: none; /* Use ::after glow instead */
+}
+#datastream-preloader .button-unit.is-energized:not(:disabled):hover::before {
+    background-color: oklch(var(--btn-energized-selected-bg-l) var(--btn-energized-selected-bg-c) var(--btn-energized-selected-bg-h) / var(--btn-energized-selected-bg-a));
 }
 #datastream-preloader .button-unit.is-energized:not(:disabled):hover .light {
-    opacity: calc(var(--btn-energized-unselected-light-a) + var(--btn-hover-light-opacity-boost));
-    transform: scale(var(--btn-hover-light-scale));
+    background-color: oklch(var(--btn-energized-selected-light-l) var(--btn-energized-selected-light-c) var(--btn-energized-selected-light-h));
+    opacity: var(--btn-energized-selected-light-a);
+    transform: none; /* Reset transform from default hover */
 }
+#datastream-preloader .button-unit.is-energized:not(:disabled):hover::after {
+    opacity: var(--btn-selected-glow-base-opacity, 0.8);
+    transform: scale(1);
+}
+
+/* Active (press) state */
 #datastream-preloader .button-unit.is-energized:not(:disabled):active {
     transform: var(--button-unit-pressed-transform);
-    box-shadow: inset 0 0 3px 1px var(--btn-pressed-innershadow-color),
-                0 0 var(--btn-unselected-glow-base-size) var(--btn-glow-spread) var(--btn-glow-color);
+    box-shadow: inset 0 0 3px 1px var(--btn-pressed-innershadow-color); /* Add inner shadow for press effect */
 }
+#datastream-preloader .button-unit.is-energized:not(:disabled):hover:active::after {
+    transform: scale(1.1);
+    opacity: calc(var(--btn-selected-glow-base-opacity) * 1.15);
+}
+
+/* Disabled state */
 #datastream-preloader .button-unit:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
 
-/* --- State-Specific Visual Changes for Streams (ENHANCED) --- */
+
+/* --- State-Specific Visual Changes for Streams (FIXED: Monochromatic) --- */
 .preloader-data-stream.is-verified {
-    border-color: oklch(0.9 0.08 160 / 0.5);
-    box-shadow: 0 0 8px 0 oklch(0.9 0.08 160 / 0.25);
+    --status-color: oklch(0.95 0 0); /* Bright white for success */
+    border-color: oklch(from var(--status-color) l c h / 0.5);
+    box-shadow: 0 0 8px 0 oklch(from var(--status-color) l c h / 0.25);
 }
 .preloader-data-stream.is-verified .preloader-stream-header,
 .preloader-data-stream.is-verified .preloader-stream-status,
 .preloader-data-stream.is-verified .preloader-stream-output-text {
-    color: oklch(0.9 0.08 160);
+    color: var(--status-color);
 }
 .preloader-data-stream.is-verified .preloader-stream-header {
-    border-bottom-color: oklch(0.9 0.08 160 / 0.4);
+    border-bottom-color: oklch(from var(--status-color) l c h / 0.4);
 }
 
 .preloader-data-stream.is-error {
-    border-color: oklch(0.75 0.22 25 / 0.6);
-    box-shadow: 0 0 8px 0 oklch(0.75 0.22 25 / 0.3);
+    --status-color: oklch(0.65 0 0); /* Mid-gray for error */
+    border-color: oklch(from var(--status-color) l c h / 0.6);
+    box-shadow: 0 0 8px 0 oklch(from var(--status-color) l c h / 0.3);
 }
 .preloader-data-stream.is-error .preloader-stream-header,
 .preloader-data-stream.is-error .preloader-stream-status,
 .preloader-data-stream.is-error .preloader-stream-output-text {
-    color: oklch(0.75 0.22 25);
+    color: var(--status-color);
 }
 .preloader-data-stream.is-error .preloader-stream-header {
-    border-bottom-color: oklch(0.75 0.22 25 / 0.4);
+    border-bottom-color: oklch(from var(--status-color) l c h / 0.4);
 }
 
 #critical-error-message {
     display: none;
-    color: oklch(0.75 0.22 25);
+    color: oklch(0.75 0.18 25);
     text-align: center;
     margin-top: 1rem;
     font-weight: bold;

@@ -34,12 +34,14 @@ body.theme-dim {
     --panel-shadow-inner: inset 0 0 0 1px oklch(var(--panel-section-border-l) var(--panel-section-border-c) var(--panel-section-border-h) / 0.5);
 
     /* --- Component: Button Unit --- */
-    --btn-unlit-bg-l: 0.06;
-    --btn-unlit-bg-a: 0.3;
-    --btn-unlit-border-l: 0.1;
-    --btn-unlit-border-a: 0.4;
-    --btn-unlit-text-l: 0.1;
-    --btn-unlit-text-a: 0.9;
+    --btn-unlit-bg-l: 0.12;
+    --btn-unlit-bg-a: 0.9;
+    --btn-unlit-border-l: 0.0;
+    --btn-unlit-border-a: 0.9;
+    --btn-unlit-text-l: 0.0;
+    --btn-unlit-text-a: 1;
+    --btn-unlit-light-l: .0;
+    --btn-unlit-light-a: .0;
 
     --btn-energized-unselected-bg-l: 0.75;
     --btn-energized-unselected-bg-a: 0.75;
@@ -70,16 +72,16 @@ body.theme-dim {
 
 
     /* --- Component: LCD Screens --- */
-    --lcd-unlit-bg-l: 0.01;
+    --lcd-unlit-bg-l: 0.08;
     --lcd-unlit-bg-c: 0;
     --lcd-unlit-bg-h: 0;
     --lcd-unlit-bg-a: 0.9;
     --lcd-unlit-text-l: 0.90;
     --lcd-unlit-text-c: 0;    
     --lcd-unlit-text-h: 0;    
-    --lcd-unlit-text-a: 1; 
-    --lcd-unlit-border-l: 0.03;
-    --lcd-unlit-border-a: 0.15;
+    --lcd-unlit-text-a: 0; 
+    --lcd-unlit-border-l: 0.10;
+    --lcd-unlit-border-a: 0.9;
     --lcd-unlit-shadow: none;
 
     --lcd-dimly-lit-grad-start-l: 0.22;
@@ -180,7 +182,7 @@ body.theme-dim .dial-canvas-container.is-dragging {
 }
 
 body.theme-dim .app-wrapper .button-unit {
-    cursor: not-allowed;
+    cursor: default;
 }
 
 /* Disable hover effects on any selected button (like Main Power) in the app area */
