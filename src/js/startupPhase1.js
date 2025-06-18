@@ -9,10 +9,18 @@ export const phase1Config = {
   // Phase duration. Accommodates concurrent visual starts and a specifically timed sound.
   duration: 3.5, 
 
-  specialTerminalFlicker: true, // Visuals for terminal (container & text flicker) start at T=0 of the phase.
-  message: ["INITIATING STARTUP PROTOCOL"],
+  // The text flicker is handled by TerminalManager, triggered by this message key.
+  terminalMessageKey: "P1_EMERGENCY_SUBSYSTEMS",
 
   animations: [
+    {
+      // RESTORED: This animation is crucial for making the terminal container itself visible.
+      type: 'lcdPowerOn',
+      target: 'terminalContainer',
+      state: 'dimly-lit',
+      profile: 'terminalScreenFlickerToDimlyLit',
+      position: 0
+    },
     {
       type: 'audio',
       soundKey: 'terminalBoot',

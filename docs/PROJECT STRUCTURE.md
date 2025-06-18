@@ -8,16 +8,22 @@ HUE9000_Project/
 ├── src/
 │   ├── assets/                 # NEW: All static assets processed by Vite
 │   │   ├── audio/
-│   │   │   ├── background.mp3
-│   │   │   ├── big-on.wav
+│   │   │   ├── auxModeChange.mp3
+│   │   │   ├── auxModeLow.mp3
+│   │   │   ├── bg-dim.mp3
+│   │   │   ├── bg-light.mp3
+│   │   │   ├── bg-resistive.mp3
 │   │   │   ├── button-press.mp3
+│   │   │   ├── buttonEnergize.mp3
 │   │   │   ├── dial.mp3
-│   │   │   ├── flicker-to-dim.wav
-│   │   │   ├── lcd-on.wav
-│   │   │   ├── lens-startup.wav
-│   │   │   ├── lights-on.wav
-│   │   │   ├── off.wav
-│   │   │   └── terminal-on.wav
+│   │   │   ├── itemAppear.mp3
+│   │   │   ├── lcdPowerOn.mp3
+│   │   │   ├── lensStartup.mp3
+│   │   │   ├── lights-on.mp3
+│   │   │   ├── off1.mp3
+│   │   │   ├── off2.mp3
+│   │   │   ├── off3.mp3
+│   │   │   └── terminalBoot.mp3
 │   │   ├── svgs/
 │   │   │   ├── dial.svg
 │   │   │   ├── logo.svg

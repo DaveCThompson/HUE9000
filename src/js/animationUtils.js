@@ -34,7 +34,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     const targetElementsForLog = Array.isArray(targets) ? targets : [targets];
     const targetIdForLog = targetElementsForLog && targetElementsForLog.length > 0 && targetElementsForLog[0] ? (targetElementsForLog[0].id || targetElementsForLog[0].ariaLabel || (targetElementsForLog[0].className && targetElementsForLog[0].className.split ? targetElementsForLog[0].className.split(' ')[0] : 'unknown') || targetElementsForLog[0].tagName) : 'unknownTarget';
     
-    console.log(`[CAF_ENTRY | ${performance.now().toFixed(2)}ms] Flicker requested for: ${targetIdForLog}, Profile: ${profileNameForLog}, GSAP valid: ${!!(gsap && gsap.timeline)}`);
+    // console.log(`[CAF_ENTRY | ${performance.now().toFixed(2)}ms] Flicker requested for: ${targetIdForLog}, Profile: ${profileNameForLog}, GSAP valid: ${!!(gsap && gsap.timeline)}`);
     if (!profileOrParams || (typeof profileOrParams === 'string' && !ADVANCED_FLICKER_PROFILES[profileOrParams])) {
         console.error(`[CAF_ERROR | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}' NOT FOUND or invalid! For target: ${targetIdForLog}`);
     }
@@ -66,14 +66,14 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     });
 
     if (!profile || Object.keys(profile).length === 0) {
-        console.warn(`[CAF | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}' for ${targetIdForLog} not found or empty. Returning empty, resolved flicker.`);
+        // console.warn(`[CAF | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}' for ${targetIdForLog} not found or empty. Returning empty, resolved flicker.`);
         const tl = gsap.timeline();
         tl.eventCallback("onComplete", () => {
             if (config.onTimelineComplete) config.onTimelineComplete();
             config.gsapInternalOnComplete();
         });
         tl.to({}, { duration: 0.001 }); 
-        console.log(`[CAF_RETURN_EMPTY_PROFILE | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${tl.duration().toFixed(3)}s.`);
+        // console.log(`[CAF_RETURN_EMPTY_PROFILE | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${tl.duration().toFixed(3)}s.`);
         return { timeline: tl, completionPromise };
     }
 
@@ -84,11 +84,11 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     
     const elementsToAnimate = Array.isArray(targets) ? targets.filter(t => t) : (targets ? [targets] : []);
     if (elementsToAnimate.length === 0) {
-        console.warn(`[CAF | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}': No valid target elements. Returning empty, resolved flicker.`);
+        // console.warn(`[CAF | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}': No valid target elements. Returning empty, resolved flicker.`);
         const tl = gsap.timeline();
         tl.eventCallback("onComplete", () => { if (config.onTimelineComplete) config.onTimelineComplete(); config.gsapInternalOnComplete(); });
         tl.to({}, { duration: 0.001 });
-        console.log(`[CAF_RETURN_NO_TARGETS | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${tl.duration().toFixed(3)}s.`);
+        // console.log(`[CAF_RETURN_NO_TARGETS | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${tl.duration().toFixed(3)}s.`);
         return { timeline: tl, completionPromise };
     }
 
@@ -98,66 +98,15 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
 
     const tl = gsap.timeline({
         onStart: () => {
-            console.log(`[CAF_TL_START | ${performance.now().toFixed(2)}ms] GSAP TL START for '${profileNameForLog}' on '${targetIdForLog}'`);
+            // console.log(`[CAF_TL_START | ${performance.now().toFixed(2)}ms] GSAP TL START for '${profileNameForLog}' on '${targetIdForLog}'`);
             if (config.onStart) config.onStart();
         },
         onComplete: () => {
-            console.log(`[CAF_TL_COMPLETE | ${performance.now().toFixed(2)}ms] GSAP TL COMPLETE for '${profileNameForLog}' on '${targetIdForLog}'. Calling user's onTimelineComplete.`);
+            // console.log(`[CAF_TL_COMPLETE | ${performance.now().toFixed(2)}ms] GSAP TL COMPLETE for '${profileNameForLog}' on '${targetIdForLog}'. Calling user's onTimelineComplete.`);
             if (config.onTimelineComplete) config.onTimelineComplete();
             config.gsapInternalOnComplete();
         },
-        // **** NEW DEBUG: onUpdate ****
-        onUpdate: function() {
-            // Ensure elementsToAnimate and baseTargetsForOpacity are populated and valid before accessing.
-            // This check is important because onUpdate can fire very early.
-            if (!elementsToAnimate[0] || (baseTargetsForOpacity !== elementsToAnimate && !baseTargetsForOpacity[0])) {
-                 // If baseTargetsForOpacity was changed to lightElements, it might not be populated yet on the very first tick.
-                if (profile.targetProperty === 'button-lights-and-frame' && lightElements.length > 0 && lightElements[0]) {
-                    // use lightElements if available and appropriate
-                } else {
-                    return; 
-                }
-            }
-
-            const time = this.time().toFixed(3);
-            const lightTarget = (profile.targetProperty === 'button-lights-and-frame' && lightElements.length > 0) ? lightElements[0] : baseTargetsForOpacity[0];
-            const buttonElement = elementsToAnimate[0];
-
-            if (!lightTarget || !buttonElement) return; // Extra safety
-
-            const lightOpacity = gsap.getProperty(lightTarget, "opacity");
-            const lightVisibility = gsap.getProperty(lightTarget, "visibility");
-            
-            let glowOpacityVal = "N/A";
-            let glowSizeVal = "N/A";
-
-            if (profile.glow) {
-                if (profile.glow.opacityVar) {
-                    glowOpacityVal = getComputedStyle(buttonElement).getPropertyValue(profile.glow.opacityVar).trim();
-                } else if (profile.glow.animatedProperties?.opacity) {
-                    glowOpacityVal = getComputedStyle(buttonElement).getPropertyValue(profile.glow.animatedProperties.opacity).trim();
-                }
-
-                if (profile.glow.sizeVar) {
-                    glowSizeVal = getComputedStyle(buttonElement).getPropertyValue(profile.glow.sizeVar).trim();
-                } else if (profile.glow.animatedProperties?.blur) {
-                    glowSizeVal = getComputedStyle(buttonElement).getPropertyValue(profile.glow.animatedProperties.blur).trim();
-                }
-            }
-            
-            const duration = this.duration();
-            // Log more frequently initially, then spread out
-            if (time === "0.000" ||
-                (duration > 0 && Math.abs(this.time() - duration * 0.01) < 0.016) || // Approx 1%
-                (duration > 0 && Math.abs(this.time() - duration * 0.05) < 0.016) || // Approx 5%
-                (duration > 0 && Math.abs(this.time() - duration * 0.15) < 0.016) || // Approx 15%
-                (duration > 0 && Math.abs(this.time() - duration * 0.30) < 0.016) || // Approx 30%
-                (duration > 0 && Math.abs(this.time() - duration * 0.50) < 0.016) || 
-                (duration > 0 && Math.abs(this.time() - duration * 0.75) < 0.016)) { 
-                console.log(`[CAF_ONUPDATE | ${performance.now().toFixed(2)}ms] ${targetIdForLog} @ ${time}s (of ${duration.toFixed(3)}s): Light Opacity=${Number(lightOpacity).toFixed(3)}, Vis=${lightVisibility}, Glow Opacity='${glowOpacityVal}', Glow Size='${glowSizeVal}'`);
-            }
-        }
-        // **** END NEW DEBUG ****
+        onUpdate: config.onUpdate
     });
 
     if (profile.targetProperty === 'button-lights-and-frame') {
@@ -167,7 +116,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         });
 
         if (lightElements.length > 0) {
-            baseTargetsForOpacity = lightElements; // Now baseTargetsForOpacity refers to lightElements
+            baseTargetsForOpacity = lightElements;
             gsap.killTweensOf(baseTargetsForOpacity); 
             gsap.set(baseTargetsForOpacity, {clearProps: "all", overwrite: true}); 
         }
@@ -177,22 +126,9 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         gsap.killTweensOf(baseTargetsForOpacity); 
     }
     
-    console.log(`[CAF_TARGETS | ${performance.now().toFixed(2)}ms] Profile: ${profileNameForLog}, TargetProp: ${profile.targetProperty} for ${targetIdForLog}`);
-    if (profile.targetProperty === 'button-lights-and-frame') {
-        console.log(`  Light elements for opacity: ${lightElements.length}`, lightElements.map(l => l.outerHTML.substring(0,50) + "..."));
-        console.log(`  Main button elements for CSS vars: ${elementsToAnimate.length}`, elementsToAnimate.map(el => el.id || el.ariaLabel));
-    } else {
-        console.log(`  Base targets for opacity/effects: ${baseTargetsForOpacity.length}`, baseTargetsForOpacity.map(el => el.id || el.ariaLabel));
-    }
-    if (profile.glow) {
-        console.log(`  Glow vars to be animated: OpacityVar='${profile.glow.opacityVar}', SizeVar='${profile.glow.sizeVar}', AnimatedProps=`, profile.glow.animatedProperties);
-    }
-
     const isTransitioningFromEffectivelyUnlit = (profile.amplitudeStart !== undefined && profile.amplitudeStart <= 0.01) &&
                                              (!profile.glow || getGlowParam(profile.glow, 'initialOpacity', 0) <= 0.01);
     
-    console.log(`[CAF_INITIAL_SET | ${performance.now().toFixed(2)}ms] For ${targetIdForLog}, isTransitioningFromEffectivelyUnlit: ${isTransitioningFromEffectivelyUnlit}. AmplitudeStart: ${profile.amplitudeStart}, GlowInitialOpacity: ${profile.glow ? getGlowParam(profile.glow, 'initialOpacity', 0) : 'N/A'}`);
-
     if (isTransitioningFromEffectivelyUnlit) {
         if (baseTargetsForOpacity.length > 0) {
             tl.set(baseTargetsForOpacity, { autoAlpha: 0, immediateRender: true });
@@ -210,7 +146,6 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     } else { 
         if (baseTargetsForOpacity.length > 0) {
             const initialAutoAlpha = profile.amplitudeStart !== undefined ? profile.amplitudeStart : 0;
-            console.log(`[CAF_INITIAL_SET_ELSE | ${performance.now().toFixed(2)}ms] Setting baseTargetsForOpacity (${baseTargetsForOpacity.length}) to autoAlpha: ${initialAutoAlpha} for ${targetIdForLog}`);
             tl.set(baseTargetsForOpacity, { autoAlpha: initialAutoAlpha, immediateRender: true });
         }
         if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
@@ -223,9 +158,6 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             if (profile.glow.animatedProperties?.opacity) initialGlowCSS[profile.glow.animatedProperties.opacity] = initialGlowOpacity;
             if (profile.glow.animatedProperties?.blur) initialGlowCSS[profile.glow.animatedProperties.blur] = typeof initialGlowSize === 'number' ? `${initialGlowSize}px` : initialGlowSize;
             
-            if (Object.keys(initialGlowCSS).length > 0) {
-                 console.log(`[CAF_INITIAL_SET_ELSE_GLOW | ${performance.now().toFixed(2)}ms] Setting initialGlowCSS on elementsToAnimate (${elementsToAnimate.length}) for ${targetIdForLog}:`, JSON.stringify(initialGlowCSS));
-            }
             if (Object.keys(initialGlowCSS).length > 0) {
                 tl.set(elementsToAnimate, { css: initialGlowCSS, immediateRender: true });
             }
@@ -262,12 +194,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         if (Object.keys(onGlowCSS).length > 0) {
             tl.to(elementsToAnimate, { css: onGlowCSS, duration: onDuration, ease: "power1.inOut" }, currentTime);
         }
-        // **** NEW DEBUG: Log what GSAP is *tweening to* in the first "on" cycle ****
-        if (i === 0) {
-            console.log(`[CAF_CYCLE_0_ON_TARGETS | ${performance.now().toFixed(2)}ms] ${targetIdForLog} Cycle 0 "ON" targets: Light autoAlpha=${onState.autoAlpha.toFixed(3)}, GlowCSS=`, JSON.stringify(onGlowCSS));
-        }
-        // **** END NEW DEBUG ****
-
+        
         currentTime += onDuration;
 
         if (i < profile.numCycles - 1) {
@@ -297,11 +224,6 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             if (Object.keys(offGlowCSS).length > 0) {
                 tl.to(elementsToAnimate, { css: offGlowCSS, duration: offDuration, ease: "power1.inOut" }, currentTime);
             }
-            // **** NEW DEBUG: Log what GSAP is *tweening to* in the first "off" cycle ****
-             if (i === 0) {
-                console.log(`[CAF_CYCLE_0_OFF_TARGETS | ${performance.now().toFixed(2)}ms] ${targetIdForLog} Cycle 0 "OFF" targets: Light autoAlpha=${offState.autoAlpha.toFixed(3)}, GlowCSS=`, JSON.stringify(offGlowCSS));
-            }
-            // **** END NEW DEBUG ****
             currentTime += offDuration;
         }
     }
@@ -328,14 +250,14 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     }
 
     if (tl.duration() === 0 && profile.numCycles === 0) { 
-        console.warn(`[CAF_WARN | ${performance.now().toFixed(2)}ms] Timeline for ${targetIdForLog} had 0 duration with 0 cycles. Adding minimal duration.`);
+        // console.warn(`[CAF_WARN | ${performance.now().toFixed(2)}ms] Timeline for ${targetIdForLog} had 0 duration with 0 cycles. Adding minimal duration.`);
         tl.to({}, {duration: 0.001});
     }
     
-    const finalDuration = tl.duration();
-    console.log(`[CAF_RETURN | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${finalDuration.toFixed(3)}s. Timeline has children: ${tl.getChildren().length > 0}`);
-    if (finalDuration <= 0.01 && profile.numCycles > 0) { 
-        console.warn(`[CAF_WARN | ${performance.now().toFixed(2)}ms] Timeline for ${targetIdForLog} is very short or empty despite having cycles! Profile:`, JSON.stringify(profile));
-    }
+    // const finalDuration = tl.duration();
+    // console.log(`[CAF_RETURN | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${finalDuration.toFixed(3)}s. Timeline has children: ${tl.getChildren().length > 0}`);
+    // if (finalDuration <= 0.01 && profile.numCycles > 0) { 
+    //     console.warn(`[CAF_WARN | ${performance.now().toFixed(2)}ms] Timeline for ${targetIdForLog} is very short or empty despite having cycles! Profile:`, JSON.stringify(profile));
+    // }
     return { timeline: tl, completionPromise };
 }

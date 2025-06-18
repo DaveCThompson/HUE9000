@@ -64,11 +64,7 @@ export class PhaseRunner {
         console.log(`[PhaseRunner | ${performance.now().toFixed(2)}ms] Phase ${phaseConfig.phase} (${phaseConfig.name}): MASTER TL CREATED. Will populate.`);
 
 
-        if (phaseConfig.specialTerminalFlicker && phaseConfig.message) {
-            console.log(`[${phaseIdForRunLog} | ${performance.now().toFixed(2)}ms] PhaseRunner: Adding specialTerminalFlicker.`);
-            const terminalFlickerTl = this.managers.terminalManager.playStartupFlicker(phaseConfig.message);
-            masterTl.add(terminalFlickerTl, 0); 
-        } else if (phaseConfig.terminalMessageKey) {
+        if (phaseConfig.terminalMessageKey) {
             console.log(`[${phaseIdForRunLog} | ${performance.now().toFixed(2)}ms] PhaseRunner: Scheduling terminalMessageKey '${phaseConfig.terminalMessageKey}' at GSAP_pos 0.`);
             masterTl.call(() => {
                 console.log(`[${phaseIdForRunLog} | ${performance.now().toFixed(2)}ms] PhaseRunner: EXECUTING emit requestTerminalMessage for '${phaseConfig.terminalMessageKey}' (Master TL time: ${masterTl.time().toFixed(3)}s)`);

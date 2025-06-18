@@ -17,6 +17,8 @@ export class AudioManager extends EventEmitter {
         this.soundLoadStates = {}; // Tracks individual sound load states: 'loading', 'loaded', 'error'
         this.queuedPlayCalls = [];
         this.debug = true; // ENABLED for detailed sound logging
+        this.currentMusicKey = null; // Track current background music
+        this.currentMusicId = null; // Track the ID of the playing music
     }
 
     /**
@@ -97,8 +99,14 @@ export class AudioManager extends EventEmitter {
                         console.log(`[AM | ${performance.now().toFixed(2)}ms] Howler ONPLAY for sound: ${key} (ID: ${id}, Current HowlerVol: ${this.sounds[key].volume(id)})`);
                         // if (this.debug) console.log(`[AudioManager] Playing sound: ${key} (ID: ${id}, Current Volume: ${this.sounds[key].volume(id)})`); // Covered by new log
                     },
-                    onstop: (id) => { // Added id parameter
+                    onstop: (id) => {
                         if (this.debug) console.log(`[AudioManager] Stopped sound: ${key} (ID: ${id})`);
+                        // If the stopped music track was the one we were tracking, clear it
+                        if (this.config.AUDIO_CONFIG.sounds[key]?.isMusic && id === this.currentMusicId) {
+                            if (this.debug) console.log(`[AM Music] Clearing currentMusicKey/Id because ${key} (ID: ${id}) stopped.`);
+                            this.currentMusicKey = null;
+                            this.currentMusicId = null;
+                        }
                     },
                     onfade: (id) => { // Added id parameter
                         if (this.debug) console.log(`[AudioManager] Fade complete for sound: ${key} (ID: ${id})`);
@@ -261,14 +269,32 @@ export class AudioManager extends EventEmitter {
     }
 
     fadeOut(key, durationSeconds, soundId = null) {
-        if (this.sounds[key] && this.sounds[key].playing(soundId)) {
+        const sound = this.sounds[key];
+        if (sound && this.isPlaying(key, soundId)) {
             if (this.debug) console.log(`[AudioManager FADEOUT] Sound: ${key}, Duration: ${durationSeconds}s, ID: ${soundId || 'all'}`);
-            const targetVolume = 0; 
+            const targetVolume = 0;
             const durationMs = durationSeconds * 1000;
-            if (soundId) this.sounds[key].fade(this.sounds[key].volume(undefined, soundId), targetVolume, durationMs, soundId);
-            else this.sounds[key].fade(this.sounds[key].volume(), targetVolume, durationMs);
-        } else if (this.debug && this.sounds[key]) {
-             console.log(`[AudioManager FADEOUT] Sound "${key}" not playing or not found, cannot fadeOut.`);
+    
+            const onFadeComplete = (id) => {
+                if (this.debug) console.log(`[AM FADEOUT] Fade complete for ${key} (ID: ${id}). Stopping sound.`);
+                this.stop(key, id); // Explicitly stop the sound
+                sound.off('fade', onFadeComplete, id);
+            };
+    
+            if (soundId) {
+                sound.once('fade', onFadeComplete, soundId);
+                sound.fade(sound.volume(undefined, soundId), targetVolume, durationMs, soundId);
+            } else {
+                const playingIds = sound._getSoundIds ? sound._getSoundIds() : [null];
+                playingIds.forEach(id => {
+                    if (this.isPlaying(key, id)) {
+                        sound.once('fade', onFadeComplete, id);
+                        sound.fade(sound.volume(undefined, id), targetVolume, durationMs, id);
+                    }
+                });
+            }
+        } else if (this.debug && sound) {
+            console.log(`[AudioManager FADEOUT] Sound "${key}" not playing or not found, cannot fadeOut.`);
         }
     }
     
@@ -294,11 +320,14 @@ export class AudioManager extends EventEmitter {
                 if(typeof idToFade === 'number') {
                     this.sounds[key].fade(0, finalVolume, durationMs, idToFade);
                 }
+                return idToFade; // Return the new ID
             } else { 
                  const currentVol = this.sounds[key].volume(undefined, soundIdToPlayOn); 
                  this.sounds[key].fade(currentVol, finalVolume, durationMs, soundIdToPlayOn);
+                 return soundIdToPlayOn;
             }
         } else console.warn(`[AudioManager FADEIN] Sound key "${key}" not found.`);
+        return null;
     }
 
     isPlaying(key, soundId = null) {
@@ -326,5 +355,34 @@ export class AudioManager extends EventEmitter {
     toggleMute(mute) { // Assumes global mute for now
         if (this.debug) console.log(`[AudioManager] Toggling global mute: ${mute}`);
         Howler.mute(mute);
+    }
+
+    playMusic(key) {
+        if (!this.sounds[key] || !this.config.AUDIO_CONFIG.sounds[key]?.isMusic) {
+            console.warn(`[AM Music] Music key "${key}" not found or not configured as music.`);
+            return;
+        }
+
+        if (this.currentMusicKey === key && this.isPlaying(this.currentMusicKey, this.currentMusicId)) {
+            if (this.debug) console.log(`[AM Music] Music key "${key}" is already playing.`);
+            return;
+        }
+
+        const crossfadeDuration = this.config.AUDIO_CONFIG.musicCrossfadeDuration;
+        console.log(`[AM Music] Playing music "${key}" with a ${crossfadeDuration}s crossfade.`);
+
+        // Fade out the old music if it's playing
+        if (this.currentMusicKey && this.currentMusicId && this.isPlaying(this.currentMusicKey, this.currentMusicId)) {
+            console.log(`[AM Music] Fading out old music: ${this.currentMusicKey}`);
+            this.fadeOut(this.currentMusicKey, crossfadeDuration, this.currentMusicId);
+        }
+
+        // Play and fade in the new music
+        const newMusicId = this.fadeIn(key, crossfadeDuration);
+        if (newMusicId) {
+            this.currentMusicKey = key;
+            this.currentMusicId = newMusicId;
+            console.log(`[AM Music] Fading in new music: ${key} (ID: ${newMusicId})`);
+        }
     }
 }

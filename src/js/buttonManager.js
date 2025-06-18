@@ -182,19 +182,8 @@ export class ButtonManager {
         appState.emit('buttonInteracted', { button: buttonInstance });
         this.emit('afterButtonTransition', buttonInstance);
 
-        if (groupId === 'light' && appState.getAppStatus() === 'interactive') {
-            if (buttonInstance.isSelected() && !wasSelected) { 
-                if (this.audioManager) {
-                    this.audioManager.play('auxModeChange', true); 
-                    if (this.debug) console.log(`[BM handleInteraction | ${performance.now().toFixed(2)}ms] Played 'auxModeChange' for ${buttonId}`);
-                }
-            }
-        } else if (appState.getAppStatus() === 'interactive' && buttonInstance.config.type !== 'radio' && buttonInstance.config.type !== 'toggle') {
-            if (this.audioManager) {
-                 this.audioManager.play('buttonPress', true); 
-                 if (this.debug) console.log(`[BM handleInteraction | ${performance.now().toFixed(2)}ms] Played 'buttonPress' for action button ${buttonId}`);
-            }
-        }
+        // REMOVED audio playing logic from here to centralize it in main.js
+        // The old logic that played 'auxModeChange' or 'buttonPress' is gone.
     }
 
     setGroupSelected(groupId, selectedValue) {

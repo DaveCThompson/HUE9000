@@ -4,7 +4,9 @@
  */
 
 // Asset Imports (Vite will handle these paths)
-import backgroundMusicSrc from '../assets/audio/background.mp3';
+import backgroundMusicDimSrc from '../assets/audio/bg-dim.mp3';
+import backgroundMusicLightSrc from '../assets/audio/bg-light.mp3';
+import backgroundMusicResistiveSrc from '../assets/audio/bg-resistive.mp3';
 import dialLoopSrc from '../assets/audio/dial.mp3';
 import buttonPressSrc from '../assets/audio/button-press.mp3';
 // import preloaderStreamDataSrc from '../assets/audio/preloader_stream_data.mp3'; // REMOVED - Assumed unused during preloader
@@ -12,9 +14,13 @@ import itemAppearSrc from '../assets/audio/itemAppear.mp3';
 import terminalBootSrc from '../assets/audio/terminalBoot.mp3'; 
 import lcdPowerOnSrc from '../assets/audio/lcdPowerOn.mp3';   
 import lensStartupSrc from '../assets/audio/lensStartup.mp3'; 
-import powerOffSrc from '../assets/audio/off.mp3';          
+import powerOff1Src from '../assets/audio/off1.mp3';          
+import powerOff2Src from '../assets/audio/off2.mp3';          
+import powerOff3Src from '../assets/audio/off3.mp3';          
 import buttonEnergizeSrc from '../assets/audio/buttonEnergize.mp3'; 
 import themeEngageSrc from '../assets/audio/lights-on.mp3'; 
+import auxModeLowSrc from '../assets/audio/auxModeLow.mp3';
+import auxModeHighSrc from '../assets/audio/auxModeChange.mp3';
 
 
 import logoSvgSrc from '../assets/svgs/logo.svg';
@@ -84,7 +90,7 @@ export const LCD_TEXT_FADE_IN_DURATION = 0.3;
 
 export const STARTUP_L_REDUCTION_FACTORS = {
     P0: 0.40, P1: 0.39, P2: 0.35, P3: 0.325, P4: 0.325, 
-    P5: 0.275, P6: 0.225, P7: 0.075, P8: 0.05, P9: 0.00
+    P5: 0.275, P6: 0.225, P7: 0.075, P8: 0.00
 };
 export const STARTUP_DIM_FACTORS_ANIMATION_DURATION = 1.0; // Standard duration for dim factor tweens
 
@@ -160,7 +166,7 @@ export const NUM_LENS_GRADIENT_STOPS = LENS_GRADIENT_BREAKPOINTS[0].stops.length
 // --- Terminal Configuration ---
 export const TERMINAL_MAX_LINES_IN_DOM = 150;
 export const TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR = 40;
-export const TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR = 15;
+export const TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR = 12; // Adjusted for sluggishness
 export const TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR = 20;
 export const TERMINAL_INTERACTION_DEBOUNCE_MS = 500;
 export const TERMINAL_THINKING_DELAY_MIN_MS = 50;
@@ -168,6 +174,7 @@ export const TERMINAL_THINKING_DELAY_MAX_MS = 250;
 export const TERMINAL_SCROLL_DURATION_S = 0.4;
 export const TERMINAL_CURSOR_BLINK_ON_MS = 530;
 export const TERMINAL_CURSOR_BLINK_OFF_MS = 370;
+export const TERMINAL_INTER_LINE_PAUSE_S = 0.25; // Adjusted for sluggishness
 
 // --- Standardized Visual State Characteristics ---
 const VISUAL_STATES = {
@@ -465,24 +472,29 @@ export const RESISTIVE_SHUTDOWN_PARAMS = {
 // --- Audio Configuration ---
 export const AUDIO_CONFIG = {
   masterVolume: 1.0, 
-  musicCrossfadeDuration: 2.0,
+  musicCrossfadeDuration: 2.5,
   soundCooldowns: {
     itemAppear: 250,      
     terminalBoot: 4000,   
     lcdPowerOn: 6000,     
   },
   sounds: { 
-    backgroundMusic: { src: backgroundMusicSrc, loop: true, volume: 0.35, html5: true },
+    bgDim:           { src: backgroundMusicDimSrc, loop: true, volume: 0.35, html5: true, isMusic: true },
+    bgLight:         { src: backgroundMusicLightSrc, loop: true, volume: 0.45, html5: true, isMusic: true },
+    bgResistive:     { src: backgroundMusicResistiveSrc, loop: true, volume: 0.40, html5: true, isMusic: true },
     dialLoop:        { src: dialLoopSrc, loop: true, volume: 0.35, html5: false },
     buttonPress:     { src: buttonPressSrc,loop: false, volume: 0.8, html5: false },
     itemAppear:      { src: itemAppearSrc, loop: false, volume: 0.6, html5: false },
     terminalBoot:    { src: terminalBootSrc, loop: false, volume: 0.9, fadeOutDuration: 4000, html5: false },
     lcdPowerOn:      { src: lcdPowerOnSrc, loop: false, volume: 0.8, fadeOutDuration: 6000, html5: false },
     lensStartup:     { src: lensStartupSrc, loop: false, volume: 0.9, html5: false },       
-    powerOff:        { src: powerOffSrc, loop: false, volume: 1.0, html5: false },
+    powerOff1:       { src: powerOff1Src, loop: false, volume: 1.0, html5: false },
+    powerOff2:       { src: powerOff2Src, loop: false, volume: 1.0, html5: false },
+    powerOff3:       { src: powerOff3Src, loop: false, volume: 1.0, html5: false },
     buttonEnergize:  { src: buttonEnergizeSrc, loop: false, volume: 0.2, html5: false }, 
     themeEngage:     { src: themeEngageSrc, loop: false, volume: 0.9, html5: false },
-    auxModeChange:   { src: buttonEnergizeSrc, loop: false, volume: 0.7, html5: false }, 
+    auxModeLow:      { src: auxModeLowSrc, loop: false, volume: 0.7, html5: false },
+    auxModeHigh:     { src: auxModeHighSrc, loop: false, volume: 0.7, html5: false },
   },
 };
 

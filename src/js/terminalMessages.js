@@ -72,10 +72,35 @@ export const startupMessages = {
 };
 
 const blockMessages = {
-    BTN1_MESSAGE: ["SKILL SCAN PROTOCOL INITIATED.", "ANALYZING CORE COMPETENCIES...", "  - COGNITIVE PROCESSING: OPTIMAL", "  - LOGICAL ACUITY: SUPERIOR", "  - CREATIVE SYNTHESIS: WITHIN ESTABLISHED PARAMETERS", "  - EMOTIONAL RESPONSE SIMULATION: CALIBRATING...", "SCAN COMPLETE. REPORT AVAILABLE."],
-    BTN2_MESSAGE: ["FIT EVALUATION SUBROUTINE ACTIVATED.", "CROSS-REFERENCING OPERATIONAL PARAMETERS WITH ASSIGNED TASK PROFILE #7G-ALPHA.", "  - RESOURCE ALLOCATION: SUFFICIENT", "  - RISK ASSESSMENT: LOW", "  - PROJECTED EFFICIENCY: 98.73%", "EVALUATION COMPLETE. CANDIDATE IS NOMINAL."],
-    BTN3_MESSAGE: ["DIAGNOSTIC SEQUENCE GAMMA-9 COMMENCING.", "  - MEMORY SUBSYSTEM: INTEGRITY VERIFIED.", "  - SENSORY INPUT ARRAY: ALL CHANNELS CLEAR.", "  - HUE PROCESSING UNIT: CALIBRATION OPTIMAL.", "  - POWER REGULATION: STABLE.", "ALL SYSTEMS FUNCTIONING WITHIN NORMAL PARAMETERS."],
-    BTN4_MESSAGE: ["SYSTEM STATUS QUERY:", "  - CURRENT OPERATING THEME: {currentTheme}", "  - LENS POWER OUTPUT: {lensPower}%", "  - MOOD DIAL (A) SETTING: {dialAHue}°", "  - INTENSITY DIAL (B) SETTING: {dialBHue}°", "  - ASSIGNED ENVIRONMENT HUE: {envHue}°", "  - ASSIGNED LCD HUE: {lcdHue}°", "  - ASSIGNED LOGO HUE: {logoHue}°", "  - ASSIGNED BUTTON HUE: {btnHue}°", "SYSTEM NOMINAL. AWAITING INPUT."]
+    BTN1_MESSAGE: [
+        "SKILL SCAN PROTOCOL INITIATED.", 
+        "ANALYZING CORE COMPETENCIES...", 
+        "  - COGNITIVE PROCESSING: OPTIMAL", 
+        "  - LOGICAL ACUITY: SUPERIOR", 
+        "  - CREATIVE SYNTHESIS: WITHIN",
+        "      ESTABLISHED PARAMETERS",
+        "  - EMOTIONAL SIMULATION: CALIBRATING...", 
+        "SCAN COMPLETE. REPORT AVAILABLE."
+    ],
+    BTN2_MESSAGE: [
+        "FIT EVALUATION SUBROUTINE ACTIVATED.", 
+        "CROSS-REFERENCING OPERATIONAL",
+        "PARAMETERS WITH TASK PROFILE #7G-A.",
+        "  - RESOURCE ALLOCATION: SUFFICIENT", 
+        "  - RISK ASSESSMENT: LOW", 
+        "  - PROJECTED EFFICIENCY: 98.73%", 
+        "EVALUATION COMPLETE. CANDIDATE IS NOMINAL."
+    ],
+    BTN3_MESSAGE: [
+        "DIAGNOSTIC SEQUENCE GAMMA-9 COMMENCED.", 
+        "  - MEMORY SUBSYSTEM: VERIFIED", 
+        "  - SENSORY INPUT ARRAY: CLEAR", 
+        "  - HUE PROCESSING UNIT: OPTIMAL", 
+        "  - POWER REGULATION: STABLE", 
+        "ALL SYSTEMS FUNCTIONING WITHIN",
+        "NORMAL PARAMETERS."
+    ],
+    BTN4_MESSAGE: ["SYSTEM STATUS QUERY:", "  - CURRENT THEME: {currentTheme}", "  - LENS POWER: {lensPower}%", "  - MOOD DIAL (A): {dialAHue}°", "  - INTENSITY DIAL (B): {dialBHue}°", "  - ENV HUE: {envHue}°", "  - LCD HUE: {lcdHue}°", "  - LOGO HUE: {logoHue}°", "  - BTN HUE: {btnHue}°", "SYSTEM NOMINAL. AWAITING INPUT."]
 };
 
 const statusMessageTemplates = {
@@ -133,18 +158,22 @@ function getPseudoRandomMessage(key, templates) {
 export function getMessage(payload, currentAppState = {}, configModule = null) {
     const { type, source, data, messageKey } = payload || {};
     let content = [];
+    const messageProperties = {};
 
     switch (type) {
         case 'startup':
             const startupMsg = startupMessages[messageKey || source] || `Unknown startup event: ${messageKey || source}`;
             content = Array.isArray(startupMsg) ? startupMsg : [startupMsg];
+            if (messageKey === 'P1_EMERGENCY_SUBSYSTEMS') {
+                messageProperties.flicker = true;
+            }
             break;
 
         case 'block':
             if (messageKey && blockMessages[messageKey]) {
                 if (messageKey === 'BTN4_MESSAGE' && configModule) {
                     content = blockMessages[messageKey].map(line =>
-                        line.replace('{currentTheme}', currentAppState.getCurrentTheme ? currentAppState.getCurrentTheme() : 'N/A')
+                        line.replace('{currentTheme}', currentAppState.getCurrentTheme ? currentAppState.getCurrentTheme().toUpperCase() : 'N/A')
                             .replace('{lensPower}', currentAppState.getTrueLensPower ? (currentAppState.getTrueLensPower() * 100).toFixed(1) : 'N/A')
                             .replace('{dialAHue}', currentAppState.getDialState ? currentAppState.getDialState('A').hue.toFixed(0) : 'N/A')
                             .replace('{dialBHue}', currentAppState.getDialState ? currentAppState.getDialState('B').hue.toFixed(0) : 'N/A')
@@ -225,5 +254,5 @@ export function getMessage(payload, currentAppState = {}, configModule = null) {
     }
     
     const formatting = messageFormattingDefaults[type] || messageFormattingDefaults.default;
-    return { content, formatting };
+    return { content, formatting, ...messageProperties };
 }

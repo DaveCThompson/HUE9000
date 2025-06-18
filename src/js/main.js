@@ -1,3 +1,5 @@
+// main.js
+
 /**
  * @module main
  * @description Entry point for the HUE 9000 application. Orchestrates the preloader
@@ -14,6 +16,7 @@ import * as config from './config.js';
 import { serviceLocator } from './serviceLocator.js';
 import { phaseConfigs } from './startupMachine.js';
 import { runPreloader } from './preloader.js';
+import { debounce } from './utils.js'; // --- ADDED ---
 
 // Manager Classes
 import { ButtonManager } from './buttonManager.js';
@@ -37,6 +40,56 @@ gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
 
 // --- DOM Element Collection ---
 const domElements = {};
+
+// --- Music Controller Class ---
+class MusicController {
+    constructor(audioManager, appState, config) {
+        this.audioManager = audioManager;
+        this.appState = appState;
+        this.config = config;
+        this.lastResistiveStage = 0;
+
+        this.appState.subscribe('themeChanged', this.handleThemeChange.bind(this));
+        this.appState.subscribe('resistiveShutdownStageChanged', this.handleResistiveShutdownStageChange.bind(this));
+        
+        // Initial music set based on the starting theme
+        this.handleThemeChange(this.appState.getCurrentTheme());
+    }
+
+    handleThemeChange(newTheme) {
+        // Don't change music if we are in resistive shutdown mode
+        if (this.appState.getResistiveShutdownStage() > 0) {
+            return;
+        }
+
+        console.log(`[MusicController] Theme changed to ${newTheme}. Setting music.`);
+        switch(newTheme) {
+            case 'light':
+                this.audioManager.playMusic('bgLight');
+                break;
+            case 'dark':
+            case 'dim':
+            default:
+                this.audioManager.playMusic('bgDim');
+                break;
+        }
+    }
+
+    handleResistiveShutdownStageChange({ newStage }) {
+        if (newStage > 0 && this.lastResistiveStage === 0) {
+            // Transitioning INTO resistive mode
+            console.log('[MusicController] Resistive shutdown started. Setting music.');
+            this.audioManager.playMusic('bgResistive');
+        } else if (newStage === 0 && this.lastResistiveStage > 0) {
+            // Transitioning OUT OF resistive mode (reset)
+            console.log('[MusicController] Resistive shutdown ended. Reverting to theme music.');
+            const currentTheme = this.appState.getCurrentTheme();
+            this.handleThemeChange(currentTheme);
+        }
+        this.lastResistiveStage = newStage;
+    }
+}
+
 
 function collectDomElements() {
     domElements.root = document.documentElement;
@@ -91,44 +144,107 @@ function createGridButtons(buttonManager) {
 function setupEventListeners() {
     const audioManager = serviceLocator.get('audioManager');
 
+    const debouncedSendMoodMessage = debounce((hue) => {
+        appState.emit('requestTerminalMessage', {
+            type: 'interaction',
+            source: 'mood_change',
+            data: { hue }
+        });
+    }, config.TERMINAL_INTERACTION_DEBOUNCE_MS);
+
+    const debouncedSendIntensityMessage = debounce((power) => {
+        appState.emit('requestTerminalMessage', {
+            type: 'interaction',
+            source: 'intensity_change',
+            data: { power }
+        });
+    }, config.TERMINAL_INTERACTION_DEBOUNCE_MS);
+
+    // Listen for Dial A (Mood) updates
+    appState.subscribe('dialUpdated', ({ id, state }) => {
+        // GUARD: Only send terminal messages for interactions when the app is fully interactive.
+        if (appState.getAppStatus() !== 'interactive') return;
+
+        if (id === 'A' && !state.isDragging) {
+            debouncedSendMoodMessage(state.hue);
+        }
+    });
+
+    // Listen for Dial B (Intensity) interaction state changes
+    appState.subscribe('dialBInteractionChange', (interactionState) => {
+        // GUARD: Only send terminal messages for interactions when the app is fully interactive.
+        if (appState.getAppStatus() !== 'interactive') return;
+
+        if (interactionState === 'idle') {
+            const powerPercent = appState.getTrueLensPower() * 100;
+            debouncedSendIntensityMessage(powerPercent);
+        }
+    });
+
     appState.subscribe('buttonInteracted', ({ button }) => {
         const groupId = button.getGroupId();
         const value = button.getValue();
         const ariaLabel = button.getElement().getAttribute('aria-label');
 
-        if (groupId === 'system-power' && value === 'off') {
-            audioManager.play('powerOff', true); 
-        } else if (groupId === 'light' && button.isSelected()) {
-            audioManager.play('themeEngage', true); 
-        } else if (button.config.type === 'action' || ['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
-            audioManager.play('buttonPress', true);
-        } else if (groupId === 'light' && !button.isSelected()){ // For aux light turning off
-             audioManager.play('buttonPress', true); // Or a specific "aux light off" sound if desired
-        }
-        // Note: 'auxModeChange' was previously tied to buttonEnergize. If a distinct sound for aux light *selection*
-        // is still desired separate from generic buttonPress, it needs to be specifically called.
-        // The current logic plays 'themeEngage' for aux light ON, and 'buttonPress' for aux light OFF.
-        // If 'auxModeChange' is for the *act* of changing the aux light mode (either to low or high if selected),
-        // that logic would need to be re-evaluated here or in ButtonManager.
-        // For now, ButtonManager handles playing 'auxModeChange' if a button in group 'light' *becomes* selected.
-
-        if (groupId === 'light') {
-            appState.setTheme(value === 'on' ? 'light' : 'dark');
-        } else if (groupId === 'system-power') {
+        if (groupId === 'system-power') {
+            // Sound is handled by resistiveShutdownController
             if (value === 'off') resistiveShutdownControllerInstance.handlePowerOffClick();
             else if (value === 'on' && appState.getResistiveShutdownStage() > 0) appState.setResistiveShutdownStage(0);
-        } else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
+        } 
+        else if (groupId === 'light') {
+            let stateTextForTerminal = 'OFF';
+            if (button.isSelected()) {
+                // A button was just turned ON
+                if (ariaLabel.includes('Low')) {
+                    appState.setTheme('dark');
+                    audioManager.play('auxModeLow', true);
+                    stateTextForTerminal = 'LOW';
+                } else if (ariaLabel.includes('High')) {
+                    appState.setTheme('light');
+                    audioManager.play('auxModeHigh', true);
+                    stateTextForTerminal = 'HIGH';
+                }
+            } else {
+                // This case handles deselection, reverting theme to dim if no other light is active.
+                const group = serviceLocator.get('buttonManager')._buttonGroups.get('light');
+                const anySelected = group ? Array.from(group).some(btn => btn.isSelected()) : false;
+                if (!anySelected) {
+                    appState.setTheme('dim');
+                }
+                audioManager.play('buttonPress', true);
+            }
+            
+            appState.emit('requestTerminalMessage', {
+                type: 'interaction',
+                source: 'aux_light',
+                data: { state: stateTextForTerminal }
+            });
+        } 
+        else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
+            audioManager.play('buttonPress', true);
             const hue = config.HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
             appState.setTargetColorProperties(groupId, hue);
+            appState.emit('requestTerminalMessage', {
+                type: 'interaction',
+                source: 'hue_assign',
+                data: { target: groupId.toUpperCase(), hue: hue }
+            });
         } 
-        else if (ariaLabel === 'Scan Button 1') {
-            appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE' });
-        } else if (ariaLabel === 'Scan Button 2') {
-            appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE' });
-        } else if (ariaLabel === 'Scan Button 3') {
-            appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN3_MESSAGE' });
-        } else if (ariaLabel === 'Scan Button 4') {
-            appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN4_MESSAGE' });
+        else if (button.config.type === 'action') {
+            audioManager.play('buttonPress', true);
+            if (ariaLabel === 'Scan Button 1') {
+                appState.emit('requestTerminalMessage', { type: 'command', command: 'clear' });
+                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE' });
+            } else if (ariaLabel === 'Scan Button 2') {
+                appState.emit('requestTerminalMessage', { type: 'command', command: 'clear' });
+                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE' });
+            } else if (ariaLabel === 'Scan Button 3') {
+                appState.emit('requestTerminalMessage', { type: 'command', command: 'clear' });
+                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN3_MESSAGE' });
+            } else if (ariaLabel === 'Scan Button 4') {
+                appState.emit('requestTerminalMessage', { type: 'command', command: 'clear' });
+                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN4_MESSAGE' });
+            }
         }
     });
 
@@ -195,9 +311,8 @@ function initializeApp() {
     buttonManager.discoverButtons(domElements.allButtons);
     setupEventListeners();
 
-    if (audioManager) {
-        audioManager.play('backgroundMusic');
-    }
+    // Instantiate and start the music controller
+    new MusicController(audioManager, appState, config);
 
     startupSequenceManager.start(true); 
     console.log('[Main INIT] HUE 9000 Initialization Complete.');

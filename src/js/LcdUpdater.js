@@ -52,6 +52,13 @@ export class LcdUpdater {
 
     const contentWrapper = lcdContainer.querySelector('.lcd-content-wrapper');
 
+    // At the start of the animation, remove any state classes that would
+    // override the base styles needed for the flicker effect.
+    masterTimeline.call(() => {
+        MANAGED_LCD_CLASSES.forEach(cls => lcdContainer.classList.remove(cls));
+        if (this.debug) console.log(`[LcdUpdater] Cleared state classes for ${targetIdForLog} to allow flicker.`);
+    }, [], 0);
+
     masterTimeline.call(() => {
         if (this.debug) console.log(`[LcdUpdater] Making content wrapper visible for animation.`);
         this._updateLcdVisibility(lcdContainer, options.state);

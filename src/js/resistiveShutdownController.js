@@ -12,6 +12,7 @@ class ResistiveShutdownController {
         // this.appState = null; // REMOVED
         this.config = null;
         this.buttonManager = null;
+        this.audioManager = null;
         this.debug = true;
     }
 
@@ -19,6 +20,7 @@ class ResistiveShutdownController {
         // this.appState = serviceLocator.get('appState'); // REMOVED
         this.config = serviceLocator.get('config');
         this.buttonManager = serviceLocator.get('buttonManager');
+        this.audioManager = serviceLocator.get('audioManager');
 
         appState.subscribe('resistiveShutdownStageChanged', (payload) => this.handleStageChange(payload));
         if (this.debug) console.log('[RSC INIT]');
@@ -32,7 +34,18 @@ class ResistiveShutdownController {
             if (this.debug) console.log(`[RSC] MAIN PWR OFF is disabled. Interaction blocked.`);
             return;
         }
+
         const currentStage = appState.getResistiveShutdownStage();
+
+        // Play the sound corresponding to the stage we are *currently in* before advancing.
+        if (currentStage === 0) {
+            this.audioManager.play('powerOff1', true, 0.33);
+        } else if (currentStage === 1) {
+            this.audioManager.play('powerOff2', true, 0.66);
+        } else if (currentStage === 2) {
+            this.audioManager.play('powerOff3', true, 1.00);
+        }
+        
         if (currentStage < this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
             const newStage = currentStage + 1;
             if (this.debug) console.log(`[RSC] Advancing resistive shutdown to stage ${newStage}.`);
