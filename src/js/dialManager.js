@@ -14,12 +14,14 @@ export class DialManager {
     this.dialInstances = {};
     this.gsap = null;
     this.dom = {};
+    this.audioManager = null;
     this.debug = false;
   }
 
   async init() { // Keep async if future operations require it, though current SVG injection is sync
     this.gsap = serviceLocator.get('gsap');
     this.dom = serviceLocator.get('domElements');
+    this.audioManager = serviceLocator.get('audioManager');
 
     // if (this.debug) console.log('[DialManager INIT]');
 
@@ -33,7 +35,7 @@ export class DialManager {
         if (dialId) {
             if (this.dialInstances[dialId]) this.dialInstances[dialId].destroy();
             // Pass imported appState to DialController constructor, removing config
-            this.dialInstances[dialId] = new DialController(container, dialId, appState, this.gsap);
+            this.dialInstances[dialId] = new DialController(container, dialId, appState, this.gsap, this.audioManager);
         }
     });
   }

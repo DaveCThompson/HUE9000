@@ -13,11 +13,13 @@ export class DialController {
      * @param {string} dialId - 'A' or 'B'.
      * @param {object} appStateModule - The imported appState module.
      * @param {object} gsapInstance - The GSAP instance.
+     * @param {object} audioManagerInstance - The AudioManager instance.
      */
-    constructor(containerElement, dialId, appStateModule, gsapInstance) {
+    constructor(containerElement, dialId, appStateModule, gsapInstance, audioManagerInstance) {
         // Dependencies
         this.appState = appStateModule; // Use passed-in appState
         this.gsap = gsapInstance; // Use passed-in GSAP
+        this.audioManager = audioManagerInstance; // Use passed-in AudioManager
 
         // Element & State
         this.containerElement = containerElement;
@@ -145,6 +147,8 @@ export class DialController {
             this.appState.setDialBInteractionState('dragging');
         }
         
+        if (this.audioManager) this.audioManager.play('dialLoop');
+        
         // Start broadcasting state on every animation frame
         this.gsap.ticker.add(this.updateLoop);
     }
@@ -179,6 +183,8 @@ export class DialController {
         if (!this.isDragging) return;
         this.isDragging = false;
         this.containerElement.classList.remove('is-dragging');
+
+        if (this.audioManager) this.audioManager.stop('dialLoop');
 
         // Stop broadcasting state on every frame
         this.gsap.ticker.remove(this.updateLoop);

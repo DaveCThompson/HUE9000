@@ -20,7 +20,8 @@ import powerOff3Src from '../../assets/audio/off3.mp3';
 import buttonEnergizeSrc from '../../assets/audio/buttonEnergize.mp3'; 
 import themeEngageSrc from '../../assets/audio/lights-on.mp3'; 
 import auxModeLowSrc from '../../assets/audio/auxModeLow.mp3';
-import auxModeHighSrc from '../../assets/audio/auxModeChange.mp3';
+import auxModeHighSrc from '../../assets/audio/auxModeHigh.mp3';
+import powerDownSrc from '../../assets/audio/powerDown.mp3';
 
 /**
  * @typedef {object} SoundConfig
@@ -64,5 +65,6 @@ export const AUDIO_CONFIG = {
     themeEngage:     { src: themeEngageSrc, loop: false, volume: 0.9, html5: false },
     auxModeLow:      { src: auxModeLowSrc, loop: false, volume: 0.7, html5: false },
     auxModeHigh:     { src: auxModeHighSrc, loop: false, volume: 0.7, html5: false },
+    powerDown:       { src: powerDownSrc, loop: false, volume: 0.9, html5: false },
   },
 };

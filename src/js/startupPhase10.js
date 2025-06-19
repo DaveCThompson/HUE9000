@@ -25,7 +25,8 @@ export const phase10Config = {
     },
     {
       type: 'audio',
-      soundKey: 'buttonEnergize', 
+      soundKey: 'buttonEnergize',
+      forceRestart: true,
       position: 0.15
     }
   ]

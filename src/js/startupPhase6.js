@@ -34,18 +34,22 @@ export const phase6Config = {
       type: 'lcdPowerOn', // Visual for LCDs
       target: ['lcdA', 'lcdB'], 
       state: 'dimly-lit',
-      profile: 'lcdScreenFlickerToDimlyLit', // Takes ~1.35s
+      profile: 'lcdScreenFlickerToDimlyLit', // Approx 0.83s duration
       stagger: 0.00, 
       position: 0.2 // Start LCD visuals slightly after dial activation call
     },
     { 
-      type: 'audio', // Sound for LCDs
+      type: 'audio', // Sound for LCDs powering on
       soundKey: 'lcdPowerOn', 
       forceRestart: true,
       position: 0.2 // Sound concurrent with LCD visual start
+    },
+    {
+      type: 'audio', // The "item appeared" sound, consistent with other phases.
+      soundKey: 'itemAppear',
+      forceRestart: true,
+      // Timed to play upon completion of the LCD flicker (0.2s start + ~0.83s duration = ~1.03s)
+      position: 1.05 
     }
-    // The original 'itemAppear' at 1.8s is removed. If a sound for the earlier
-    // 'dialManager.setDialsActiveState(true)' at 0.1s is desired, it would be 'itemAppear' at 0.1s.
-    // For now, focusing on LCDs having their own dedicated sound.
   ]
 };

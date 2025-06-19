@@ -27,11 +27,14 @@ class ResistiveShutdownController {
      * This method is called from the main.js event listener when the power off button is clicked.
      */
     handlePowerOffClick() {
+        // First, handle the click if the button is already fully locked down.
         if (appState.getIsMainPowerOffButtonDisabled()) {
-            // if (this.debug) console.log(`[RSC] MAIN PWR OFF is disabled. Interaction blocked.`);
-            return;
+            // if (this.debug) console.log(`[RSC] MAIN PWR OFF is disabled. Playing final 'powerDown' sound.`);
+            this.audioManager.play('powerDown', true);
+            return; // Stop further execution.
         }
 
+        // If not disabled, proceed with the stage-advancement logic.
         const currentStage = appState.getResistiveShutdownStage();
 
         // Play the sound corresponding to the stage we are *currently in* before advancing.
@@ -43,6 +46,7 @@ class ResistiveShutdownController {
             this.audioManager.play('powerOff3', true, 1.00);
         }
         
+        // Advance the stage if not at the max stage yet.
         if (currentStage < RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
             const newStage = currentStage + 1;
             // if (this.debug) console.log(`[RSC] Advancing resistive shutdown to stage ${newStage}.`);
