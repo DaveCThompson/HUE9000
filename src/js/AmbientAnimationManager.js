@@ -76,7 +76,22 @@ class AmbientAnimationManager {
         this.isActive = (newStatus === 'interactive');
 
         if (this.isActive && !previouslyActive) {
-            if (this.enableHarmonicResonance) this.resonanceTicker.add(this._updateResonance);
+            // THE DEFINITIVE FIX:
+            // Delay the application of ambient effects until the next animation frame.
+            // This allows the browser to finish processing the synchronous class removals
+            // from the FSM's cleanup action, ensuring a stable state before we
+            // read computed styles and apply new animations.
+            this.gsap.delayedCall(0, () => {
+                if (!this.isActive) return; // Re-check in case status changed again quickly
+
+                if (this.enableHarmonicResonance) this.resonanceTicker.add(this._updateResonance);
+
+                const buttons = this.buttonManager.getAllButtonInstances();
+                for (const button of buttons) {
+                    this._applyAmbientAnimation(button);
+                }
+            });
+
         } else if (!this.isActive && previouslyActive) {
             if (this.enableHarmonicResonance) {
                 this.resonanceTicker.remove(this._updateResonance);
@@ -84,13 +99,9 @@ class AmbientAnimationManager {
                 rootStyle.removeProperty('--harmonic-resonance-glow-opacity');
                 rootStyle.removeProperty('--harmonic-resonance-glow-scale');
             }
-        }
-
-        const buttons = this.buttonManager.getAllButtonInstances();
-        for (const button of buttons) {
-            if (this.isActive) {
-                this._applyAmbientAnimation(button);
-            } else {
+            // Synchronously remove effects when becoming inactive.
+            const buttons = this.buttonManager.getAllButtonInstances();
+            for (const button of buttons) {
                 if (typeof button.stopHarmonicResonance === 'function') button.stopHarmonicResonance();
                 if (typeof button.setCssIdleLightDriftActive === 'function') button.setCssIdleLightDriftActive(false);
             }

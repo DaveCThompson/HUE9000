@@ -17,6 +17,7 @@ class Button {
         this.debugAmbient = false;
         this.debugResistive = false;
         this.cssIdleDriftClassName = 'css-idle-drifting';
+        this.idleDriftEaseInTween = null; // To manage the ease-in tween
 
         if (!this.gsap) throw new Error(`[Button CONSTRUCTOR ${this.getIdentifier()}] GSAP instance is not available.`);
         if (!this.appState) console.warn(`[Button CONSTRUCTOR ${this.getIdentifier()}] appStateService not available at construction.`);
@@ -278,31 +279,62 @@ class Button {
     }
 
     setCssIdleLightDriftActive(isActive) {
-        const D_PARAMS = IDLE_LIGHT_DRIFT_PARAMS;
+        // Kill any existing tween to prevent conflicts
+        if (this.idleDriftEaseInTween) {
+            this.idleDriftEaseInTween.kill();
+            this.idleDriftEaseInTween = null;
+        }
+
         const lights = Array.from(this.element.querySelectorAll('.light'));
+        if (lights.length === 0) return;
 
         if (isActive) {
             if (this.element.classList.contains(this.cssIdleDriftClassName)) return;
+
+            // Get the current opacity directly from the element as the source of truth.
+            const currentOpacity = parseFloat(window.getComputedStyle(lights[0]).opacity);
+            const D_PARAMS = IDLE_LIGHT_DRIFT_PARAMS;
+
+            // Calculate target variation, but start at 0.
+            const targetVariation = currentOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
+            const variationProxy = { value: 0 }; // Start variation at 0
+
+            // Set the base opacity and animation properties immediately.
+            const randomDuration = this.gsap.utils.random(D_PARAMS.PERIOD_MIN, D_PARAMS.PERIOD_MAX);
+            lights.forEach(light => {
+                light.style.setProperty('--light-idle-base-opacity', currentOpacity.toFixed(3));
+                light.style.setProperty('--light-idle-variation', '0'); // Start with no variation
+                light.style.setProperty('--light-idle-duration', `${randomDuration}s`);
+                light.style.setProperty('--light-idle-delay', '0s'); // CSS delay is not used
+            });
+
+            // Add the class to apply the animation rule.
             this.element.classList.add(this.cssIdleDriftClassName);
 
-            // Calculate animation parameters ONCE per button instance
-            const randomDuration = this.gsap.utils.random(D_PARAMS.PERIOD_MIN, D_PARAMS.PERIOD_MAX);
-            const randomDelay = this.gsap.utils.random(0, D_PARAMS.PERIOD_MAX / 4); // No per-light stagger
-            const baseOpacity = D_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED;
-            const variation = baseOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
-            const opacityStart = Math.max(0, Math.min(1, baseOpacity - variation));
-            const opacityEnd = Math.max(0, Math.min(1, baseOpacity + variation));
-
-            // Apply the SAME parameters to all lights within this button
-            lights.forEach((light) => {
-                light.style.setProperty('--light-idle-duration', `${randomDuration.toFixed(3)}s`);
-                light.style.setProperty('--light-idle-delay', `${randomDelay.toFixed(3)}s`);
-                light.style.setProperty('--light-idle-opacity-start', opacityStart.toFixed(3));
-                light.style.setProperty('--light-idle-opacity-end', opacityEnd.toFixed(3));
+            // Use GSAP to smoothly tween the variation from 0 to its target value.
+            this.idleDriftEaseInTween = this.gsap.to(variationProxy, {
+                value: targetVariation,
+                duration: 2.0, // Duration of the ease-in effect
+                delay: this.gsap.utils.random(0, 1.5), // *** ADDED RANDOM DELAY TO THE TWEEN START ***
+                ease: 'sine.inOut',
+                onUpdate: () => {
+                    // On each frame of the tween, update the CSS variable for all lights.
+                    lights.forEach(light => {
+                        light.style.setProperty('--light-idle-variation', variationProxy.value.toFixed(3));
+                    });
+                }
             });
+
         } else {
             if (!this.element.classList.contains(this.cssIdleDriftClassName)) return;
             this.element.classList.remove(this.cssIdleDriftClassName);
+            // Clean up inline styles set by the animation
+            lights.forEach(light => {
+                light.style.removeProperty('--light-idle-base-opacity');
+                light.style.removeProperty('--light-idle-variation');
+                light.style.removeProperty('--light-idle-duration');
+                light.style.removeProperty('--light-idle-delay');
+            });
         }
     }
 
@@ -359,6 +391,7 @@ class Button {
     destroy() {
         if (this.currentFlickerAnim && this.currentFlickerAnim.isActive()) this.currentFlickerAnim.kill();
         if (this._pressTimeoutId) clearTimeout(this._pressTimeoutId);
+        if (this.idleDriftEaseInTween) this.idleDriftEaseInTween.kill();
         this.stopHarmonicResonance();
         this.setCssIdleLightDriftActive(false);
         if (this.stateTransitionEchoTween && this.stateTransitionEchoTween.isActive()) this.stateTransitionEchoTween.kill();

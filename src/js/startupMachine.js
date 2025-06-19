@@ -70,20 +70,7 @@ export const startupMachine = createMachine({
     },
     RUNNING_PHASE: {
       entry: [
-        ({ context }) => {
-            if (context.currentPhase === 12 && !context.themeTransitionCleanupPerformed) {
-                // Assuming StartupSequenceManager instance is on serviceLocator
-                const ssm = serviceLocator.get('startupSequenceManager');
-                if (ssm && typeof ssm._performThemeTransitionCleanup === 'function') {
-                    ssm._performThemeTransitionCleanup();
-                } else {
-                    console.warn("[FSM] Could not find startupSequenceManager or _performThemeTransitionCleanup for P12 cleanup.");
-                }
-            }
-        },
-        assign({
-            themeTransitionCleanupPerformed: ({context}) => context.currentPhase === 12 ? true : context.themeTransitionCleanupPerformed
-        })
+        // This check is no longer needed here as cleanup is explicitly handled before COMPLETE state.
       ],
       invoke: {
         id: 'phaseRunnerService',
@@ -141,7 +128,22 @@ export const startupMachine = createMachine({
     },
     COMPLETE: {
       type: 'final',
-      entry: () => appState.setAppStatus('interactive') // Use imported appState
+      entry: [
+        // RECOMMENDED FIX: Perform cleanup BEFORE setting the app to interactive.
+        // This ensures the 1s transition is removed from the DOM before the
+        // ambient animation classes are applied, preventing the conflict.
+        () => {
+            const ssm = serviceLocator.get('startupSequenceManager');
+            if (ssm && typeof ssm._performThemeTransitionCleanup === 'function') {
+                ssm._performThemeTransitionCleanup();
+            } else {
+                console.warn("[FSM] Could not find startupSequenceManager for pre-completion cleanup.");
+            }
+        },
+        // Now that cleanup is done, it is safe to emit the event that
+        // triggers the ambient animations.
+        () => appState.setAppStatus('interactive')
+      ]
     },
     ERROR: {
       entry: [

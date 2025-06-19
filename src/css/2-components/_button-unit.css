@@ -414,22 +414,20 @@
 }
 
 /* --- HIGH-PERFORMANCE IDLE LIGHT DRIFT --- */
+/* UPDATED: New keyframes driven by base and variation. */
 @keyframes idleLightDrift {
     0%, 100% {
-        opacity: var(--light-idle-opacity-start);
+        opacity: calc(var(--light-idle-base-opacity) - var(--light-idle-variation));
     }
     50% {
-        opacity: var(--light-idle-opacity-end);
+        opacity: calc(var(--light-idle-base-opacity) + var(--light-idle-variation));
     }
 }
 
-/* Apply the animation when the JS adds the class */
 .button-unit.css-idle-drifting .light {
-    /*
-    The opacity property is now controlled by this animation.
-    It will override the static opacity set by .is-energized.
-    We use 'forwards' to ensure it holds the final state if paused.
-    */
+    /* The initial opacity will be set by JS via --light-idle-base-opacity. */
+    /* The variation starts at 0 and is tweened by JS. */
+    --light-idle-variation: 0;
     animation: idleLightDrift var(--light-idle-duration) var(--light-idle-delay) ease-in-out infinite forwards;
-    will-change: opacity; /* Promote opacity to its own layer for performance */
+    will-change: opacity;
 }
