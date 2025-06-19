@@ -6,14 +6,12 @@
  */
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
-// import logoSvgUrl from '../assets/svgs/logo.svg'; // OLD: Direct string path
 import logoSvgUrl from '../assets/svgs/logo.svg?raw'; // NEW: Vite ?raw import for SVG string
+import { DEFAULT_DIAL_A_HUE } from './config/index.js';
 
 export class DynamicStyleManager {
   constructor() {
     this.root = document.documentElement;
-    // this.appState = null; // REMOVED
-    this.config = null;
     this.dom = {};
     this.debug = false;
   }
@@ -22,8 +20,6 @@ export class DynamicStyleManager {
    * Initializes the DynamicStyleManager.
    */
   init() {
-    // this.appState = serviceLocator.get('appState'); // REMOVED
-    this.config = serviceLocator.get('config');
     this.dom = serviceLocator.get('domElements');
 
     if (this.debug) console.log('[DynamicStyleManager INIT]');
@@ -92,7 +88,7 @@ export class DynamicStyleManager {
     });
 
     const dialAState = appState.getDialState('A');
-    const initialDialAHue = dialAState ? dialAState.hue : this.config.DEFAULT_DIAL_A_HUE;
+    const initialDialAHue = dialAState ? dialAState.hue : DEFAULT_DIAL_A_HUE;
     this.updateDynamicCSSVar('ui-accent', initialDialAHue, false);
   }
 

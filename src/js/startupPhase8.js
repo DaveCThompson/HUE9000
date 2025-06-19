@@ -25,7 +25,7 @@ export const phase8Config = {
       groups: ['env', 'lcd', 'logo', 'btn'],
       state: 'is-energized',
       profile: 'buttonFlickerFromDimlyLitToFullyLitUnselected',
-      stagger: 0.008,
+      stagger: 0.00,
       position: 0.1
     },
     {

@@ -8,13 +8,21 @@ import { getMessage } from './terminalMessages.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
 import { createAdvancedFlicker } from './animationUtils.js'; // Import flicker utility
+import {
+    TERMINAL_THINKING_DELAY_MIN_MS,
+    TERMINAL_THINKING_DELAY_MAX_MS,
+    TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR,
+    TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR,
+    TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR,
+    TERMINAL_INTER_LINE_PAUSE_S,
+    TERMINAL_SCROLL_DURATION_S,
+    TERMINAL_MAX_LINES_IN_DOM
+} from './config/index.js';
 
 class TerminalManager {
     constructor() {
         this._terminalContainerElement = null;
         this._terminalContentElement = null;
-        // this._appState = null; // REMOVED
-        this._configModule = null;
         this._gsap = null;
         this._lcdUpdater = null; 
 
@@ -31,8 +39,6 @@ class TerminalManager {
         const dom = serviceLocator.get('domElements');
         this._terminalContainerElement = dom.terminalContainer;
         this._terminalContentElement = dom.terminalLcdContentElement;
-        // this._appState = serviceLocator.get('appState'); // REMOVED
-        this._configModule = serviceLocator.get('config');
         this._gsap = serviceLocator.get('gsap');
         this._lcdUpdater = serviceLocator.get('lcdUpdater'); 
 
@@ -74,7 +80,7 @@ class TerminalManager {
         
         console.log(`[TM | ${performance.now().toFixed(2)}ms] Queuing request: ${payload.messageKey || payload.source}`);
         // Pass the imported appState module to getMessage
-        const messageData = getMessage(payload, appState, this._configModule);
+        const messageData = getMessage(payload, appState);
         this._messageQueue.push({ ...payload, ...messageData });
         
         // Only start the processing loop if it's not already running.
@@ -96,8 +102,8 @@ class TerminalManager {
             console.log(`[TM | ${performance.now().toFixed(2)}ms] Dequeuing and processing: ${messageObject.messageKey || messageObject.source}`);
 
             const delay = this._gsap.utils.random(
-                this._configModule.TERMINAL_THINKING_DELAY_MIN_MS,
-                this._configModule.TERMINAL_THINKING_DELAY_MAX_MS
+                TERMINAL_THINKING_DELAY_MIN_MS,
+                TERMINAL_THINKING_DELAY_MAX_MS
             );
             
             if (!this._isFirstLine) {
@@ -116,11 +122,11 @@ class TerminalManager {
 
                 let speedPerChar;
                 if (messageObject.type === 'startup') {
-                    speedPerChar = this._configModule.TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
+                    speedPerChar = TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
                 } else if (messageObject.type === 'block') {
-                    speedPerChar = this._configModule.TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR;
+                    speedPerChar = TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR;
                 } else {
-                    speedPerChar = this._configModule.TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
+                    speedPerChar = TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
                 }
                 
                 // Pass the flicker option from the message object to the typing method.
@@ -128,7 +134,7 @@ class TerminalManager {
                 await this._typeLine(lineText, speedPerChar, typeOptions);
                 
                 if (i < messageObject.content.length - 1) {
-                    await this._pauseAndBlink(this._configModule.TERMINAL_INTER_LINE_PAUSE_S || 0.4);
+                    await this._pauseAndBlink(TERMINAL_INTER_LINE_PAUSE_S || 0.4);
                 }
             }
             
@@ -218,14 +224,14 @@ class TerminalManager {
         if (scrollContainer) {
             this._gsap.to(scrollContainer, {
                 scrollTop: scrollContainer.scrollHeight,
-                duration: instant ? 0 : this._configModule.TERMINAL_SCROLL_DURATION_S,
+                duration: instant ? 0 : TERMINAL_SCROLL_DURATION_S,
                 ease: 'power2.out'
             });
         }
     }
 
     _limitMaxLines() {
-        while (this._terminalContentElement.childElementCount > this._configModule.TERMINAL_MAX_LINES_IN_DOM) {
+        while (this._terminalContentElement.childElementCount > TERMINAL_MAX_LINES_IN_DOM) {
             if (this._terminalContentElement.firstChild) {
                 this._terminalContentElement.removeChild(this._terminalContentElement.firstChild);
             }

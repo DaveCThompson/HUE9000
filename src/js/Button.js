@@ -5,22 +5,20 @@
  * (Project Decouple Refactor)
  */
 import { ButtonStates }  from './buttonManager.js';
-// Removed appState import from here as it's passed in constructor
+import { IDLE_LIGHT_DRIFT_PARAMS, STATE_TRANSITION_ECHO_PARAMS } from './config/index.js';
 
 class Button {
-    constructor(domElement, config, gsapInstance, appStateService, configModule) {
+    constructor(domElement, config, gsapInstance, appStateService) {
         this.element = domElement;
         this.config = config; // { type, groupId, value, isSelectedByDefault }
         this.gsap = gsapInstance;
         this.appState = appStateService; // Use the passed appStateService
-        this.configModule = configModule;
 
         this.debugAmbient = false;
         this.debugResistive = false;
         this.cssIdleDriftClassName = 'css-idle-drifting';
 
         if (!this.gsap) throw new Error(`[Button CONSTRUCTOR ${this.getIdentifier()}] GSAP instance is not available.`);
-        if (!this.configModule) console.warn(`[Button CONSTRUCTOR ${this.getIdentifier()}] configModule not available at construction.`);
         if (!this.appState) console.warn(`[Button CONSTRUCTOR ${this.getIdentifier()}] appStateService not available at construction.`);
 
 
@@ -302,9 +300,7 @@ class Button {
     }
 
     setCssIdleLightDriftActive(isActive) {
-        if (!this.configModule || !this.configModule.IDLE_LIGHT_DRIFT_PARAMS) return;
-
-        const D_PARAMS = this.configModule.IDLE_LIGHT_DRIFT_PARAMS;
+        const D_PARAMS = IDLE_LIGHT_DRIFT_PARAMS;
         const lights = Array.from(this.element.querySelectorAll('.light'));
 
         if (isActive) {
@@ -331,7 +327,6 @@ class Button {
     }
 
     playStateTransitionEcho() {
-        if (!this.configModule) return;
         const buttonId = this.getIdentifier(); // For logging
 
         if (this.stateTransitionEchoTween && this.stateTransitionEchoTween.isActive()) {
@@ -351,7 +346,7 @@ class Button {
         const lights = Array.from(this.element.querySelectorAll('.light'));
         if (!lights.length) return;
 
-        const E_PARAMS = this.configModule.STATE_TRANSITION_ECHO_PARAMS;
+        const E_PARAMS = STATE_TRANSITION_ECHO_PARAMS;
         const tl = this.gsap.timeline({
             delay: E_PARAMS.DELAY_AFTER_TRANSITION,
             onComplete: () => { 

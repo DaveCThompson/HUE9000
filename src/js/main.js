@@ -12,11 +12,12 @@ import { TextPlugin } from "gsap/TextPlugin";
 
 // Core Modules & Services
 import * as appState from './appState.js';
-import * as config from './config.js';
+import * as config from './config/index.js';
 import { serviceLocator } from './serviceLocator.js';
 import { phaseConfigs } from './startupMachine.js';
 import { runPreloader } from './preloader.js';
-import { debounce } from './utils.js'; // --- ADDED ---
+import { debounce } from './utils.js';
+import { HUE_ASSIGNMENT_ROW_HUES, TERMINAL_INTERACTION_DEBOUNCE_MS } from './config/index.js';
 
 // Manager Classes
 import { ButtonManager } from './buttonManager.js';
@@ -150,7 +151,7 @@ function setupEventListeners() {
             source: 'mood_change',
             data: { hue }
         });
-    }, config.TERMINAL_INTERACTION_DEBOUNCE_MS);
+    }, TERMINAL_INTERACTION_DEBOUNCE_MS);
 
     const debouncedSendIntensityMessage = debounce((power) => {
         appState.emit('requestTerminalMessage', {
@@ -158,7 +159,7 @@ function setupEventListeners() {
             source: 'intensity_change',
             data: { power }
         });
-    }, config.TERMINAL_INTERACTION_DEBOUNCE_MS);
+    }, TERMINAL_INTERACTION_DEBOUNCE_MS);
 
     // Listen for Dial A (Mood) updates
     appState.subscribe('dialUpdated', ({ id, state }) => {
@@ -222,7 +223,7 @@ function setupEventListeners() {
         } 
         else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
             audioManager.play('buttonPress', true);
-            const hue = config.HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
+            const hue = HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
             appState.setTargetColorProperties(groupId, hue);
             appState.emit('requestTerminalMessage', {
                 type: 'interaction',

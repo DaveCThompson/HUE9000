@@ -8,12 +8,27 @@
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
 import { debounce, mapRange } from './utils.js';
+import {
+    DEBOUNCE_DELAY,
+    DEFAULT_DIAL_A_HUE,
+    DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG,
+    HUE_UPDATE_THRESHOLD,
+    LENS_GRADIENT_BREAKPOINTS,
+    LENS_HOTSPOT_HUE_OFFSET,
+    LENS_OSCILLATION_AMPLITUDE_MAX_ADDITION,
+    LENS_OSCILLATION_AMPLITUDE_MIN,
+    LENS_OSCILLATION_HUE_SMOOTHING_DURATION,
+    LENS_OSCILLATION_SMOOTHING_DURATION,
+    LENS_OSCILLATION_THRESHOLD,
+    LENS_STARTUP_RAMP_DURATION_MS,
+    LENS_STARTUP_TARGET_POWER,
+    NUM_LENS_GRADIENT_STOPS,
+    RESISTIVE_SHUTDOWN_PARAMS
+} from './config/index.js';
 
 export class LensManager {
   constructor() {
     this.gsap = null;
-    // this.appState = null; // REMOVED
-    this.config = null;
     this.dom = {};
 
     this.isOscillating = false;
@@ -32,8 +47,6 @@ export class LensManager {
 
   init() {
     this.gsap = serviceLocator.get('gsap');
-    // this.appState = serviceLocator.get('appState'); // REMOVED
-    this.config = serviceLocator.get('config');
     this.dom = serviceLocator.get('domElements');
 
     if (this.debug) console.log('[LensManager INIT]');
@@ -41,11 +54,11 @@ export class LensManager {
     this.debouncedSetLegacyLensPowerVar = debounce((visualPower) => {
       const clampedPower = Math.max(0.0, Math.min(visualPower, 1.05));
       this.dom.root.style.setProperty('--lens-power', clampedPower.toFixed(3));
-    }, this.config.DEBOUNCE_DELAY / 3);
+    }, DEBOUNCE_DELAY / 3);
 
     const initialPower01 = appState.getTrueLensPower();
     const initialDialAState = appState.getDialState('A');
-    this.currentMasterHue = initialDialAState ? ((initialDialAState.hue % 360) + 360) % 360 : this.config.DEFAULT_DIAL_A_HUE;
+    this.currentMasterHue = initialDialAState ? ((initialDialAState.hue % 360) + 360) % 360 : DEFAULT_DIAL_A_HUE;
     this.currentLensHueProxy.value = this.currentMasterHue;
     this.lastHueForGradientRender = this.currentMasterHue;
     this._updateSuperGlowHue(this.currentMasterHue);
@@ -62,8 +75,8 @@ export class LensManager {
   }
 
   energizeLensCoreStartup(targetPowerPercent = null, rampDurationMs = null) {
-    const effectiveTargetPower = targetPowerPercent ?? this.config.LENS_STARTUP_TARGET_POWER;
-    const effectiveRampDuration = rampDurationMs ?? this.config.LENS_STARTUP_RAMP_DURATION;
+    const effectiveTargetPower = targetPowerPercent ?? LENS_STARTUP_TARGET_POWER;
+    const effectiveRampDuration = rampDurationMs ?? LENS_STARTUP_RAMP_DURATION_MS;
 
     const tl = this.gsap.timeline();
     const initialPower01 = appState.getTrueLensPower();
@@ -85,7 +98,7 @@ export class LensManager {
         const finalPowerPercent = lensPowerProxy.value;
         appState.setTrueLensPower(finalPowerPercent);
         const dialBHue = (finalPowerPercent / 100) * 359.999;
-        const dialBRotation = dialBHue * this.config.DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG;
+        const dialBRotation = dialBHue * DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG;
         appState.updateDialState('B', {
           hue: dialBHue,
           targetHue: dialBHue,
@@ -113,7 +126,7 @@ export class LensManager {
 
   _updateSuperGlowHue(hue) {
     const normalizedHue = ((Number(hue) % 360) + 360) % 360;
-    if (Math.abs(normalizedHue - this.lastSuperGlowHue) >= this.config.HUE_UPDATE_THRESHOLD || this.lastSuperGlowHue === -1) {
+    if (Math.abs(normalizedHue - this.lastSuperGlowHue) >= HUE_UPDATE_THRESHOLD || this.lastSuperGlowHue === -1) {
       this.dom.root.style.setProperty('--dynamic-lens-super-glow-hue', normalizedHue.toFixed(1));
       this.lastSuperGlowHue = normalizedHue;
     }
@@ -136,16 +149,16 @@ export class LensManager {
     }
 
     const hueDiff = Math.abs(newMasterHueTarget - this.currentMasterHue);
-    if (Math.min(hueDiff, 360 - hueDiff) < this.config.HUE_UPDATE_THRESHOLD && this.currentMasterHue !== -1) return;
+    if (Math.min(hueDiff, 360 - hueDiff) < HUE_UPDATE_THRESHOLD && this.currentMasterHue !== -1) return;
 
-    let duration = this.config.LENS_OSCILLATION_HUE_SMOOTHING_DURATION;
+    let duration = LENS_OSCILLATION_HUE_SMOOTHING_DURATION;
     let ease = "power1.out";
     const shutdownStage = appState.getResistiveShutdownStage();
     if (shutdownStage > 0) {
-      const stageParams = this.config.RESISTIVE_SHUTDOWN_PARAMS[`STAGE_${shutdownStage}`];
+      const stageParams = RESISTIVE_SHUTDOWN_PARAMS[`STAGE_${shutdownStage}`];
       if (stageParams) {
         duration = stageParams.LENS_ANIM_DURATION_S;
-        ease = stageParams.LENS_ANIM_EASING || this.config.RESISTIVE_SHUTDOWN_PARAMS.LENS_ANIMATION_EASING_DEFAULT;
+        ease = stageParams.LENS_ANIM_EASING || RESISTIVE_SHUTDOWN_PARAMS.LENS_ANIMATION_EASING_DEFAULT;
       }
     }
 
@@ -189,10 +202,10 @@ export class LensManager {
     if (lensEl.style.opacity !== '1') lensEl.style.opacity = '1';
 
     const powerChanged = Math.abs(visualPower - this.lastVisualPowerForGradientRender) >= 0.0001;
-    const hueChanged = Math.abs(this.currentMasterHue - this.lastHueForGradientRender) >= this.config.HUE_UPDATE_THRESHOLD;
+    const hueChanged = Math.abs(this.currentMasterHue - this.lastHueForGradientRender) >= HUE_UPDATE_THRESHOLD;
     if (!powerChanged && !hueChanged) return;
 
-    const breakpoints = this.config.LENS_GRADIENT_BREAKPOINTS;
+    const breakpoints = LENS_GRADIENT_BREAKPOINTS;
     const powerForSelection = Math.max(breakpoints[0].power, visualPower);
     let prevBreakpoint = breakpoints[0], nextBreakpoint = breakpoints[0];
 
@@ -213,13 +226,13 @@ export class LensManager {
     }
 
     const gradientStops = [];
-    for (let i = 0; i < this.config.NUM_LENS_GRADIENT_STOPS; i++) {
+    for (let i = 0; i < NUM_LENS_GRADIENT_STOPS; i++) {
       const prev = prevBreakpoint.stops[i];
       const next = nextBreakpoint.stops[i];
       const l = prev.l + t * (next.l - prev.l);
       const c = prev.c + t * (next.c - prev.c);
       const pos = prev.pos + t * (next.pos - prev.pos);
-      let stopHue = (prev.type === 'hotspot') ? (this.currentMasterHue + this.config.LENS_HOTSPOT_HUE_OFFSET) : this.currentMasterHue;
+      let stopHue = (prev.type === 'hotspot') ? (this.currentMasterHue + LENS_HOTSPOT_HUE_OFFSET) : this.currentMasterHue;
       if (prev.type === 'darkedge' || prev.type === 'blackedge') stopHue = 0;
       stopHue = ((stopHue % 360) + 360) % 360;
       gradientStops.push(`oklch(${l.toFixed(3)} ${c.toFixed(3)} ${stopHue.toFixed(1)}) ${(pos * 100).toFixed(2)}%`);
@@ -251,13 +264,13 @@ export class LensManager {
     }
 
     // --- Logic for programmatic changes, settling, or startup ---
-    let duration = this.config.LENS_OSCILLATION_SMOOTHING_DURATION;
+    let duration = LENS_OSCILLATION_SMOOTHING_DURATION;
     let ease = "power1.out";
     if (shutdownStage > 0) {
-      const stageParams = this.config.RESISTIVE_SHUTDOWN_PARAMS[`STAGE_${shutdownStage}`];
+      const stageParams = RESISTIVE_SHUTDOWN_PARAMS[`STAGE_${shutdownStage}`];
       if (stageParams) {
         duration = stageParams.LENS_ANIM_DURATION_S;
-        ease = stageParams.LENS_ANIM_EASING || this.config.RESISTIVE_SHUTDOWN_PARAMS.LENS_ANIMATION_EASING_DEFAULT;
+        ease = stageParams.LENS_ANIM_EASING || RESISTIVE_SHUTDOWN_PARAMS.LENS_ANIMATION_EASING_DEFAULT;
       }
     }
 
@@ -271,17 +284,17 @@ export class LensManager {
         onComplete: () => {
           this.powerSmoothingTween = null;
           this._updateLensVisualsWithCurrentState(true);
-          if (appState.getAppStatus() === 'interactive' && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
+          if (appState.getAppStatus() === 'interactive' && this.smoothedTrueLensPower.value >= LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
             this._startOscillation();
           }
         }
       });
     }
 
-    if ((this.trueLensPowerTarget < this.config.LENS_OSCILLATION_THRESHOLD || !isDialIdle || isStartingUp) && this.isOscillating) {
+    if ((this.trueLensPowerTarget < LENS_OSCILLATION_THRESHOLD || !isDialIdle || isStartingUp) && this.isOscillating) {
       this._stopOscillation();
     }
-    if (appState.getAppStatus() === 'interactive' && isDialIdle && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
+    if (appState.getAppStatus() === 'interactive' && isDialIdle && this.smoothedTrueLensPower.value >= LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
       this._startOscillation();
     }
   }
@@ -314,7 +327,7 @@ export class LensManager {
     this._updateSuperGlowHue(this.currentMasterHue);
 
     if (newStatus === 'interactive') {
-      if (appState.getDialBInteractionState() === 'idle' && this.smoothedTrueLensPower.value >= this.config.LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
+      if (appState.getDialBInteractionState() === 'idle' && this.smoothedTrueLensPower.value >= LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
         this._startOscillation();
       }
     } else {
@@ -346,9 +359,9 @@ export class LensManager {
   _applyOscillationVisuals(progress) {
     if (!this.isOscillating) return;
 
-    const powerAboveThreshold = Math.max(0, this.smoothedTrueLensPower.value - this.config.LENS_OSCILLATION_THRESHOLD);
-    const powerRatio = Math.min(1, powerAboveThreshold / (1.0 - this.config.LENS_OSCILLATION_THRESHOLD));
-    const amplitude = this.config.LENS_OSCILLATION_AMPLITUDE_MIN + powerRatio * this.config.LENS_OSCILLATION_AMPLITUDE_MAX_ADDITION;
+    const powerAboveThreshold = Math.max(0, this.smoothedTrueLensPower.value - LENS_OSCILLATION_THRESHOLD);
+    const powerRatio = Math.min(1, powerAboveThreshold / (1.0 - LENS_OSCILLATION_THRESHOLD));
+    const amplitude = LENS_OSCILLATION_AMPLITUDE_MIN + powerRatio * LENS_OSCILLATION_AMPLITUDE_MAX_ADDITION;
 
     const oscillationOffset = this.gsap.utils.interpolate(-amplitude, amplitude, progress);
     const currentVisualPower01 = this.smoothedTrueLensPower.value + oscillationOffset;

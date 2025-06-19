@@ -4,8 +4,7 @@
  * such as advanced flicker and glow effects.
  */
 import { gsap as globalGsap } from "gsap"; // Import gsap, but we'll prefer injected if available
-import { ADVANCED_FLICKER_PROFILES, PERCEPTUAL_AUDIO_OFFSET_MS } from './config.js';
-import { serviceLocator } from './serviceLocator.js'; // Import serviceLocator
+import { ADVANCED_FLICKER_PROFILES } from './config/index.js';
 
 /**
  * Helper function to retrieve a glow parameter.
@@ -254,10 +253,5 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         tl.to({}, {duration: 0.001});
     }
     
-    // const finalDuration = tl.duration();
-    // console.log(`[CAF_RETURN | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${finalDuration.toFixed(3)}s. Timeline has children: ${tl.getChildren().length > 0}`);
-    // if (finalDuration <= 0.01 && profile.numCycles > 0) { 
-    //     console.warn(`[CAF_WARN | ${performance.now().toFixed(2)}ms] Timeline for ${targetIdForLog} is very short or empty despite having cycles! Profile:`, JSON.stringify(profile));
-    // }
     return { timeline: tl, completionPromise };
 }

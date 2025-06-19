@@ -25,7 +25,7 @@ export const phase7Config = {
       groups: ['env', 'lcd', 'logo', 'btn'], // Hue Assignment buttons
       state: 'is-dimly-lit',
       profile: 'buttonFlickerToDimlyLit', // Approx 0.79s to completion now
-      stagger: 0.0,
+      stagger: 0.05,
       // Target completion for this large group slightly later, e.g., 0.90s
       // New position: 0.90 - 0.79 = 0.11s
       position: 0.11

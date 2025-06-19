@@ -5,11 +5,10 @@
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
 import { MoodMatrix } from './MoodMatrix.js';
+import { MOOD_MATRIX_DEFINITIONS, V2_DISPLAY_PARAMS } from './config/index.js';
 
 export class MoodMatrixManager {
     constructor() {
-        // this.appState = null; // REMOVED
-        this.config = null;
         this.dom = null;
         this.gsap = null;
         this.moodMatrix = null;
@@ -19,17 +18,15 @@ export class MoodMatrixManager {
     }
 
     init() {
-        // this.appState = serviceLocator.get('appState'); // REMOVED
-        this.config = serviceLocator.get('config');
         this.dom = serviceLocator.get('domElements');
         this.gsap = serviceLocator.get('gsap');
 
         this.moodLcdContent = this.dom.lcdA.querySelector('.lcd-content-wrapper');
 
         const displayConfig = {
-            moods: this.config.MOOD_MATRIX_DEFINITIONS.map(mood => mood.toUpperCase()),
-            majorBlocks: this.config.V2_DISPLAY_PARAMS.MOOD_MAJOR_BLOCKS,
-            fineDots: this.config.V2_DISPLAY_PARAMS.MOOD_FINE_DOTS,
+            moods: MOOD_MATRIX_DEFINITIONS.map(mood => mood.toUpperCase()),
+            majorBlocks: V2_DISPLAY_PARAMS.MOOD_MAJOR_BLOCKS,
+            fineDots: V2_DISPLAY_PARAMS.MOOD_FINE_DOTS,
         };
 
         this.moodMatrix = new MoodMatrix(this.moodLcdContent, displayConfig, this.gsap);
@@ -53,7 +50,7 @@ export class MoodMatrixManager {
     }
 
     handleInteractionChange(isInteracting, currentHue) {
-        const idleDelay = this.config.V2_DISPLAY_PARAMS.RESONANCE_IDLE_DELAY_MS;
+        const idleDelay = V2_DISPLAY_PARAMS.RESONANCE_IDLE_DELAY_MS;
         
         clearTimeout(this.resonanceTimer);
         this.dom.lcdA.classList.remove('is-resonating');

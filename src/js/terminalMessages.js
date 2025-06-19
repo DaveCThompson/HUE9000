@@ -3,7 +3,7 @@
  * @description Central repository for all HUE 9000 terminal message strings,
  * templates, and logic for pseudo-randomization of status messages.
  */
-import { HUE_ASSIGNMENT_ROW_HUES } from './config.js';
+import { HUE_ASSIGNMENT_ROW_HUES, MOOD_MATRIX_DEFINITIONS } from './config/index.js';
 
 // --- Message Formatting ---
 
@@ -155,7 +155,7 @@ function getPseudoRandomMessage(key, templates) {
     return message;
 }
 
-export function getMessage(payload, currentAppState = {}, configModule = null) {
+export function getMessage(payload, currentAppState = {}) {
     const { type, source, data, messageKey } = payload || {};
     let content = [];
     const messageProperties = {};
@@ -171,7 +171,7 @@ export function getMessage(payload, currentAppState = {}, configModule = null) {
 
         case 'block':
             if (messageKey && blockMessages[messageKey]) {
-                if (messageKey === 'BTN4_MESSAGE' && configModule) {
+                if (messageKey === 'BTN4_MESSAGE') {
                     content = blockMessages[messageKey].map(line =>
                         line.replace('{currentTheme}', currentAppState.getCurrentTheme ? currentAppState.getCurrentTheme().toUpperCase() : 'N/A')
                             .replace('{lensPower}', currentAppState.getTrueLensPower ? (currentAppState.getTrueLensPower() * 100).toFixed(1) : 'N/A')
@@ -230,8 +230,8 @@ export function getMessage(payload, currentAppState = {}, configModule = null) {
                         message = template.replace('{power}', data.power.toFixed(1));
                         break;
                     case 'mood_change':
-                        if (configModule && configModule.MOOD_MATRIX_DEFINITIONS) {
-                            const moods = configModule.MOOD_MATRIX_DEFINITIONS;
+                        if (MOOD_MATRIX_DEFINITIONS) {
+                            const moods = MOOD_MATRIX_DEFINITIONS;
                             const degreesPerBlock = 360 / moods.length;
                             const primaryIndex = Math.floor(data.hue / degreesPerBlock);
                             const progressInSegment = (data.hue % degreesPerBlock) / degreesPerBlock;

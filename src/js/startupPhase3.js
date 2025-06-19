@@ -3,7 +3,7 @@
  * @description Declarative configuration for Phase 3 (Main Power Online)
  * of the HUE 9000 startup sequence.
  */
-import { estimateFlickerDuration } from './config.js';
+import { estimateFlickerDuration } from './config/index.js';
 
 const TARGET_EVENT_TIME_P3 = 0.7; 
 const FLICKER_SELECTED_FAST_DURATION_P3 = estimateFlickerDuration('buttonFlickerFromDimlyLitToFullyLitSelectedFast'); // Approx 0.81s

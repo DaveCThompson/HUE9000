@@ -3,7 +3,7 @@
  * @description Handles the "Preloader V2 Enhanced" sequence.
  */
 import { serviceLocator } from './serviceLocator.js';
-import { PRELOADER_ASSETS, PRELOADER_CONFIG } from './config.js';
+import { PRELOADER_ASSETS, PRELOADER_CONFIG } from './config/index.js';
 
 // Helper function to fetch assets (text-based like SVG, or image)
 async function fetchAsset(assetConfig) {

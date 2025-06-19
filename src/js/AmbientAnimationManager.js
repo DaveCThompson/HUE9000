@@ -6,13 +6,12 @@
  */
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
+import { HARMONIC_RESONANCE_PARAMS } from './config/index.js';
 
 class AmbientAnimationManager {
     constructor() {
         this.gsap = null;
-        // this.appState = null; // REMOVED
         this.buttonManager = null;
-        this.configModule = null;
 
         this.isActive = false;
         this.globalResonanceParams = { progress: 0 };
@@ -26,15 +25,13 @@ class AmbientAnimationManager {
 
     init() {
         this.gsap = serviceLocator.get('gsap');
-        // this.appState = serviceLocator.get('appState'); // REMOVED
         this.buttonManager = serviceLocator.get('buttonManager');
-        this.configModule = serviceLocator.get('config');
 
-        if (!this.configModule.HARMONIC_RESONANCE_PARAMS) {
+        if (!HARMONIC_RESONANCE_PARAMS) {
             console.error('[AAM INIT] HARMONIC_RESONANCE_PARAMS not found in config. Disabling.');
             this.enableHarmonicResonance = false;
         } else {
-            this.enableHarmonicResonance = this.configModule.HARMONIC_RESONANCE_PARAMS.ENABLED;
+            this.enableHarmonicResonance = HARMONIC_RESONANCE_PARAMS.ENABLED;
         }
 
         appState.subscribe('appStatusChanged', (status) => this._handleAppStatusChange(status));
@@ -54,7 +51,7 @@ class AmbientAnimationManager {
     _updateResonance() {
         if (!this.isActive || !this.enableHarmonicResonance) return;
 
-        const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
+        const R_PARAMS = HARMONIC_RESONANCE_PARAMS;
         const time = this.gsap.ticker.time;
         const progress = (Math.sin((time * Math.PI * 2) / R_PARAMS.PERIOD) + 1) / 2;
 
@@ -62,9 +59,9 @@ class AmbientAnimationManager {
     }
 
     _handleAmbientPulse({ progress }) {
-        if (!this.isActive || !this.configModule || !this.enableHarmonicResonance || !this.gsap.utils) return;
+        if (!this.isActive || !this.enableHarmonicResonance || !this.gsap.utils) return;
 
-        const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
+        const R_PARAMS = HARMONIC_RESONANCE_PARAMS;
         const glowOpacity = this.gsap.utils.interpolate(R_PARAMS.GLOW_OPACITY_RANGE[0], R_PARAMS.GLOW_OPACITY_RANGE[1], progress);
         const glowScale = this.gsap.utils.interpolate(R_PARAMS.GLOW_SCALE_RANGE[0], R_PARAMS.GLOW_SCALE_RANGE[1], progress);
 
@@ -119,7 +116,7 @@ class AmbientAnimationManager {
     }
 
     _applyAmbientAnimation(buttonInstance) {
-        if (!this.isActive || !this.configModule) return;
+        if (!this.isActive) return;
         
         if (typeof buttonInstance.stopHarmonicResonance !== 'function' || typeof buttonInstance.setCssIdleLightDriftActive !== 'function') {
             return;
@@ -128,7 +125,7 @@ class AmbientAnimationManager {
         buttonInstance.stopHarmonicResonance();
         buttonInstance.setCssIdleLightDriftActive(false);
 
-        const R_PARAMS = this.configModule.HARMONIC_RESONANCE_PARAMS;
+        const R_PARAMS = HARMONIC_RESONANCE_PARAMS;
         const isSelected = buttonInstance.isSelected();
         const currentClasses = buttonInstance.getCurrentClasses(); // Get live classes
         const isEnergized = currentClasses.has(R_PARAMS.ELIGIBILITY_CLASS); // Check live class

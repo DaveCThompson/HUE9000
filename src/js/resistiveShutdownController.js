@@ -6,19 +6,16 @@
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
 import { clamp } from './utils.js';
+import { RESISTIVE_SHUTDOWN_PARAMS, DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG, HUE_ASSIGNMENT_ROW_HUES } from './config/index.js';
 
 class ResistiveShutdownController {
     constructor() {
-        // this.appState = null; // REMOVED
-        this.config = null;
         this.buttonManager = null;
         this.audioManager = null;
         this.debug = true;
     }
 
     init() {
-        // this.appState = serviceLocator.get('appState'); // REMOVED
-        this.config = serviceLocator.get('config');
         this.buttonManager = serviceLocator.get('buttonManager');
         this.audioManager = serviceLocator.get('audioManager');
 
@@ -46,7 +43,7 @@ class ResistiveShutdownController {
             this.audioManager.play('powerOff3', true, 1.00);
         }
         
-        if (currentStage < this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
+        if (currentStage < RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
             const newStage = currentStage + 1;
             if (this.debug) console.log(`[RSC] Advancing resistive shutdown to stage ${newStage}.`);
             appState.setResistiveShutdownStage(newStage);
@@ -64,7 +61,7 @@ class ResistiveShutdownController {
         }
 
         const stageKey = `STAGE_${newStage}`;
-        const stageParams = this.config.RESISTIVE_SHUTDOWN_PARAMS[stageKey];
+        const stageParams = RESISTIVE_SHUTDOWN_PARAMS[stageKey];
         if (!stageParams) return;
 
         if (stageParams.TERMINAL_MESSAGE_KEY) {
@@ -77,7 +74,7 @@ class ResistiveShutdownController {
         this._updateLensAndDialTargets(stageParams);
         this._updateHueAssignmentButtons(stageParams);
 
-        if (newStage === this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
+        if (newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
             appState.setIsMainPowerOffButtonDisabled(true);
         }
     }
@@ -104,7 +101,7 @@ class ResistiveShutdownController {
         appState.setTrueLensPower(targetPower * 100);
 
         const dialBHue = targetPower * 359.999;
-        const dialBRotation = dialBHue * (this.config.DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG || 1);
+        const dialBRotation = dialBHue * (DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG || 1);
 
         appState.updateDialState('B', {
             hue: dialBHue,
@@ -125,7 +122,7 @@ class ResistiveShutdownController {
         let closestIndex = -1;
         let smallestDiff = 360;
 
-        this.config.HUE_ASSIGNMENT_ROW_HUES.forEach((hue, index) => {
+        HUE_ASSIGNMENT_ROW_HUES.forEach((hue, index) => {
             const diff = Math.abs(hue - targetHue);
             if (diff < smallestDiff) {
                 smallestDiff = diff;
@@ -135,7 +132,7 @@ class ResistiveShutdownController {
 
         if (closestIndex !== -1) {
             ['btn', 'logo', 'lcd', 'env'].forEach(groupId => {
-                appState.setTargetColorProperties(groupId, this.config.HUE_ASSIGNMENT_ROW_HUES[closestIndex]);
+                appState.setTargetColorProperties(groupId, HUE_ASSIGNMENT_ROW_HUES[closestIndex]);
                 this.buttonManager.setGroupSelected(groupId, closestIndex.toString());
             });
         }

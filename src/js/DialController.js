@@ -4,22 +4,19 @@
  * and user interaction. It dynamically recalculates and updates SVG ridge attributes
  * on each frame to create a 3D perspective rotation effect.
  */
-// Removed serviceLocator import as appState is passed in constructor
-// import { serviceLocator } from './serviceLocator.js';
 import { throttle } from './utils.js';
+import { PIXELS_PER_DEGREE_ROTATION, PIXELS_PER_DEGREE_HUE } from './config/index.js';
 
-class DialController {
+export class DialController {
     /**
      * @param {HTMLElement} containerElement - The main div container for the dial.
      * @param {string} dialId - 'A' or 'B'.
      * @param {object} appStateModule - The imported appState module.
-     * @param {object} configModule - The imported config module.
      * @param {object} gsapInstance - The GSAP instance.
      */
-    constructor(containerElement, dialId, appStateModule, configModule, gsapInstance) {
+    constructor(containerElement, dialId, appStateModule, gsapInstance) {
         // Dependencies
         this.appState = appStateModule; // Use passed-in appState
-        this.configModule = configModule; // Use passed-in config
         this.gsap = gsapInstance; // Use passed-in GSAP
 
         // Element & State
@@ -35,14 +32,10 @@ class DialController {
         this.config = { // Local config for dial appearance/behavior
             NUM_RIDGES: 66, 
             RIDGE_WIDTH_FACTOR: 1.6,
-            PIXELS_PER_DEGREE_ROTATION: 1.3, // From global config
-            PIXELS_PER_DEGREE_HUE: 0.64,    // From global config
+            PIXELS_PER_DEGREE_ROTATION: PIXELS_PER_DEGREE_ROTATION, // From named import
+            PIXELS_PER_DEGREE_HUE: PIXELS_PER_DEGREE_HUE,         // From named import
             SHADOW_OFFSET_MULTIPLIER: 8,
         };
-        // Override with global config values if they exist
-        this.config.PIXELS_PER_DEGREE_ROTATION = this.configModule.PIXELS_PER_DEGREE_ROTATION || this.config.PIXELS_PER_DEGREE_ROTATION;
-        this.config.PIXELS_PER_DEGREE_HUE = this.configModule.PIXELS_PER_DEGREE_HUE || this.config.PIXELS_PER_DEGREE_HUE;
-
 
         // Local component state for smooth dragging
         this.isDragging = false;
@@ -311,5 +304,3 @@ class DialController {
         window.removeEventListener('resize', this.boundOnResize);
     }
 }
-
-export default DialController;

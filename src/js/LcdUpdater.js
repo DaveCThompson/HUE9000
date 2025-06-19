@@ -13,16 +13,12 @@ const MANAGED_LCD_CLASSES = ['lcd--unlit', 'lcd--dimly-lit'];
 export class LcdUpdater {
   constructor() {
     this.gsap = null;
-    // this.appState = null; // REMOVED
-    this.config = null;
     this.dom = {};
     this.debug = true; // Enable detailed logging
   }
 
   init() {
     this.gsap = serviceLocator.get('gsap');
-    // this.appState = serviceLocator.get('appState'); // REMOVED
-    this.config = serviceLocator.get('config');
     this.dom = serviceLocator.get('domElements');
 
     if (this.debug) console.log('[LcdUpdater INIT]');

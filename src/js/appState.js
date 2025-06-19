@@ -5,7 +5,7 @@
  * Emits events when state changes occur, allowing other modules to react.
  * Includes basic console logging for event emissions.
  */
-import { HUE_ASSIGNMENT_ROW_HUES, DEFAULT_ASSIGNMENT_SELECTIONS, DEFAULT_DIAL_A_HUE } from './config.js';
+import { HUE_ASSIGNMENT_ROW_HUES, DEFAULT_ASSIGNMENT_SELECTIONS, DEFAULT_DIAL_A_HUE } from './config/index.js';
 import { clamp } from './utils.js';
 
 const DEBUG_APP_STATE = false; // Global debug flag for appState logging (set to false to reduce console noise)

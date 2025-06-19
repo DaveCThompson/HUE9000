@@ -8,7 +8,6 @@ import * as appState from './appState.js'; // IMPORT appState directly
 export class SidePanelManager {
     constructor() {
         this.dom = null;
-        // this.appState = null; // REMOVED
         this.startupManager = null;
         this.audioManager = null;
         this.config = null;
@@ -19,10 +18,9 @@ export class SidePanelManager {
 
     init() {
         this.dom = serviceLocator.get('domElements');
-        // this.appState = serviceLocator.get('appState'); // REMOVED
         this.startupManager = serviceLocator.get('startupSequenceManager');
         this.audioManager = serviceLocator.get('audioManager');
-        this.config = serviceLocator.get('config');
+        this.config = serviceLocator.get('config'); // Still needed for phaseConfigs
 
         if (this.debug) console.log('[SidePanelManager] Initializing...');
 

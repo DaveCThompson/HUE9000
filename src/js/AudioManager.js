@@ -6,11 +6,11 @@
 import { Howl, Howler } from 'howler';
 import { serviceLocator } from './serviceLocator.js';
 import { EventEmitter } from './EventEmitter.js'; // Simple event emitter
+import { AUDIO_CONFIG } from './config/index.js';
 
 export class AudioManager extends EventEmitter {
     constructor() {
         super(); // Call EventEmitter constructor
-        this.config = null;
         this.sounds = {};
         this.isAudioUnlocked = false;
         this.isReadyState = false; // Tracks if AudioManager init is complete
@@ -26,18 +26,16 @@ export class AudioManager extends EventEmitter {
      * This is called BEFORE the preloader visual sequence typically starts.
      */
     init() {
-        this.config = serviceLocator.get('config');
-        if (!this.config || !this.config.AUDIO_CONFIG) {
+        if (!AUDIO_CONFIG) {
             console.error('[AudioManager INIT] Audio config not found!');
             this.isReadyState = true; // Mark as ready but with errors
             return;
         }
 
-        Howler.volume(this.config.AUDIO_CONFIG.masterVolume);
-        console.log(`[AM | ${performance.now().toFixed(2)}ms] AudioManager INIT. MasterVol: ${this.config.AUDIO_CONFIG.masterVolume}`);
+        Howler.volume(AUDIO_CONFIG.masterVolume);
+        console.log(`[AM | ${performance.now().toFixed(2)}ms] AudioManager INIT. MasterVol: ${AUDIO_CONFIG.masterVolume}`);
         this._loadAllSounds();
         this.isReadyState = true;
-        // if (this.debug) console.log('[AudioManager INIT] Initialized and loading sounds.'); // Replaced by specific log above
     }
 
     postInitSubscribe() {
@@ -49,11 +47,10 @@ export class AudioManager extends EventEmitter {
     }
 
     _loadAllSounds() {
-        const soundConfigs = this.config.AUDIO_CONFIG.sounds;
+        const soundConfigs = AUDIO_CONFIG.sounds;
         for (const key in soundConfigs) {
             if (Object.prototype.hasOwnProperty.call(soundConfigs, key) && soundConfigs[key].src) {
                 this.soundLoadStates[key] = 'loading';
-                // if (this.debug) console.log(`[AudioManager] Attempting to load sound: ${key}, src: ${soundConfigs[key].src}, html5: ${!!soundConfigs[key].html5}`);
                 
                 if (key === 'itemAppear') {
                     console.warn(`[A_LOAD_INIT P7_SOUND] itemAppear: Howl instance creation initiated. Time: ${performance.now().toFixed(2)}`);
@@ -97,12 +94,11 @@ export class AudioManager extends EventEmitter {
                     },
                     onplay: (id) => { // Added id parameter
                         console.log(`[AM | ${performance.now().toFixed(2)}ms] Howler ONPLAY for sound: ${key} (ID: ${id}, Current HowlerVol: ${this.sounds[key].volume(id)})`);
-                        // if (this.debug) console.log(`[AudioManager] Playing sound: ${key} (ID: ${id}, Current Volume: ${this.sounds[key].volume(id)})`); // Covered by new log
                     },
                     onstop: (id) => {
                         if (this.debug) console.log(`[AudioManager] Stopped sound: ${key} (ID: ${id})`);
                         // If the stopped music track was the one we were tracking, clear it
-                        if (this.config.AUDIO_CONFIG.sounds[key]?.isMusic && id === this.currentMusicId) {
+                        if (AUDIO_CONFIG.sounds[key]?.isMusic && id === this.currentMusicId) {
                             if (this.debug) console.log(`[AM Music] Clearing currentMusicKey/Id because ${key} (ID: ${id}) stopped.`);
                             this.currentMusicKey = null;
                             this.currentMusicId = null;
@@ -166,7 +162,6 @@ export class AudioManager extends EventEmitter {
     unlockAudioContext() {
         if (this.isAudioUnlocked || !Howler.ctx || Howler.ctx.state !== 'suspended') {
             if (this.debug && Howler.ctx && Howler.ctx.state !== 'suspended' && !this.isAudioUnlocked) {
-                // console.log('[AudioManager] AudioContext already running, marking as unlocked.');
                 this.isAudioUnlocked = true;
             }
             return;
@@ -201,10 +196,6 @@ export class AudioManager extends EventEmitter {
             return null;
         }
 
-        // if (this.debug) { // Covered by the new log above
-        //     console.log(`[AudioManager PLAY Attempt] Key: '${key}', LoadState: ${this.soundLoadStates[key]}, ForceRestart: ${forceRestart}, Volume: ${specificVolume === null ? 'default' : specificVolume}`);
-        // }
-
         if (this.soundLoadStates[key] === 'loading') {
             if (key === 'itemAppear') {
                 console.warn(`[A_PLAY_QUEUE P7_SOUND] itemAppear: Queuing play because LoadState is 'loading'. App Time: ${performance.now().toFixed(2)}`);
@@ -214,7 +205,6 @@ export class AudioManager extends EventEmitter {
             }
             console.log(`[AM | ${performance.now().toFixed(2)}ms] Sound "${key}" is loading. Queuing play call.`);
             if (!this.queuedPlayCalls.find(call => call.key === key && call.forceRestart === forceRestart && call.specificVolume === specificVolume)) {
-                 // if (this.debug) console.log(`[AudioManager PLAY] Sound "${key}" is still loading. Queuing play call.`); // Covered
                  this.queuedPlayCalls.push({ key, forceRestart, specificVolume });
             } else {
                 if (this.debug) console.log(`[AudioManager PLAY] Sound "${key}" is loading, identical play call already queued.`);
@@ -246,7 +236,7 @@ export class AudioManager extends EventEmitter {
                     this.sounds[key].volume(specificVolume, soundId);
                     if (this.debug) console.log(`[AudioManager PLAY] Setting specific volume ${specificVolume} for "${key}" (ID: ${soundId})`);
                 } else {
-                    const defaultConfigVolume = this.config.AUDIO_CONFIG.sounds[key]?.volume;
+                    const defaultConfigVolume = AUDIO_CONFIG.sounds[key]?.volume;
                     if (defaultConfigVolume !== undefined) {
                         this.sounds[key].volume(defaultConfigVolume, soundId);
                     }
@@ -300,7 +290,7 @@ export class AudioManager extends EventEmitter {
     
     fadeIn(key, durationSeconds, targetVolume = null, soundIdToPlayOn = null) { // Renamed soundId to soundIdToPlayOn for clarity
         if (this.sounds[key]) {
-            const finalVolume = targetVolume !== null ? targetVolume : (this.config.AUDIO_CONFIG.sounds[key]?.volume || 1.0);
+            const finalVolume = targetVolume !== null ? targetVolume : (AUDIO_CONFIG.sounds[key]?.volume || 1.0);
             const durationMs = durationSeconds * 1000;
             if (this.debug) console.log(`[AudioManager FADEIN] Sound: ${key}, Duration: ${durationSeconds}s, TargetVol: ${finalVolume}, ID: ${soundIdToPlayOn || 'new/all'}`);
             
@@ -358,7 +348,7 @@ export class AudioManager extends EventEmitter {
     }
 
     playMusic(key) {
-        if (!this.sounds[key] || !this.config.AUDIO_CONFIG.sounds[key]?.isMusic) {
+        if (!this.sounds[key] || !AUDIO_CONFIG.sounds[key]?.isMusic) {
             console.warn(`[AM Music] Music key "${key}" not found or not configured as music.`);
             return;
         }
@@ -368,7 +358,7 @@ export class AudioManager extends EventEmitter {
             return;
         }
 
-        const crossfadeDuration = this.config.AUDIO_CONFIG.musicCrossfadeDuration;
+        const crossfadeDuration = AUDIO_CONFIG.musicCrossfadeDuration;
         console.log(`[AM Music] Playing music "${key}" with a ${crossfadeDuration}s crossfade.`);
 
         // Fade out the old music if it's playing

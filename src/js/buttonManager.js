@@ -8,7 +8,7 @@ import { createAdvancedFlicker } from './animationUtils.js';
 import { shuffleArray } from './utils.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
-import { ADVANCED_FLICKER_PROFILES } from './config.js'; // Import for checking glow var names
+import { ADVANCED_FLICKER_PROFILES, RESISTIVE_SHUTDOWN_PARAMS } from './config/index.js';
 
 export const ButtonStates = {
     UNLIT: 'is-unlit',
@@ -25,7 +25,6 @@ export const ButtonStates = {
 export class ButtonManager {
     constructor() {
         this.gsap = null;
-        this.config = null;
         this.aam = null; 
         this.audioManager = null; 
 
@@ -40,7 +39,6 @@ export class ButtonManager {
 
     init() {
         this.gsap = serviceLocator.get('gsap');
-        this.config = serviceLocator.get('config');
         this.aam = serviceLocator.get('ambientAnimationManager');
         this.audioManager = serviceLocator.get('audioManager'); 
 
@@ -74,7 +72,7 @@ export class ButtonManager {
         if (!element || this._buttons.has(element)) return;
 
         const buttonConfig = this._generateButtonConfig(element, explicitGroupId);
-        const buttonInstance = new Button(element, buttonConfig, this.gsap, appState, this.config);
+        const buttonInstance = new Button(element, buttonConfig, this.gsap, appState);
         this._buttons.set(element, buttonInstance);
 
         const finalGroupId = buttonInstance.getGroupId();
@@ -338,10 +336,10 @@ export class ButtonManager {
         }
 
         const stageKey = `STAGE_${newStage}`;
-        const stageParams = this.config.RESISTIVE_SHUTDOWN_PARAMS[stageKey];
+        const stageParams = RESISTIVE_SHUTDOWN_PARAMS[stageKey];
         if (!stageParams || !stageParams.BUTTON_FLASH_PROFILE_NAME) return;
 
-        let targetState = newStage === this.config.RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE
+        let targetState = newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE
             ? ButtonStates.PERMANENTLY_DISABLED
             : ButtonStates.ENERGIZED_UNSELECTED;
 

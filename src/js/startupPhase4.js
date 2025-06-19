@@ -21,7 +21,7 @@ export const phase4Config = {
     },
     {
       type: 'lensEnergize',
-      // Lens energize visual sequence (ramp over config.LENS_STARTUP_RAMP_DURATION) starts at T=0.1s.
+      // Lens energize visual sequence (ramp over config.LENS_STARTUP_RAMP_DURATION_MS) starts at T=0.1s.
       position: 0.1 
     },
     {

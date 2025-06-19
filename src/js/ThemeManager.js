@@ -3,13 +3,11 @@
  * @description Manages global UI theme changes by updating the <body> class.
  * Replaces the theme-handling portion of the old uiUpdater.js.
  */
-import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
 
 export class ThemeManager {
   constructor() {
     this.body = document.body;
-    // this.appState = null; // REMOVED
     this.debug = false;
   }
 
@@ -18,7 +16,6 @@ export class ThemeManager {
    */
   init() {
     if (this.debug) console.log('[ThemeManager INIT]');
-    // this.appState = serviceLocator.get('appState'); // REMOVED
     appState.subscribe('themeChanged', (newTheme) => this.handleThemeChange(newTheme));
 
     // Set initial theme based on appState

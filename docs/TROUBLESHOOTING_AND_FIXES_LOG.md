@@ -205,6 +205,22 @@ This section details issues addressed during and immediately after the V2.3 refa
 *   **Files Affected:** `src/js/DialController.js`, `src/css/3-themes/theme-dim.css`, `src/css/3-themes/theme-dark.css`, `src/css/3-themes/theme-light.css`.
 *   **Key Learning (CRITICAL):** Never use `calc()` or other CSS functions in a CSS custom property that you intend to read and parse with JavaScript's `parseFloat()`. The CSS variable must contain a simple, clean numeric value. Perform all mathematical modifications on the JavaScript side after parsing the clean value. This prevents `NaN` poisoning and ensures robust data flow between CSS and JS. A component should, whenever possible, subscribe to the state changes it cares about rather than relying on external callers to manually trigger its updates.
 
+### C.11. Terminal Startup Text: Flicker Quality & Typing Synchronization
+*   **Symptom (Iterative):**
+    1.  **Initial:** The first line of terminal text would "pop" into view instantly, instead of typing out, and the flicker effect was not visible.
+    2.  **After Fix 1:** The text would type out, but the flicker effect was a simple, low-energy, looping glow, not matching the complex, energetic flicker of the button components.
+*   **Root Cause Analysis (Iterative):**
+    1.  **"Pop-in" Cause:** The initial implementation attempted to run the `createAdvancedFlicker` animation *instead of* the typing loop. This caused the full text to be rendered into an invisible (`autoAlpha: 0`) element, which then became visible when the animation completed.
+    2.  **Low-Quality Flicker Cause:** The subsequent fix overcorrected. It replaced the complex `createAdvancedFlicker` with a simple, looping `gsap.to()` tween that oscillated the glow properties. While this allowed typing to occur, it lost the high-quality, structured chaos of the intended effect.
+    3.  **The Core Conflict:** The definitive problem was how to reconcile a one-shot, state-transition animation (`createAdvancedFlicker`) with a continuous, character-by-character process (typing). The solution required letting both run concurrently and using their interaction to create the desired visual.
+*   **Solution Implemented (Definitive):**
+    1.  The `terminalManager.js` `_typeLine` method was refactored for the `flicker: true` case.
+    2.  **Concurrent Animation:** It now immediately starts the `createAdvancedFlicker` animation on the empty text span. This animation runs for its full duration in the background, constantly trying to tween the span's `autoAlpha` and glow properties according to its complex profile.
+    3.  **"Flicker Battle":** The code then *immediately* enters the character-by-character typing loop. Crucially, after appending each character, it forces the text span's visibility with `gsap.set(this._currentTextSpan, { autoAlpha: 1 });`. This constant "fighting" between the flicker animation's attempts to hide the element and the typing loop's attempts to show it creates the desired chaotic, high-energy, unstable flicker effect as the text appears.
+    4.  **Synchronization:** After the typing loop completes, the code now `await`s the `completionPromise` from the `createAdvancedFlicker` animation. This ensures that the terminal manager waits for the flicker effect to run its full course and "settle" into its stable, final state before proceeding to the next message in the queue, preserving the integrity of the sequence.
+*   **Files Affected:** `src/js/terminalManager.js`.
+*   **Key Learning:** Complex, layered visual effects can sometimes be achieved by orchestrating a "conflict" between two different animation drivers. By having a background GSAP timeline attempt to tween a property while a foreground loop repeatedly sets it to a different value, a dynamic and chaotic effect can be created that is more visually interesting than either animation alone. Awaiting the completion of the background animation is key to ensuring the overall process remains synchronous and predictable.
+
 ## Section D: XState Refactor & Key Considerations (Post V2.3 - SSR-V1.0)
 
 This section highlights critical aspects and potential pitfalls related to the XState-orchestrated startup sequence, primarily for future maintenance and development.
@@ -273,5 +289,3 @@ This section highlights critical aspects and potential pitfalls related to the X
 *   **Debugging Approach:** Use console logging within animation utilities and phase modules to verify targets and parameters. Temporarily exaggerate animation profile values to confirm the animation path is working. Inspect CSS for overrides.
 *   **Files Affected:** `animationUtils.js`, `config.js` (profiles), `startupPhaseX.js` (targeting logic), `index.html` (for `data-group-id`).
 *   **Key Learning:** Visual verification is as important as logical completion. Debug targeting and animation parameters if visuals don't match expectations. Ensure HTML attributes support JS targeting logic.
-
----

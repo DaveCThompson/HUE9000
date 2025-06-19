@@ -5,11 +5,10 @@
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
 import { IntensityDisplay } from './IntensityDisplay.js';
+import { V2_DISPLAY_PARAMS } from './config/index.js';
 
 export class IntensityDisplayManager {
     constructor() {
-        // this.appState = null; // REMOVED
-        this.config = null;
         this.dom = null;
         this.intensityDisplay = null;
         this.resonanceTimer = null;
@@ -18,13 +17,11 @@ export class IntensityDisplayManager {
     init() {
         console.log('[IntensityDisplayManager] init() called.');
 
-        // this.appState = serviceLocator.get('appState'); // REMOVED
-        this.config = serviceLocator.get('config');
         this.dom = serviceLocator.get('domElements');
 
         const displayConfig = {
-            bars: this.config.V2_DISPLAY_PARAMS.INTENSITY_BARS,
-            dots: this.config.V2_DISPLAY_PARAMS.INTENSITY_DOTS,
+            bars: V2_DISPLAY_PARAMS.INTENSITY_BARS,
+            dots: V2_DISPLAY_PARAMS.INTENSITY_DOTS,
         };
 
         this.intensityDisplay = new IntensityDisplay(this.dom.lcdB.querySelector('.lcd-content-wrapper'), displayConfig);
@@ -51,7 +48,7 @@ export class IntensityDisplayManager {
     handleInteractionChange(isInteracting) {
         console.log(`[IntensityDisplayManager] handleInteractionChange() called. isInteracting: ${isInteracting}`);
 
-        const idleDelay = this.config.V2_DISPLAY_PARAMS.RESONANCE_IDLE_DELAY_MS;
+        const idleDelay = V2_DISPLAY_PARAMS.RESONANCE_IDLE_DELAY_MS;
         
         clearTimeout(this.resonanceTimer);
         this.dom.lcdB.classList.remove('is-resonating');

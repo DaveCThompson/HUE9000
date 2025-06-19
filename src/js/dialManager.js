@@ -3,26 +3,21 @@
  * @description Manages rotary dial controls: initialization, SVG injection, and global operations.
  * Delegates individual dial logic to DialController instances.
  */
-import DialController from './DialController.js';
+import { DialController } from './DialController.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
-// import dialSvgUrl from '../assets/svgs/dial.svg'; // OLD: Direct string path
 import dialSvgRawString from '../assets/svgs/dial.svg?raw'; // NEW: Vite ?raw import for SVG string
 
 
 export class DialManager {
   constructor() {
     this.dialInstances = {};
-    // this.appState = null; // REMOVED
-    this.config = null;
     this.gsap = null;
     this.dom = {};
     this.debug = false;
   }
 
   async init() { // Keep async if future operations require it, though current SVG injection is sync
-    // this.appState = serviceLocator.get('appState'); // REMOVED
-    this.config = serviceLocator.get('config');
     this.gsap = serviceLocator.get('gsap');
     this.dom = serviceLocator.get('domElements');
 
@@ -37,8 +32,8 @@ export class DialManager {
         const dialId = container.dataset.dialId;
         if (dialId) {
             if (this.dialInstances[dialId]) this.dialInstances[dialId].destroy();
-            // Pass imported appState to DialController constructor
-            this.dialInstances[dialId] = new DialController(container, dialId, appState, this.config, this.gsap);
+            // Pass imported appState to DialController constructor, removing config
+            this.dialInstances[dialId] = new DialController(container, dialId, appState, this.gsap);
         }
     });
   }

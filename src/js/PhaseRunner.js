@@ -5,13 +5,11 @@
  */
 import { serviceLocator } from './serviceLocator.js';
 import * as appStateModule from './appState.js'; 
-import { getMessage } from './terminalMessages.js';
-import { createAdvancedFlicker } from './animationUtils.js';
+import { MIN_PHASE_DURATION_FOR_STEPPING } from './config/index.js';
 
 export class PhaseRunner {
   constructor() {
     this.gsap = null;
-    this.config = null;
     this.managers = {};
     this.dom = {};
     this.proxies = {};
@@ -20,7 +18,6 @@ export class PhaseRunner {
 
   init() {
     this.gsap = serviceLocator.get('gsap');
-    this.config = serviceLocator.get('config');
     this.dom = serviceLocator.get('domElements');
     this.proxies = serviceLocator.get('proxies');
 
@@ -89,7 +86,7 @@ export class PhaseRunner {
             }
         });
 
-        let phaseConfiguredDuration = phaseConfig.duration || this.config.MIN_PHASE_DURATION_FOR_STEPPING;
+        let phaseConfiguredDuration = phaseConfig.duration || MIN_PHASE_DURATION_FOR_STEPPING;
         let effectiveMinDuration = Math.max(phaseConfiguredDuration, calculatedMaxAnimationEndTime);
 
         if (masterTl.duration() < effectiveMinDuration) {
@@ -141,6 +138,10 @@ export class PhaseRunner {
                 return appStateModule; 
             }
             try {
+                // Special case for 'config' dependency to pass the whole resolved config object
+                if (depName === 'config') {
+                    return serviceLocator.get('config');
+                }
                 return serviceLocator.get(depName);
             } catch (e) {
                 console.error(`[PhaseRunner | ${performance.now().toFixed(2)}ms] Error resolving dependency "${depName}" for 'call' animation in phase ${currentPhaseConfig.name}:`, e.message);

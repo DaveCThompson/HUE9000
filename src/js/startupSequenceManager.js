@@ -8,6 +8,7 @@ import { interpret } from 'xstate';
 import { startupMachine } from './startupMachine.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // ENSURE appState is imported
+import { STARTUP_L_REDUCTION_FACTORS, DEFAULT_DIAL_A_HUE } from './config/index.js';
 
 export class StartupSequenceManager {
   constructor() {
@@ -22,8 +23,7 @@ export class StartupSequenceManager {
 
   init() {
     if (this.debug) console.log('[StartupSequenceManager INIT]');
-    const config = serviceLocator.get('config');
-    this.LReductionProxy.value = config.STARTUP_L_REDUCTION_FACTORS.P0;
+    this.LReductionProxy.value = STARTUP_L_REDUCTION_FACTORS.P0;
     this.opacityFactorProxy.value = 1.0 - this.LReductionProxy.value;
 
     serviceLocator.register('proxies', {
@@ -112,8 +112,6 @@ export class StartupSequenceManager {
 
     const dom = serviceLocator.get('domElements');
     const gsap = serviceLocator.get('gsap');
-    const config = serviceLocator.get('config');
-    // REMOVE: const localAppStateRef = serviceLocator.get('appState'); // THIS WAS THE ERROR LINE (121)
     const lcdUpdater = serviceLocator.get('lcdUpdater');
 
     if (dom.body.classList.contains('pre-boot')) {
@@ -126,7 +124,7 @@ export class StartupSequenceManager {
         gsap.set(dom.body, { opacity: 1 });
     }
 
-    this.LReductionProxy.value = config.STARTUP_L_REDUCTION_FACTORS.P0;
+    this.LReductionProxy.value = STARTUP_L_REDUCTION_FACTORS.P0;
     this.opacityFactorProxy.value = 1.0 - this.LReductionProxy.value;
     dom.root.style.setProperty('--startup-L-reduction-factor', this.LReductionProxy.value.toFixed(3));
     dom.root.style.setProperty('--startup-opacity-factor', this.opacityFactorProxy.value.toFixed(3));
@@ -138,7 +136,7 @@ export class StartupSequenceManager {
     appState.setCurrentStartupPhaseNumber(-1);
     appState.setTheme('dim');
     appState.setTrueLensPower(0);
-    appState.updateDialState('A', { hue: config.DEFAULT_DIAL_A_HUE, targetHue: config.DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0, isDragging: false });
+    appState.updateDialState('A', { hue: DEFAULT_DIAL_A_HUE, targetHue: DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0, isDragging: false });
     appState.updateDialState('B', { hue: 0, targetHue: 0, rotation: 0, targetRotation: 0, isDragging: false });
     if (this.debug) console.log('[SSM Reset] App state reset (status, theme, lens, dials).');
 
