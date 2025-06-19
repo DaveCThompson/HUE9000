@@ -7,7 +7,7 @@ export const phase1Config = {
   phase: 1,
   name: "EMERGENCY_SUBSYSTEMS",
   // Phase duration. Accommodates concurrent visual starts and a specifically timed sound.
-  duration: 3.5, 
+  duration: 2.5, 
 
   // The text flicker is handled by TerminalManager, triggered by this message key.
   terminalMessageKey: "P1_EMERGENCY_SUBSYSTEMS",

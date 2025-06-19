@@ -412,3 +412,24 @@
 .button-unit.is-flashing-tint-orange .light {
     background-color: oklch(0.80 0.16 50);
 }
+
+/* --- HIGH-PERFORMANCE IDLE LIGHT DRIFT --- */
+@keyframes idleLightDrift {
+    0%, 100% {
+        opacity: var(--light-idle-opacity-start);
+    }
+    50% {
+        opacity: var(--light-idle-opacity-end);
+    }
+}
+
+/* Apply the animation when the JS adds the class */
+.button-unit.css-idle-drifting .light {
+    /*
+    The opacity property is now controlled by this animation.
+    It will override the static opacity set by .is-energized.
+    We use 'forwards' to ensure it holds the final state if paused.
+    */
+    animation: idleLightDrift var(--light-idle-duration) var(--light-idle-delay) ease-in-out infinite forwards;
+    will-change: opacity; /* Promote opacity to its own layer for performance */
+}

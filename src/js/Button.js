@@ -109,38 +109,15 @@ class Button {
             this.currentFlickerAnim.kill(); this.currentFlickerAnim = null;
         }
 
-        const lights = Array.from(this.element.querySelectorAll('.light'));
-        
-        // Revised clearProps logic
-        if (!internalFlickerCall) { // This is true for flicker's final setState and for "hostile" setStates
+        // Revised clearProps logic - BECOMES UNCONDITIONAL for non-internal calls
+        if (!internalFlickerCall) {
             this.element.classList.remove(ButtonStates.FLICKERING); // Remove if this class is managed by Button.js
 
-            if (isFlickerCompletion) {
-                // Flicker's own final setState: Be very gentle.
-                // Preserve inline styles set by the flicker (opacity on lights, glow CSS vars).
-                // console.log(`[BTN_SETSTATE_FLICKER_COMPLETION_SKIP_CLEARPROPS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Flicker self-completing. Minimal/No clearProps. AppTime: ${performance.now().toFixed(2)}`);
-                if (isFinalSetAfterP7DimlyLitFlicker) { // P7 still needs its special handling if it's also a flicker completion
-                     if (lights.length > 0) this.gsap.set(lights, { clearProps: "transform,filter" });
-                    //  console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Used selective clearProps for lights (FlickerCompletion + P7). AppTime: ${performance.now().toFixed(2)}`);
-                }
-                // For other flicker completions, no specific clearProps on lights or element CSS vars.
-            } else if (this._isUndergoingManagedFlicker) {
-                // A "hostile" setState call happened WHILE a ButtonManager-initiated flicker was running.
-                // Avoid aggressive clearProps to not destroy the ongoing flicker.
-                // console.warn(`[BTN_SETSTATE_FLICKER_INTERRUPTED_CLEARPROPS_AVOIDED | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. setState during managed flicker. Avoiding aggressive clearProps. NewState: ${newStateClassesStr}. AppTime: ${performance.now().toFixed(2)}`);
-                // Potentially do nothing here regarding clearProps, or be extremely selective.
-                // This path means the flicker was likely cut short by this setState call's class changes.
-            } else {
-                // Standard setState, not a flicker completion, and no flicker currently managed by ButtonManager.
-                // This is also the path for the _BaseSet call in ButtonManager.playFlickerToState.
-                if (isFinalSetAfterP7DimlyLitFlicker) { // This case should ideally not be hit if isFlickerCompletion handles P7 correctly.
-                    if (lights.length > 0) this.gsap.set(lights, { clearProps: "transform,filter" });
-                    // console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Used selective clearProps for lights (Standard + P7). AppTime: ${performance.now().toFixed(2)}`);
-                } else {
-                    if (lights.length > 0) this.gsap.set(lights, { clearProps: "all" });
-                }
-                this.gsap.set(this.element, { clearProps: "css" });
+            const lights = Array.from(this.element.querySelectorAll('.light'));
+            if (lights.length > 0) {
+                this.gsap.set(lights, { clearProps: "all" });
             }
+            this.gsap.set(this.element, { clearProps: "css" }); // Clears CSS vars like --btn-glow-color
         }
 
 
@@ -162,6 +139,7 @@ class Button {
 
         if (isFinalSetAfterP7DimlyLitFlicker && buttonId.includes('Assign')) {
             const finalClasses = Array.from(this.element.classList).join(' ');
+            const lights = Array.from(this.element.querySelectorAll('.light'));
             const finalLightOpacities = lights.map(l => l.style.opacity || getComputedStyle(l).opacity ).join(', ');
             // console.log(`[BTN_SETSTATE_END P7_VISUALS_FINAL_DIM] Button: ${buttonId}. FinalClasses: '${finalClasses}'. Final Light Opacities (inline||computed): [${finalLightOpacities}]. AppTime: ${performance.now().toFixed(2)}`);
         } else if (effectivePhaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && buttonId.includes('Assign')) {
@@ -307,14 +285,16 @@ class Button {
             if (this.element.classList.contains(this.cssIdleDriftClassName)) return;
             this.element.classList.add(this.cssIdleDriftClassName);
 
-            lights.forEach((light, index) => {
-                const randomDuration = this.gsap.utils.random(D_PARAMS.PERIOD_MIN, D_PARAMS.PERIOD_MAX);
-                const randomDelay = this.gsap.utils.random(0, D_PARAMS.PERIOD_MAX / 4) + (index * D_PARAMS.STAGGER_PER_LIGHT);
-                const baseOpacity = D_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED;
-                const variation = baseOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
-                const opacityStart = Math.max(0, Math.min(1, baseOpacity - variation));
-                const opacityEnd = Math.max(0, Math.min(1, baseOpacity + variation));
+            // Calculate animation parameters ONCE per button instance
+            const randomDuration = this.gsap.utils.random(D_PARAMS.PERIOD_MIN, D_PARAMS.PERIOD_MAX);
+            const randomDelay = this.gsap.utils.random(0, D_PARAMS.PERIOD_MAX / 4); // No per-light stagger
+            const baseOpacity = D_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED;
+            const variation = baseOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
+            const opacityStart = Math.max(0, Math.min(1, baseOpacity - variation));
+            const opacityEnd = Math.max(0, Math.min(1, baseOpacity + variation));
 
+            // Apply the SAME parameters to all lights within this button
+            lights.forEach((light) => {
                 light.style.setProperty('--light-idle-duration', `${randomDuration.toFixed(3)}s`);
                 light.style.setProperty('--light-idle-delay', `${randomDelay.toFixed(3)}s`);
                 light.style.setProperty('--light-idle-opacity-start', opacityStart.toFixed(3));

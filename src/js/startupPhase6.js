@@ -42,14 +42,14 @@ export const phase6Config = {
       type: 'audio', // Sound for LCDs powering on
       soundKey: 'lcdPowerOn', 
       forceRestart: true,
-      position: 0.2 // Sound concurrent with LCD visual start
+      position: 0.24 // Sound concurrent with LCD visual start
     },
     {
       type: 'audio', // The "item appeared" sound, consistent with other phases.
       soundKey: 'itemAppear',
       forceRestart: true,
       // Timed to play upon completion of the LCD flicker (0.2s start + ~0.83s duration = ~1.03s)
-      position: 1.05 
+      position: 0.5 
     }
   ]
 };

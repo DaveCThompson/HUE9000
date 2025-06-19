@@ -200,7 +200,13 @@ function setupEventListeners() {
                 // A button was just turned ON
                 if (ariaLabel.includes('Low')) {
                     appState.setTheme('dark');
-                    audioManager.play('auxModeLow', true);
+                    const soundId = audioManager.play('auxModeLow', true);
+                    if (soundId !== null) {
+                        // After 1 second, start a 1.5 second fade out.
+                        setTimeout(() => {
+                            audioManager.fadeOut('auxModeLow', 1.5, soundId);
+                        }, 1000);
+                    }
                     stateTextForTerminal = 'LOW';
                 } else if (ariaLabel.includes('High')) {
                     appState.setTheme('light');
