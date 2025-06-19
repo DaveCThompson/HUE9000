@@ -1,5 +1,3 @@
-// main.js
-
 /**
  * @module main
  * @description Entry point for the HUE 9000 application. Orchestrates the preloader
@@ -63,7 +61,7 @@ class MusicController {
             return;
         }
 
-        console.log(`[MusicController] Theme changed to ${newTheme}. Setting music.`);
+        // console.log(`[MusicController] Theme changed to ${newTheme}. Setting music.`);
         switch(newTheme) {
             case 'light':
                 this.audioManager.playMusic('bgLight');
@@ -79,11 +77,11 @@ class MusicController {
     handleResistiveShutdownStageChange({ newStage }) {
         if (newStage > 0 && this.lastResistiveStage === 0) {
             // Transitioning INTO resistive mode
-            console.log('[MusicController] Resistive shutdown started. Setting music.');
+            // console.log('[MusicController] Resistive shutdown started. Setting music.');
             this.audioManager.playMusic('bgResistive');
         } else if (newStage === 0 && this.lastResistiveStage > 0) {
             // Transitioning OUT OF resistive mode (reset)
-            console.log('[MusicController] Resistive shutdown ended. Reverting to theme music.');
+            // console.log('[MusicController] Resistive shutdown ended. Reverting to theme music.');
             const currentTheme = this.appState.getCurrentTheme();
             this.handleThemeChange(currentTheme);
         }
@@ -261,7 +259,7 @@ function initializeApp() {
     if (window.HUE9000_INITIALIZED) return;
     window.HUE9000_INITIALIZED = true;
 
-    console.log('[Main INIT] HUE 9000 Project Decouple Initializing...');
+    // console.log('[Main INIT] HUE 9000 Project Decouple Initializing...');
     
     const audioManager = serviceLocator.get('audioManager'); 
     const themeManager = new ThemeManager();
@@ -316,7 +314,7 @@ function initializeApp() {
     new MusicController(audioManager, appState, config);
 
     startupSequenceManager.start(true); 
-    console.log('[Main INIT] HUE 9000 Initialization Complete.');
+    // console.log('[Main INIT] HUE 9000 Initialization Complete.');
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -110,7 +110,7 @@ class AmbientAnimationManager {
         // Check if this button is part of the P7 Hue Assignment group
         const isP7HueButton = buttonId.includes('Assign') && appState.getCurrentStartupPhaseNumber() === 7; 
         if (isP7HueButton) {
-            console.log(`[AAM_AFTER_TRANS P7_VISUALS] Button: ${buttonId}. isActive: ${this.isActive}. AppTime: ${performance.now().toFixed(2)}`);
+            // console.log(`[AAM_AFTER_TRANS P7_VISUALS] Button: ${buttonId}. isActive: ${this.isActive}. AppTime: ${performance.now().toFixed(2)}`);
         }
         this._applyAmbientAnimation(buttonInstance);
     }
@@ -134,9 +134,9 @@ class AmbientAnimationManager {
         // P7 Debug Logging
         const isP7HueButton = buttonId.includes('Assign') && appState.getCurrentStartupPhaseNumber() === 7;
         if (isP7HueButton) {
-            console.log(`[AAM_APPLY_EFFECT P7_VISUALS] Button: ${buttonId}. Active: ${this.isActive}, Selected: ${isSelected}, Energized: ${isEnergized}, Classes: ${Array.from(currentClasses).join(' ')}. AppTime: ${performance.now().toFixed(2)}`);
+            // console.log(`[AAM_APPLY_EFFECT P7_VISUALS] Button: ${buttonId}. Active: ${this.isActive}, Selected: ${isSelected}, Energized: ${isEnergized}, Classes: ${Array.from(currentClasses).join(' ')}. AppTime: ${performance.now().toFixed(2)}`);
             if (isEnergized && this.isActive) {
-                 console.warn(`[AAM_APPLY_EFFECT P7_VISUALS_WARN] Button: ${buttonId}. AAM IS APPLYING EFFECT (Resonance/Drift) during P7. This might be UNINTENDED.`);
+                //  console.warn(`[AAM_APPLY_EFFECT P7_VISUALS_WARN] Button: ${buttonId}. AAM IS APPLYING EFFECT (Resonance/Drift) during P7. This might be UNINTENDED.`);
             }
         }
 

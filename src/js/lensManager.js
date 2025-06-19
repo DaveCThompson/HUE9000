@@ -42,14 +42,14 @@ export class LensManager {
     this.lastSuperGlowHue = -1;
     this.currentLensHueProxy = { value: -1 };
     this.debouncedSetLegacyLensPowerVar = null;
-    this.debug = true;
+    this.debug = false;
   }
 
   init() {
     this.gsap = serviceLocator.get('gsap');
     this.dom = serviceLocator.get('domElements');
 
-    if (this.debug) console.log('[LensManager INIT]');
+    // if (this.debug) console.log('[LensManager INIT]');
 
     this.debouncedSetLegacyLensPowerVar = debounce((visualPower) => {
       const clampedPower = Math.max(0.0, Math.min(visualPower, 1.05));
@@ -339,19 +339,19 @@ export class LensManager {
     const canOscillate = appState.getAppStatus() === 'interactive' && 
                          appState.getDialBInteractionState() === 'idle';
 
-    if (this.debug) {
-        console.log(`[LensManager _startOscillation] Attempting to start. Conditions: isOscillating=${this.isOscillating}, canOscillate=${canOscillate} (appStatus: ${appState.getAppStatus()}, dialBState: ${appState.getDialBInteractionState()}, shutdownStage: ${appState.getResistiveShutdownStage()})`);
-    }
+    // if (this.debug) {
+    //     console.log(`[LensManager _startOscillation] Attempting to start. Conditions: isOscillating=${this.isOscillating}, canOscillate=${canOscillate} (appStatus: ${appState.getAppStatus()}, dialBState: ${appState.getDialBInteractionState()}, shutdownStage: ${appState.getResistiveShutdownStage()})`);
+    // }
 
     if (this.isOscillating || !canOscillate) return;
     
     this.isOscillating = true;
-    if (this.debug) console.log('[LensManager _startOscillation] Oscillation STARTED.');
+    // if (this.debug) console.log('[LensManager _startOscillation] Oscillation STARTED.');
   }
 
   _stopOscillation() {
     if (!this.isOscillating) return;
-    if (this.debug) console.log('[LensManager _stopOscillation] Oscillation STOPPED.');
+    // if (this.debug) console.log('[LensManager _stopOscillation] Oscillation STOPPED.');
     this.isOscillating = false;
     this._updateLensVisualsWithCurrentState(true);
   }

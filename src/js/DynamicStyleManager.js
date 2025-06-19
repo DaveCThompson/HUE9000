@@ -22,7 +22,7 @@ export class DynamicStyleManager {
   init() {
     this.dom = serviceLocator.get('domElements');
 
-    if (this.debug) console.log('[DynamicStyleManager INIT]');
+    // if (this.debug) console.log('[DynamicStyleManager INIT]');
 
     appState.subscribe('targetColorChanged', (payload) => this.handleTargetColorChange(payload));
     appState.subscribe('dialUpdated', (payload) => this.handleDialAUpdateForUIAccent(payload));
@@ -48,7 +48,7 @@ export class DynamicStyleManager {
     this.root.style.setProperty(`--dynamic-${targetKey}-hue`, normalizedHue.toFixed(1));
     this.root.style.setProperty(`--dynamic-${targetKey}-chroma`, chromaToSet.toFixed(4));
 
-    if (this.debug) console.log(`[DynamicStyleManager] Set CSS vars for '${targetKey}': Hue=${normalizedHue.toFixed(1)}, Chroma=${chromaToSet.toFixed(4)}`);
+    // if (this.debug) console.log(`[DynamicStyleManager] Set CSS vars for '${targetKey}': Hue=${normalizedHue.toFixed(1)}, Chroma=${chromaToSet.toFixed(4)}`);
   }
 
   /**
@@ -62,13 +62,13 @@ export class DynamicStyleManager {
       return;
     }
     if (logoContainer.querySelector('svg.logo-svg')) {
-      if (this.debug) console.log('[DynamicStyleManager] Logo SVG already injected.');
+      // if (this.debug) console.log('[DynamicStyleManager] Logo SVG already injected.');
       return; 
     }
 
     if (typeof logoSvgUrl === 'string' && logoSvgUrl.trim().startsWith('<svg')) {
         logoContainer.innerHTML = logoSvgUrl;
-        if (this.debug) console.log('[DynamicStyleManager] SVG logo injected via ?raw import.');
+        // if (this.debug) console.log('[DynamicStyleManager] SVG logo injected via ?raw import.');
         this.applyInitialDynamicCSSVars(); // Re-apply vars to the new SVG
     } else {
         console.error('[DynamicStyleManager] Error: logoSvgUrl is not a valid SVG string.', logoSvgUrl);

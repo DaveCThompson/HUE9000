@@ -20,7 +20,7 @@ class ResistiveShutdownController {
         this.audioManager = serviceLocator.get('audioManager');
 
         appState.subscribe('resistiveShutdownStageChanged', (payload) => this.handleStageChange(payload));
-        if (this.debug) console.log('[RSC INIT]');
+        // if (this.debug) console.log('[RSC INIT]');
     }
 
     /**
@@ -28,7 +28,7 @@ class ResistiveShutdownController {
      */
     handlePowerOffClick() {
         if (appState.getIsMainPowerOffButtonDisabled()) {
-            if (this.debug) console.log(`[RSC] MAIN PWR OFF is disabled. Interaction blocked.`);
+            // if (this.debug) console.log(`[RSC] MAIN PWR OFF is disabled. Interaction blocked.`);
             return;
         }
 
@@ -45,13 +45,13 @@ class ResistiveShutdownController {
         
         if (currentStage < RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
             const newStage = currentStage + 1;
-            if (this.debug) console.log(`[RSC] Advancing resistive shutdown to stage ${newStage}.`);
+            // if (this.debug) console.log(`[RSC] Advancing resistive shutdown to stage ${newStage}.`);
             appState.setResistiveShutdownStage(newStage);
         }
     }
 
     handleStageChange({ newStage }) {
-        if (this.debug) console.log(`[RSC] Stage changed to ${newStage}`);
+        // if (this.debug) console.log(`[RSC] Stage changed to ${newStage}`);
 
         if (newStage === 0) {
             if (appState.getIsMainPowerOffButtonDisabled()) {
@@ -110,9 +110,9 @@ class ResistiveShutdownController {
             targetRotation: dialBRotation,
         });
 
-        if (this.debug) {
-            console.log(`[RSC _updateLensAndDialTargets] Synced state. New Lens Power: ${targetPower.toFixed(3)}. New Dial B Hue: ${dialBHue.toFixed(2)}`);
-        }
+        // if (this.debug) {
+        //     console.log(`[RSC _updateLensAndDialTargets] Synced state. New Lens Power: ${targetPower.toFixed(3)}. New Dial B Hue: ${dialBHue.toFixed(2)}`);
+        // }
     }
 
     _updateHueAssignmentButtons(stageParams) {

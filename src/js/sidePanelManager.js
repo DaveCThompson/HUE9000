@@ -22,7 +22,7 @@ export class SidePanelManager {
         this.audioManager = serviceLocator.get('audioManager');
         this.config = serviceLocator.get('config'); // Still needed for phaseConfigs
 
-        if (this.debug) console.log('[SidePanelManager] Initializing...');
+        // if (this.debug) console.log('[SidePanelManager] Initializing...');
 
         this._setupPanelToggles();
         this._setupTabControls();
@@ -32,7 +32,7 @@ export class SidePanelManager {
         
         this._updateManualControlsVisibility();
 
-        if (this.debug) console.log('[SidePanelManager] Initialization complete.');
+        // if (this.debug) console.log('[SidePanelManager] Initialization complete.');
     }
 
     _setupPanelToggles() {
@@ -60,10 +60,10 @@ export class SidePanelManager {
 
                 if (this.isAutoplayOn) {
                     this.startupManager.playAllRemaining();
-                    if (this.debug) console.log('[SidePanelManager] Autoplay toggled ON.');
+                    // if (this.debug) console.log('[SidePanelManager] Autoplay toggled ON.');
                 } else {
                     this.startupManager.pauseSequence();
-                    if (this.debug) console.log('[SidePanelManager] Autoplay toggled OFF.');
+                    // if (this.debug) console.log('[SidePanelManager] Autoplay toggled OFF.');
                 }
             });
         }
@@ -86,7 +86,7 @@ export class SidePanelManager {
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
                 this.startupManager.resetSequence();
-                if (this.debug) console.log('[SidePanelManager] Sequence reset.');
+                // if (this.debug) console.log('[SidePanelManager] Sequence reset.');
             });
         }
 

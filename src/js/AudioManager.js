@@ -16,7 +16,7 @@ export class AudioManager extends EventEmitter {
         this.isReadyState = false; // Tracks if AudioManager init is complete
         this.soundLoadStates = {}; // Tracks individual sound load states: 'loading', 'loaded', 'error'
         this.queuedPlayCalls = [];
-        this.debug = true; // ENABLED for detailed sound logging
+        this.debug = false; // ENABLED for detailed sound logging
         this.currentMusicKey = null; // Track current background music
         this.currentMusicId = null; // Track the ID of the playing music
     }
@@ -33,7 +33,7 @@ export class AudioManager extends EventEmitter {
         }
 
         Howler.volume(AUDIO_CONFIG.masterVolume);
-        console.log(`[AM | ${performance.now().toFixed(2)}ms] AudioManager INIT. MasterVol: ${AUDIO_CONFIG.masterVolume}`);
+        // console.log(`[AM] AudioManager INIT. MasterVol: ${AUDIO_CONFIG.masterVolume}`);
         this._loadAllSounds();
         this.isReadyState = true;
     }
@@ -52,40 +52,20 @@ export class AudioManager extends EventEmitter {
             if (Object.prototype.hasOwnProperty.call(soundConfigs, key) && soundConfigs[key].src) {
                 this.soundLoadStates[key] = 'loading';
                 
-                if (key === 'itemAppear') {
-                    console.warn(`[A_LOAD_INIT P7_SOUND] itemAppear: Howl instance creation initiated. Time: ${performance.now().toFixed(2)}`);
-                }
-                if (key === 'lcdPowerOn') { // P6 logging for lcdPowerOn
-                    console.warn(`[A_LOAD_INIT P6_SOUND_LCDPOWERON] lcdPowerOn: Howl instance creation initiated. Time: ${performance.now().toFixed(2)}`);
-                }
-
-
                 this.sounds[key] = new Howl({
                     src: [soundConfigs[key].src],
                     loop: soundConfigs[key].loop || false,
                     volume: soundConfigs[key].volume !== undefined ? soundConfigs[key].volume : 1.0,
                     html5: soundConfigs[key].html5 || false, 
                     onload: () => {
-                        if (key === 'itemAppear') {
-                            console.warn(`[A_LOAD_DONE P7_SOUND] itemAppear: LOADED and READY. Time: ${performance.now().toFixed(2)}`);
-                        }
-                        if (key === 'lcdPowerOn') { // P6 logging for lcdPowerOn
-                            console.warn(`[A_LOAD_DONE P6_SOUND_LCDPOWERON] lcdPowerOn: LOADED and READY. Time: ${performance.now().toFixed(2)}`);
-                        }
                         this.soundLoadStates[key] = 'loaded';
-                        console.log(`[AM | ${performance.now().toFixed(2)}ms] Sound LOADED and READY: ${key}`);
+                        // console.log(`[AM] Sound LOADED and READY: ${key}`);
                         this.emit('soundLoaded', key); 
                         this._processQueuedPlayCalls(key);
                     },
                     onloaderror: (id, err) => {
-                        if (key === 'itemAppear') {
-                            console.error(`[A_LOAD_ERR P7_SOUND] itemAppear: FAILED to load. Error: `, err, `Time: ${performance.now().toFixed(2)}`);
-                        }
-                        if (key === 'lcdPowerOn') { // P6 logging for lcdPowerOn
-                            console.error(`[A_LOAD_ERR P6_SOUND_LCDPOWERON] lcdPowerOn: FAILED to load. Error: `, err, `Time: ${performance.now().toFixed(2)}`);
-                        }
                         this.soundLoadStates[key] = 'error';
-                        console.error(`[AM | ${performance.now().toFixed(2)}ms] Error loading sound ${key} (id: ${id}):`, err);
+                        console.error(`[AM] Error loading sound ${key} (id: ${id}):`, err);
                         this.emit('soundLoadError', { key, error: err });
                     },
                     onplayerror: (id, err) => {
@@ -93,19 +73,19 @@ export class AudioManager extends EventEmitter {
                         this.unlockAudioContext(); 
                     },
                     onplay: (id) => { // Added id parameter
-                        console.log(`[AM | ${performance.now().toFixed(2)}ms] Howler ONPLAY for sound: ${key} (ID: ${id}, Current HowlerVol: ${this.sounds[key].volume(id)})`);
+                        // console.log(`[AM] Howler ONPLAY for sound: ${key} (ID: ${id}, Vol: ${this.sounds[key].volume(id)})`);
                     },
                     onstop: (id) => {
-                        if (this.debug) console.log(`[AudioManager] Stopped sound: ${key} (ID: ${id})`);
+                        // if (this.debug) console.log(`[AudioManager] Stopped sound: ${key} (ID: ${id})`);
                         // If the stopped music track was the one we were tracking, clear it
                         if (AUDIO_CONFIG.sounds[key]?.isMusic && id === this.currentMusicId) {
-                            if (this.debug) console.log(`[AM Music] Clearing currentMusicKey/Id because ${key} (ID: ${id}) stopped.`);
+                            // if (this.debug) console.log(`[AM Music] Clearing currentMusicKey/Id because ${key} (ID: ${id}) stopped.`);
                             this.currentMusicKey = null;
                             this.currentMusicId = null;
                         }
                     },
                     onfade: (id) => { // Added id parameter
-                        if (this.debug) console.log(`[AudioManager] Fade complete for sound: ${key} (ID: ${id})`);
+                        // if (this.debug) console.log(`[AudioManager] Fade complete for sound: ${key} (ID: ${id})`);
                     }
                 });
             } else {
@@ -115,18 +95,12 @@ export class AudioManager extends EventEmitter {
     }
 
     _processQueuedPlayCalls(soundKey) {
-        if (this.debug && this.queuedPlayCalls.some(call => call.key === soundKey)) {
-            console.log(`[AudioManager] Processing queued play calls for just loaded sound: ${soundKey}`);
-        }
+        // if (this.debug && this.queuedPlayCalls.some(call => call.key === soundKey)) {
+        //     console.log(`[AudioManager] Processing queued play calls for just loaded sound: ${soundKey}`);
+        // }
         this.queuedPlayCalls = this.queuedPlayCalls.filter(call => {
             if (call.key === soundKey) {
-                if (this.debug) console.log(`[AudioManager] Executing queued play for: ${soundKey}`);
-                if (call.key === 'itemAppear') {
-                    console.warn(`[A_QUEUE_PROC P7_SOUND] itemAppear: Processing queued play call. App Time: ${performance.now().toFixed(2)}`);
-                }
-                if (call.key === 'lcdPowerOn') { // P6 logging
-                    console.warn(`[A_QUEUE_PROC P6_SOUND_LCDPOWERON] lcdPowerOn: Processing queued play call. App Time: ${performance.now().toFixed(2)}`);
-                }
+                // if (this.debug) console.log(`[AudioManager] Executing queued play for: ${soundKey}`);
                 this.play(call.key, call.forceRestart, call.specificVolume);
                 return false; 
             }
@@ -161,33 +135,20 @@ export class AudioManager extends EventEmitter {
 
     unlockAudioContext() {
         if (this.isAudioUnlocked || !Howler.ctx || Howler.ctx.state !== 'suspended') {
-            if (this.debug && Howler.ctx && Howler.ctx.state !== 'suspended' && !this.isAudioUnlocked) {
+            if (Howler.ctx && Howler.ctx.state !== 'suspended' && !this.isAudioUnlocked) {
                 this.isAudioUnlocked = true;
             }
             return;
         }
-        if (this.debug) console.log('[AudioManager] Attempting to unlock AudioContext...');
+        // if (this.debug) console.log('[AudioManager] Attempting to unlock AudioContext...');
         Howler.ctx.resume().then(() => {
             this.isAudioUnlocked = true;
-            if (this.debug) console.log('[AudioManager] AudioContext resumed successfully.');
+            // if (this.debug) console.log('[AudioManager] AudioContext resumed successfully.');
         }).catch(e => console.error('[AudioManager] Error resuming AudioContext:', e));
     }
 
     play(key, forceRestart = false, specificVolume = null) {
-        // P7 itemAppear logging
-        if (key === 'itemAppear') {
-            const loadState = this.soundLoadStates[key] || 'UNKNOWN';
-            const isQueued = this.queuedPlayCalls.some(call => call.key === key);
-            console.warn(`[A_PLAY_ATTEMPT P7_SOUND] itemAppear: Play called. LoadState: ${loadState}. IsAlreadyQueued: ${isQueued}. App Time: ${performance.now().toFixed(2)}`);
-        }
-        // P6 lcdPowerOn logging
-        if (key === 'lcdPowerOn') {
-            const loadState = this.soundLoadStates[key] || 'UNKNOWN';
-            const isQueued = this.queuedPlayCalls.some(call => call.key === key);
-            console.warn(`[A_PLAY_ATTEMPT P6_SOUND_LCDPOWERON] lcdPowerOn: Play called. LoadState: ${loadState}. IsAlreadyQueued: ${isQueued}. App Time: ${performance.now().toFixed(2)}`);
-        }
-        console.log(`[AM | ${performance.now().toFixed(2)}ms] Play called for '${key}'. LoadState: ${this.soundLoadStates[key]}, ForceRestart: ${forceRestart}, SpecificVol: ${specificVolume === null ? 'default' : specificVolume}`);
-
+        // console.log(`[AM] Play: '${key}', Force: ${forceRestart}, Vol: ${specificVolume === null ? 'default' : specificVolume}`);
 
         this.unlockAudioContext(); 
 
@@ -197,17 +158,8 @@ export class AudioManager extends EventEmitter {
         }
 
         if (this.soundLoadStates[key] === 'loading') {
-            if (key === 'itemAppear') {
-                console.warn(`[A_PLAY_QUEUE P7_SOUND] itemAppear: Queuing play because LoadState is 'loading'. App Time: ${performance.now().toFixed(2)}`);
-            }
-            if (key === 'lcdPowerOn') { // P6 logging
-                console.warn(`[A_PLAY_QUEUE P6_SOUND_LCDPOWERON] lcdPowerOn: Queuing play because LoadState is 'loading'. App Time: ${performance.now().toFixed(2)}`);
-            }
-            console.log(`[AM | ${performance.now().toFixed(2)}ms] Sound "${key}" is loading. Queuing play call.`);
             if (!this.queuedPlayCalls.find(call => call.key === key && call.forceRestart === forceRestart && call.specificVolume === specificVolume)) {
                  this.queuedPlayCalls.push({ key, forceRestart, specificVolume });
-            } else {
-                if (this.debug) console.log(`[AudioManager PLAY] Sound "${key}" is loading, identical play call already queued.`);
             }
             return null;
         }
@@ -217,42 +169,29 @@ export class AudioManager extends EventEmitter {
         }
 
         if (forceRestart && this.sounds[key].playing()) {
-            if (this.debug) console.log(`[AudioManager PLAY] Force stopping sound "${key}" before replay.`);
             this.sounds[key].stop();
         }
 
         if (!this.sounds[key].playing() || forceRestart) {
-            if (key === 'itemAppear') {
-                console.warn(`[A_HOWLER_PLAY P7_SOUND] itemAppear: Calling Howler's .play(). App Time: ${performance.now().toFixed(2)}`);
-            }
-             if (key === 'lcdPowerOn') { // P6 logging
-                console.warn(`[A_HOWLER_PLAY P6_SOUND_LCDPOWERON] lcdPowerOn: Calling Howler's .play(). App Time: ${performance.now().toFixed(2)}`);
-            }
-            console.log(`[AM | ${performance.now().toFixed(2)}ms] Calling Howler's .play() for '${key}'.`);
             const soundId = this.sounds[key].play();
-            // Check if play returned a valid ID (it might not if context is locked, etc.)
             if (typeof soundId === 'number') {
                 if (specificVolume !== null && typeof specificVolume === 'number') {
                     this.sounds[key].volume(specificVolume, soundId);
-                    if (this.debug) console.log(`[AudioManager PLAY] Setting specific volume ${specificVolume} for "${key}" (ID: ${soundId})`);
                 } else {
                     const defaultConfigVolume = AUDIO_CONFIG.sounds[key]?.volume;
                     if (defaultConfigVolume !== undefined) {
                         this.sounds[key].volume(defaultConfigVolume, soundId);
                     }
                 }
-            } else {
-                 if (this.debug) console.warn(`[AudioManager PLAY] Howler.play did not return a soundId for "${key}". Audio might be locked or another issue occurred.`);
             }
             return soundId;
         }
-        if (this.debug) console.log(`[AudioManager PLAY] Sound "${key}" is already playing and forceRestart is false. No action taken.`);
         return null; 
     }
 
     stop(key, soundId = null) {
         if (this.sounds[key]) {
-            if (this.debug) console.log(`[AudioManager STOP] Sound: ${key}, ID: ${soundId || 'all'}`);
+            // console.log(`[AM] Stop: ${key}, ID: ${soundId || 'all'}`);
             if (soundId) this.sounds[key].stop(soundId);
             else this.sounds[key].stop();
         } else console.warn(`[AudioManager STOP] Sound key "${key}" not found.`);
@@ -261,12 +200,11 @@ export class AudioManager extends EventEmitter {
     fadeOut(key, durationSeconds, soundId = null) {
         const sound = this.sounds[key];
         if (sound && this.isPlaying(key, soundId)) {
-            if (this.debug) console.log(`[AudioManager FADEOUT] Sound: ${key}, Duration: ${durationSeconds}s, ID: ${soundId || 'all'}`);
+            // console.log(`[AM] FadeOut: ${key}, Duration: ${durationSeconds}s, ID: ${soundId || 'all'}`);
             const targetVolume = 0;
             const durationMs = durationSeconds * 1000;
     
             const onFadeComplete = (id) => {
-                if (this.debug) console.log(`[AM FADEOUT] Fade complete for ${key} (ID: ${id}). Stopping sound.`);
                 this.stop(key, id); // Explicitly stop the sound
                 sound.off('fade', onFadeComplete, id);
             };
@@ -283,8 +221,6 @@ export class AudioManager extends EventEmitter {
                     }
                 });
             }
-        } else if (this.debug && sound) {
-            console.log(`[AudioManager FADEOUT] Sound "${key}" not playing or not found, cannot fadeOut.`);
         }
     }
     
@@ -292,7 +228,7 @@ export class AudioManager extends EventEmitter {
         if (this.sounds[key]) {
             const finalVolume = targetVolume !== null ? targetVolume : (AUDIO_CONFIG.sounds[key]?.volume || 1.0);
             const durationMs = durationSeconds * 1000;
-            if (this.debug) console.log(`[AudioManager FADEIN] Sound: ${key}, Duration: ${durationSeconds}s, TargetVol: ${finalVolume}, ID: ${soundIdToPlayOn || 'new/all'}`);
+            // console.log(`[AM] FadeIn: ${key}, Duration: ${durationSeconds}s, TargetVol: ${finalVolume}, ID: ${soundIdToPlayOn || 'new/all'}`);
             
             // If a specific soundId is provided, operate on that. Otherwise, operate on the sound generally.
             const currentPlayingId = soundIdToPlayOn || (this.sounds[key].playing() ? true : null); // Need a way to get a general playing ID if not specified, or just check if *any* instance is playing. Howler's `playing()` without ID checks if *any* instance is playing.
@@ -329,7 +265,7 @@ export class AudioManager extends EventEmitter {
 
     setVolume(key, volume, soundId = null) {
         if (this.sounds[key]) {
-            if (this.debug) console.log(`[AudioManager SETVOLUME] Sound: ${key}, Volume: ${volume}, ID: ${soundId || 'all'}`);
+            // console.log(`[AM] SetVolume: ${key}, Volume: ${volume}, ID: ${soundId || 'all'}`);
             this.sounds[key].volume(volume, soundId);
         } else console.warn(`[AudioManager SETVOLUME] Sound key "${key}" not found.`);
     }
@@ -343,7 +279,7 @@ export class AudioManager extends EventEmitter {
     }
 
     toggleMute(mute) { // Assumes global mute for now
-        if (this.debug) console.log(`[AudioManager] Toggling global mute: ${mute}`);
+        // console.log(`[AM] Toggling global mute: ${mute}`);
         Howler.mute(mute);
     }
 
@@ -354,16 +290,16 @@ export class AudioManager extends EventEmitter {
         }
 
         if (this.currentMusicKey === key && this.isPlaying(this.currentMusicKey, this.currentMusicId)) {
-            if (this.debug) console.log(`[AM Music] Music key "${key}" is already playing.`);
+            // if (this.debug) console.log(`[AM Music] Music key "${key}" is already playing.`);
             return;
         }
 
         const crossfadeDuration = AUDIO_CONFIG.musicCrossfadeDuration;
-        console.log(`[AM Music] Playing music "${key}" with a ${crossfadeDuration}s crossfade.`);
+        // console.log(`[AM Music] Playing music "${key}" with a ${crossfadeDuration}s crossfade.`);
 
         // Fade out the old music if it's playing
         if (this.currentMusicKey && this.currentMusicId && this.isPlaying(this.currentMusicKey, this.currentMusicId)) {
-            console.log(`[AM Music] Fading out old music: ${this.currentMusicKey}`);
+            // console.log(`[AM Music] Fading out old music: ${this.currentMusicKey}`);
             this.fadeOut(this.currentMusicKey, crossfadeDuration, this.currentMusicId);
         }
 
@@ -372,7 +308,7 @@ export class AudioManager extends EventEmitter {
         if (newMusicId) {
             this.currentMusicKey = key;
             this.currentMusicId = newMusicId;
-            console.log(`[AM Music] Fading in new music: ${key} (ID: ${newMusicId})`);
+            // console.log(`[AM Music] Fading in new music: ${key} (ID: ${newMusicId})`);
         }
     }
 }

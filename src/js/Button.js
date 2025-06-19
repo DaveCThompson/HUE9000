@@ -52,11 +52,11 @@ class Button {
         const buttonId = this.getIdentifier();
         
         const currentFlickerActive = this.currentFlickerAnim ? this.currentFlickerAnim.isActive() : 'N/A_ButtonJSLocalFlicker';
-        console.log(`[BTN_SETSTATE | ${performance.now().toFixed(2)}ms] ID: ${buttonId}, NewState: '${newStateClassesStr}', Opts: ${JSON.stringify(options)}, _isUndergoingManagedFlicker: ${this._isUndergoingManagedFlicker}, CurrentInternalFlickerActive: ${currentFlickerActive}`);
+        // console.log(`[BTN_SETSTATE | ${performance.now().toFixed(2)}ms] ID: ${buttonId}, NewState: '${newStateClassesStr}', Opts: ${JSON.stringify(options)}, _isUndergoingManagedFlicker: ${this._isUndergoingManagedFlicker}, CurrentInternalFlickerActive: ${currentFlickerActive}`);
 
 
         if (this._isUndergoingManagedFlicker && !isFlickerCompletion && !internalFlickerCall) {
-            console.warn(`[BTN_SETSTATE_INTERFERENCE | ${performance.now().toFixed(2)}ms] ID: ${buttonId} received setState WHILE _isUndergoingManagedFlicker. NewState: '${newStateClassesStr}'. Opts: ${JSON.stringify(options)}. Flicker might be cut short or visuals reset.`);
+            // console.warn(`[BTN_SETSTATE_INTERFERENCE | ${performance.now().toFixed(2)}ms] ID: ${buttonId} received setState WHILE _isUndergoingManagedFlicker. NewState: '${newStateClassesStr}'. Opts: ${JSON.stringify(options)}. Flicker might be cut short or visuals reset.`);
             // Decide if we should return, or apply a very minimal state change (e.g. only classes)
             // For now, proceeding but this log is key. The clearProps logic below will be affected.
         }
@@ -67,9 +67,9 @@ class Button {
                                                  newStateClassesStr === ButtonStates.DIMLY_LIT;
 
         if (isFinalSetAfterP7DimlyLitFlicker && buttonId.includes('Assign')) { 
-            console.log(`[BTN_SETSTATE_START P7_VISUALS_FINAL_DIM] Button: ${buttonId}. NewState: '${newStateClassesStr}'. Force: ${forceState}. AppTime: ${performance.now().toFixed(2)}`);
+            // console.log(`[BTN_SETSTATE_START P7_VISUALS_FINAL_DIM] Button: ${buttonId}. NewState: '${newStateClassesStr}'. Force: ${forceState}. AppTime: ${performance.now().toFixed(2)}`);
         } else if (effectivePhaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && buttonId.includes('Assign')) { 
-             console.log(`[BTN_SETSTATE_START P7_VISUALS_OTHER] Button: ${buttonId}. NewState: '${newStateClassesStr}'. EffectiveCtx: ${effectivePhaseContext}. AppTime: ${performance.now().toFixed(2)}`);
+            //  console.log(`[BTN_SETSTATE_START P7_VISUALS_OTHER] Button: ${buttonId}. NewState: '${newStateClassesStr}'. EffectiveCtx: ${effectivePhaseContext}. AppTime: ${performance.now().toFixed(2)}`);
         }
 
 
@@ -95,7 +95,7 @@ class Button {
         }
 
         if (this.debugResistive && this.getIdentifier().includes("MAIN PWR OFF") && newStateClassesStr === ButtonStates.PERMANENTLY_DISABLED) {
-            console.log(`[Button ${buttonId} setState - ${effectivePhaseContext}] Setting to PERMANENTLY_DISABLED. stateChanged: ${stateChanged}, forceState: ${forceState}`);
+            // console.log(`[Button ${buttonId} setState - ${effectivePhaseContext}] Setting to PERMANENTLY_DISABLED. stateChanged: ${stateChanged}, forceState: ${forceState}`);
         }
 
         if (!stateChanged && !forceState) {
@@ -105,7 +105,7 @@ class Button {
 
         // This currentFlickerAnim is for Button.js's *own* flickers, not those from ButtonManager.
         if (!internalFlickerCall && this.currentFlickerAnim && this.currentFlickerAnim.isActive()) {
-            console.log(`[BTN_SETSTATE | ${performance.now().toFixed(2)}ms] ID: ${buttonId} killing its OWN internal flicker due to non-internal setState call.`);
+            // console.log(`[BTN_SETSTATE | ${performance.now().toFixed(2)}ms] ID: ${buttonId} killing its OWN internal flicker due to non-internal setState call.`);
             this.currentFlickerAnim.kill(); this.currentFlickerAnim = null;
         }
 
@@ -118,16 +118,16 @@ class Button {
             if (isFlickerCompletion) {
                 // Flicker's own final setState: Be very gentle.
                 // Preserve inline styles set by the flicker (opacity on lights, glow CSS vars).
-                console.log(`[BTN_SETSTATE_FLICKER_COMPLETION_SKIP_CLEARPROPS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Flicker self-completing. Minimal/No clearProps. AppTime: ${performance.now().toFixed(2)}`);
+                // console.log(`[BTN_SETSTATE_FLICKER_COMPLETION_SKIP_CLEARPROPS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Flicker self-completing. Minimal/No clearProps. AppTime: ${performance.now().toFixed(2)}`);
                 if (isFinalSetAfterP7DimlyLitFlicker) { // P7 still needs its special handling if it's also a flicker completion
                      if (lights.length > 0) this.gsap.set(lights, { clearProps: "transform,filter" });
-                     console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Used selective clearProps for lights (FlickerCompletion + P7). AppTime: ${performance.now().toFixed(2)}`);
+                    //  console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Used selective clearProps for lights (FlickerCompletion + P7). AppTime: ${performance.now().toFixed(2)}`);
                 }
                 // For other flicker completions, no specific clearProps on lights or element CSS vars.
             } else if (this._isUndergoingManagedFlicker) {
                 // A "hostile" setState call happened WHILE a ButtonManager-initiated flicker was running.
                 // Avoid aggressive clearProps to not destroy the ongoing flicker.
-                console.warn(`[BTN_SETSTATE_FLICKER_INTERRUPTED_CLEARPROPS_AVOIDED | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. setState during managed flicker. Avoiding aggressive clearProps. NewState: ${newStateClassesStr}. AppTime: ${performance.now().toFixed(2)}`);
+                // console.warn(`[BTN_SETSTATE_FLICKER_INTERRUPTED_CLEARPROPS_AVOIDED | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. setState during managed flicker. Avoiding aggressive clearProps. NewState: ${newStateClassesStr}. AppTime: ${performance.now().toFixed(2)}`);
                 // Potentially do nothing here regarding clearProps, or be extremely selective.
                 // This path means the flicker was likely cut short by this setState call's class changes.
             } else {
@@ -135,7 +135,7 @@ class Button {
                 // This is also the path for the _BaseSet call in ButtonManager.playFlickerToState.
                 if (isFinalSetAfterP7DimlyLitFlicker) { // This case should ideally not be hit if isFlickerCompletion handles P7 correctly.
                     if (lights.length > 0) this.gsap.set(lights, { clearProps: "transform,filter" });
-                    console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Used selective clearProps for lights (Standard + P7). AppTime: ${performance.now().toFixed(2)}`);
+                    // console.warn(`[BTN_SETSTATE_P7_CLEARPROPS_MODIFIED P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Used selective clearProps for lights (Standard + P7). AppTime: ${performance.now().toFixed(2)}`);
                 } else {
                     if (lights.length > 0) this.gsap.set(lights, { clearProps: "all" });
                 }
@@ -163,10 +163,10 @@ class Button {
         if (isFinalSetAfterP7DimlyLitFlicker && buttonId.includes('Assign')) {
             const finalClasses = Array.from(this.element.classList).join(' ');
             const finalLightOpacities = lights.map(l => l.style.opacity || getComputedStyle(l).opacity ).join(', ');
-            console.log(`[BTN_SETSTATE_END P7_VISUALS_FINAL_DIM] Button: ${buttonId}. FinalClasses: '${finalClasses}'. Final Light Opacities (inline||computed): [${finalLightOpacities}]. AppTime: ${performance.now().toFixed(2)}`);
+            // console.log(`[BTN_SETSTATE_END P7_VISUALS_FINAL_DIM] Button: ${buttonId}. FinalClasses: '${finalClasses}'. Final Light Opacities (inline||computed): [${finalLightOpacities}]. AppTime: ${performance.now().toFixed(2)}`);
         } else if (effectivePhaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && buttonId.includes('Assign')) {
              const finalClasses = Array.from(this.element.classList).join(' ');
-            console.log(`[BTN_SETSTATE_END P7_VISUALS_OTHER] Button: ${buttonId}. EffectiveCtx: ${effectivePhaseContext}. FinalClasses: '${finalClasses}'. AppTime: ${performance.now().toFixed(2)}`);
+            // console.log(`[BTN_SETSTATE_END P7_VISUALS_OTHER] Button: ${buttonId}. EffectiveCtx: ${effectivePhaseContext}. FinalClasses: '${finalClasses}'. AppTime: ${performance.now().toFixed(2)}`);
         }
     }
 
@@ -201,9 +201,9 @@ class Button {
         const buttonId = this.getIdentifier();
 
         if (this._isPermanentlyDisabled && selected === false && this.getIdentifier().includes("MAIN PWR OFF")) {
-            if (this.debugResistive) console.log(`[Button ${buttonId} setSelected] Allowing deselect for permanently disabled OFF button during reset.`);
+            // if (this.debugResistive) console.log(`[Button ${buttonId} setSelected] Allowing deselect for permanently disabled OFF button during reset.`);
         } else if (this._isPermanentlyDisabled) {
-            if (this.debugResistive) console.log(`[Button ${buttonId} setSelected] Blocked: Button is permanently disabled.`);
+            // if (this.debugResistive) console.log(`[Button ${buttonId} setSelected] Blocked: Button is permanently disabled.`);
             return;
         }
 
@@ -238,7 +238,7 @@ class Button {
     handleInteraction() {
         const buttonId = this.getIdentifier();
         if (this._isPermanentlyDisabled) {
-            if (this.debugResistive) console.log(`[Button ${buttonId} handleInteraction] Blocked: Button is permanently disabled.`);
+            // if (this.debugResistive) console.log(`[Button ${buttonId} handleInteraction] Blocked: Button is permanently disabled.`);
             return;
         }
 
@@ -274,7 +274,7 @@ class Button {
         if (this._isPermanentlyDisabled === isDisabled) return;
 
         this._isPermanentlyDisabled = isDisabled;
-        if (this.debugResistive) console.log(`[Button ${buttonId} setPermanentlyDisabled] Set to: ${isDisabled}`);
+        // if (this.debugResistive) console.log(`[Button ${buttonId} setPermanentlyDisabled] Set to: ${isDisabled}`);
 
         if (isDisabled) {
             if (this._isSelected) {
@@ -332,14 +332,14 @@ class Button {
         if (this.stateTransitionEchoTween && this.stateTransitionEchoTween.isActive()) {
             const currentPhase = this.appState && this.appState.getCurrentStartupPhaseNumber ? this.appState.getCurrentStartupPhaseNumber() : -1;
             if (buttonId.includes('Assign') && currentPhase === 7) {
-                console.warn(`[BTN_ECHO_START_OVERLAP P7_VISUALS] Button: ${buttonId}. Starting echo while previous echo was active. AppTime: ${performance.now().toFixed(2)}`);
+                // console.warn(`[BTN_ECHO_START_OVERLAP P7_VISUALS] Button: ${buttonId}. Starting echo while previous echo was active. AppTime: ${performance.now().toFixed(2)}`);
             }
             this.stateTransitionEchoTween.kill();
         }
 
         const currentPhase = this.appState && this.appState.getCurrentStartupPhaseNumber ? this.appState.getCurrentStartupPhaseNumber() : -1;
         if (buttonId.includes('Assign') && currentPhase === 7) {
-             console.log(`[BTN_ECHO_START P7_VISUALS] Button: ${buttonId}. Echo requested (but will be skipped by ButtonManager). AppTime: ${performance.now().toFixed(2)}`);
+            //  console.log(`[BTN_ECHO_START P7_VISUALS] Button: ${buttonId}. Echo requested (but will be skipped by ButtonManager). AppTime: ${performance.now().toFixed(2)}`);
         }
 
 
@@ -353,7 +353,7 @@ class Button {
                 this.stateTransitionEchoTween = null; 
                 const endPhase = this.appState && this.appState.getCurrentStartupPhaseNumber ? this.appState.getCurrentStartupPhaseNumber() : -1;
                 if (buttonId.includes('Assign') && endPhase <= 7 && endPhase !== -1) { 
-                     console.log(`[BTN_ECHO_END P7_VISUALS] Button: ${buttonId}. Echo (if it ran) would have ended. AppTime: ${performance.now().toFixed(2)}`);
+                    //  console.log(`[BTN_ECHO_END P7_VISUALS] Button: ${buttonId}. Echo (if it ran) would have ended. AppTime: ${performance.now().toFixed(2)}`);
                 }
             }
         });

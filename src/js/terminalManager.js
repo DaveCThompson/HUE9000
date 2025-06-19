@@ -32,7 +32,7 @@ class TerminalManager {
         this._currentTextSpan = null; 
         this._cursorElement = null;
         this._isFirstLine = true; 
-        this.debug = true; 
+        this.debug = false; 
     }
 
     init() {
@@ -44,11 +44,11 @@ class TerminalManager {
 
         this._setupDOM();
         appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
-        if (this.debug) console.log(`[TM | ${performance.now().toFixed(2)}ms] TerminalManager INIT`);
+        // if (this.debug) console.log(`[TM | ${performance.now().toFixed(2)}ms] TerminalManager INIT`);
     }
 
     reset() {
-        if (this.debug) console.log('[TerminalManager] Resetting terminal.');
+        // if (this.debug) console.log('[TerminalManager] Resetting terminal.');
         this._isTyping = false;
         if(this._gsap) this._gsap.killTweensOf(this); // Kill any pending delayed calls
         this._messageQueue = [];
@@ -73,12 +73,12 @@ class TerminalManager {
     _handleRequestTerminalMessage(payload) {
         // Handle clear command immediately, even if typing
         if (payload.type === 'command' && payload.command === 'clear') {
-            console.log(`[TM | ${performance.now().toFixed(2)}ms] Received immediate command: clear`);
+            // console.log(`[TM | ${performance.now().toFixed(2)}ms] Received immediate command: clear`);
             this.reset();
             return; // Don't queue the clear command
         }
         
-        console.log(`[TM | ${performance.now().toFixed(2)}ms] Queuing request: ${payload.messageKey || payload.source}`);
+        // console.log(`[TM | ${performance.now().toFixed(2)}ms] Queuing request: ${payload.messageKey || payload.source}`);
         // Pass the imported appState module to getMessage
         const messageData = getMessage(payload, appState);
         this._messageQueue.push({ ...payload, ...messageData });
@@ -99,7 +99,7 @@ class TerminalManager {
 
         while (this._messageQueue.length > 0) {
             const messageObject = this._messageQueue.shift();
-            console.log(`[TM | ${performance.now().toFixed(2)}ms] Dequeuing and processing: ${messageObject.messageKey || messageObject.source}`);
+            // console.log(`[TM | ${performance.now().toFixed(2)}ms] Dequeuing and processing: ${messageObject.messageKey || messageObject.source}`);
 
             const delay = this._gsap.utils.random(
                 TERMINAL_THINKING_DELAY_MIN_MS,

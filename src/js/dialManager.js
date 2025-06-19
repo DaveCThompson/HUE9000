@@ -21,7 +21,7 @@ export class DialManager {
     this.gsap = serviceLocator.get('gsap');
     this.dom = serviceLocator.get('domElements');
 
-    if (this.debug) console.log('[DialManager INIT]');
+    // if (this.debug) console.log('[DialManager INIT]');
 
     // SVG injection is now synchronous with ?raw import
     this.injectDialSVGs(); 
@@ -47,7 +47,7 @@ export class DialManager {
                 container.innerHTML = dialSvgRawString;
             }
         });
-        if (this.debug) console.log('[DialManager] SVG dials injected successfully via ?raw import.');
+        // if (this.debug) console.log('[DialManager] SVG dials injected successfully via ?raw import.');
     } else {
         console.error('[DialManager] Could not inject dial SVG: dialSvgRawString is not a valid SVG string.');
         dialContainers.forEach(container => {

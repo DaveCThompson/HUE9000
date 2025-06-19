@@ -15,7 +15,7 @@ export class IntensityDisplayManager {
     }
 
     init() {
-        console.log('[IntensityDisplayManager] init() called.');
+        // console.log('[IntensityDisplayManager] init() called.');
 
         this.dom = serviceLocator.get('domElements');
 
@@ -46,7 +46,7 @@ export class IntensityDisplayManager {
     }
 
     handleInteractionChange(isInteracting) {
-        console.log(`[IntensityDisplayManager] handleInteractionChange() called. isInteracting: ${isInteracting}`);
+        // console.log(`[IntensityDisplayManager] handleInteractionChange() called. isInteracting: ${isInteracting}`);
 
         const idleDelay = V2_DISPLAY_PARAMS.RESONANCE_IDLE_DELAY_MS;
         
@@ -57,7 +57,7 @@ export class IntensityDisplayManager {
             this.resonanceTimer = setTimeout(() => {
                 const dialState = appState.getDialState('B');
                 if (dialState && dialState.hue > 0) {
-                    console.log('[IntensityDisplayManager] Starting resonance for Dial B.');
+                    // console.log('[IntensityDisplayManager] Starting resonance for Dial B.');
                     this.dom.lcdB.classList.add('is-resonating');
                 }
             }, idleDelay);

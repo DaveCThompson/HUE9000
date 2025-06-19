@@ -14,7 +14,7 @@ export class StartupSequenceManager {
   constructor() {
     this.fsmInterpreter = null;
     this.previousFsmSnapshotValue = null;
-    this.debug = true;
+    this.debug = false;
 
     // Proxies for animating CSS variables
     this.LReductionProxy = { value: 0.85 };
@@ -22,7 +22,7 @@ export class StartupSequenceManager {
   }
 
   init() {
-    if (this.debug) console.log('[StartupSequenceManager INIT]');
+    // if (this.debug) console.log('[StartupSequenceManager INIT]');
     this.LReductionProxy.value = STARTUP_L_REDUCTION_FACTORS.P0;
     this.opacityFactorProxy.value = 1.0 - this.LReductionProxy.value;
 
@@ -64,14 +64,14 @@ export class StartupSequenceManager {
   pauseSequence() {
       if (this.fsmInterpreter) {
           this.fsmInterpreter.send({ type: 'PAUSE_SEQUENCE' });
-          console.log("[SSM] Sequence auto-play paused.");
+        //   console.log("[SSM] Sequence auto-play paused.");
       }
   }
 
   resumeSequence() {
       if (this.fsmInterpreter) {
           this.playAllRemaining();
-          console.log("[SSM] Sequence auto-play resumed.");
+        //   console.log("[SSM] Sequence auto-play resumed.");
       }
   }
 
@@ -103,7 +103,7 @@ export class StartupSequenceManager {
   }
 
   _resetVisualsAndState(makeBodyVisible) {
-    if (this.debug) console.log(`[SSM] _resetVisualsAndState called. Make Body Visible: ${makeBodyVisible}`);
+    // if (this.debug) console.log(`[SSM] _resetVisualsAndState called. Make Body Visible: ${makeBodyVisible}`);
     if (this.fsmInterpreter) {
       this.fsmInterpreter.stop();
       this.fsmInterpreter = null;
@@ -129,7 +129,7 @@ export class StartupSequenceManager {
     dom.root.style.setProperty('--startup-L-reduction-factor', this.LReductionProxy.value.toFixed(3));
     dom.root.style.setProperty('--startup-opacity-factor', this.opacityFactorProxy.value.toFixed(3));
     dom.root.style.setProperty('--startup-opacity-factor-boosted', Math.min(1, this.opacityFactorProxy.value * 1.25).toFixed(3));
-    if (this.debug) console.log(`[SSM Reset] Set L-reduction to ${this.LReductionProxy.value}`);
+    // if (this.debug) console.log(`[SSM Reset] Set L-reduction to ${this.LReductionProxy.value}`);
 
     // Use the imported appState module directly
     appState.setAppStatus('starting-up');
@@ -138,7 +138,7 @@ export class StartupSequenceManager {
     appState.setTrueLensPower(0);
     appState.updateDialState('A', { hue: DEFAULT_DIAL_A_HUE, targetHue: DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0, isDragging: false });
     appState.updateDialState('B', { hue: 0, targetHue: 0, rotation: 0, targetRotation: 0, isDragging: false });
-    if (this.debug) console.log('[SSM Reset] App state reset (status, theme, lens, dials).');
+    // if (this.debug) console.log('[SSM Reset] App state reset (status, theme, lens, dials).');
 
     serviceLocator.get('buttonManager').setInitialDimStates();
     serviceLocator.get('lensManager').directUpdateLensVisuals(0);
@@ -150,7 +150,7 @@ export class StartupSequenceManager {
             lcdUpdater.setLcdState(lcd, 'unlit', { phaseContext: 'Reset' });
         }
     });
-    if (this.debug) console.log('[SSM Reset] All managers reset to initial state.');
+    // if (this.debug) console.log('[SSM Reset] All managers reset to initial state.');
   }
 
   _performThemeTransitionCleanup() {
@@ -165,7 +165,7 @@ export class StartupSequenceManager {
         }
     });
 
-    if (this.debug) console.log("[SSM] Theme transition cleanup performed.");
+    // if (this.debug) console.log("[SSM] Theme transition cleanup performed.");
   }
 
   _notifyFsmTransition(snapshot) {

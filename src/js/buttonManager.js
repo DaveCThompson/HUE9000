@@ -34,7 +34,7 @@ export class ButtonManager {
 
         this.mainPowerOffButtonInstance = null;
         this.debug = false;
-        this.debugResistive = true;
+        this.debugResistive = false;
     }
 
     init() {
@@ -45,7 +45,7 @@ export class ButtonManager {
         appState.subscribe('resistiveShutdownStageChanged', this.handleResistiveShutdownStageChange.bind(this));
         appState.subscribe('mainPowerOffButtonDisabledChanged', this.handleMainPowerOffButtonDisabledChange.bind(this));
 
-        if (this.debug) console.log('[ButtonManager INIT]');
+        // if (this.debug) console.log('[ButtonManager INIT]');
     }
 
     on(eventName, callback) {
@@ -61,7 +61,7 @@ export class ButtonManager {
     }
 
     discoverButtons(buttonElements) {
-        if (this.debug) console.log(`[ButtonManager] Discovering ${buttonElements?.length} buttons.`);
+        // if (this.debug) console.log(`[ButtonManager] Discovering ${buttonElements?.length} buttons.`);
         if (buttonElements && buttonElements.length > 0) {
             buttonElements.forEach(element => this.addButton(element));
         }
@@ -141,25 +141,25 @@ export class ButtonManager {
         const value = buttonInstance.getValue();
         const wasSelected = buttonInstance.isSelected(); 
 
-        if (this.debugResistive) {
-            console.log(`[BM handleInteraction | ${performance.now().toFixed(2)}ms] Clicked: ${buttonId}, Group: ${groupId}, Value: ${value}, WasSelected: ${wasSelected}, AppStatus: ${appState.getAppStatus()}`);
-        }
+        // if (this.debugResistive) {
+        //     console.log(`[BM handleInteraction] Clicked: ${buttonId}, Group: ${groupId}, Value: ${value}, WasSelected: ${wasSelected}, AppStatus: ${appState.getAppStatus()}`);
+        // }
 
         if (appState.getAppStatus() !== 'interactive' && groupId !== 'system-power') {
-            if (this.debug) console.log(`[BM INTERACTION | ${performance.now().toFixed(2)}ms] Blocked, app not interactive for ${buttonId}`);
+            // if (this.debug) console.log(`[BM INTERACTION] Blocked, app not interactive for ${buttonId}`);
             return;
         }
 
         if (groupId === 'system-power' && value === 'off') {
             buttonInstance.setPressedVisuals(true); 
             appState.emit('buttonInteracted', { button: buttonInstance }); 
-            if (this.debugResistive) console.log(`[BM handleInteraction | ${performance.now().toFixed(2)}ms] Intercepted "off" button press. Emitting event only.`);
+            // if (this.debugResistive) console.log(`[BM handleInteraction] Intercepted "off" button press. Emitting event only.`);
             return; 
         }
 
         if ((buttonInstance.config.type === 'toggle' || buttonInstance.config.type === 'radio') && buttonInstance.isSelected()) {
             buttonInstance.setPressedVisuals(true); 
-            if (this.debugResistive) console.log(`[BM handleInteraction | ${performance.now().toFixed(2)}ms] Blocked deselection for already-selected button: ${buttonId}`);
+            // if (this.debugResistive) console.log(`[BM handleInteraction] Blocked deselection for already-selected button: ${buttonId}`);
             return; 
         }
         
@@ -207,19 +207,19 @@ export class ButtonManager {
         const { profileName, phaseContext = "UnknownPhase", isButtonSelectedOverride = null, onFlickerComplete, tempGlowColor, tempTintColorClass } = options;
         
         const buttonId = buttonInstance.getIdentifier();
-        console.log(`[BM_PFLICK_ENTRY | ${performance.now().toFixed(2)}ms] For: ${buttonId}, Target: '${targetState}', Profile: '${profileName}', PhaseCtx: ${phaseContext}`);
+        // console.log(`[BM_PFLICK_ENTRY | ${performance.now().toFixed(2)}ms] For: ${buttonId}, Target: '${targetState}', Profile: '${profileName}', PhaseCtx: ${phaseContext}`);
 
         const isP7DimlyLitFlicker = phaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit');
 
         if (isP7DimlyLitFlicker && buttonId.includes('Assign')) { 
-             console.log(`[BM_FLICK_START P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Target: '${targetState}'. Profile: '${profileName}'.`);
+            //  console.log(`[BM_FLICK_START P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Target: '${targetState}'. Profile: '${profileName}'.`);
         }
 
         let baseStateToSet = ButtonStates.UNLIT;
         if (profileName.toLowerCase().includes('fromdimlylit')) baseStateToSet = ButtonStates.DIMLY_LIT;
         else if (profileName.toLowerCase().includes('resist')) baseStateToSet = buttonInstance.isSelected() ? ButtonStates.ENERGIZED_SELECTED : ButtonStates.ENERGIZED_UNSELECTED;
 
-        console.log(`[BM_PFLICK_BASE_SET | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Base state being set before flicker: '${baseStateToSet}'. Profile: ${profileName}`);
+        // console.log(`[BM_PFLICK_BASE_SET | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Base state being set before flicker: '${baseStateToSet}'. Profile: ${profileName}`);
         
         if (!profileName.toLowerCase().includes('resist')) {
             buttonInstance.setState(baseStateToSet, { skipAnimation: true, forceState: true, phaseContext: `${phaseContext}_BaseSet` });
@@ -241,9 +241,9 @@ export class ButtonManager {
                     }
                     const baseSetButtonGlowOpacity = getComputedStyle(buttonElement).getPropertyValue(glowVarName).trim();
 
-                    console.log(`[BM_PFLICK_POST_BASESET_INSPECT | ${performance.now().toFixed(2)}ms] ${buttonId}: After _BaseSet ('${baseStateToSet}'). Light Opacity=${baseSetLightOpacity}, Display=${baseSetLightDisplay}, Visibility=${baseSetLightVisibility}, Button Glow Opacity Var ('${glowVarName}')='${baseSetButtonGlowOpacity}'`);
+                    // console.log(`[BM_PFLICK_POST_BASESET_INSPECT | ${performance.now().toFixed(2)}ms] ${buttonId}: After _BaseSet ('${baseStateToSet}'). Light Opacity=${baseSetLightOpacity}, Display=${baseSetLightDisplay}, Visibility=${baseSetLightVisibility}, Button Glow Opacity Var ('${glowVarName}')='${baseSetButtonGlowOpacity}'`);
                 } else {
-                    console.log(`[BM_PFLICK_POST_BASESET_INSPECT | ${performance.now().toFixed(2)}ms] ${buttonId}: After _BaseSet ('${baseStateToSet}'). No .light element found for inspection.`);
+                    // console.log(`[BM_PFLICK_POST_BASESET_INSPECT | ${performance.now().toFixed(2)}ms] ${buttonId}: After _BaseSet ('${baseStateToSet}'). No .light element found for inspection.`);
                 }
             });
             // **** END NEW DEBUG ****
@@ -259,10 +259,10 @@ export class ButtonManager {
         if (tempTintColorClass) buttonElement.classList.add(tempTintColorClass);
 
         buttonInstance._isUndergoingManagedFlicker = true;
-        console.log(`[BM_PFLICK_FLAG_SET | ${performance.now().toFixed(2)}ms] Set _isUndergoingManagedFlicker=true for '${buttonId}'`);
+        // console.log(`[BM_PFLICK_FLAG_SET | ${performance.now().toFixed(2)}ms] Set _isUndergoingManagedFlicker=true for '${buttonId}'`);
         
         buttonElement.classList.add(ButtonStates.FLICKERING);
-        console.log(`[BM_PFLICK_ADD_CLASS | ${performance.now().toFixed(2)}ms] Added '${ButtonStates.FLICKERING}' to ${buttonId}`);
+        // console.log(`[BM_PFLICK_ADD_CLASS | ${performance.now().toFixed(2)}ms] Added '${ButtonStates.FLICKERING}' to ${buttonId}`);
 
         const flickerOptions = {
             ...options,
@@ -270,15 +270,15 @@ export class ButtonManager {
             overrideGlowParams: { isButtonSelected: typeof isButtonSelectedOverride === 'boolean' ? isButtonSelectedOverride : impliesSelection },
             onTimelineComplete: () => { 
                 buttonInstance._isUndergoingManagedFlicker = false; 
-                console.log(`[BM_PFLICK_FLAG_CLEAR | ${performance.now().toFixed(2)}ms] Set _isUndergoingManagedFlicker=false for '${buttonInstance.getIdentifier()}' (in onTimelineComplete)`);
+                // console.log(`[BM_PFLICK_FLAG_CLEAR | ${performance.now().toFixed(2)}ms] Set _isUndergoingManagedFlicker=false for '${buttonInstance.getIdentifier()}' (in onTimelineComplete)`);
                 
                 buttonElement.classList.remove(ButtonStates.FLICKERING);
-                console.log(`[BM_PFLICK_REMOVE_CLASS | ${performance.now().toFixed(2)}ms] Removed '${ButtonStates.FLICKERING}' from ${buttonInstance.getIdentifier()}`);
+                // console.log(`[BM_PFLICK_REMOVE_CLASS | ${performance.now().toFixed(2)}ms] Removed '${ButtonStates.FLICKERING}' from ${buttonInstance.getIdentifier()}`);
 
                 if (isP7DimlyLitFlicker && buttonInstance.getIdentifier().includes('Assign')) {
                     // ... P7 specific logging ...
                 }
-                console.log(`[BM_PFLICK_ONCOMPLETE_PRE_SETSTATE | ${performance.now().toFixed(2)}ms] Button: ${buttonInstance.getIdentifier()}. Flicker timeline done. About to set final state: '${targetState}'.`);
+                // console.log(`[BM_PFLICK_ONCOMPLETE_PRE_SETSTATE | ${performance.now().toFixed(2)}ms] Button: ${buttonInstance.getIdentifier()}. Flicker timeline done. About to set final state: '${targetState}'.`);
 
                 if (tempGlowColor) buttonElement.style.removeProperty('--btn-glow-color');
                 if (tempTintColorClass) buttonElement.classList.remove(tempTintColorClass);
@@ -289,7 +289,7 @@ export class ButtonManager {
                     phaseContext: `${phaseContext}_FinalSet`,
                     isFlickerCompletion: true 
                 });
-                console.log(`[BM_PFLICK_SETSTATE_DONE | ${performance.now().toFixed(2)}ms] Final setState for '${buttonInstance.getIdentifier()}' (after flicker) DONE.`);
+                // console.log(`[BM_PFLICK_SETSTATE_DONE | ${performance.now().toFixed(2)}ms] Final setState for '${buttonInstance.getIdentifier()}' (after flicker) DONE.`);
 
                 if (isP7DimlyLitFlicker && buttonInstance.getIdentifier().includes('Assign')) {
                     // ... P7 specific logging ...
@@ -303,7 +303,7 @@ export class ButtonManager {
                     if (!isP7HueButtonDimlyLitFlickerContext) { 
                         buttonInstance.playStateTransitionEcho();
                     } else {
-                        console.log(`[BM P7_VISUALS_ECHO_SKIP | ${performance.now().toFixed(2)}ms] Button: ${buttonInstance.getIdentifier()}. Skipping echo in P7 for DimlyLit flicker.`);
+                        // console.log(`[BM P7_VISUALS_ECHO_SKIP | ${performance.now().toFixed(2)}ms] Button: ${buttonInstance.getIdentifier()}. Skipping echo in P7 for DimlyLit flicker.`);
                     }
                 }
                 this.emit('afterButtonTransition', buttonInstance);
