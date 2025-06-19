@@ -9,85 +9,19 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!--
-        REMOVED: <link rel="preload"> for fonts.gstatic.com URLs.
-        These were causing 404s. Relying on the Google Fonts CSS API link below
-        and `display=swap` is more robust for Google-hosted fonts.
-        The preconnect hints above are still beneficial.
-    -->
-
-    <!-- Critical Preloader CSS (Inlined) -->
-    <style id="critical-preloader-css">
-        #datastream-preloader {
-            --preloader-display-font: 'IBM Plex Mono', monospace; /* Fallback, preload preferred */
-            --preloader-panel-bezel-bg: oklch(0.12 0.002 240 / 0.75);
-            --preloader-panel-section-bg: oklch(0.10 0.002 240 / 0.85);
-            --preloader-text-primary: oklch(0.9 0.005 240);
-            --preloader-text-secondary: oklch(0.8 0.008 240);
-            --preloader-space-xl: 0.75rem;
-            --preloader-space-2xl: 1rem;
-            --preloader-radius-panel-tight: 0.1rem;
-
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--preloader-text-primary);
-            font-family: var(--preloader-display-font);
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            z-index: 10001;
-            opacity: 0; /* Will be faded in by JS or full CSS */
-            box-sizing: border-box;
-            transition: opacity 0.5s ease-out; /* var(--preloader-transition-duration-slow) */
-        }
-        #datastream-preloader.preloader-main-bezel { /* Combined element */
-            width: 100%;
-            max-width: 900px;
-            padding: var(--preloader-space-xl);
-            background-color: var(--preloader-panel-bezel-bg);
-            border-radius: var(--preloader-radius-panel-tight);
-            box-sizing: border-box;
-        }
-        .preloader-content-section {
-            background-color: var(--preloader-panel-section-bg);
-            padding: var(--preloader-space-2xl);
-            border-radius: var(--preloader-radius-panel-tight);
-            display: flex;
-            flex-direction: column;
-            gap: var(--preloader-space-2xl);
-            box-sizing: border-box;
-            width: 100%;
-        }
-        .preloader-stream-columns { display: flex; gap: 0.5rem; justify-content: space-around; flex-wrap: wrap; box-sizing: border-box; }
-        .preloader-data-stream { width: 250px; flex-shrink: 0; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; opacity: 0.9; }
-        .preloader-stream-header { font-size: 0.85em; text-align: center; padding-bottom: 0.25rem; margin-bottom: 0.375rem; color: var(--preloader-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .preloader-stream-output { height: 90px; background-color: oklch(0.03 0 0 / 0.5); border: 1px solid oklch(0.08 0 0 / 0.2); padding: 0.25rem; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .preloader-stream-output-text { font-size: 0.75em; width:100%; height:100%; overflow:hidden; }
-        .preloader-stream-status { font-size: 0.75em; text-align: center; margin-top: 0.375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .preloader-overall-progress { text-align: center; margin-top: 0.5rem; }
-        .preloader-progress-bar-container { height: 0.25rem; border: 1px solid oklch(0.4 0.001 240 / 0.12); padding: 0.0625rem; margin-top: 0.25rem; }
-        .preloader-progress-bar-fill { height: 100%; width: 0%; background-color: oklch(0.7 0.2 145); }
-        .preloader-engage-container { text-align: center; margin-top: 0.75rem; opacity: 0; transform: translateY(0.375rem); }
-        .preloader-engage-container.is-visible { opacity: 1; transform: translateY(0); }
-        #critical-error-message { display: none; color: oklch(0.65 0.25 25); text-align: center; margin-top: 1rem; font-weight: bold; }
-        /* Initial body opacity for fade-in */
-        .pre-boot { opacity: 0; }
-    </style>
-
-    <!-- Full Preloader Stylesheet (loaded early) -->
-    
-    <!-- Main Application Stylesheet (Imports all other CSS partials) -->
+    <!-- Main Application Stylesheet (Imports all other CSS partials, including preloader) -->
 
     <!-- Google Fonts API CSS (display=swap is good for fallback) -->
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0" />
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-wCSUnVow.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-4H_SrQey.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-CuRaJTfs.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-D3QeqMIw.css">
 </head>
 <body class="theme-dim pre-boot">
+
+    <!-- Preloader Mask (Hides main UI during preloading) -->
+    <div id="preloader-mask"></div>
 
     <div id="datastream-preloader" class="panel-bezel preloader-main-bezel">
         <div class="panel-section preloader-content-section">
@@ -118,6 +52,7 @@
             </div>
 
             <div class="preloader-engage-container" id="engage-button-container">
+                <!-- Corrected Button Structure -->
                 <button id="preloader-engage-btn" class="button-unit button-unit--l" disabled>
                     <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div>
                     <div class="button-bg-frame"></div>
