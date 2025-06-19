@@ -32,7 +32,8 @@ class TerminalManager {
         this._currentTextSpan = null; 
         this._cursorElement = null;
         this._isFirstLine = true; 
-        this.debug = false; 
+        this.debug = false;
+        this._currentTypingPromise = null; // To manage the active typing process
     }
 
     init() {
@@ -48,16 +49,7 @@ class TerminalManager {
     }
 
     reset() {
-        // if (this.debug) console.log('[TerminalManager] Resetting terminal.');
-        this._isTyping = false;
-        if(this._gsap) this._gsap.killTweensOf(this); // Kill any pending delayed calls
-        this._messageQueue = [];
-        if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
-        if (this._cursorElement && this._cursorElement.parentNode) {
-            this._cursorElement.parentNode.removeChild(this._cursorElement);
-        }
-        this._isFirstLine = true; 
-        this._setCursorState('idle');
+        this._interruptAndClear(); // Use the new interrupt method for a full reset
     }
 
     _setupDOM() {
@@ -66,83 +58,122 @@ class TerminalManager {
         this.reset();
     }
 
-    // The playStartupFlicker method has been removed as it was causing the issue.
-    // The desired effect is now achieved declaratively in startupPhase1.js by combining
-    // an 'lcdPowerOn' animation for the container with a 'terminalMessageKey' request.
+    _interruptAndClear() {
+        if (this._currentTypingPromise) {
+            this._currentTypingPromise.abort = true;
+            this._currentTypingPromise = null;
+        }
+        if(this._gsap) this._gsap.killTweensOf(this); // Kill any pending delayed calls
+        this._messageQueue = [];
+        this._isTyping = false;
+        if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
+        if (this._cursorElement && this._cursorElement.parentNode) {
+            this._cursorElement.parentNode.removeChild(this._cursorElement);
+        }
+        this._isFirstLine = true; 
+        this._setCursorState('idle');
+    }
 
     _handleRequestTerminalMessage(payload) {
-        // Handle clear command immediately, even if typing
-        if (payload.type === 'command' && payload.command === 'clear') {
-            // console.log(`[TM | ${performance.now().toFixed(2)}ms] Received immediate command: clear`);
-            this.reset();
-            return; // Don't queue the clear command
-        }
-        
-        // console.log(`[TM | ${performance.now().toFixed(2)}ms] Queuing request: ${payload.messageKey || payload.source}`);
-        // Pass the imported appState module to getMessage
         const messageData = getMessage(payload, appState);
-        this._messageQueue.push({ ...payload, ...messageData });
-        
-        // Only start the processing loop if it's not already running.
+        const messageObject = { ...payload, ...messageData };
+
+        // 1. Handle immediate commands (interrupts and clears)
+        if (messageObject.type === 'command' && messageObject.command === 'clear') {
+            this._interruptAndClear();
+            return;
+        }
+        if (messageObject.interrupt) {
+            this._interruptAndClear();
+        }
+
+        // 2. Handle message coalescing for status updates
+        if (messageObject.coalesce) {
+            const existingIndex = this._messageQueue.findIndex(m => m.coalesceId === messageObject.coalesceId);
+            if (existingIndex > -1) {
+                this._messageQueue[existingIndex] = messageObject; // Replace old with new
+                return; // Don't queue again and don't start a new process
+            }
+        }
+
+        // 3. Add to queue
+        this._messageQueue.push(messageObject);
+
+        // 4. THE CRITICAL FIX: The Race-Condition-Proof Lock
+        // Only start processing if we are not *already* in the middle of the _processQueue loop.
         if (!this._isTyping) {
             this._processQueue();
         }
     }
 
     async _processQueue() {
-        if (this._isTyping || this._messageQueue.length === 0) {
-            return;
-        }
+        if (this._isTyping) return; // Redundant guard, but safe
 
-        this._isTyping = true;
-        this._setCursorState('typing');
+        this._isTyping = true; // Set the lock IMMEDIATELY
 
         while (this._messageQueue.length > 0) {
             const messageObject = this._messageQueue.shift();
-            // console.log(`[TM | ${performance.now().toFixed(2)}ms] Dequeuing and processing: ${messageObject.messageKey || messageObject.source}`);
+            this._setCursorState('typing');
 
+            // Thinking delay
             const delay = this._gsap.utils.random(
                 TERMINAL_THINKING_DELAY_MIN_MS,
                 TERMINAL_THINKING_DELAY_MAX_MS
             );
-            
             if (!this._isFirstLine) {
-                await new Promise(resolve => this._gsap.delayedCall(delay / 1000, resolve));
-            }
-            
-            if (!this._isFirstLine && messageObject.formatting.spacingBefore > 0) {
-                for (let i = 0; i < messageObject.formatting.spacingBefore; i++) {
-                    this._addNewLineAndPrepareForTyping(true);
-                }
+                await new Promise(resolve => setTimeout(resolve, delay));
             }
 
-            for (let i = 0; i < messageObject.content.length; i++) {
-                const lineText = messageObject.content[i];
-                this._addNewLineAndPrepareForTyping();
+            // Create a new promise for the typing task
+            const typingPromise = {};
+            this._currentTypingPromise = typingPromise;
 
-                let speedPerChar;
-                if (messageObject.type === 'startup') {
-                    speedPerChar = TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
-                } else if (messageObject.type === 'block') {
-                    speedPerChar = TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR;
-                } else {
-                    speedPerChar = TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
-                }
-                
-                // Pass the flicker option from the message object to the typing method.
-                const typeOptions = { flicker: messageObject.flicker || false };
-                await this._typeLine(lineText, speedPerChar, typeOptions);
-                
-                if (i < messageObject.content.length - 1) {
-                    await this._pauseAndBlink(TERMINAL_INTER_LINE_PAUSE_S || 0.4);
-                }
+            // Run the typing logic
+            await this._typeMessage(messageObject, typingPromise);
+
+            if (typingPromise.abort) {
+                // If we were aborted, exit the loop immediately
+                break;
             }
-            
-            this._isFirstLine = false;
         }
 
         this._isTyping = false;
-        this._setCursorState('idle');
+        this._currentTypingPromise = null;
+        if (this._messageQueue.length === 0) {
+            this._setCursorState('idle'); // Only go idle if queue is truly empty
+        }
+    }
+
+    async _typeMessage(messageObject, promise) {
+        if (promise.abort) return;
+
+        if (!this._isFirstLine && messageObject.formatting.spacingBefore > 0) {
+            for (let i = 0; i < messageObject.formatting.spacingBefore; i++) {
+                this._addNewLineAndPrepareForTyping(true);
+            }
+        }
+
+        for (let i = 0; i < messageObject.content.length; i++) {
+            if (promise.abort) return;
+
+            const lineText = messageObject.content[i];
+            this._addNewLineAndPrepareForTyping();
+
+            let speedPerChar;
+            if (messageObject.type === 'startup') speedPerChar = TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
+            else if (messageObject.type === 'block') speedPerChar = TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR;
+            else speedPerChar = TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
+
+            const typeOptions = { flicker: messageObject.flicker || false };
+
+            // Pass the promise down to be checked inside the loop
+            await this._typeLine(lineText, speedPerChar, typeOptions, promise);
+
+            if (i < messageObject.content.length - 1) {
+                await this._pauseAndBlink(TERMINAL_INTER_LINE_PAUSE_S || 0.4, promise);
+            }
+        }
+        this._isFirstLine = false;
     }
 
     _addNewLineAndPrepareForTyping(isSpacer = false) {
@@ -163,25 +194,23 @@ class TerminalManager {
         return this._currentTextSpan; // Return the new span for potential use
     }
     
-    async _typeLine(text, speedPerChar, options = {}) {
+    async _typeLine(text, speedPerChar, options = {}, promise) {
         if (!this._currentTextSpan) return;
+        if (promise.abort) return;
+
         const scrollContainer = this._terminalContentElement.parentElement;
         let flickerAnimation = null;
 
         if (options.flicker) {
-            // Start the advanced flicker animation on the text span.
-            // We do not await it here; we let it run in the background.
             flickerAnimation = createAdvancedFlicker(this._currentTextSpan, 'textFlickerToDimlyLit', { gsapInstance: this._gsap });
         }
         
-        // Standard character-by-character typing loop.
         for (const char of text) {
+            if (promise.abort) return;
             const oldScrollHeight = scrollContainer ? scrollContainer.scrollHeight : 0;
             this._currentTextSpan.textContent += char;
 
             if (options.flicker) {
-                // "Battle" the flicker animation's autoAlpha tween by forcing visibility
-                // on each frame. This creates the chaotic, energetic flicker effect.
                 this._gsap.set(this._currentTextSpan, { autoAlpha: 1 });
             }
             
@@ -196,8 +225,6 @@ class TerminalManager {
         }
 
         if (flickerAnimation) {
-            // Now that typing is done, await the flicker animation's completion
-            // to ensure it "settles" into its final state before we proceed.
             if (flickerAnimation.completionPromise) {
                 await flickerAnimation.completionPromise;
             } else {
@@ -209,10 +236,12 @@ class TerminalManager {
     }
 
 
-    _pauseAndBlink(durationSeconds) {
+    _pauseAndBlink(durationSeconds, promise) {
         return new Promise(resolve => {
+            if (promise.abort) return resolve();
             this._setCursorState('idle');
             this._gsap.delayedCall(durationSeconds, () => {
+                if (promise.abort) return resolve();
                 this._setCursorState('typing');
                 resolve();
             });

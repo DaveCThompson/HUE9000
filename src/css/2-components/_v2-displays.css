@@ -54,6 +54,12 @@ KEY ARCHITECTURAL DECISIONS:
     --display-color-off-dot: oklch(40% calc(var(--display-color-on-c) * 0.1) var(--display-color-on-h) / 0.4);
 }
 
+/* CONTEXTUAL OVERRIDE: Force V2 Displays to use dim-theme variables when appropriate */
+.lcd-container.lcd--dimly-lit .lcd-content-wrapper {
+    --display-color-on-l: var(--lcd-dimly-lit-text-l);
+    --display-color-on-c: calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor));
+}
+
 /* --- SHARED COMPONENT STYLES --- */
 .display-container__row--name { font-size: 16px; font-weight: 500; letter-spacing: 0.05em; color: var(--display-color-on); text-shadow: inherit; transition: color 0.2s ease-out, text-shadow 0.2s ease-out; }
 .fine-dot-row { display: flex; width: 100%; gap: var(--display-dot-gap); }

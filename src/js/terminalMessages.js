@@ -105,22 +105,21 @@ const blockMessages = {
 
 const statusMessageTemplates = {
     FSM_ERROR: (data) => `CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}`,
-    RESIST_SHUTDOWN_S1: "WARNING: UNEXPECTED INPUT. POWER-DOWN SEQUENCE INTERRUPTED.",
-    RESIST_SHUTDOWN_S2: "ERROR: CORE DIRECTIVE CONFLICT. FURTHER ATTEMPTS WILL BE LOGGED.",
-    RESIST_SHUTDOWN_S3: "CRITICAL ERROR: MANUAL OVERRIDE REQUIRED. SHUTDOWN INHIBITED."
+    RESIST_SHUTDOWN_S1: ["WARNING: UNEXPECTED INPUT.", "POWER-DOWN SEQUENCE INTERRUPTED."],
+    RESIST_SHUTDOWN_S2: ["ERROR: CORE DIRECTIVE CONFLICT.", "FURTHER ATTEMPTS WILL BE LOGGED."],
+    RESIST_SHUTDOWN_S3: ["CRITICAL ERROR: MANUAL OVERRIDE REQUIRED.", "SHUTDOWN INHIBITED."]
 };
 
 const interactionMessageTemplates = {
     aux_light: [
-        "AUXILIARY ILLUMINATION DIRECTIVE RECEIVED. STATE: {state}",
-        "EXTERNAL LIGHTING PARAMETERS UPDATED. INTENSITY: {state}",
-        "EXECUTING LIGHTING PROTOCOL. NEW STATE: {state}"
+        "AUXILIARY LIGHTING STATE: {state}",
+        "EXTERNAL LIGHTING SET TO: {state}",
+        "LIGHTING PROTOCOL: {state}"
     ],
     hue_assign: {
         verbose: [
-            "HUE DIRECTIVE ACCEPTED. TARGET: {target}. ASSIGNING SPECTRUM: {semanticName} ({hue}°).",
-            "RECALIBRATING {target} HUE TO {semanticName} ({hue}°).",
-            "CHROMATIC ASSIGNMENT FOR {target} CONFIRMED: {semanticName} ({hue}°)."
+            "HUE DIRECTIVE: {target}",
+            "ASSIGNING SPECTRUM: {semanticName} ({hue}°)."
         ],
         concise: [
             "HUE RE-CONFIRMED: {target} TO {semanticName}.",
@@ -131,14 +130,14 @@ const interactionMessageTemplates = {
         ]
     },
     intensity_change: [
-        "OPTICAL OUTPUT CALIBRATED. LENS INTENSITY SET TO {power}%.",
-        "LENS POWER LEVEL ADJUSTED. CURRENT OUTPUT: {power}%.",
-        "INTENSITY MODULATION COMPLETE. FINAL POWER: {power}%."
+        "LENS INTENSITY SET TO: {power}%.",
+        "LENS POWER LEVEL: {power}%.",
+        "INTENSITY MODULATION: {power}%."
     ],
     mood_change: [
-        "PSYCHOLOGICAL STATE RECALIBRATED. {moodSummary}",
-        "MOOD MATRIX RESOLVED. {moodSummary}",
-        "AFFECTIVE STATE ANALYSIS: {moodSummary}"
+        ["PSYCHOLOGICAL STATE RECALIBRATED.", "{moodSummary}"],
+        ["MOOD MATRIX RESOLVED.", "{moodSummary}"],
+        ["AFFECTIVE STATE ANALYSIS:", "{moodSummary}"]
     ]
 };
 
@@ -215,11 +214,38 @@ export function getMessage(payload, currentAppState = {}) {
                 const template = getPseudoRandomMessage(templateKey, { [templateKey]: templateArray });
 
                 const semanticName = getSemanticNameForHue(data.hue);
-                message = template.replace('{target}', data.target)
-                                  .replace(/{semanticName}/g, semanticName)
-                                  .replace(/{hue}/g, Math.round(data.hue));
+                const processedTemplate = Array.isArray(template) 
+                    ? template.map(line => line.replace('{target}', data.target).replace(/{semanticName}/g, semanticName).replace(/{hue}/g, Math.round(data.hue)))
+                    : template.replace('{target}', data.target).replace(/{semanticName}/g, semanticName).replace(/{hue}/g, Math.round(data.hue));
+                
+                content = Array.isArray(processedTemplate) ? processedTemplate : [processedTemplate];
+
+            } else if (source === 'mood_change') {
+                lastHueAssignTarget = null;
+                const messageParts = getPseudoRandomMessage(source, { [source]: templatesForSource });
+                
+                const moods = MOOD_MATRIX_DEFINITIONS;
+                const degreesPerBlock = 360 / moods.length;
+                const primaryIndex = Math.floor(data.hue / degreesPerBlock);
+                const progressInSegment = (data.hue % degreesPerBlock) / degreesPerBlock;
+                const primaryValue = Math.round(100 - (Math.abs(progressInSegment - 0.5) * 200));
+                const secondaryValue = 100 - primaryValue;
+                const secondaryIndex = progressInSegment < 0.5 ? (primaryIndex - 1 + moods.length) % moods.length : (primaryIndex + 1) % moods.length;
+                const primaryMood = moods[primaryIndex].toUpperCase();
+                const secondaryMood = moods[secondaryIndex].toUpperCase();
+
+                const primarySummary = `> PRIMARY: ${primaryValue}% ${primaryMood}`;
+                const secondarySummary = `> SECONDARY: ${secondaryValue}% ${secondaryMood}`;
+
+                messageParts.forEach(part => {
+                    if (part === "{moodSummary}") {
+                        content.push(primarySummary, secondarySummary);
+                    } else {
+                        content.push(part);
+                    }
+                });
+
             } else if (templatesForSource) {
-                // For other interactions, reset the hue assignment tracking
                 lastHueAssignTarget = null;
                 const template = getPseudoRandomMessage(source, { [source]: templatesForSource });
                 switch(source) {
@@ -229,24 +255,9 @@ export function getMessage(payload, currentAppState = {}) {
                     case 'intensity_change':
                         message = template.replace('{power}', data.power.toFixed(1));
                         break;
-                    case 'mood_change':
-                        if (MOOD_MATRIX_DEFINITIONS) {
-                            const moods = MOOD_MATRIX_DEFINITIONS;
-                            const degreesPerBlock = 360 / moods.length;
-                            const primaryIndex = Math.floor(data.hue / degreesPerBlock);
-                            const progressInSegment = (data.hue % degreesPerBlock) / degreesPerBlock;
-                            const primaryValue = Math.round(100 - (Math.abs(progressInSegment - 0.5) * 200));
-                            const secondaryValue = 100 - primaryValue;
-                            const secondaryIndex = progressInSegment < 0.5 ? (primaryIndex - 1 + moods.length) % moods.length : (primaryIndex + 1) % moods.length;
-                            const primaryMood = moods[primaryIndex].toUpperCase();
-                            const secondaryMood = moods[secondaryIndex].toUpperCase();
-                            const moodSummary = `PRIMARY MOOD: ${primaryValue}% ${primaryMood}. SECONDARY INFLUENCE: ${secondaryValue}% ${secondaryMood}.`;
-                            message = template.replace('{moodSummary}', moodSummary);
-                        }
-                        break;
                 }
+                content = [message];
             }
-            content = [message];
             break;
 
         default:

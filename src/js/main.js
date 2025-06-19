@@ -147,6 +147,8 @@ function setupEventListeners() {
         appState.emit('requestTerminalMessage', {
             type: 'interaction',
             source: 'mood_change',
+            coalesce: true,
+            coalesceId: 'mood_change',
             data: { hue }
         });
     }, TERMINAL_INTERACTION_DEBOUNCE_MS);
@@ -155,6 +157,8 @@ function setupEventListeners() {
         appState.emit('requestTerminalMessage', {
             type: 'interaction',
             source: 'intensity_change',
+            coalesce: true,
+            coalesceId: 'intensity_change',
             data: { power }
         });
     }, TERMINAL_INTERACTION_DEBOUNCE_MS);
@@ -216,6 +220,8 @@ function setupEventListeners() {
             appState.emit('requestTerminalMessage', {
                 type: 'interaction',
                 source: 'aux_light',
+                coalesce: true,
+                coalesceId: 'aux_light',
                 data: { state: stateTextForTerminal }
             });
         } 
@@ -226,23 +232,21 @@ function setupEventListeners() {
             appState.emit('requestTerminalMessage', {
                 type: 'interaction',
                 source: 'hue_assign',
+                coalesce: true,
+                coalesceId: `hue_assign_${groupId}`,
                 data: { target: groupId.toUpperCase(), hue: hue }
             });
         } 
         else if (button.config.type === 'action') {
             audioManager.play('buttonPress', true);
             if (ariaLabel === 'Scan Button 1') {
-                appState.emit('requestTerminalMessage', { type: 'command', command: 'clear' });
-                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE' });
+                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });
             } else if (ariaLabel === 'Scan Button 2') {
-                appState.emit('requestTerminalMessage', { type: 'command', command: 'clear' });
-                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE' });
+                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE', interrupt: true });
             } else if (ariaLabel === 'Scan Button 3') {
-                appState.emit('requestTerminalMessage', { type: 'command', command: 'clear' });
-                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN3_MESSAGE' });
+                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN3_MESSAGE', interrupt: true });
             } else if (ariaLabel === 'Scan Button 4') {
-                appState.emit('requestTerminalMessage', { type: 'command', command: 'clear' });
-                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN4_MESSAGE' });
+                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN4_MESSAGE', interrupt: true });
             }
         }
     });
