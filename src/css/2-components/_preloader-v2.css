@@ -377,14 +377,12 @@ body.preloader-active {
     }
 
     .preloader-stream-columns {
-        /* This is no longer a grid. It's a simple flex container. */
         display: flex;
         flex-direction: column;
-        gap: calc(var(--space-s)); /* The space between stream blocks */
-        flex-shrink: 0; /* Prevent this group from shrinking */
+        gap: calc(var(--space-s) / 2); /* This creates the space between blocks */
+        flex-shrink: 0;
     }
 
-    /* Give the stream blocks a solid, predictable height */
     .preloader-data-stream.control-block {
         height: 120px;
         padding: var(--space-m);
@@ -411,9 +409,9 @@ body.preloader-active {
     }
     
     .preloader-engage-container {
-        margin-top: auto; /* THIS IS THE KEY: Pushes the button to the bottom */
-        padding-top: var(--space-l); /* Space above button */
-        padding-bottom: var(--space-m); /* Space below button */
+        margin-top: auto; /* Pushes the button to the bottom */
+        padding-top: var(--space-l);
+        padding-bottom: var(--space-m);
         transform: none;
         flex-shrink: 0;
     }

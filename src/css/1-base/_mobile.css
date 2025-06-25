@@ -70,10 +70,12 @@
     margin-bottom: 0;
   }
   
-  /* Increase grill texture density on mobile */
+  /* REMOVED: The fixed-pixel grill override is no longer needed. */
+  /*
   .grill-placeholder {
       background-size: 168.5px 114px;
   }
+  */
 
   .main-content-area > .panel-bezel.right-panel {
     display: block;
@@ -85,11 +87,6 @@
     overflow: visible;
   }
 
-  /*
-   * DEFINITIVE FIX: The lingering texture was on the ::after pseudo-element
-   * of the .panel-bezel itself. This rule explicitly hides it for the
-   * repurposed right panel on mobile.
-  */
   .main-content-area > .panel-bezel.right-panel::after {
     display: none;
   }
@@ -106,15 +103,13 @@
     padding: 0;
     align-items: start;
     
-    /* This rule is still correct for making the section transparent. */
-    background: transparent;
-    box-shadow: none;
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
   .right-panel .hue-control-block {
     flex: 1 1 50%;
     max-width: none;
-    /* Set padding to a mid-point value (0.75rem). */
     padding: var(--space-xl);
   }
   
@@ -136,24 +131,15 @@
 /* --- Mobile Landscape Layout (Scaled Desktop) --- */
 /* On a narrow device (like a phone) that is turned sideways */
 @media (orientation: landscape) and (max-height: 500px) {
-  /*
-    When a device with width > 768px (like a rotated iPhone) is in landscape,
-    the portrait media query above will not apply, and it will correctly fall back
-    to the default desktop flexbox layout. This query simply adds scaling on top
-    of the default desktop styles for a better fit on a small screen.
-  */
+  /* ... no changes here ... */
   .app-wrapper {
-    /* Ensure the wrapper can contain the scaled content without huge padding */
     padding: var(--space-lg);
-    /* Prevent vertical overflow */
     overflow: hidden;
     height: 100vh;
   }
   .main-content-area {
-    /* Scale the entire desktop UI down to fit */
     transform: scale(0.75);
     transform-origin: center center;
-    /* Adjust height to compensate for scaling and prevent overflow */
     height: 100%;
   }
 }
