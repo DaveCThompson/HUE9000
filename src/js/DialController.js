@@ -72,15 +72,25 @@ export class DialController {
                 if (this.gsapTween) this.gsapTween.kill();
                 
                 const targetState = payload.state;
-                this.targetRotation = targetState.rotation;
+                const isProgrammaticUpdate = this.appState.getResistiveShutdownStage() > 0;
 
-                this.gsapTween = this.gsap.to(this, {
-                    rotation: targetState.rotation,
-                    hue: targetState.hue,
-                    duration: 0.5,
-                    ease: 'power2.out',
-                    onUpdate: () => this._draw()
-                });
+                // FIX: Bypass animation for programmatic updates to prevent state conflicts.
+                if (isProgrammaticUpdate) {
+                    this.rotation = targetState.rotation;
+                    this.hue = targetState.hue;
+                    this.targetRotation = targetState.rotation;
+                    this._draw(); // Snap directly to the new state
+                } else {
+                    // Animate for other non-drag updates (e.g., settling after a flick)
+                    this.targetRotation = targetState.rotation;
+                    this.gsapTween = this.gsap.to(this, {
+                        rotation: targetState.rotation,
+                        hue: targetState.hue,
+                        duration: 0.5,
+                        ease: 'power2.out',
+                        onUpdate: () => this._draw()
+                    });
+                }
             }
         });
         this.unsubscribers.push(dialUpdateUnsub);
@@ -296,6 +306,10 @@ export class DialController {
         
         ridgesToDraw.sort((a, b) => a.zIndex - b.zIndex);
 
+        // PERFORMANCE FIX: Detach the group, manipulate, then re-attach to batch DOM updates.
+        const parent = this.ridgesGroup.parentNode;
+        parent.removeChild(this.ridgesGroup);
+
         ridgesToDraw.forEach(ridge => {
             ridge.element.setAttribute('x', ridge.x.toFixed(2));
             ridge.element.setAttribute('width', ridge.width.toFixed(2));
@@ -304,6 +318,8 @@ export class DialController {
             ridge.element.setAttribute('fill', ridgeColor);
             this.ridgesGroup.appendChild(ridge.element);
         });
+
+        parent.appendChild(this.ridgesGroup);
     }
 
     destroy() {

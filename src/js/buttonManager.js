@@ -198,76 +198,30 @@ export class ButtonManager extends EventEmitter {
         const buttonId = buttonInstance.getIdentifier();
         // console.log(`[BM_PFLICK_ENTRY | ${performance.now().toFixed(2)}ms] For: ${buttonId}, Target: '${targetState}', Profile: '${profileName}', PhaseCtx: ${phaseContext}`);
 
-        const isP7DimlyLitFlicker = phaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit');
-
-        if (isP7DimlyLitFlicker && buttonId.includes('Assign')) { 
-            //  console.log(`[BM_FLICK_START P7_VISUALS | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Target: '${targetState}'. Profile: '${profileName}'.`);
-        }
-
-        let baseStateToSet = ButtonStates.UNLIT;
-        if (profileName.toLowerCase().includes('fromdimlylit')) baseStateToSet = ButtonStates.DIMLY_LIT;
-        else if (profileName.toLowerCase().includes('resist')) baseStateToSet = buttonInstance.isSelected() ? ButtonStates.ENERGIZED_SELECTED : ButtonStates.ENERGIZED_UNSELECTED;
-
-        // console.log(`[BM_PFLICK_BASE_SET | ${performance.now().toFixed(2)}ms] Button: ${buttonId}. Base state being set before flicker: '${baseStateToSet}'. Profile: ${profileName}`);
-        
-        if (!profileName.toLowerCase().includes('resist')) {
-            buttonInstance.setState(baseStateToSet, { skipAnimation: true, forceState: true, phaseContext: `${phaseContext}_BaseSet` });
-            
-            // **** NEW DEBUG: Check state AFTER _BaseSet, BEFORE flicker starts ****
-            this.gsap.delayedCall(0.001, () => { // Tiny delay for CSS to apply
-                const lightTarget = buttonElement.querySelector('.light');
-                if (lightTarget) {
-                    const baseSetLightOpacity = getComputedStyle(lightTarget).opacity;
-                    const baseSetLightDisplay = getComputedStyle(lightTarget).display;
-                    const baseSetLightVisibility = getComputedStyle(lightTarget).visibility;
-                    
-                    let glowVarName = '--btn-dimly-lit-glow-opacity'; // Default or fallback
-                    const flickerProfile = ADVANCED_FLICKER_PROFILES[profileName];
-                    if (flickerProfile && flickerProfile.glow && flickerProfile.glow.opacityVar) {
-                        glowVarName = flickerProfile.glow.opacityVar;
-                    } else if (flickerProfile && flickerProfile.glow && flickerProfile.glow.animatedProperties && flickerProfile.glow.animatedProperties.opacity) {
-                        glowVarName = flickerProfile.glow.animatedProperties.opacity;
-                    }
-                    const baseSetButtonGlowOpacity = getComputedStyle(buttonElement).getPropertyValue(glowVarName).trim();
-
-                    // console.log(`[BM_PFLICK_POST_BASESET_INSPECT | ${performance.now().toFixed(2)}ms] ${buttonId}: After _BaseSet ('${baseStateToSet}'). Light Opacity=${baseSetLightOpacity}, Display=${baseSetLightDisplay}, Visibility=${baseSetLightVisibility}, Button Glow Opacity Var ('${glowVarName}')='${baseSetButtonGlowOpacity}'`);
-                } else {
-                    // console.log(`[BM_PFLICK_POST_BASESET_INSPECT | ${performance.now().toFixed(2)}ms] ${buttonId}: After _BaseSet ('${baseStateToSet}'). No .light element found for inspection.`);
-                }
-            });
-            // **** END NEW DEBUG ****
-        }
-
+        // FIX: The initial `setState` call has been removed. `createAdvancedFlicker` is now responsible for
+        // setting the initial visual state of the animation, which prevents the premature `clearProps` call
+        // from interfering with the flicker's own styling.
 
         const impliesSelection = targetState.includes('is-selected');
+        // Update the button's internal `_isSelected` property so `overrideGlowParams` works correctly,
+        // but without triggering a full visual `setState` call.
         if (buttonInstance.isSelected() !== impliesSelection && !profileName.toLowerCase().includes('resist')) {
-            buttonInstance.setSelected(impliesSelection, { skipAnimation: true, forceState: true, phaseContext: `${phaseContext}_SelectSet` });
+            buttonInstance.setSelected(impliesSelection, { skipAnimation: true, phaseContext: `${phaseContext}_SelectSet` });
         }
 
         if (tempGlowColor) buttonElement.style.setProperty('--btn-glow-color', tempGlowColor);
         if (tempTintColorClass) buttonElement.classList.add(tempTintColorClass);
 
         buttonInstance._isUndergoingManagedFlicker = true;
-        // console.log(`[BM_PFLICK_FLAG_SET | ${performance.now().toFixed(2)}ms] Set _isUndergoingManagedFlicker=true for '${buttonId}'`);
-        
         buttonElement.classList.add(ButtonStates.FLICKERING);
-        // console.log(`[BM_PFLICK_ADD_CLASS | ${performance.now().toFixed(2)}ms] Added '${ButtonStates.FLICKERING}' to ${buttonId}`);
-
+        
         const flickerOptions = {
             ...options,
             gsapInstance: this.gsap, 
             overrideGlowParams: { isButtonSelected: typeof isButtonSelectedOverride === 'boolean' ? isButtonSelectedOverride : impliesSelection },
             onTimelineComplete: () => { 
                 buttonInstance._isUndergoingManagedFlicker = false; 
-                // console.log(`[BM_PFLICK_FLAG_CLEAR | ${performance.now().toFixed(2)}ms] Set _isUndergoingManagedFlicker=false for '${buttonInstance.getIdentifier()}' (in onTimelineComplete)`);
-                
                 buttonElement.classList.remove(ButtonStates.FLICKERING);
-                // console.log(`[BM_PFLICK_REMOVE_CLASS | ${performance.now().toFixed(2)}ms] Removed '${ButtonStates.FLICKERING}' from ${buttonInstance.getIdentifier()}`);
-
-                if (isP7DimlyLitFlicker && buttonInstance.getIdentifier().includes('Assign')) {
-                    // ... P7 specific logging ...
-                }
-                // console.log(`[BM_PFLICK_ONCOMPLETE_PRE_SETSTATE | ${performance.now().toFixed(2)}ms] Button: ${buttonInstance.getIdentifier()}. Flicker timeline done. About to set final state: '${targetState}'.`);
 
                 if (tempGlowColor) buttonElement.style.removeProperty('--btn-glow-color');
                 if (tempTintColorClass) buttonElement.classList.remove(tempTintColorClass);
@@ -278,12 +232,7 @@ export class ButtonManager extends EventEmitter {
                     phaseContext: `${phaseContext}_FinalSet`,
                     isFlickerCompletion: true 
                 });
-                // console.log(`[BM_PFLICK_SETSTATE_DONE | ${performance.now().toFixed(2)}ms] Final setState for '${buttonInstance.getIdentifier()}' (after flicker) DONE.`);
-
-                if (isP7DimlyLitFlicker && buttonInstance.getIdentifier().includes('Assign')) {
-                    // ... P7 specific logging ...
-                }
-
+                
                 if (targetState !== ButtonStates.PERMANENTLY_DISABLED) {
                     const currentPhaseNum = appState.getCurrentStartupPhaseNumber ? appState.getCurrentStartupPhaseNumber() : -1;
                     const isP7HueButtonDimlyLitFlickerContext = (phaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && 

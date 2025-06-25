@@ -19,21 +19,20 @@
 @import url('./1-base/_layout.css');
 @import url('./1-base/_typography.css');
 @import url('./1-base/_effects.css');
-@import url('./1-base/_startup-transition.css');
+@import url('./1-base/_dim-to-theme-transition.css');
 @import url('./1-base/_utilities.css');
 
 
-/* --- 3: Themes --- */
+/* --- 2: Themes --- */
 /* Theme-specific variable overrides. Imported after the contract, before components. */
-@import url('./3-themes/theme-dim.css');
-@import url('./3-themes/theme-dark.css');
-@import url('./3-themes/theme-light.css');
+@import url('./3-themes/_theme-dim.css');
+@import url('./3-themes/_theme-dark.css');
+@import url('./3-themes/_theme-light.css');
 
 
-/* --- 2: Components --- */
+/* --- 3: Components --- */
 /* Styles for individual UI components */
-@import url('./2-components/_preloader-v2.css'); /* NEW PRELOADER STYLES - LOAD FIRST */
-/* @import url('./2-components/_preloader.css'); /* OLD PRELOADER - COMMENTED OUT */
+@import url('./2-components/_preloader.css');
 @import url('./2-components/_side-panels.css');
 @import url('./2-components/_panel-bezel.css');
 @import url('./2-components/_button-unit.css');

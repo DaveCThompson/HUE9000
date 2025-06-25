@@ -1,4 +1,4 @@
-/* src/css/animations/_startup-transition.css (Refactored for .animate-on-dim-exit) */
+/* src/css/animations/_dim-to-theme-transition.css (Formerly _startup-transition.css) */
 
 /*
  * This rule is active when body.is-transitioning-from-dim is present.

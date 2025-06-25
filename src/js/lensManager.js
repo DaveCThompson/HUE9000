@@ -79,13 +79,14 @@ export class LensManager {
     const effectiveRampDuration = rampDurationMs ?? LENS_STARTUP_RAMP_DURATION_MS;
 
     const tl = this.gsap.timeline();
-    const initialPower01 = appState.getTrueLensPower();
-    const lensPowerProxy = { value: initialPower01 * 100 };
+    const targetPower01 = effectiveTargetPower / 100;
 
-    if (initialPower01 <= 0.0001) this._updateLensGradientVisuals(0.0);
-
-    tl.to(lensPowerProxy, {
-      value: effectiveTargetPower,
+    if (this.smoothedTrueLensPower.value <= 0.0001) {
+        this._updateLensGradientVisuals(0.0);
+    }
+    
+    tl.to(this.smoothedTrueLensPower, {
+      value: targetPower01,
       duration: effectiveRampDuration / 1000,
       ease: "sine.inOut",
       onStart: () => {
@@ -93,12 +94,15 @@ export class LensManager {
           this.dom.colorLensGradient.style.opacity = '1';
         }
       },
-      onUpdate: () => appState.setTrueLensPower(lensPowerProxy.value),
+      onUpdate: () => {
+        this._updateLensVisualsWithCurrentState();
+      },
       onComplete: () => {
-        const finalPowerPercent = lensPowerProxy.value;
-        appState.setTrueLensPower(finalPowerPercent);
-        const dialBHue = (finalPowerPercent / 100) * 359.999;
+        appState.setTrueLensPower(effectiveTargetPower);
+        
+        const dialBHue = (effectiveTargetPower / 100) * 359.999;
         const dialBRotation = dialBHue * DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG;
+        
         appState.updateDialState('B', {
           hue: dialBHue,
           targetHue: dialBHue,
@@ -250,51 +254,45 @@ export class LensManager {
     this.trueLensPowerTarget = newTruePower01;
     if (this.powerSmoothingTween) this.powerSmoothingTween.kill();
 
-    const isStartingUp = appState.getAppStatus() === 'starting-up';
     const dialBInteraction = appState.getDialBInteractionState();
     const isDialDragging = dialBInteraction === 'dragging';
     const isDialIdle = dialBInteraction === 'idle';
-    const shutdownStage = appState.getResistiveShutdownStage();
 
+    // FIX: Decouple user-dragging logic from programmatic/settling logic for clarity and control.
     // If the user is actively dragging the dial, bypass all smoothing for instant feedback.
     if (isDialDragging) {
       this.smoothedTrueLensPower.value = this.trueLensPowerTarget;
-      this._updateLensVisualsWithCurrentState(true); // Force immediate visual update
-      return; // Exit early, no smoothing needed.
-    }
-
-    // --- Logic for programmatic changes, settling, or startup ---
-    let duration = LENS_OSCILLATION_SMOOTHING_DURATION;
-    let ease = "power1.out";
-    if (shutdownStage > 0) {
-      const stageParams = RESISTIVE_SHUTDOWN_PARAMS[`STAGE_${shutdownStage}`];
-      if (stageParams) {
-        duration = stageParams.LENS_ANIM_DURATION_S;
-        ease = stageParams.LENS_ANIM_EASING || RESISTIVE_SHUTDOWN_PARAMS.LENS_ANIMATION_EASING_DEFAULT;
-      }
-    }
-
-    if (isStartingUp) {
-      this.smoothedTrueLensPower.value = this.trueLensPowerTarget;
       this._updateLensVisualsWithCurrentState(true);
     } else {
+      // This 'else' block now handles all non-dragging updates (programmatic, settling).
+      let duration = LENS_OSCILLATION_SMOOTHING_DURATION;
+      let ease = "power1.out";
+
+      const shutdownStage = appState.getResistiveShutdownStage();
+      if (shutdownStage > 0) {
+        const stageParams = RESISTIVE_SHUTDOWN_PARAMS[`STAGE_${shutdownStage}`];
+        if (stageParams) {
+          duration = stageParams.LENS_ANIM_DURATION_S;
+          ease = stageParams.LENS_ANIM_EASING || RESISTIVE_SHUTDOWN_PARAMS.LENS_ANIMATION_EASING_DEFAULT;
+        }
+      }
+      
       this.powerSmoothingTween = this.gsap.to(this.smoothedTrueLensPower, {
         value: this.trueLensPowerTarget, duration: duration, ease: ease,
         onUpdate: () => this._updateLensVisualsWithCurrentState(),
         onComplete: () => {
           this.powerSmoothingTween = null;
           this._updateLensVisualsWithCurrentState(true);
-          if (appState.getAppStatus() === 'interactive' && this.smoothedTrueLensPower.value >= LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
-            this._startOscillation();
-          }
         }
       });
     }
 
+    // Oscillation logic is now independent of the update type (drag vs. tween).
+    const isStartingUp = appState.getAppStatus() === 'starting-up';
     if ((this.trueLensPowerTarget < LENS_OSCILLATION_THRESHOLD || !isDialIdle || isStartingUp) && this.isOscillating) {
       this._stopOscillation();
     }
-    if (appState.getAppStatus() === 'interactive' && isDialIdle && this.smoothedTrueLensPower.value >= LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
+    if (appState.getAppStatus() === 'interactive' && isDialIdle && this.trueLensPowerTarget >= LENS_OSCILLATION_THRESHOLD && !this.isOscillating) {
       this._startOscillation();
     }
   }
@@ -302,9 +300,8 @@ export class LensManager {
   _handleDialBInteractionChange(newState) {
     if (newState !== 'idle') {
       if (this.isOscillating) this._stopOscillation();
-      if (this.powerSmoothingTween) this.powerSmoothingTween.kill();
-      this.smoothedTrueLensPower.value = appState.getTrueLensPower();
-      this._updateLensVisualsWithCurrentState(true);
+      // When dragging starts, the value is snapped directly in _handleTrueLensPowerChange.
+      // No need to kill the tween here, as the next power change event will handle it.
     } else {
       // When interaction ends and state becomes idle, re-evaluate smoothing.
       this._handleTrueLensPowerChange(appState.getTrueLensPower());

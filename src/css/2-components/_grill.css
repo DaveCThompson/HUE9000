@@ -6,7 +6,7 @@
   height: 100%;
   width: 100%;
   background-color: oklch(var(--grill-bg-l) var(--grill-bg-c) var(--grill-bg-h) / var(--grill-bg-a));
-  background-image: url('../../assets/textures/metal-grill.png'); /* MODIFIED PATH */
+  background-image: url('../assets/textures/metal-grill.png');
   background-size: 337px 228px;
   background-repeat: repeat;
   background-position: center center;

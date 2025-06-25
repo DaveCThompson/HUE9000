@@ -1,4 +1,4 @@
-/* src/css/themes/theme-dim.css */
+/* src/css/themes/_theme-dim.css */
 /* Overrides variables from _variables-theme-contract.css for the DIM theme. */
 
 body.theme-dim {
@@ -176,6 +176,8 @@ body.theme-dim {
 
 /* --- Non-Interactive States --- */
 /* In dim mode, main app controls are visually non-interactive. */
+/* This comment clarifies that the following high-specificity selectors are intentional */
+/* to enforce a non-interactive appearance during the startup/dim phase. */
 body.theme-dim .dial-canvas-container,
 body.theme-dim .dial-canvas-container.is-dragging {
     cursor: default;

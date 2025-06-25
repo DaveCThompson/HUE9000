@@ -38,7 +38,7 @@ export const phase11Config = {
       target: 'buttonGroup',
       groups: ['skill-scan-group', 'fit-eval-group'],
       state: 'is-energized', 
-      profile: 'buttonFlickerFromDimlyLitToFullyLit', 
+      profile: 'buttonFlickerFromDimlyLitToFullyLitUnselected', 
       stagger: 0.03, 
       position: 0.6
     },

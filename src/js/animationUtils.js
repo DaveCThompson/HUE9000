@@ -114,10 +114,10 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             if (lights.length > 0) lightElements.push(...Array.from(lights));
         });
 
+        // FIX: Kill any existing tweens on the targets to prevent interference.
         if (lightElements.length > 0) {
             baseTargetsForOpacity = lightElements;
             gsap.killTweensOf(baseTargetsForOpacity); 
-            gsap.set(baseTargetsForOpacity, {clearProps: "all", overwrite: true}); 
         }
         gsap.killTweensOf(elementsToAnimate, "css");
     } else if (profile.targetProperty === 'text-shadow-opacity-and-blur' || profile.targetProperty === 'element-opacity-and-box-shadow') {
@@ -125,10 +125,13 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         gsap.killTweensOf(baseTargetsForOpacity); 
     }
     
+    // FIX: Self-contained initial state setting.
+    // This logic replaces the need for an external `setState` call before the animation.
     const isTransitioningFromEffectivelyUnlit = (profile.amplitudeStart !== undefined && profile.amplitudeStart <= 0.01) &&
                                              (!profile.glow || getGlowParam(profile.glow, 'initialOpacity', 0) <= 0.01);
     
     if (isTransitioningFromEffectivelyUnlit) {
+        // If starting from an "off" state, ensure everything is visually zeroed out.
         if (baseTargetsForOpacity.length > 0) {
             tl.set(baseTargetsForOpacity, { autoAlpha: 0, immediateRender: true });
         }
@@ -143,6 +146,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             }
         }
     } else { 
+        // If starting from a lit state, set to the defined start values.
         if (baseTargetsForOpacity.length > 0) {
             const initialAutoAlpha = profile.amplitudeStart !== undefined ? profile.amplitudeStart : 0;
             tl.set(baseTargetsForOpacity, { autoAlpha: initialAutoAlpha, immediateRender: true });
@@ -198,6 +202,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
 
         if (i < profile.numCycles - 1) {
             let offStateAmplitude;
+            // If the flicker starts from a lit state, the "off" part should be a dim state, not total blackness.
             if (profile.amplitudeStart > 0.01) {
                 offStateAmplitude = profile.amplitudeStart * 0.1; // e.g., 0.25 * 0.1 = 0.025. Very dim.
             } else {
@@ -210,6 +215,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
             const baseGlowSizeOff = getGlowParam(profile.glow, 'initialSize', '0px');
 
             if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
+                // Dim the glow proportionally if the "off" state is not total blackness.
                 const offGlowOpacityTarget = offStateAmplitude > 0.01 && profile.amplitudeStart > 0.01 ? baseGlowOpacityOff * (offStateAmplitude / profile.amplitudeStart) : baseGlowOpacityOff;
 
                 if (profile.glow.opacityVar) offGlowCSS[profile.glow.opacityVar] = offGlowOpacityTarget;
@@ -227,6 +233,7 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         }
     }
 
+    // Settle to the final state
     const finalSettleDuration = Math.max(0.15, profile.periodEnd * 1.5);
     const finalState = { autoAlpha: profile.amplitudeEnd, duration: finalSettleDuration, ease: "sine.out" };
     const finalGlowCSS = {};
@@ -242,12 +249,13 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
         }
     }
 
-    const overlapTime = lastOnDuration * 0.3; 
+    const overlapTime = lastOnDuration * 0.3; // Overlap with the last "on" flicker for a smoother transition
     if (baseTargetsForOpacity.length > 0) tl.to(baseTargetsForOpacity, finalState, `>-=${overlapTime}`);
     if (Object.keys(finalGlowCSS).length > 0) {
-        tl.to(elementsToAnimate, { css: finalGlowCSS, duration: finalSettleDuration, ease: "sine.out" }, "<"); 
+        tl.to(elementsToAnimate, { css: finalGlowCSS, duration: finalSettleDuration, ease: "sine.out" }, "<"); // "<" syncs with previous tween
     }
 
+    // Final safety check for zero-duration timelines
     if (tl.duration() === 0 && profile.numCycles === 0) { 
         // console.warn(`[CAF_WARN | ${performance.now().toFixed(2)}ms] Timeline for ${targetIdForLog} had 0 duration with 0 cycles. Adding minimal duration.`);
         tl.to({}, {duration: 0.001});

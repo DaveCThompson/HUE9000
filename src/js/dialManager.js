@@ -76,6 +76,8 @@ export class DialManager {
   }
 
   resizeAllCanvases(forceDraw = false) {
+    // The new rendering logic is independent of canvas size, but we might still need to
+    // trigger a redraw if external factors (like theme) change.
     requestAnimationFrame(() => {
         Object.values(this.dialInstances).forEach(dial => {
             if (dial && typeof dial.forceRedraw === 'function') {

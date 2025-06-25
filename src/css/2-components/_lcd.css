@@ -45,7 +45,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('../../assets/textures/crt-overlay.png'); /* MODIFIED PATH */
+    background-image: url('../assets/textures/crt-overlay.png');
     background-size: var(--lcd-crt-overlay-size, 1920px 1120px);
     background-repeat: repeat;
     background-position: 0 0;

@@ -1,4 +1,4 @@
-/* src/css/2-components/_preloader-v2.css */
+/* src/css/2-components/_preloader.css */
 /* REFACTORED V6.2: Moved animation driver to parent body for robust hue rotation. */
 
 /* --- Property Definition (Enables Animation) --- */
@@ -95,7 +95,7 @@ body.preloader-active {
     box-sizing: border-box;
     width: 100%;
     background-color: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
-    background-image: url('../../assets/textures/noise.svg');
+    background-image: url('../assets/textures/noise.svg');
     background-size: 150px 150px;
     background-blend-mode: multiply;
     box-shadow: var(--panel-section-shadow-inner);
@@ -357,18 +357,19 @@ body.preloader-active {
     transition: opacity 0.3s ease;
 }
 
-/* -------------------------------------------------- */
-/* --- REBUILT: Mobile Portrait Responsive Styles --- */
-/* -------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
+/* --- REBUILT & REFINED: Mobile Portrait 'No-Thrash' Responsive Styles --- */
+/* -------------------------------------------------------------------------- */
 @media (max-width: 768px) and (orientation: portrait) {
     .preloader-main-bezel {
         max-width: 95vw;
         max-height: 98vh;
-        display: flex;
+        display: flex; /* Ensure bezel fills its child content section */
     }
 
+    /* 1. Make the content section a master flex column that fills the bezel */
     .preloader-content-section {
-        padding: var(--space-m) var(--space-s);
+        padding: var(--space-lg);
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -376,30 +377,36 @@ body.preloader-active {
         gap: 0; /* Let children manage their own margins/gaps */
     }
 
+    /* 2. Make the stream columns a fixed-size block at the top */
     .preloader-stream-columns {
         display: flex;
         flex-direction: column;
-        gap: calc(var(--space-s) / 2); /* This creates the space between blocks */
-        flex-shrink: 0;
+        gap: var(--space-md); /* Add clear spacing BETWEEN blocks */
+        flex-shrink: 0; /* Prevent this block from shrinking */
     }
 
+    /* 3. Refine the stream blocks to be internally stable flex columns */
     .preloader-data-stream.control-block {
-        height: 120px;
-        padding: var(--space-m);
-        gap: var(--space-xs);
+        height: 120px; /* Keep fixed height for stability */
+        padding: var(--space-md);
+        gap: var(--space-sm);
+        /* Redundant flex properties from desktop are fine */
     }
     
     .preloader-stream-header,
     .preloader-stream-status {
-        font-size: 0.75em;
+        font-size: 0.7em;
+        padding-bottom: var(--space-xs);
+        /* flex-shrink: 0 is already set on desktop */
     }
     
     .preloader-stream-output-text {
         font-size: 0.7em;
     }
-
+    
+    /* 4. Group the progress elements together as a fixed-size block */
     .preloader-overall-progress {
-        margin-top: var(--space-l);
+        margin-top: var(--space-xl); /* Space above the progress bar */
         font-size: 0.9em;
         flex-shrink: 0;
     }
@@ -408,15 +415,17 @@ body.preloader-active {
         flex-shrink: 0;
     }
     
+    /* 5. Push the engage button to the bottom using `margin-top: auto` */
     .preloader-engage-container {
-        margin-top: auto; /* Pushes the button to the bottom */
-        padding-top: var(--space-l);
-        padding-bottom: var(--space-m);
-        transform: none;
+        margin-top: auto; /* THIS IS THE KEY CHANGE */
+        padding-top: var(--space-lg); /* Add breathing room above the button */
+        padding-bottom: var(--space-sm);
+        transform: none; /* No need for transform animations on mobile */
         flex-shrink: 0;
     }
     
     #datastream-preloader .button-unit {
-        min-width: 80%;
+        width: 100%; /* Make button fill width for better touch target */
+        min-width: unset;
     }
 }
