@@ -10,7 +10,7 @@
     padding: var(--space-lg);
   }
 
-  /* --- 2. Main Content Area: Layout Reset & Re-ordering with CSS Grid --- */
+  /* --- 2. Main Content Area: Global Layout Reset & Re-ordering with CSS Grid --- */
   .main-content-area {
     display: grid;
     grid-template-columns: 1fr;
@@ -25,7 +25,7 @@
     align-items: stretch;
   }
 
-  /* --- 3. Panel Placement, Hiding, and Styling --- */
+  /* --- 3. Panel Placement, Hiding, and Global Styling --- */
 
   .panel-bezel.left-panel {
     display: none;
@@ -58,24 +58,10 @@
   .panel-bezel.center-panel .lower-section {
     flex: 1;
     height: auto;
-    min-height: 0;
+    min-height: 0; /* FIX: Prevents flex container collapse, making grill visible */
   }
 
-  #logo-container {
-    margin: var(--space-md) var(--space-md) 0 var(--space-md);
-  }
-
-  #lens-container {
-    margin-top: auto;
-    margin-bottom: 0;
-  }
-  
-  /* REMOVED: The fixed-pixel grill override is no longer needed. */
-  /*
-  .grill-placeholder {
-      background-size: 168.5px 114px;
-  }
-  */
+  /* REMOVED: The fixed-pixel grill override is no longer needed or correct. */
 
   .main-content-area > .panel-bezel.right-panel {
     display: block;
@@ -113,19 +99,11 @@
     padding: var(--space-xl);
   }
   
-  /* Reduce dial height on mobile */
-  .right-panel .hue-control-block .dial-canvas-container {
-      height: 1.5rem;
-  }
-  
-  /* Adjust label background for mobile context */
+  /* Adjust label background for mobile context (affects all labels) */
   .block-label-bottom {
       background-color: oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
   }
 
-  .side-panel, .compact-view-wrapper {
-    display: none;
-  }
 }
 
 /* --- Mobile Landscape Layout (Scaled Desktop) --- */

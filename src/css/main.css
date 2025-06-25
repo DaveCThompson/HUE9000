@@ -18,7 +18,7 @@
 @import url('./1-base/_variables-theme-contract.css');
 @import url('./1-base/_layout.css');
 @import url('./1-base/_typography.css');
-@import url('./1-base/_effects.css');
+/* @import url('./1-base/_effects.css'); /* REMOVED: File was empty/unused */
 @import url('./1-base/_dim-to-theme-transition.css');
 @import url('./1-base/_utilities.css');
 
@@ -46,7 +46,7 @@
 @import url('./2-components/_color-chips.css');
 @import url('./2-components/_grill.css');
 @import url('./2-components/_terminal.css');
-@import url('./2-components/_v2-displays.css');
+@import url('./2-components/_dial-displays.css'); /* RENAMED: from _v2-displays.css */
 
 
 /* --- 4: Mobile --- */
