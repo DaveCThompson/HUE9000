@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HUE 9000 Interface (REFACTOR-V2.1)</title>
     
-    <!-- Placeholder Favicon to prevent 404 errors -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>">
-
     <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,91 +15,57 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0" />
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-DMdVLD1d.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-C1CJ4nhb.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-isWiUsU0.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-BjroQM9c.css">
 </head>
 <body class="theme-dim pre-boot">
 
     <!-- Preloader Mask (Hides main UI during preloading) -->
     <div id="preloader-mask"></div>
 
-    <!-- 
-      FIX: Re-added desktop-only/mobile-only classes. Visibility is now controlled
-      by a robust mobile-first CSS architecture.
-    -->
-    <div id="preloader-wrapper" class="desktop-only">
-        <div id="datastream-preloader" class="panel-bezel preloader-main-bezel">
-            <div class="panel-section preloader-content-section">
-                <div class="preloader-stream-columns">
-                    <div class="preloader-data-stream control-block is-inactive" id="stream-fonts">
-                        <div class="preloader-stream-header">SYS_FONTS</div>
-                        <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
-                        <div class="preloader-stream-status">[INITIATING...]</div>
-                    </div>
-                    <div class="preloader-data-stream control-block is-inactive" id="stream-graphics">
-                        <div class="preloader-stream-header">GFX_PIPELINE</div>
-                        <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
-                        <div class="preloader-stream-status">[AWAITING_KEY...]</div>
-                    </div>
-                    <div class="preloader-data-stream control-block is-inactive" id="stream-audio">
-                        <div class="preloader-stream-header">AUDIO_IO_BUFFER</div>
-                        <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
-                        <div class="preloader-stream-status">[STANDBY...]</div>
-                    </div>
-                </div>
-
-                <div class="preloader-overall-progress">
-                    <span class="preloader-progress-label">SYSTEM CHECK: </span>
-                    <span class="preloader-progress-value" id="overall-progress-percentage">0%</span>
-                </div>
-                <div class="preloader-progress-bar-container">
-                    <div class="preloader-progress-bar-fill" id="overall-progress-bar"></div>
-                </div>
-
-                <div class="preloader-engage-container" id="engage-button-container">
-                    <button id="preloader-engage-btn" class="button-unit button-unit--l" disabled>
-                        <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div>
-                        <div class="button-bg-frame"></div>
-                        <div class="button-text">[ ESTABLISH LINK ]</div>
-                    </button>
-                </div>
-                 <div class="preloader-critical-error-message" id="critical-error-message" style="display: none;">
-                    CRITICAL SYSTEM ERROR. CANNOT PROCEED.
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="mobile-preloader-wrapper" class="mobile-only">
-        <div id="mobile-datastream-preloader" class="panel-bezel preloader-main-bezel">
-            <div class="panel-section preloader-content-section">
-                <div class="preloader-data-stream control-block is-active" id="stream-system-check">
-                    <div class="preloader-stream-header">SYSTEM_CHECK</div>
-                    <div class="preloader-stream-output"><div class="preloader-stream-output-text">LOADING...</div></div>
+    <div id="datastream-preloader" class="panel-bezel preloader-main-bezel">
+        <div class="panel-section preloader-content-section">
+            <div class="preloader-stream-columns">
+                <div class="preloader-data-stream control-block is-inactive" id="stream-fonts">
+                    <div class="preloader-stream-header">SYS_FONTS</div>
+                    <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
                     <div class="preloader-stream-status">[INITIATING...]</div>
                 </div>
-                <div class="preloader-overall-progress">
-                    <span class="preloader-progress-label">SYSTEM CHECK: </span>
-                    <span class="preloader-progress-value" id="mobile-overall-progress-percentage">0%</span>
+                <div class="preloader-data-stream control-block is-inactive" id="stream-graphics">
+                    <div class="preloader-stream-header">GFX_PIPELINE</div>
+                    <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
+                    <div class="preloader-stream-status">[AWAITING_KEY...]</div>
                 </div>
-                <div class="preloader-progress-bar-container">
-                    <div class="preloader-progress-bar-fill" id="mobile-overall-progress-bar"></div>
+                <div class="preloader-data-stream control-block is-inactive" id="stream-audio">
+                    <div class="preloader-stream-header">AUDIO_IO_BUFFER</div>
+                    <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
+                    <div class="preloader-stream-status">[STANDBY...]</div>
                 </div>
-                <div class="preloader-engage-container" id="mobile-engage-button-container">
-                    <button id="mobile-preloader-engage-btn" class="button-unit button-unit--l" disabled>
-                        <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div>
-                        <div class="button-bg-frame"></div>
-                        <div class="button-text">[ ESTABLISH LINK ]</div>
-                    </button>
-                </div>
-                <div class="preloader-critical-error-message" id="mobile-critical-error-message" style="display: none;">
-                    CRITICAL SYSTEM ERROR. CANNOT PROCEED.
-                </div>
+            </div>
+
+            <div class="preloader-overall-progress">
+                <span class="preloader-progress-label">SYSTEM CHECK: </span>
+                <span class="preloader-progress-value" id="overall-progress-percentage">0%</span>
+            </div>
+            <div class="preloader-progress-bar-container">
+                <div class="preloader-progress-bar-fill" id="overall-progress-bar"></div>
+            </div>
+
+            <div class="preloader-engage-container" id="engage-button-container">
+                <!-- Corrected Button Structure -->
+                <button id="preloader-engage-btn" class="button-unit button-unit--l" disabled>
+                    <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div>
+                    <div class="button-bg-frame"></div>
+                    <div class="button-text">[ ESTABLISH LINK ]</div>
+                </button>
+            </div>
+             <div class="preloader-critical-error-message" id="critical-error-message" style="display: none;">
+                CRITICAL SYSTEM ERROR. CANNOT PROCEED.
             </div>
         </div>
     </div>
     
-    <div class="compact-view-wrapper left-panel desktop-only">
+    <div class="compact-view-wrapper left-panel">
         <div class="compact-view">
             <button class="panel-control-button" id="seq-autoplay-toggle" aria-label="Toggle Sequence Autoplay"><span class="material-symbols-outlined">rule</span><span class="label-text">AUTO</span></button>
             <button class="panel-control-button hidden" id="seq-next-step" aria-label="Next Step"><span class="material-symbols-outlined">skip_next</span><span class="label-text">NEXT</span></button>
@@ -113,7 +76,7 @@
         </div>
     </div>
 
-    <div id="control-deck" class="side-panel left-panel desktop-only">
+    <div id="control-deck" class="side-panel left-panel">
         <div class="expanded-view">
             <div class="panel-header">HUE 9000 INTERFACE</div>
             <div class="panel-tabs">
@@ -145,7 +108,7 @@
     </div>
 
     <div class="app-wrapper">
-        <div class="main-content-area desktop-only">
+        <div class="main-content-area">
             <div class="panel-bezel left-panel">
                  <div class="panel-section top-section">
                     <div class="top-toggle-bar">
@@ -227,10 +190,10 @@
                             <div class="color-chip color-chip-10" data-chip-index="10" aria-label="Orange"></div>
                             <div class="color-chip color-chip-11" data-chip-index="11" aria-label="Red"></div>
                         </div>
-                        <div class="hue-assignment-column env-assignment-column" data-assignment-target="env" data-group-id="env" role="radiogroup" aria-labelledby="env-label"><div class="control-group-label label-top" id="env-label">ENV</div></div>
-                        <div class="hue-assignment-column lcd-assignment-column" data-assignment-target="lcd" data-group-id="lcd" role="radiogroup" aria-labelledby="lcd-label"><div class="control-group-label label-top" id="lcd-label">LCD</div></div>
-                        <div class="hue-assignment-column logo-assignment-column" data-assignment-target="logo" data-group-id="logo" role="radiogroup" aria-labelledby="logo-label"><div class="control-group-label label-top" id="logo-label">LOGO</div></div>
-                        <div class="hue-assignment-column btn-assignment-column" data-assignment-target="btn" data-group-id="btn" role="radiogroup" aria-labelledby="btn-label"><div class="control-group-label label-top" id="btn-label">BTN</div></div>
+                        <div class="hue-assignment-column env-assignment-column" data-assignment-target="env" role="radiogroup" aria-labelledby="env-label"><div class="control-group-label label-top" id="env-label">ENV</div></div>
+                        <div class="hue-assignment-column lcd-assignment-column" data-assignment-target="lcd" role="radiogroup" aria-labelledby="lcd-label"><div class="control-group-label label-top" id="lcd-label">LCD</div></div>
+                        <div class="hue-assignment-column logo-assignment-column" data-assignment-target="logo" role="radiogroup" aria-labelledby="logo-label"><div class="control-group-label label-top" id="logo-label">LOGO</div></div>
+                        <div class="hue-assignment-column btn-assignment-column" data-assignment-target="btn" role="radiogroup" aria-labelledby="btn-label"><div class="control-group-label label-top" id="btn-label">BTN</div></div>
                         <div class="hue-assignment-column color-chips-column" aria-hidden="true">
                             <div class="control-group-label label-top is-invisible" aria-hidden="true">*</div>
                             <div class="color-chip color-chip-0"></div>
@@ -251,89 +214,27 @@
                 </div>
                 <div class="panel-section lower-section">
                     <div class="control-block hue-control-block joined-block-pair__item joined-block-pair__item--left">
-                        <div class="hue-lcd-display lcd-container" id="hue-lcd-A" aria-live="polite">
-                            <div class="lcd-content-wrapper"></div>
-                        </div>
                         <div id="dial-canvas-container-A" class="dial-canvas-container" data-dial-id="A" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="41" aria-labelledby="dial-A-label">
                             <div class="dial-shadow-host"></div>
+                        </div>
+                        <div class="hue-lcd-display lcd-container" id="hue-lcd-A" aria-live="polite">
+                            <div class="lcd-content-wrapper"></div>
                         </div>
                         <div class="block-label-bottom block-label-bottom--descriptor">MOOD</div>
                     </div>
                     <div class="control-block hue-control-block joined-block-pair__item joined-block-pair__item--right">
-                        <div class="hue-lcd-display lcd-container" id="hue-lcd-B" aria-live="polite">
-                            <div class="lcd-content-wrapper"></div>
-                        </div>
                         <div id="dial-canvas-container-B" class="dial-canvas-container" data-dial-id="B" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="0" aria-labelledby="dial-B-label">
                             <div class="dial-shadow-host"></div>
+                        </div>
+                        <div class="hue-lcd-display lcd-container" id="hue-lcd-B" aria-live="polite">
+                            <div class="lcd-content-wrapper"></div>
                         </div>
                         <div class="block-label-bottom block-label-bottom--descriptor">INTENSITY</div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- MOBILE UI CONTAINER -->
-        <div class="mobile-layout mobile-only">
-            <div class="mobile-row mobile-row--top">
-                <div class="mobile-panel mobile-panel--top-left">
-                    <div id="mobile-logo-container"></div>
-                    <div id="mobile-lens-container" aria-label="Color lens visualization">
-                        <div id="mobile-color-lens"><div id="mobile-color-lens-gradient"></div></div>
-                        <div id="mobile-outer-glow" aria-hidden="true"></div>
-                    </div>
-                </div>
-                <div class="mobile-panel mobile-panel--top-right">
-                    <div class="placeholder grill-placeholder"></div>
-                </div>
-            </div>
-            <div class="mobile-row mobile-row--bottom">
-                <div class="mobile-panel mobile-panel--bottom">
-                    <div class="control-block hue-assignment-block">
-                        <div class="hue-assignment-columns-wrapper">
-                            <div class="hue-assignment-column color-chips-column">
-                                <div class="control-group-label label-top is-invisible" aria-hidden="true">*</div>
-                                <div class="color-chip color-chip-0"></div><div class="color-chip color-chip-1"></div><div class="color-chip color-chip-2"></div><div class="color-chip color-chip-3"></div><div class="color-chip color-chip-4"></div><div class="color-chip color-chip-5"></div><div class="color-chip color-chip-6"></div><div class="color-chip color-chip-7"></div><div class="color-chip color-chip-8"></div><div class="color-chip color-chip-9"></div><div class="color-chip color-chip-10"></div><div class="color-chip color-chip-11"></div>
-                            </div>
-                            <div class="hue-assignment-column" data-assignment-target="env" data-group-id="env" role="radiogroup" aria-labelledby="mobile-env-label">
-                                <div class="control-group-label label-top" id="mobile-env-label">ENV</div>
-                            </div>
-                            <div class="hue-assignment-column" data-assignment-target="lcd" data-group-id="lcd" role="radiogroup" aria-labelledby="mobile-lcd-label">
-                                <div class="control-group-label label-top" id="mobile-lcd-label">LCD</div>
-                            </div>
-                            <div class="hue-assignment-column" data-assignment-target="logo" data-group-id="logo" role="radiogroup" aria-labelledby="mobile-logo-label">
-                                <div class="control-group-label label-top" id="mobile-logo-label">LOGO</div>
-                            </div>
-                            <div class="hue-assignment-column" data-assignment-target="btn" data-group-id="btn" role="radiogroup" aria-labelledby="mobile-btn-label">
-                                <div class="control-group-label label-top" id="mobile-btn-label">BTN</div>
-                            </div>
-                            <div class="hue-assignment-column color-chips-column" aria-hidden="true">
-                                <div class="control-group-label label-top is-invisible" aria-hidden="true">*</div>
-                                <div class="color-chip color-chip-0"></div><div class="color-chip color-chip-1"></div><div class="color-chip color-chip-2"></div><div class="color-chip color-chip-3"></div><div class="color-chip color-chip-4"></div><div class="color-chip color-chip-5"></div><div class="color-chip color-chip-6"></div><div class="color-chip color-chip-7"></div><div class="color-chip color-chip-8"></div><div class="color-chip color-chip-9"></div><div class="color-chip color-chip-10"></div><div class="color-chip color-chip-11"></div>
-                            </div>
-                        </div>
-                        <div class="block-label-bottom block-label-bottom--descriptor">HUE ASSN</div>
-                    </div>
-                    <div class="mobile-dial-row">
-                        <div class="control-block hue-control-block joined-block-pair__item joined-block-pair__item--left">
-                            <div class="hue-lcd-display lcd-container" id="mobile-hue-lcd-A">
-                                <div class="lcd-content-wrapper"></div>
-                            </div>
-                            <div id="mobile-dial-canvas-container-A" class="dial-canvas-container" data-dial-id="A"></div>
-                            <div class="block-label-bottom block-label-bottom--descriptor">MOOD</div>
-                        </div>
-                        <div class="control-block hue-control-block joined-block-pair__item joined-block-pair__item--right">
-                            <div class="hue-lcd-display lcd-container" id="mobile-hue-lcd-B">
-                                <div class="lcd-content-wrapper"></div>
-                            </div>
-                            <div id="mobile-dial-canvas-container-B" class="dial-canvas-container" data-dial-id="B"></div>
-                            <div class="block-label-bottom block-label-bottom--descriptor">INTENSITY</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
-    
     <div id="lens-super-glow" aria-hidden="true"></div>
 
 </body>
