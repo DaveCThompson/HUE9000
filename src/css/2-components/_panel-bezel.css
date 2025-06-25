@@ -45,20 +45,20 @@
     border-radius: inherit;
     z-index: -1;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000'%3E%3Cfilter id='b' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.002 0.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='1000' height='1000' filter='url(%23b)'/%3E%3C/svg%3E");
-    background-size: 500px 500px;
+    background-size: 31.25rem 31.25rem; /* 500px -> rem */
     background-repeat: repeat;
     background-position: center center;
     mix-blend-mode: multiply;
-    opacity: calc(var(--panel-bezel-texture-opacity) * var(--startup-opacity-factor, 0)); 
+    opacity: calc(var(--panel-bezel-texture-opacity) * var(--startup-opacity-factor, 0));
     pointer-events: none;
     transition: opacity var(--transition-duration-medium) ease;
 }
 
 /* Base Panel Section Structure */
 .panel-section {
-    background-color: oklch(calc(var(--panel-section-bg-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a)); 
+    background-color: oklch(calc(var(--panel-section-bg-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
     background-image: url('../assets/textures/noise.svg');
-    background-size: 150px 150px;
+    background-size: 9.375rem 9.375rem; /* 150px -> rem */
     background-repeat: repeat;
     background-position: 0 0;
     background-blend-mode: multiply;
@@ -66,11 +66,11 @@
     border-radius: var(--radius-panel-tight);
     display: flex;
     flex-direction: column;
-    min-height: 0; 
+    min-height: 0;
     position: relative;
     z-index: 1;
     box-shadow: var(--panel-section-shadow-inner);
-    opacity: var(--theme-component-opacity); 
+    opacity: var(--theme-component-opacity);
 
     transition:
         background-color var(--transition-duration-medium) ease,
@@ -88,7 +88,7 @@
 .panel-section.lower-section {
     height: var(--height-lower-section);
     flex-shrink: 0;
-    display: flex; 
+    display: flex;
     justify-content: center;
     align-items: center;
 }
@@ -99,7 +99,7 @@
    z-index: 2;
    border-width: var(--control-section-border-width);
    border-style: solid;
-   border-color: oklch(calc(var(--panel-section-border-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-border-c) var(--panel-section-border-h) / var(--panel-section-border-a)); 
+   border-color: oklch(calc(var(--panel-section-border-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-border-c) var(--panel-section-border-h) / var(--panel-section-border-a));
    border-radius: var(--control-section-radius);
    padding: var(--space-3xl);
    transition:
@@ -125,6 +125,6 @@
 /* Specific shadow for center panel lower section (grill area) */
 .center-panel .panel-section.lower-section {
     box-shadow:
-       var(--panel-section-grill-shadow-inset-top, inset 0px 6px 8px -4px oklch(0% 0 0 / 0.35)), 
-       var(--panel-section-shadow-inner); 
+       var(--panel-section-grill-shadow-inset-top, inset 0 0.375rem 0.5rem -0.25rem oklch(0% 0 0 / 0.35)), /* 6px 8px -4px -> rem */
+       var(--panel-section-shadow-inner);
 }

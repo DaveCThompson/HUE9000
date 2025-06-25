@@ -9,7 +9,7 @@
    box-shadow: var(--color-chip-shadow-inset);
    opacity: calc(var(--color-chip-base-opacity, var(--theme-component-opacity)) * var(--startup-opacity-factor-boosted, 0));
    transition:
-        background-color var(--transition-duration-medium) ease, 
+        background-color var(--transition-duration-medium) ease,
         box-shadow var(--transition-duration-medium) ease,
         border-color var(--transition-duration-medium) ease,
         opacity var(--transition-duration-medium) ease;

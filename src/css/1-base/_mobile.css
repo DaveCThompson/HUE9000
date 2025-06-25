@@ -1,8 +1,8 @@
 /* src/css/mobile/_mobile.css */
 /* All mobile-specific styles for the HUE 9000 Interface v3.0 */
 
-/* --- Mobile Portrait Layout (max-width: 768px) --- */
-@media (max-width: 768px) {
+/* --- Mobile Portrait Layout (max-width: 48rem) --- */
+@media (max-width: 48rem) { /* 768px -> rem */
 
   /* --- 1. Global & Wrapper Adjustments --- */
   .app-wrapper {
@@ -20,7 +20,7 @@
       "dial-controls";
     gap: var(--space-md);
     height: 100%;
-    max-width: 500px;
+    max-width: 31.25rem; /* 500px -> rem */
     margin: 0 auto;
     align-items: stretch;
   }
@@ -28,7 +28,7 @@
   /* --- 3. Panel Placement, Hiding, and Global Styling --- */
 
   .panel-bezel.left-panel,
-  .side-panel, 
+  .side-panel,
   .compact-view-wrapper {
     display: none;
   }
@@ -90,7 +90,7 @@
     height: auto;
     padding: 0;
     align-items: start;
-    
+
     background: transparent !important;
     box-shadow: none !important;
   }
@@ -100,14 +100,14 @@
     max-width: none;
     padding: var(--space-xl);
   }
-  
+
   /* Adjust label background for mobile context (affects all labels) */
   .block-label-bottom {
       background-color: oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
   }
 
   /* --- 4. Component-Specific Mobile Overrides (Consolidated) --- */
-  
+
   /* From _dial.css */
   .right-panel .hue-control-block .dial-canvas-container {
       height: 1.5rem;
@@ -125,7 +125,7 @@
 
 /* --- Mobile Landscape Layout (Scaled Desktop) --- */
 /* On a narrow device (like a phone) that is turned sideways */
-@media (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 31.25rem) { /* 500px -> rem */
   /* ... no changes here ... */
   .app-wrapper {
     padding: var(--space-lg);

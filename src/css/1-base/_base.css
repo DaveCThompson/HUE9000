@@ -1,0 +1,61 @@
+/* src/css/1-base/_base.css */
+/* NEW FILE: Contains the most fundamental styles for the document. */
+
+/* --- Base HTML/Body Styles --- */
+html {
+    font-size: 16px; /* Defines the root for 1rem */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    height: 100%;
+    width: 100%;
+
+    background-color: oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
+    background-image:
+        url('../assets/textures/noise.svg'),
+        linear-gradient(180deg,
+            oklch(calc(var(--body-bg-top-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
+            oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%
+        );
+    background-repeat: repeat, no-repeat;
+    background-size: 9.375rem 9.375rem, cover; /* 150px -> rem */
+    background-position: 0 0, 0 0;
+    background-blend-mode: multiply, normal;
+
+    color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
+    font-family: 'IBM Plex Mono', 'Inter', sans-serif;
+    touch-action: none;
+
+    transition:
+        color var(--transition-duration-medium) ease,
+        background-color var(--transition-duration-medium) ease,
+        background-image var(--transition-duration-medium) ease;
+}
+
+body.pre-boot {
+    opacity: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}

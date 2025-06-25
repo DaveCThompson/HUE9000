@@ -5,18 +5,18 @@
     /* --- Dynamic Color Inputs (Controlled by JS/HUE ASSN via uiUpdater.js) --- */
     --dynamic-env-hue: 246;
     --dynamic-env-chroma: 0.039;
-    --dynamic-lcd-hue: 0; 
-    --dynamic-lcd-chroma: 0; 
+    --dynamic-lcd-hue: 0;
+    --dynamic-lcd-chroma: 0;
     --dynamic-logo-hue: 246;
     --dynamic-logo-chroma: 0.099;
-    --dynamic-btn-hue: 0; 
-    --dynamic-btn-chroma: 0; 
+    --dynamic-btn-hue: 0;
+    --dynamic-btn-chroma: 0;
     --dynamic-ui-accent-hue: 246;
     --dynamic-ui-accent-chroma: 0.20;
     --dynamic-lens-super-glow-hue: 240;
 
     /* --- Global Theme Adjustments --- */
-    --theme-component-opacity: 1; 
+    --theme-component-opacity: 1;
     --theme-text-primary-l: 0.95;   --theme-text-primary-c: 0.01;  --theme-text-primary-h: 240; --theme-text-primary-a: 1;
     --theme-text-secondary-l: 0.85; --theme-text-secondary-c: 0.008; --theme-text-secondary-h: 240; --theme-text-secondary-a: 1;
     --theme-text-tertiary-l: 0.70;  --theme-text-tertiary-c: 0.015; --theme-text-tertiary-h: 240; --theme-text-tertiary-a: 1;
@@ -24,8 +24,8 @@
     /* --- Body Background --- */
     --body-bg-top-l: 0.33;     --body-bg-top-c: var(--dynamic-env-chroma);    --body-bg-top-h: var(--dynamic-env-hue);    --body-bg-top-a: 1;
     --body-bg-bottom-l: 0.18;  --body-bg-bottom-c: var(--dynamic-env-chroma); --body-bg-bottom-h: var(--dynamic-env-hue); --body-bg-bottom-a: 1;
-    --noise-base-opacity: 0.1; 
-    --noise-blend-mode: multiply; 
+    --noise-base-opacity: 0.1;
+    --noise-blend-mode: multiply;
 
 
     /* --- Panel Bezel & Sections --- */
@@ -35,7 +35,7 @@
     --panel-bezel-grad-4-l: 0.72; --panel-bezel-grad-5-l: 0.78; --panel-bezel-grad-6-l: 0.45;
     --panel-bezel-grad-7-l: 0.48; --panel-bezel-grad-8-l: 0.52; --panel-bezel-grad-9-l: 0.50;
     --panel-bezel-grad-c: 0; --panel-bezel-grad-h: 0;
-    --panel-bezel-texture-opacity: 0.15; 
+    --panel-bezel-texture-opacity: 0.15;
 
     --panel-shadow-outer-lowlight-color: oklch(0% 0 0 / 0.25);
     --panel-shadow-outer-highlight-color: oklch(100% 0 0 / 0.03);
@@ -43,16 +43,16 @@
     --panel-shadow-inner-chamfer-bottom-color: oklch(0% 0 0 / 0.35);
     --panel-shadow-inner-depth-color: oklch(0% 0 0 / 0.2);
     --panel-shadow-outer:
-        0 3px 5px var(--panel-shadow-outer-lowlight-color),
+        0 0.1875rem 0.3125rem var(--panel-shadow-outer-lowlight-color),
         0 -1px 1px var(--panel-shadow-outer-highlight-color);
     --panel-shadow-inner:
-        inset 0px 1.5px 1px 0px var(--panel-shadow-inner-chamfer-top-color),
-        inset 0px -1.5px 1px 0px var(--panel-shadow-inner-chamfer-bottom-color),
-        inset 0px 0px 15px 0px var(--panel-shadow-inner-depth-color);
+        inset 0 0.09375rem 1px 0 var(--panel-shadow-inner-chamfer-top-color),
+        inset 0 -0.09375rem 1px 0 var(--panel-shadow-inner-chamfer-bottom-color),
+        inset 0 0 0.9375rem 0 var(--panel-shadow-inner-depth-color);
     --panel-section-inner-lowlight-color: oklch(0% 0 0 / 0.3);
     --panel-section-inner-highlight-color: oklch(100% 0 0 / 0.03);
     --panel-section-shadow-inner:
-        inset 0px 3px 5px -1px var(--panel-section-inner-lowlight-color),
+        inset 0 0.1875rem 0.3125rem -1px var(--panel-section-inner-lowlight-color),
         inset 0 -1px 1px var(--panel-section-inner-highlight-color);
 
     /* --- Component: Button Unit --- */
@@ -60,7 +60,7 @@
 
     --btn-unlit-bg-l: 0.12;  --btn-unlit-bg-c: 0; --btn-unlit-bg-h: 0;     --btn-unlit-bg-a: 0.6;
     --btn-unlit-border-l: 0.15;--btn-unlit-border-c: 0; --btn-unlit-border-h: 0; --btn-unlit-border-a: 0.7;
-    --btn-unlit-text-l: 0.1;   --btn-unlit-text-c: 0; --btn-unlit-text-h: 0;   --btn-unlit-text-a: 0.9; 
+    --btn-unlit-text-l: 0.1;   --btn-unlit-text-c: 0; --btn-unlit-text-h: 0;   --btn-unlit-text-a: 0.9;
     --btn-unlit-light-l: 0.2;  /* DEBUG: Very dark gray, not black (was 0) */
     --btn-unlit-light-c: 0;
     --btn-unlit-light-h: 0;
@@ -71,18 +71,18 @@
     --btn-energized-unselected-text-l: 0.15;   --btn-energized-unselected-text-c: 0; --btn-energized-unselected-text-h: 0; --btn-energized-unselected-text-a: 1;
     --btn-energized-unselected-light-l: 0.86;  --btn-energized-unselected-light-c: var(--dynamic-btn-chroma); --btn-energized-unselected-light-h: var(--dynamic-btn-hue); --btn-energized-unselected-light-a: var(--button-unit-light-opacity-unselected-idle-min);
     --btn-energized-unselected-glow-hover-l: 0.80; --btn-energized-unselected-glow-hover-c: var(--dynamic-btn-chroma); --btn-energized-unselected-glow-hover-h: var(--dynamic-btn-hue); --btn-energized-unselected-glow-hover-a: 0.35;
-    --btn-energized-unselected-shadow: 0px 1px 2px oklch(0% 0 0 / 0.5);
+    --btn-energized-unselected-shadow: 0 1px 0.125rem oklch(0% 0 0 / 0.5); /* 2px -> rem */
 
     --btn-energized-selected-bg-l: 0.88;       --btn-energized-selected-bg-c: var(--dynamic-btn-chroma); --btn-energized-selected-bg-h: var(--dynamic-btn-hue); --btn-energized-selected-bg-a: 0.85;
     --btn-energized-selected-border-l: 0.78;   --btn-energized-selected-border-c: var(--dynamic-btn-chroma); --btn-energized-selected-border-h: var(--dynamic-btn-hue); --btn-energized-selected-border-a: 0.9;
     --btn-energized-selected-text-l: 0.15;     --btn-energized-selected-text-c: 0; --btn-energized-selected-text-h: 0; --btn-energized-selected-text-a: 1;
     --btn-energized-selected-light-l: 0.96;    --btn-energized-selected-light-c: var(--dynamic-btn-chroma); --btn-energized-selected-light-h: var(--dynamic-btn-hue); --btn-energized-selected-light-a: var(--button-unit-light-opacity-selected);
-    --btn-energized-selected-glow-l: 0.92;     --btn-energized-selected-glow-c: var(--dynamic-btn-chroma); --btn-energized-selected-glow-h: var(--dynamic-btn-hue); 
+    --btn-energized-selected-glow-l: 0.92;     --btn-energized-selected-glow-c: var(--dynamic-btn-chroma); --btn-energized-selected-glow-h: var(--dynamic-btn-hue);
     --btn-energized-selected-shadow: var(--btn-energized-unselected-shadow);
 
     --btn-dimly-lit-bg-l: 0.38;   --btn-dimly-lit-bg-c: var(--dynamic-btn-chroma);  --btn-dimly-lit-bg-h: var(--dynamic-btn-hue); --btn-dimly-lit-bg-a: 0.95;
     --btn-dimly-lit-border-l:0.42;--btn-dimly-lit-border-c: var(--dynamic-btn-chroma);--btn-dimly-lit-border-h: var(--dynamic-btn-hue); --btn-dimly-lit-border-a:0.95;
-    --btn-dimly-lit-text-l: 0.1;  --btn-dimly-lit-text-c: 0;   --btn-dimly-lit-text-h: 0;    --btn-dimly-lit-text-a: 0.9; 
+    --btn-dimly-lit-text-l: 0.1;  --btn-dimly-lit-text-c: 0;   --btn-dimly-lit-text-h: 0;    --btn-dimly-lit-text-a: 0.9;
     --btn-dimly-lit-light-l: 0.90;--btn-dimly-lit-light-c: var(--dynamic-btn-chroma); --btn-dimly-lit-light-h:var(--dynamic-btn-hue); --btn-dimly-lit-light-a: var(--button-unit-light-opacity-dimly-lit);
 
     --btn-disabled-bg-l: 0.35;
@@ -104,7 +104,7 @@
     --btn-energized-pressing-light-l: calc((var(--btn-energized-unselected-light-l) + var(--btn-energized-selected-light-l)) / 2);
     --btn-energized-pressing-light-a: calc((var(--btn-energized-unselected-light-a) + var(--btn-energized-selected-light-a)) / 2);
     --btn-energized-pressing-glow-opacity: calc((var(--btn-unselected-glow-base-opacity, 0) + var(--btn-selected-glow-base-opacity, 0)) / 2.2);
-    --btn-energized-pressing-glow-size: calc((var(--btn-unselected-glow-base-size, 0px) + var(--btn-selected-glow-base-size, 0px)) / 2.2);
+    --btn-energized-pressing-glow-size: calc((var(--btn-unselected-glow-base-size, 0rem) + var(--btn-selected-glow-base-size, 0rem)) / 2.2);
 
     --btn-hover-transition-duration: 0.08s;
     --btn-hover-light-opacity-boost: 0.25;
@@ -118,67 +118,67 @@
     --btn-action-energized-pressed-light-a-boost: 0.3;
     --btn-action-energized-pressed-light-scale: 1.1;
 
-    --btn-glow-opacity: 0; 
-    --btn-glow-size: 0px;
-    --btn-glow-spread: 3px;
+    --btn-glow-opacity: 0;
+    --btn-glow-size: 0rem;
+    --btn-glow-spread: 0.1875rem; /* 3px -> rem */
     --btn-glow-color: oklch(var(--btn-energized-unselected-glow-hover-l, 0.80) var(--btn-energized-unselected-glow-hover-c, var(--dynamic-btn-chroma)) var(--btn-energized-unselected-glow-hover-h, var(--dynamic-btn-hue)) / var(--btn-glow-opacity));
 
     --btn-selected-glow-base-opacity: 0.45;
-    --btn-selected-glow-base-size: 10px;
+    --btn-selected-glow-base-size: 0.625rem; /* 10px -> rem */
     --btn-unselected-glow-base-opacity: 0.25;
-    --btn-unselected-glow-base-size: 5px;
+    --btn-unselected-glow-base-size: 0.3125rem; /* 5px -> rem */
 
     --btn-dimly-lit-glow-color: oklch(0.85 0.01 var(--dynamic-btn-hue) / var(--btn-glow-opacity));
-    --btn-dimly-lit-glow-size: 4px;
+    --btn-dimly-lit-glow-size: 0.25rem; /* 4px -> rem */
     --btn-dimly-lit-glow-opacity: 0;
 
-    --harmonic-resonance-opacity-target: var(--btn-energized-selected-light-a); 
+    --harmonic-resonance-opacity-target: var(--btn-energized-selected-light-a);
 
 
     /* --- Component: LCD Screens --- */
     --lcd-active-grad-start-l: 0.10;
     --lcd-active-grad-end-l: 0.06;
-    --lcd-active-text-l: 0.92; 
-    --lcd-active-text-c: var(--dynamic-lcd-chroma); 
-    --lcd-active-text-h: var(--dynamic-lcd-hue);    
+    --lcd-active-text-l: 0.92;
+    --lcd-active-text-c: var(--dynamic-lcd-chroma);
+    --lcd-active-text-h: var(--dynamic-lcd-hue);
     --lcd-active-text-a: 1;
     --lcd-active-border-l: 0.12;     --lcd-active-border-c: var(--dynamic-lcd-chroma);     --lcd-active-border-h: var(--dynamic-lcd-hue); --lcd-active-border-a: 0.6;
     --lcd-active-inner-glow-bottom-l: 0.95; --lcd-active-inner-glow-bottom-c: var(--dynamic-lcd-chroma); --lcd-active-inner-glow-bottom-h: var(--dynamic-lcd-hue); --lcd-active-inner-glow-bottom-a: 0.1;
     --lcd-active-inner-glow-diffuse-l: 0.95; --lcd-active-inner-glow-diffuse-c: var(--dynamic-lcd-chroma); --lcd-active-inner-glow-diffuse-h: var(--dynamic-lcd-hue); --lcd-active-inner-glow-diffuse-a: 0.08;
     --lcd-active-shadow-inner-glow:
-        inset 0px -3px 10px 0px oklch(var(--lcd-active-inner-glow-bottom-l) var(--lcd-active-inner-glow-bottom-c) var(--lcd-active-inner-glow-bottom-h) / var(--lcd-active-inner-glow-bottom-a)),
-        inset 0px 0px 18px -8px oklch(var(--lcd-active-inner-glow-diffuse-l) var(--lcd-active-inner-glow-diffuse-c) var(--lcd-active-inner-glow-diffuse-h) / var(--lcd-active-inner-glow-diffuse-a));
-    --lcd-base-chroma-factor: 1.0; 
+        inset 0 -0.1875rem 0.625rem 0 oklch(var(--lcd-active-inner-glow-bottom-l) var(--lcd-active-inner-glow-bottom-c) var(--lcd-active-inner-glow-bottom-h) / var(--lcd-active-inner-glow-bottom-a)),
+        inset 0 0 1.125rem -0.5rem oklch(var(--lcd-active-inner-glow-diffuse-l) var(--lcd-active-inner-glow-diffuse-c) var(--lcd-active-inner-glow-diffuse-h) / var(--lcd-active-inner-glow-diffuse-a));
+    --lcd-base-chroma-factor: 1.0;
 
     --lcd-unlit-bg-l: 0.02; --lcd-unlit-bg-c: 0; --lcd-unlit-bg-h: 0; --lcd-unlit-bg-a: 0.4;
-    --lcd-unlit-text-l: 0.90; 
-    --lcd-unlit-text-c: 0; --lcd-unlit-text-h: 0; --lcd-unlit-text-a: 1; 
+    --lcd-unlit-text-l: 0.90;
+    --lcd-unlit-text-c: 0; --lcd-unlit-text-h: 0; --lcd-unlit-text-a: 1;
     --lcd-unlit-border-l: 0.05; --lcd-unlit-border-c: 0; --lcd-unlit-border-h: 0; --lcd-unlit-border-a: 0.1;
     --lcd-unlit-shadow: none;
 
     --lcd-active-dim-bg-l: 0.05; --lcd-active-dim-bg-c: var(--dynamic-lcd-chroma); --lcd-active-dim-bg-h: var(--dynamic-lcd-hue); --lcd-active-dim-bg-a: 0.7;
-    --lcd-active-dim-text-l: 0.80; 
+    --lcd-active-dim-text-l: 0.80;
     --lcd-active-dim-text-c: var(--dynamic-lcd-chroma); --lcd-active-dim-text-h: var(--dynamic-lcd-hue); --lcd-active-dim-text-a: 1;
     --lcd-active-dim-border-l: 0.10; --lcd-active-dim-border-c: var(--dynamic-lcd-chroma); --lcd-active-dim-border-h: var(--dynamic-lcd-hue); --lcd-active-dim-border-a: 0.3;
     --lcd-active-dim-shadow: none;
-    --lcd-active-dim-chroma-factor: 0.5; 
+    --lcd-active-dim-chroma-factor: 0.5;
     --lcd-dim-active-text-l: var(--lcd-active-dim-text-l); --lcd-dim-active-text-c: var(--lcd-active-dim-text-c); --lcd-dim-active-text-h: var(--lcd-active-dim-text-h);
 
     --lcd-dimly-lit-grad-start-l: 0.32;
     --lcd-dimly-lit-grad-end-l: 0.26;
-    --lcd-dimly-lit-text-l: 0.90; 
+    --lcd-dimly-lit-text-l: 0.90;
     --lcd-dimly-lit-text-c: var(--dynamic-lcd-chroma); --lcd-dimly-lit-text-h: var(--dynamic-lcd-hue); --lcd-dimly-lit-text-a: 1;
-    --lcd-dimly-lit-shadow: inset 0 1px 2px oklch(0% 0 0 / 0.15);
-    --lcd-dimly-lit-chroma-factor: 0.3; 
+    --lcd-dimly-lit-shadow: inset 0 1px 0.125rem oklch(0% 0 0 / 0.15); /* 2px -> rem */
+    --lcd-dimly-lit-chroma-factor: 0.3;
 
-    --lcd-text-shadow-base-alpha: 0.3; 
-    --lcd-crt-overlay-opacity: 0.2; 
-    --lcd-content-font-size: 0.9em; 
+    --lcd-text-shadow-base-alpha: 0.3;
+    --lcd-crt-overlay-opacity: 0.2;
+    --lcd-content-font-size: 0.9em;
 
 
     --lcd-glow-opacity: 0;
-    --lcd-glow-size: 5px;
-    --lcd-glow-spread: 2px;
+    --lcd-glow-size: 0.3125rem; /* 5px -> rem */
+    --lcd-glow-spread: 0.125rem; /* 2px -> rem */
     --lcd-glow-color: oklch(1 0 0 / var(--lcd-glow-opacity));
 
     /* --- Component: V2 Displays & Resonance --- */
@@ -200,7 +200,7 @@
     /* UPDATED: Corrected variable names for shading overlay */
     --dial-shading-top-highlight-color: oklch(0% 0 0 / 0.35);
     --dial-shading-bottom-shadow-color: oklch(0% 0 0 / 0.4);
-    
+
     /* REMOVED: Obsolete dial variables */
 
 
@@ -214,9 +214,9 @@
 
 
     /* --- Component: Lens Container & Core --- */
-    --lens-bezel-opacity: 1; 
-    --lens-bezel-shadow-alpha: 0.15; 
-    --lens-bezel-dim-overlay-alpha: 0; 
+    --lens-bezel-opacity: 1;
+    --lens-bezel-shadow-alpha: 0.15;
+    --lens-bezel-dim-overlay-alpha: 0;
     --lens-bezel-o-1-l: 0.30;  --lens-bezel-o-1-c: 0.02;   --lens-bezel-o-1-h: 280;
     --lens-bezel-o-2-l: 0.28;  --lens-bezel-o-2-c: 0.02;   --lens-bezel-o-2-h: 290;
     --lens-bezel-o-3-l: 0.10;  --lens-bezel-o-3-c: 0.02;   --lens-bezel-o-3-h: 210;
@@ -236,8 +236,8 @@
     --lens-bezel-i-8-l: 0.60;  --lens-bezel-i-8-c: 0.02;   --lens-bezel-i-8-h: 35;
     --lens-bezel-i-9-l: 0.30;  --lens-bezel-i-9-c: 0.005;  --lens-bezel-i-9-h: 280;
     --lens-bezel-i-10-l: var(--lens-bezel-i-1-l); --lens-bezel-i-10-c: var(--lens-bezel-i-1-c); --lens-bezel-i-10-h: var(--lens-bezel-i-1-h);
-    --lens-core-bg-l: 0.05; --lens-core-bg-c: 0; --lens-core-bg-h: 0; 
-    --lens-specular-opacity: 0.02; 
+    --lens-core-bg-l: 0.05; --lens-core-bg-c: 0; --lens-core-bg-h: 0;
+    --lens-specular-opacity: 0.02;
 
     --lens-super-glow-l: 0.75;
     --lens-super-glow-base-chroma: 0.04;
@@ -250,33 +250,33 @@
 
 
     /* --- Component: Color Chips --- */
-    --color-chip-base-opacity: var(--theme-component-opacity); 
+    --color-chip-base-opacity: var(--theme-component-opacity);
     --color-chip-border-l: 0.1; --color-chip-border-c:0; --color-chip-border-h:0; --color-chip-border-a: 0.2;
     --color-chip-shadow-inset: inset 0 0 1px oklch(0% 0 0 / 0.2);
 
     /* --- Component: Grill --- */
     --grill-bg-l: 0.1; --grill-bg-c:0; --grill-bg-h:0; --grill-bg-a: 1;
     --grill-placeholder-text-l:0.45; --grill-placeholder-text-c:0.01; --grill-placeholder-text-h:240;
-    --grill-opacity: 1; 
-    --panel-section-grill-shadow-inset-top: inset 0px 6px 8px -4px oklch(0% 0 0 / 0.35);
+    --grill-opacity: 1;
+    --panel-section-grill-shadow-inset-top: inset 0 0.375rem 0.5rem -0.25rem oklch(0% 0 0 / 0.35); /* 6px 8px -4px -> rem */
 
     /* --- Component: Terminal --- */
     --terminal-font-weight: 500;
     --terminal-cursor-blink-on-duration: 0.53s;
     --terminal-cursor-blink-off-duration: 0.37s;
-    --terminal-text-drop-shadow-offset-x: 0.5px;
-    --terminal-text-drop-shadow-offset-y: 0.5px;
-    --terminal-text-drop-shadow-blur: 0px;
+    --terminal-text-drop-shadow-offset-x: 0.03125rem; /* 0.5px -> rem */
+    --terminal-text-drop-shadow-offset-y: 0.03125rem; /* 0.5px -> rem */
+    --terminal-text-drop-shadow-blur: 0rem; /* 0px -> rem */
     --terminal-text-drop-shadow-color: oklch(0 0 0 / 0.2);
-    --terminal-scanline-color: oklch(var(--lcd-active-text-l) var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue) / 0.05); 
-    --terminal-scanline-thickness: 1px;
+    --terminal-scanline-color: oklch(var(--lcd-active-text-l) var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue) / 0.05);
+    --terminal-scanline-thickness: 1px; /* Keep 1px */
     --terminal-scanline-animation-duration: 8s;
 
     /* Terminal Text Glow - Unified Variables */
-    --terminal-text-glow-color-base: oklch(0.85 0.10 160); 
-    --terminal-text-glow-opacity: 1.0; 
-    --terminal-text-bloom-size: 16px;  
+    --terminal-text-glow-color-base: oklch(0.85 0.10 160);
+    --terminal-text-glow-opacity: 1.0;
+    --terminal-text-bloom-size: 1rem; /* 16px -> rem */
     /* Theme-specific scaling factors for terminal glow */
-    --theme-terminal-glow-opacity-factor: 1.0; 
-    --theme-terminal-glow-size-factor: 1.0;    
+    --theme-terminal-glow-opacity-factor: 1.0;
+    --theme-terminal-glow-size-factor: 1.0;
 }

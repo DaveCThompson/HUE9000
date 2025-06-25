@@ -16,7 +16,7 @@
    box-shadow: none;
    overflow: visible;
    /* The drop-shadow's alpha is attenuated by --startup-opacity-factor. */
-   filter: drop-shadow(0 3px 3px oklch(0% 0 0 / calc(var(--lens-bezel-shadow-alpha, 0.15) * var(--startup-opacity-factor, 0))));
+   filter: drop-shadow(0 0.1875rem 0.1875rem oklch(0% 0 0 / calc(var(--lens-bezel-shadow-alpha, 0.15) * var(--startup-opacity-factor, 0)))); /* 3px -> rem */
    opacity: 1; /* Lens container opacity is not tied to --theme-component-opacity and NOT affected by startup factors */
 
    transition:
@@ -69,7 +69,7 @@
   transition-property: background-image, opacity;
   transition-duration: var(--lens-bezel-effective-transition-duration, var(--transition-duration-medium));
   transition-timing-function: var(--lens-bezel-effective-transition-timing, ease);
-  filter: blur(0.25px);
+  filter: blur(0.25px); /* Keep as px for subtle effect */
   opacity: var(--lens-bezel-opacity, 1);
 }
 
@@ -118,6 +118,6 @@
   transition-property: background-image, opacity;
   transition-duration: var(--lens-bezel-effective-transition-duration, var(--transition-duration-medium));
   transition-timing-function: var(--lens-bezel-effective-transition-timing, ease);
-  filter: blur(0.25px);
+  filter: blur(0.25px); /* Keep as px for subtle effect */
   opacity: var(--lens-bezel-opacity, 1);
 }

@@ -6,22 +6,23 @@
     --bezel-inner-ring-scale: 96%;        /* For lens bezel */
     --lens-core-scale: 86%;               /* For lens core relative to its container */
     --dial-container-fixed-height: 3rem;
-    --height-lower-section: 224px;        /* Fixed height for lower panel sections */
+    --height-lower-section: 14rem;        /* 224px -> rem */
     --bezel-thickness: var(--space-xl);   /* Thickness of panel bezels (padding/gap) */
-    
-    --control-section-border-width: 4px;
+
+    --control-section-border-width: 0.25rem; /* 4px -> rem */
     --control-section-radius: 0.5rem;
+
     --radius-panel-tight: 0.1rem;         /* For panel bezels and sections */
-    
+
     --control-label-padding: 1rem;
     --control-label-height: 1.25rem;
-    
-    --connector-line-thickness: 4px;
-    
-    --size-lens-container-diameter: 150px; /* Base size, can be overridden by layout */
-    --size-logo-container-width: 80px;
-    --size-logo-container-height: 80px;
-    
+
+    --connector-line-thickness: 0.25rem; /* 4px -> rem */
+
+    --size-lens-container-diameter: 9.375rem; /* 150px -> rem */
+    --size-logo-container-width: 5rem;      /* 80px -> rem */
+    --size-logo-container-height: 5rem;     /* 80px -> rem */
+
     --grid-color-chip-width: 0.375rem;
     --hue-assignment-column-gap: var(--space-md);
     --hue-assignment-row-gap: var(--space-sm);
@@ -38,7 +39,7 @@
 
     /* --- Spacing Tokens --- */
     --space-none: 0;
-    --space-xxs: 0.0625rem; /* 1px */
+    --space-xxs: 1px;      /* EXCEPTION: Keep 1px for crisp lines */
     --space-xs:  0.125rem;  /* 2px */
     --space-sm:  0.25rem;   /* 4px */
     --space-md:  0.375rem;  /* 6px */
@@ -51,72 +52,72 @@
     /* --- Timing Tokens --- */
     --transition-duration-fast: 0.15s;
     --transition-duration-medium: 0.3s;
-    --transition-duration-hue: 0.2s; 
+    --transition-duration-hue: 0.2s;
     --transition-duration-slow: 0.5s;
-    --button-light-transition-duration: 0.15s; 
+    --button-light-transition-duration: 0.15s;
     --button-p4-prime-transition-duration: 0.6s; /* Slower individual button fade for P4 */
 
 
     /* --- Button Unit System - Structural & Animation Defaults --- */
     --button-unit-radius: var(--space-xs);
-    --button-unit-transition-duration: var(--transition-duration-fast); 
-    --button-unit-pressed-transform: translateY(0.5px); 
-    --button-unit-light-object-base-size: 64px; 
-    --button-unit-light-object-base-blur: 20px; 
-    --button-unit-pressed-effect-duration-css: 0.12s; 
+    --button-unit-transition-duration: var(--transition-duration-fast);
+    --button-unit-pressed-transform: translateY(0.03125rem); /* 0.5px -> rem */
+    --button-unit-light-object-base-size: 4rem; /* 64px -> rem */
+    --button-unit-light-object-base-blur: 1.25rem; /* 20px -> rem */
+    --button-unit-pressed-effect-duration-css: 0.12s;
     --button-unit-pressed-pulse-scale-factor-css: 1.15;
 
-    --button-unit-light-responsive-scale-factor: 1.33333333; 
-    --button-unit-light-responsive-blur-factor: 0.41666667; 
+    --button-unit-light-responsive-scale-factor: 1.33333333;
+    --button-unit-light-responsive-blur-factor: 0.41666667;
 
-    --button-unit-light-opacity-initial-dim-unlit: 0; 
-    --button-unit-light-opacity-dim-standby: 0.5;     
-    --button-unit-light-opacity-dimly-lit: 0.8;       
-    
-    --button-unit-light-opacity-unselected-idle-min: 0.45; 
-    --button-unit-light-opacity-selected: 1.0;             
+    --button-unit-light-opacity-initial-dim-unlit: 0;
+    --button-unit-light-opacity-dim-standby: 0.5;
+    --button-unit-light-opacity-dimly-lit: 0.8;
+
+    --button-unit-light-opacity-unselected-idle-min: 0.45;
+    --button-unit-light-opacity-selected: 1.0;
     --button-unit-light-opacity-mid-pressed: calc((var(--button-unit-light-opacity-unselected-idle-min) + var(--button-unit-light-opacity-selected)) / 2);
 
 
     /* --- Lens Calculation Factors (Non-Themeable) --- */
-    --lens-power: 0.0; 
-    --base-oklch-l: 0.65; 
+    --lens-power: 0.0;
+    --base-oklch-l: 0.65;
 
-    --_s-base-outer-glow-opacity: 0.45; 
-    --_s-base-outer-glow-blur: 50px;
+    --_s-base-outer-glow-opacity: 0.45;
+    --_s-base-outer-glow-blur: 3.125rem; /* 50px -> rem */
     --_s-tune-outer-glow-start-power-threshold: 0.35;
     --_s-tune-outer-glow-fade-in-duration: 0.8;
     --_s-tune-outer-glow-blur-low-power-multiplier: 3.0;
     --_s-tune-outer-glow-l-factor-min: 0.1;
     --_s-tune-outer-glow-c-factor-min: 0.02;
 
-    --base-outer-glow-opacity: calc(var(--_s-base-outer-glow-opacity) * 1.33); 
+    --base-outer-glow-opacity: calc(var(--_s-base-outer-glow-opacity) * 1.33);
     --base-outer-glow-blur: var(--_s-base-outer-glow-blur);
     --tune-outer-glow-start-power-threshold: var(--_s-tune-outer-glow-start-power-threshold);
     --tune-outer-glow-fade-in-duration: var(--_s-tune-outer-glow-fade-in-duration);
     --tune-outer-glow-blur-low-power-multiplier: var(--_s-tune-outer-glow-blur-low-power-multiplier);
     --tune-outer-glow-l-factor-min: var(--_s-tune-outer-glow-l-factor-min);
     --tune-outer-glow-c-factor-min: var(--_s-tune-outer-glow-c-factor-min);
-    
+
     --calc-outer-glow-active-factor: clamp(0, (var(--lens-power) - var(--tune-outer-glow-start-power-threshold)) / var(--tune-outer-glow-fade-in-duration), 1);
     --calc-outer-glow-opacity: calc(var(--calc-outer-glow-active-factor) * pow(var(--lens-power), 4.5) * var(--base-outer-glow-opacity));
     --calc-outer-glow-blur: calc(var(--base-outer-glow-blur) * (var(--tune-outer-glow-blur-low-power-multiplier) - var(--calc-outer-glow-active-factor) * (var(--tune-outer-glow-blur-low-power-multiplier) - 1)));
     --calc-outer-glow-current-l-factor: calc(var(--tune-outer-glow-l-factor-min) + var(--calc-outer-glow-active-factor) * (1 - var(--tune-outer-glow-l-factor-min)));
     --calc-outer-glow-current-c-factor: calc(var(--tune-outer-glow-c-factor-min) + var(--calc-outer-glow-active-factor) * (1 - var(--tune-outer-glow-c-factor-min)));
 
-    --_s-base-lens-super-glow-opacity-reference: 0.08; 
-    --_s-base-lens-super-glow-strength-factor: 4.0; 
-    --_s-base-lens-super-glow-edge-stop: 60%; 
-    --_s-base-lens-super-glow-scale: 1.0; 
+    --_s-base-lens-super-glow-opacity-reference: 0.08;
+    --_s-base-lens-super-glow-strength-factor: 4.0;
+    --_s-base-lens-super-glow-edge-stop: 60%;
+    --_s-base-lens-super-glow-scale: 1.0;
 
     --base-lens-super-glow-opacity-reference: var(--_s-base-lens-super-glow-opacity-reference);
     --base-lens-super-glow-strength-factor: var(--_s-base-lens-super-glow-strength-factor);
     --base-lens-super-glow-edge-stop: var(--_s-base-lens-super-glow-edge-stop);
     --base-lens-super-glow-scale: var(--_s-base-lens-super-glow-scale);
 
-    --calc-lens-super-glow-raw-intensity: calc(var(--calc-outer-glow-active-factor) * pow(var(--lens-power), 0.75)); 
+    --calc-lens-super-glow-raw-intensity: calc(var(--calc-outer-glow-active-factor) * pow(var(--lens-power), 0.75));
     --calc-lens-super-glow-opacity: clamp(0, var(--calc-lens-super-glow-raw-intensity) * var(--base-lens-super-glow-opacity-reference) * var(--base-lens-super-glow-strength-factor), 0.95);
-    --calc-lens-super-glow-center-alpha: clamp(0.01, var(--calc-lens-super-glow-raw-intensity) * 0.5, 0.7); 
+    --calc-lens-super-glow-center-alpha: clamp(0.01, var(--calc-lens-super-glow-raw-intensity) * 0.5, 0.7);
     --calc-lens-super-glow-edge-stop: var(--base-lens-super-glow-edge-stop);
     --calc-lens-super-glow-scale: var(--base-lens-super-glow-scale);
 

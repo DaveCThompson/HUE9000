@@ -36,7 +36,7 @@
 
 .terminal-block .actual-lcd-screen-element {
     flex-grow: 1;
-    min-height: 0; 
+    min-height: 0;
 }
 
 
@@ -46,7 +46,7 @@
     position: absolute;
     inset: 0;
     background-image: url('../assets/textures/crt-overlay.png');
-    background-size: var(--lcd-crt-overlay-size, 1920px 1120px);
+    background-size: var(--lcd-crt-overlay-size, 120rem 70rem); /* 1920px 1120px -> rem */
     background-repeat: repeat;
     background-position: 0 0;
     mix-blend-mode: var(--lcd-crt-overlay-blend-mode, multiply);
@@ -72,7 +72,7 @@
     font-weight: 500;
     line-height: 1.4;
     color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
-    
+
     --terminal-text-glow-color: oklch(
         from var(--terminal-text-glow-color-base)
         l c h / calc(var(--terminal-text-glow-opacity) * var(--theme-terminal-glow-opacity-factor) * var(--harmonic-resonance-glow-opacity, 1))
@@ -86,7 +86,7 @@
 }
 
 .lcd-container.is-resonating .lcd-content-wrapper {
-    --terminal-text-bloom-size: calc(16px * var(--harmonic-resonance-glow-scale, 1));
+    --terminal-text-bloom-size: calc(1rem * var(--harmonic-resonance-glow-scale, 1)); /* 16px -> rem */
     transition: color var(--transition-duration-medium) ease, text-shadow 0.3s ease-out;
 }
 
@@ -142,7 +142,7 @@
 .lcd-container.lcd--dimly-lit .lcd-content-wrapper {
     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
     --terminal-text-glow-opacity: 0.7;
-    --terminal-text-bloom-size: 10px;
+    --terminal-text-bloom-size: 0.625rem; /* 10px -> rem */
 }
 .lcd-container.lcd--dimly-lit::after {
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0));
@@ -160,6 +160,6 @@
     display: flex;
     align-items: baseline;
     line-height: 1.7;
-    color: inherit; 
+    color: inherit;
     text-shadow: inherit;
 }

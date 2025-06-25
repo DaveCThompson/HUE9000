@@ -21,13 +21,13 @@ KEY ARCHITECTURAL DECISIONS:
 :root {
     --display-font: 'IBM Plex Mono', monospace;
     /* Sizing variables adjusted to fit within the 56px height of the LCD container */
-    --display-block-size: 16px;
-    --display-block-gap: 1px;
-    --display-block-radius: 2px;
-    --display-dot-height: 3px;
-    --display-dot-gap: 1px;
-    --display-dot-radius: 1px;
-    --display-row-gap: 4px;
+    --display-block-size: 1rem; /* 16px -> rem */
+    --display-block-gap: var(--space-xxs); /* 1px */
+    --display-block-radius: var(--space-xs); /* 2px */
+    --display-dot-height: 0.1875rem; /* 3px */
+    --display-dot-gap: var(--space-xxs); /* 1px */
+    --display-dot-radius: var(--space-xxs); /* 1px */
+    --display-row-gap: var(--space-sm); /* 4px */
 }
 
 /* --- SHARED COMPONENT SETUP --- */
@@ -39,14 +39,14 @@ KEY ARCHITECTURAL DECISIONS:
     gap: var(--display-row-gap);
     width: 100%;
     height: 100%;
-    padding: 4px; /* Reduced padding */
+    padding: var(--space-sm); /* 4px -> rem (via token) */
 
     /* --- THEME DEFINITIONS --- */
     /* Deconstructed color parts for robust calculations. Values from theme-contract.css */
     --display-color-on-l: var(--lcd-active-text-l); /* Use LCD's text lightness */
     --display-color-on-c: var(--dynamic-lcd-chroma); /* Use LCD's assigned chroma */
     --display-color-on-h: var(--dynamic-lcd-hue); /* Use LCD's assigned hue */
-    
+
     /* Derived colors */
     --display-color-on: oklch(var(--display-color-on-l) var(--display-color-on-c) var(--display-color-on-h) / var(--lcd-active-text-a));
     --display-color-text-dark: oklch(15% 0.01 var(--display-color-on-h) / 0.8); /* Make text on bright bg darker */
@@ -61,27 +61,27 @@ KEY ARCHITECTURAL DECISIONS:
 }
 
 /* --- SHARED COMPONENT STYLES --- */
-.display-container__row--name { font-size: 16px; font-weight: 500; letter-spacing: 0.05em; color: var(--display-color-on); text-shadow: inherit; transition: color 0.2s ease-out, text-shadow 0.2s ease-out; }
+.display-container__row--name { font-size: 1rem; font-weight: 500; letter-spacing: 0.05em; color: var(--display-color-on); text-shadow: inherit; transition: color 0.2s ease-out, text-shadow 0.2s ease-out; } /* 16px -> rem */
 .fine-dot-row { display: flex; width: 100%; gap: var(--display-dot-gap); }
 .fine-dot { flex: 1; height: var(--display-dot-height); border-radius: var(--display-dot-radius); transition: background-color 0.1s linear, box-shadow 0.2s ease-out; }
 .fine-dot--off { background-color: var(--display-color-off-dot); box-shadow: none; }
-.fine-dot--on { background-color: var(--display-color-on); box-shadow: 0 0 4px var(--terminal-text-glow-color); }
+.fine-dot--on { background-color: var(--display-color-on); box-shadow: 0 0 0.25rem var(--terminal-text-glow-color); } /* 4px -> rem */
 .fine-dot--in-progress-1 { background-color: oklch(from var(--display-color-on) l c h / 0.65); }
 .fine-dot--in-progress-2 { background-color: oklch(from var(--display-color-on) l c h / 0.40); }
 .fine-dot--in-progress-3 { background-color: oklch(from var(--display-color-on) l c h / 0.20); }
 
 /* --- MOOD MATRIX SPECIFIC STYLES --- */
 .mood-matrix__row--major-blocks { display: flex; justify-content: center; gap: var(--display-block-gap); width: 100%; }
-.major-block { flex: 1; height: var(--display-block-size); border-radius: var(--display-block-radius); display: flex; justify-content: center; align-items: center; font-size: 11px; font-weight: 500; transition: background-color 0.2s ease-out, color 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out; }
+.major-block { flex: 1; height: var(--display-block-size); border-radius: var(--display-block-radius); display: flex; justify-content: center; align-items: center; font-size: 0.6875rem; font-weight: 500; transition: background-color 0.2s ease-out, color 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out; } /* 11px -> rem */
 .major-block--off { background-color: var(--display-color-off-bg); color: var(--display-color-off-dot); opacity: 0.7; box-shadow: none; text-shadow: none; }
 .major-block--in-progress { background-color: var(--display-color-off-bg); color: var(--display-color-on); opacity: 1; text-shadow: inherit; box-shadow: none; }
-.major-block--on { background-color: var(--display-color-on); color: var(--display-color-text-dark); opacity: 1; text-shadow: none; box-shadow: 0 0 5px var(--terminal-text-glow-color); }
+.major-block--on { background-color: var(--display-color-on); color: var(--display-color-text-dark); opacity: 1; text-shadow: none; box-shadow: 0 0 0.3125rem var(--terminal-text-glow-color); } /* 5px -> rem */
 
 /* --- INTENSITY DISPLAY SPECIFIC STYLES --- */
 .intensity-display__row--bars { display: flex; width: 100%; gap: var(--display-block-gap); align-items: flex-end; }
 .intensity-bar { flex: 1; height: var(--display-block-size); border-radius: var(--display-dot-radius); transition: background-color 0.1s linear, box-shadow 0.2s ease-out; }
 .intensity-bar--unselected { background-color: var(--display-color-off-dot); box-shadow: none; }
-.intensity-bar--selected { background-color: var(--display-color-on); box-shadow: 0 0 4px var(--terminal-text-glow-color); }
+.intensity-bar--selected { background-color: var(--display-color-on); box-shadow: 0 0 0.25rem var(--terminal-text-glow-color); } /* 4px -> rem */
 
 /*
 ========================================================================

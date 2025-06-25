@@ -7,10 +7,10 @@
   width: 100%;
   background-color: oklch(var(--grill-bg-l) var(--grill-bg-c) var(--grill-bg-h) / var(--grill-bg-a));
   background-image: url('../assets/textures/metal-grill.png');
-  background-size: 337px 228px;
+  background-size: 21.0625rem 14.25rem; /* 337px 228px -> rem */
   background-repeat: repeat;
   background-position: center center;
-  background-blend-mode: var(--grill-blend-mode, multiply); 
+  background-blend-mode: var(--grill-blend-mode, multiply);
   color: oklch(var(--grill-placeholder-text-l) var(--grill-placeholder-text-c) var(--grill-placeholder-text-h));
   border-radius: var(--radius-panel-tight);
   opacity: calc(var(--grill-opacity, 1) * var(--startup-opacity-factor-boosted, 0));
@@ -27,5 +27,5 @@
   padding: var(--space-lg);
 }
 .grill-placeholder > span {
-  display: none; 
+  display: none;
 }

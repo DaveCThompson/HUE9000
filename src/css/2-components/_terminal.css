@@ -45,11 +45,11 @@
     width: 0.6em;
     height: 1.1em;
     background-color: currentColor;
-    margin-left: 2px;
+    margin-left: 0.125rem; /* 2px -> rem */
     user-select: none;
     opacity: 1;
     vertical-align: text-bottom;
-    transform: translateY(2px);
+    transform: translateY(0.125rem); /* 2px -> rem */
 }
 
 .terminal-cursor.is-blinking {

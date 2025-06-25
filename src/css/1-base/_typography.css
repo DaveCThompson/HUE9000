@@ -46,7 +46,7 @@ body {
   position: absolute;
   left: 50%;
   bottom: 0;
-  transform: translate(-50%, calc(50% + 0.1875rem));
+  transform: translate(-50%, calc(50% + 0.1875rem)); /* 3px -> rem */
   line-height: 1;
   white-space: nowrap;
   background-color: oklch(calc(var(--panel-section-bg-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));

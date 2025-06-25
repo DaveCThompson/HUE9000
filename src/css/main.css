@@ -1,120 +1,54 @@
 /* src/css/main.css - Main CSS Import Hub */
 
 /*
- * IMPORT ORDER:
- * 1. Base:      Foundational styles, variable contracts, utilities, and keyframes.
- * 2. Themes:    Variable overrides for different visual themes (dark, light, etc.).
- * 3. Components: Styles for individual UI components, which consume the variables.
- * 4. Mobile:    Responsive overrides for mobile devices.
- *
- * This order ensures the CSS cascade works as intended: components are styled
- * using the final variable values defined by the active theme, and mobile
- * styles can correctly override any of the above.
+ * DEFINE LAYER ORDER (REVISED):
+ * This revised order ensures layout rules (including mobile) can override
+ * base component styles, which fixes the cascade issues.
+ * 1. base
+ * 2. components
+ * 3. themes
+ * 4. layout
+ * 5. utilities
+ */
+@layer base, components, themes, layout, utilities;
+
+
+/*
+ * IMPORT STYLESHEETS INTO LAYERS:
  */
 
-/* --- 1: Base --- */
-/* Foundational styles, variables, and helpers */
-@import url('./1-base/_variables-structural.css');
-@import url('./1-base/_variables-theme-contract.css');
-@import url('./1-base/_layout.css');
-@import url('./1-base/_typography.css');
-@import url('./1-base/_dim-to-theme-transition.css');
-@import url('./1-base/_utilities.css');
+/* --- 1: Base Layer --- */
+@import url('./1-base/_variables-structural.css') layer(base);
+@import url('./1-base/_variables-theme-contract.css') layer(base);
+@import url('./1-base/_base.css') layer(base);
+@import url('./1-base/_typography.css') layer(base);
+@import url('./1-base/_dim-to-theme-transition.css') layer(base);
 
+/* --- 2: Components Layer --- */
+@import url('./2-components/_preloader.css') layer(components);
+@import url('./2-components/_side-panels.css') layer(components);
+@import url('./2-components/_panel-bezel.css') layer(components);
+@import url('./2-components/_button-unit.css') layer(components);
+@import url('./2-components/_dial.css') layer(components);
+@import url('./2-components/_lcd.css') layer(components);
+@import url('./2-components/_logo.css') layer(components);
+@import url('./2-components/_lens-container.css') layer(components);
+@import url('./2-components/_lens-core.css') layer(components);
+@import url('./2-components/_lens-outer-glow.css') layer(components);
+@import url('./2-components/_lens-super-glow.css') layer(components);
+@import url('./2-components/_color-chips.css') layer(components);
+@import url('./2-components/_grill.css') layer(components);
+@import url('./2-components/_terminal.css') layer(components);
+@import url('./2-components/_dial-displays.css') layer(components);
 
-/* --- 2: Themes --- */
-/* Theme-specific variable overrides. Imported after the contract, before components. */
-@import url('./3-themes/_theme-dim.css');
-@import url('./3-themes/_theme-dark.css');
-@import url('./3-themes/_theme-light.css');
+/* --- 3: Themes Layer --- */
+@import url('./3-themes/_theme-dim.css') layer(themes);
+@import url('./3-themes/_theme-dark.css') layer(themes);
+@import url('./3-themes/_theme-light.css') layer(themes);
 
+/* --- 4: Layout Layer --- */
+@import url('./1-base/_layout.css') layer(layout);
+@import url('./1-base/_mobile.css') layer(layout);
 
-/* --- 3: Components --- */
-/* Styles for individual UI components */
-@import url('./2-components/_preloader.css');
-@import url('./2-components/_side-panels.css');
-@import url('./2-components/_panel-bezel.css');
-@import url('./2-components/_button-unit.css');
-@import url('./2-components/_dial.css');
-@import url('./2-components/_lcd.css');
-@import url('./2-components/_logo.css');
-@import url('./2-components/_lens-container.css');
-@import url('./2-components/_lens-core.css');
-@import url('./2-components/_lens-outer-glow.css');
-@import url('./2-components/_lens-super-glow.css');
-@import url('./2-components/_color-chips.css');
-@import url('./2-components/_grill.css');
-@import url('./2-components/_terminal.css');
-@import url('./2-components/_dial-displays.css'); /* RENAMED: from _v2-displays.css */
-
-
-/* --- 4: Mobile --- */
-/* Responsive overrides. Imported last to ensure correct cascade. */
-@import url('./1-base/_mobile.css');
-
-
-/* --- Base HTML/Body Styles --- */
-/* Global styles applied to the root document elements */
-html {
-    font-size: 16px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    height: 100%; /* Ensure html tag takes full height */
-    width: 100%;  /* Ensure html tag takes full width */
-    margin: 0;
-    padding: 0;
-}
-
-html, body {
-    /* width: 100%; /* Ensured by html rule */
-    /* height: 100%; /* Ensured by html rule */
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box; /* Apply to all elements for consistency */
-}
-
-body {
-    display: flex; 
-    flex-direction: column; 
-    justify-content: center; 
-    align-items: center; 
-    min-height: 100vh; /* Use min-height to ensure it fills viewport at least */
-    height: 100%; /* Explicitly set height to 100% of html */
-    width: 100%; /* Explicitly set width to 100% of html */
-
-    background-color: oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
-    background-image:
-        url('../assets/textures/noise.svg'), 
-        linear-gradient(180deg,
-            oklch(calc(var(--body-bg-top-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
-            oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%
-        );
-    background-repeat: repeat, no-repeat;
-    background-size: 150px 150px, cover;
-    background-position: 0 0, 0 0;
-    background-blend-mode: multiply, normal;
-
-    color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
-    font-family: 'IBM Plex Mono', 'Inter', sans-serif;
-    touch-action: none;
-
-    transition:
-        color var(--transition-duration-medium) ease,
-        background-color var(--transition-duration-medium) ease,
-        background-image var(--transition-duration-medium) ease;
-}
-
-/* Ensure pre-boot state also has flex centering for body */
-body.pre-boot {
-    opacity: 0;
-    display: flex; /* This should be inherited, but being explicit */
-    justify-content: center; /* This should be inherited */
-    align-items: center; /* This should be inherited */
-    /* min-height: 100vh; /* Already set above */
-    /* height: 100%; /* Already set above */
-}
-
-
-*, *:before, *:after {
-    box-sizing: inherit; /* Inherit from html/body */
-}
+/* --- 5: Utilities Layer --- */
+@import url('./1-base/_utilities.css') layer(utilities);

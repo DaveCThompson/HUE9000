@@ -27,7 +27,7 @@
     will-change: transform;
 }
 .app-wrapper.left-panel-expanded {
-    transform: translateX(350px) scale(0.95);
+    transform: translateX(21.875rem) scale(0.95); /* 350px -> rem */
 }
 
 /* --- Compact View Wrapper (The always-visible bar) --- */
@@ -46,19 +46,19 @@
 
 /* --- Compact View (The Vertical Bar Content) --- */
 .compact-view {
-    width: 48px;
+    width: 3rem; /* 48px -> rem */
     height: auto; /* Let content define height */
     background-color: oklch(0.1 0 0 / 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(0.625rem); /* 10px -> rem */
+    -webkit-backdrop-filter: blur(0.625rem); /* 10px -> rem */
     border: 1px solid oklch(0.3 0 0 / 0.5);
     border-left: none; /* For left panel */
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 0.5rem 0.5rem 0; /* 8px -> rem */
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.75rem 0; /* Adjusted padding */
-    gap: 0.75rem; /* Adjusted gap */
+    padding: 0.75rem 0;
+    gap: 0.75rem;
     pointer-events: all; /* The actual bar needs events */
 }
 
@@ -67,12 +67,12 @@
     border: none;
     color: oklch(0.7 0 0); /* Muted grey for the text label */
     cursor: pointer;
-    padding: 0.4rem; /* Adjusted padding */
-    font-size: 20px;
+    padding: 0.4rem;
+    font-size: 1.25rem; /* 20px -> rem */
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.2rem; /* Adjusted gap */
+    gap: 0.2rem;
     width: 100%;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
@@ -83,7 +83,7 @@
 
 /* Style the new Material Symbols icons */
 .panel-control-button .material-symbols-outlined {
-    font-size: 24px;
+    font-size: 1.5rem; /* 24px -> rem */
     color: oklch(0.7 0 0); /* Muted grey for icon */
     transition: color 0.2s ease;
 }
@@ -116,16 +116,16 @@
 /* Re-orient the text label to be horizontal */
 .panel-control-button .label-text {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 0.625rem; /* 10px -> rem */
 }
 
 /* --- Expanded View (The Main Panel Content) --- */
 .expanded-view {
-    width: 350px;
+    width: 21.875rem; /* 350px -> rem */
     height: 100%;
     background-color: oklch(0.15 0 0 / 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(0.625rem); /* 10px -> rem */
+    -webkit-backdrop-filter: blur(0.625rem); /* 10px -> rem */
     border-right: 1px solid oklch(0.3 0 0 / 0.5);
     display: flex;
     flex-direction: column;
@@ -151,7 +151,7 @@
     padding: 0.75rem;
     background: none;
     border: none;
-    border-bottom: 2px solid oklch(0.5 0.01 240 / 0.3);
+    border-bottom: 0.125rem solid oklch(0.5 0.01 240 / 0.3); /* 2px -> rem */
     color: oklch(0.7 0.01 240);
     cursor: pointer;
     font-family: 'Inter', sans-serif;
@@ -176,9 +176,9 @@
 .panel-tab-content.active { display: block; }
 
 /* Scrollbar styling */
-.panel-content::-webkit-scrollbar { width: 8px; }
+.panel-content::-webkit-scrollbar { width: 0.5rem; } /* 8px -> rem */
 .panel-content::-webkit-scrollbar-track { background: oklch(0.2 0 0); }
-.panel-content::-webkit-scrollbar-thumb { background: oklch(0.4 0 0); border-radius: 4px; }
+.panel-content::-webkit-scrollbar-thumb { background: oklch(0.4 0 0); border-radius: 0.25rem; } /* 4px -> rem */
 .panel-content::-webkit-scrollbar-thumb:hover { background: oklch(0.5 0 0); }
 
 /* Briefing Content Specifics (now inside the main panel) */
@@ -189,7 +189,7 @@
 }
 #briefing-tab p, #briefing-tab ul {
     font-family: 'Inter', sans-serif;
-    font-size: 14px; line-height: 1.6;
+    font-size: 0.875rem; line-height: 1.6; /* 14px -> rem */
     color: oklch(0.8 0.01 240);
 }
 #briefing-tab hr {
@@ -209,7 +209,7 @@
     padding: 0.5rem;
     border-bottom: 1px solid oklch(0.3 0 0 / 0.5);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
+    font-size: 0.8125rem; /* 13px -> rem */
     transition: background-color 0.2s ease;
 }
 
