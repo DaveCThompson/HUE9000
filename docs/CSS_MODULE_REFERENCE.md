@@ -1,76 +1,146 @@
-Of course. Here is a comprehensive analysis based on the provided files.
+# HUE 9000 CSS Module Reference
 
-1. CSS Module Reference
+This document provides a comprehensive overview of each CSS module in the HUE 9000 project, reflecting the current architecture.
 
-This document provides a high-level overview of each CSS module in the HUE 9000 project, mirroring the structure of the JavaScript reference.
+## Core / Hub
 
-Core / Hub
+### `main.css`
+The central CSS entry point.
+*   **Core Responsibilities:**
+    *   Acts as the import hub, pulling in all other CSS files in a specific, intentional order.
+    *   Defines the critical import order: 1. Base (foundations), 2. Themes (overrides), 3. Components (consumers), 4. Mobile (final overrides). This ensures the CSS cascade functions predictably.
+    *   Contains global `html` and `body` styles, including the dynamic `oklch()` background gradient, base font settings, and global transitions.
 
-@module main: The central CSS entry point.
+## 1-base/ (Foundational Styles)
 
-Core Responsibilities:
+### `_variables-structural.css`
+Defines non-themeable, structural constants.
+*   **Core Responsibilities:**
+    *   Includes sizing (`--height-lower-section`), spacing (`--space-md`), timing (`--transition-duration-medium`), and complex, non-aesthetic calculations (e.g., lens glow math). These are the immutable structural pillars of the UI.
 
-Acts as the import hub, pulling in all other CSS files in a specific, intentional order.
+### `_variables-theme-contract.css`
+The "API" for all themes.
+*   **Core Responsibilities:**
+    *   Defines the name of every themeable CSS variable.
+    *   Provides default (fallback) values, which collectively constitute the **Dark Theme**. All other themes work by overriding a subset of these variables.
 
-Defines the critical import order: 1. Base (foundations, contracts), 2. Themes (variable overrides), 3. Components (styles that consume the variables). This ensures the CSS cascade functions correctly.
+### `_layout.css`
+Governs the high-level structure and layout of the main application panels.
+*   **Core Responsibilities:**
+    *   Uses Flexbox to position the primary UI containers (`.app-wrapper`, `.panel-bezel`, etc.).
+    *   Includes critical `body.pre-boot` styles to prevent a Flash of Unstyled Content (FOUC) for LCDs during the initial page load.
 
-Contains the global html and body styles, including the dynamic oklch() background gradient, font settings, and global transitions.
+### `_typography.css`
+Sets the base font family and defines shared text styles.
+*   **Core Responsibilities:**
+    *   Defines styles for shared labels like `.control-group-label` and `.block-label-bottom`.
+    *   These styles consume theme variables for color and are attenuated during startup by `--startup-L-reduction-factor`.
 
-1-base/ (Foundational Styles)
+### `_dim-to-theme-transition.css`
+Manages the synchronized visual transition from DIM mode to a full theme.
+*   **Core Responsibilities:**
+    *   Contains a single, highly specific CSS rule targeting `body.is-transitioning-from-dim .animate-on-dim-exit`.
+    *   This rule is activated by JavaScript during startup phase P10 to apply a smooth, 1-second transition to specific CSS properties (e.g., `background-color`, `border-color`, `opacity`).
 
-_variables-structural.css: Defines non-themeable, structural constants. This includes sizing (--height-lower-section), spacing (--space-md), timing (--transition-duration-medium), and complex, non-aesthetic calculations (e.g., lens glow math). These are the immutable structural pillars of the UI.
+### `_utilities.css`
+Provides simple, reusable helper classes.
+*   **Core Responsibilities:**
+    *   Defines common patterns like `.visually-hidden`, `.cursor-pointer`, and `.display-flex`.
 
-_variables-theme-contract.css: The "API" for all themes. It defines the name of every themeable CSS variable and provides a default (fallback) value, which effectively constitutes the Dark Theme. All other themes (theme-dim, theme-light) work by overriding a subset of these variables.
+### `_effects.css` (Deprecated)
+This file was found to be empty and has been removed from the import chain in `main.css`. It is no longer in use.
 
-_layout.css: Governs the high-level structure and layout of the main application panels (.app-wrapper, .panel-bezel.left-panel, etc.). It uses Flexbox and Grid to position the primary UI containers. It also critically includes body.pre-boot styles to prevent a Flash of Unstyled Content (FOUC) for LCDs.
+## 2-components/ (Individual Component Styles)
 
-_typography.css: Sets the base font family and defines shared text styles, most notably for labels (.control-group-label, .block-label-bottom). These styles consume theme variables for color and are attenuated by startup factors (--startup-L-reduction-factor).
+### `_preloader.css`
+Styles the initial loading screen.
+*   **Core Responsibilities:**
+    *   Defines the layout and appearance of the preloader interface, which mimics the main UI's bezel/panel design.
+    *   Uses a performant `@property` animation on the `body.preloader-active` class to create the continuous hue-cycling effect.
 
-_effects.css: A library of reusable @keyframes animations.
+### `_side-panels.css`
+Styles the slide-out left and right panels.
+*   **Core Responsibilities:**
+    *   Defines the appearance of the compact vertical bar (`.compact-view`) and the expanded panel content (`.expanded-view`).
+    *   Manages the `transform` applied to `.app-wrapper` when a panel is open.
 
-_startup-transition.css: A highly specialized file that manages the 1-second visual transition from theme-dim to a full theme during startup phase P10. It uses the body.is-transitioning-from-dim and .animate-on-dim-exit classes to apply a smooth, synchronized transition to specific CSS properties.
+### `_panel-bezel.css`
+Styles the main "chrome" of the UI panels.
+*   **Core Responsibilities:**
+    *   Defines the metallic `linear-gradient` background, inner/outer shadows, and the recessed `.panel-section` areas.
+    *   Its appearance is attenuated during startup by `--startup-L-reduction-factor` and `--startup-opacity-factor`.
 
-_utilities.css: Provides simple, reusable helper classes for common patterns like .visually-hidden, .cursor-pointer, and .display-flex.
+### `_button-unit.css`
+The comprehensive stylesheet for all interactive buttons.
+*   **Core Responsibilities:**
+    *   Defines all states (`is-unlit`, `is-energized`, `is-selected`), sizes (`--s`, `--m`, `--l`), and hover/pressed effects.
+    *   Implements a high-performance layering system: the `::before` pseudo-element handles the `background-color`, while the `::after` pseudo-element is used for the animated `transform`/`opacity` glow on selected buttons. This is a critical performance optimization.
 
-2-components/ (Individual Component Styles)
+### `_dial.css`
+Styles the housing for the SVG dials.
+*   **Core Responsibilities:**
+    *   Styles the `.dial-canvas-container` and defines base classes for the SVG elements (`.dial-face`, `.dial-ridge`) that are manipulated by `DialController.js`.
 
-_preloader-v2.css: The active preloader style. It is self-contained, using hardcoded variables to ensure it loads quickly without dependencies on the main theme contract.
+### `_lcd.css`
+The authoritative stylesheet for all LCD screens.
+*   **Core Responsibilities:**
+    *   Defines the container (`.lcd-container`), the inner content wrapper, the CRT overlay effect, and the core states (`.lcd--unlit`, `.lcd--dimly-lit`, active).
+    *   Defines the base `text-shadow` for the "harmonic resonance" text glow effect, which is then scaled by theme-specific factors.
 
-_preloader.css: The old, legacy preloader style. It is commented out in main.css and is considered obsolete.
+### `_logo.css`
+Styles for the HUE 9000 SVG logo.
+*   **Core Responsibilities:**
+    *   Defines how the logo's different SVG path elements are filled based on theme and dynamic color variables (`--dynamic-logo-hue`, etc.).
 
-_side-panels.css: Styles the slide-out left and right panels used for debugging and controls, including the compact vertical bar and the expanded view.
+### `_lens-container.css`
+Styles the bezel of the central lens.
+*   **Core Responsibilities:**
+    *   Uses two pseudo-elements (`::before`, `::after`) with complex `conic-gradient` backgrounds to create a metallic, 3D effect.
 
-_panel-bezel.css: Styles the main "chrome" of the UI panels, including the metallic conic-gradient background, inner/outer shadows, and the recessed panel-section areas.
+### `_lens-core.css`
+Styles the innermost part of the lens.
+*   **Core Responsibilities:**
+    *   Styles the colored circle (`#color-lens`) and its `specular-highlights.svg` overlay.
 
-_button-unit.css: The comprehensive stylesheet for all interactive buttons. It defines all states (is-unlit, is-energized, is-selected, is-pressing), sizes (--s, --m, --l), and implements the high-performance ::before (background) and ::after (animated glow) layering.
+### `_lens-outer-glow.css` & `_lens-super-glow.css`
+Styles the two-part glow system emanating from the lens.
+*   **Core Responsibilities:**
+    *   Defines the appearance of the glows, which are driven by the `--lens-power` CSS variable.
+    *   The `dim` theme provides significant overrides to these files to create a larger, more diffuse "standby" effect.
 
-_dial.css: Styles the housing/container for the SVG dials and defines the base classes for the SVG elements (.dial-face, .dial-ridge) that are manipulated by DialController.js.
+### `_color-chips.css`
+Styles for the small, vertical color indicator strips in the Hue Assignment panel.
 
-_lcd.css: The authoritative stylesheet for all LCD screens. It defines the container, the inner content wrapper, the CRT overlay effect, and the core states (.lcd--unlit, .lcd--dimly-lit, active). It also defines the base for the "harmonic resonance" text glow effect.
+### `_grill.css`
+Styles the metallic grill texture used in placeholder sections.
 
-_logo.css: Styles for the HUE 9000 SVG logo, defining how its different path elements are filled based on theme and dynamic color variables.
+### `_terminal.css`
+Contains styles unique to the terminal component.
+*   **Core Responsibilities:**
+    *   Defines the animated scanline effect and the blinking cursor. It builds upon the foundational styles from `_lcd.css`.
 
-_lens-container.css: Styles the bezel of the central lens, using two pseudo-elements (::before, ::after) with complex conic gradients to create a metallic, 3D effect.
+### `_dial-displays.css`
+Styles the Mood Matrix and Intensity Display components.
+*   **Core Responsibilities:**
+    *   Defines the layout for the block/dot-based displays.
+    *   Critically, it **derives its colors** from the theme variables of its parent `.lcd-container`, ensuring it matches the state (dimly-lit, active) of the screen it's on.
 
-_lens-core.css: Styles the innermost part of the lens, the colored circle itself, and its specular highlight overlay.
+## 3-themes/ (Variable Overrides)
 
-_lens-outer-glow.css: Styles the primary colored glow that emanates from the lens, driven by the --lens-power variable.
+### `_theme-dim.css`
+Defines the very dark, low-power "standby" appearance.
+*   **Core Responsibilities:**
+    *   Aggressively lowers the lightness and opacity of most UI elements.
+    *   Provides special `.is-energized` styles for buttons that must appear "on" during the dim state (e.g., MAIN PWR).
+    *   Provides significant overrides for the lens glow system to create a unique standby effect.
 
-_lens-super-glow.css: Styles the full-viewport color overlay effect that appears at high lens power levels, also driven by --lens-power.
+### `_theme-dark.css`
+Defines the standard "Dark" theme.
+*   **Core Responsibilities:**
+    *   This file is intentionally minimal. Since the values in `_variables-theme-contract.css` already define the dark theme, this file only contains minor adjustments and fine-tuning overrides.
 
-_color-chips.css: Styles for the small, vertical color indicator strips in the Hue Assignment panel.
-
-_grill.css: Styles the metallic grill texture used in placeholder sections.
-
-_terminal.css: Contains styles unique to the terminal, such as the animated scanline effect and the blinking cursor. It builds upon the foundational styles from _lcd.css.
-
-_v2-displays.css: Styles the Mood Matrix and Intensity Display components that live inside the Dial LCDs, deriving their appearance from the parent LCD's theme variables.
-
-3-themes/ (Variable Overrides)
-
-theme-dark.css: Overrides variables to define the standard "Dark" theme. (Note: The default values in the theme contract are already the dark theme, so this file contains mostly redundant or fine-tuning overrides).
-
-theme-light.css: Overrides variables to create a brighter, higher-intensity variant of the dark aesthetic. It is not a traditional light mode.
-
-theme-dim.css: Overrides variables to create the very dark, low-power "standby" or "dim" appearance used during the startup sequence.
-
+### `_theme-light.css`
+Defines a brighter, higher-intensity variant of the dark aesthetic.
+*   **Core Responsibilities:**
+    *   Overrides variables to increase the lightness of backgrounds, bezels, and buttons.
+    *   **Note:** This is **not a traditional light mode**. It maintains the retro-futuristic, control-panel feel.

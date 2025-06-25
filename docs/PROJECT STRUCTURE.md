@@ -1,93 +1,60 @@
-# HUE 9000 Project Structure (Project Decouple - V2.1 - Vite Asset Migration)
+# HUE 9000 Project Structure (V2.1 - Post-Refactor)
 
 This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns after the "Project Decouple" refactoring and Vite-idiomatic asset migration.
 
 HUE9000_Project/
-├── public/                     # Should now be minimal, for truly static assets not processed by Vite (e.g., favicon.ico, robots.txt)
-│                               # All previously listed assets (audio, images, SVGs) have been moved to src/assets/
+├── public/                     # Minimal static assets not processed by Vite (e.g., favicon.ico, robots.txt)
 ├── src/
-│   ├── assets/                 # NEW: All static assets processed by Vite
-│   │   ├── audio/
-│   │   │   ├── auxModeChange.mp3
-│   │   │   ├── auxModeLow.mp3
-│   │   │   ├── bg-dim.mp3
-│   │   │   ├── bg-light.mp3
-│   │   │   ├── bg-resistive.mp3
-│   │   │   ├── button-press.mp3
-│   │   │   ├── buttonEnergize.mp3
-│   │   │   ├── dial.mp3
-│   │   │   ├── itemAppear.mp3
-│   │   │   ├── lcdPowerOn.mp3
-│   │   │   ├── lensStartup.mp3
-│   │   │   ├── lights-on.mp3
-│   │   │   ├── off1.mp3
-│   │   │   ├── off2.mp3
-│   │   │   ├── off3.mp3
-│   │   │   └── terminalBoot.mp3
-│   │   ├── svgs/
-│   │   │   ├── dial.svg
-│   │   │   ├── logo.svg
-│   │   │   └── specular-highlights.svg
-│   │   └── textures/
-│   │       ├── crt-overlay.png
-│   │       ├── metal-grill.png
-│   │       └── noise.svg
+│   ├── assets/                 # All static assets processed by Vite
+│   │   ├── audio/              # Sound effects for the UI
+│   │   ├── svgs/               # Core SVG assets for components
+│   │   └── textures/           # Tiling textures for UI surfaces
 │   │
-│   ├── js/
-│   │   ├── AmbientAnimationManager.js # Manages continuous ambient animations
-│   │   ├── animationUtils.js          # Utilities for complex animations (e.g., flicker)
-│   │   ├── appState.js                # Central application state management
-│   │   ├── AudioManager.js            # Class to manage all application audio
-│   │   ├── Button.js                  # Class for individual button components
-│   │   ├── buttonManager.js           # Class to orchestrate Button instances
-│   │   ├── config.js                  # Shared configuration constants
-│   │   ├── DialController.js          # Class for individual SVG dial components
-│   │   ├── dialManager.js             # Class to orchestrate Dial instances
-│   │   ├── DynamicStyleManager.js     # Manages dynamic CSS variables and logo
-│   │   ├── IntensityDisplay.js        # V2 Component: Renders the intensity display
-│   │   ├── IntensityDisplayManager.js # V2 Manager: Bridges appState and IntensityDisplay
-│   │   ├── LcdUpdater.js              # Manages LCD state and animations
-│   │   ├── lensManager.js             # Class to manage the central lens visuals
-│   │   ├── main.js                    # Application entry point and orchestrator
-│   │   ├── MoodMatrix.js              # V2 Component: Renders the mood matrix display
-│   │   ├── MoodMatrixManager.js       # V2 Manager: Bridges appState and MoodMatrix
-│   │   ├── PhaseRunner.js             # Executes declarative startup phase configs
-│   │   ├── preloader.js               # Manages the initial boot-up/loading screen
-│   │   ├── resistiveShutdownController.js # Orchestrates the resistive shutdown sequence
-│   │   ├── serviceLocator.js          # Central dependency locator
-│   │   ├── sidePanelManager.js        # Manages the left/right info/debug panels
-│   │   ├── startupSequenceManager.js  # Manages the XState startup sequence
-│   │   ├── startupMachine.js          # XState machine definition for startup
-│   │   ├── startupPhase0.js           # Declarative config for startup phase 0
-│   │   ├── startupPhase1.js           # (pattern continues for all phases...)
-│   │   ├── startupPhase2.js
-│   │   ├── startupPhase3.js
-│   │   ├── startupPhase4.js
-│   │   ├── startupPhase5.js
-│   │   ├── startupPhase6.js
-│   │   ├── startupPhase7.js
-│   │   ├── startupPhase8.js
-│   │   ├── startupPhase9.js
-│   │   ├── startupPhase10.js
-│   │   ├── startupPhase11.js
+│   ├── js/                     # All application logic and component controllers
+│   │   ├── AmbientAnimationManager.js
+│   │   ├── animationUtils.js
+│   │   ├── appState.js         # Central application state (theme, power, etc.)
+│   │   ├── AudioManager.js
+│   │   ├── Button.js
+│   │   ├── buttonManager.js
+│   │   ├── config.js
+│   │   ├── DialController.js
+│   │   ├── dialManager.js
+│   │   ├── DynamicStyleManager.js
+│   │   ├── IntensityDisplay.js
+│   │   ├── IntensityDisplayManager.js
+│   │   ├── LcdUpdater.js
+│   │   ├── lensManager.js
+│   │   ├── main.js             # Application entry point
+│   │   ├── MoodMatrix.js
+│   │   ├── MoodMatrixManager.js
+│   │   ├── PhaseRunner.js
+│   │   ├── preloader.js
+│   │   ├── resistiveShutdownController.js
+│   │   ├── serviceLocator.js
+│   │   ├── sidePanelManager.js
+│   │   ├── startupSequenceManager.js
+│   │   ├── startupMachine.js   # XState FSM definition for startup
+│   │   ├── startupPhase0.js    # (Declarative configs for each startup phase)
+│   │   ├── ...
 │   │   ├── startupPhase12.js
-│   │   ├── terminalManager.js         # Manages terminal display
-│   │   ├── terminalMessages.js        # Terminal message content
-│   │   ├── ThemeManager.js            # Manages global theme changes
-│   │   └── utils.js                   # Common utility functions
+│   │   ├── terminalManager.js
+│   │   ├── terminalMessages.js
+│   │   ├── ThemeManager.js
+│   │   └── utils.js
 │   │
 │   └── css/
-│       ├── 1-base/
+│       ├── 1-base/             # Foundational styles, variables, and utilities
 │       │   ├── _variables-structural.css
 │       │   ├── _variables-theme-contract.css
 │       │   ├── _layout.css
 │       │   ├── _typography.css
-│       │   ├── _effects.css
-│       │   ├── _startup-transition.css
+│       │   ├── _dim-to-theme-transition.css  # CORRECTED: Formerly _startup-transition.css
 │       │   └── _utilities.css
+│       │   # _effects.css - DEPRECATED: File was empty and has been removed.
 │       │
-│       ├── 2-components/
-│       │   ├── _preloader-v2.css
+│       ├── 2-components/       # Styles for individual, self-contained components
+│       │   ├── _preloader.css  # CORRECTED: Formerly _preloader-v2.css
 │       │   ├── _side-panels.css
 │       │   ├── _panel-bezel.css
 │       │   ├── _button-unit.css
@@ -101,16 +68,17 @@ HUE9000_Project/
 │       │   ├── _color-chips.css
 │       │   ├── _grill.css
 │       │   ├── _terminal.css
-│       │   └── _v2-displays.css
+│       │   └── _dial-displays.css # CORRECTED: Formerly _v2-displays.css
 │       │
-│       ├── 3-themes/
-│       │   ├── theme-dim.css
-│       │   ├── theme-dark.css
-│       └── │   └── theme-light.css
+│       ├── 3-themes/           # Theme-specific overrides of contract variables
+│       │   ├── _theme-dim.css
+│       │   ├── _theme-dark.css
+│       │   └── _theme-light.css
 │       │
-│       └── main.css
+│       └── main.css            # Central CSS import hub
+│
 ├── index.html
-├── vite.config.js             # Vite build configuration
+├── vite.config.js
 ├── package.json
 ├── yarn.lock / package-lock.json
 └── README.md
