@@ -356,3 +356,69 @@ body.preloader-active {
     opacity: 0;
     transition: opacity 0.3s ease;
 }
+
+/* -------------------------------------------------- */
+/* --- REBUILT: Mobile Portrait Responsive Styles --- */
+/* -------------------------------------------------- */
+@media (max-width: 768px) and (orientation: portrait) {
+    .preloader-main-bezel {
+        max-width: 95vw;
+        max-height: 98vh;
+        display: flex;
+    }
+
+    .preloader-content-section {
+        padding: var(--space-m) var(--space-s);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        gap: 0; /* Let children manage their own margins/gaps */
+    }
+
+    .preloader-stream-columns {
+        /* This is no longer a grid. It's a simple flex container. */
+        display: flex;
+        flex-direction: column;
+        gap: calc(var(--space-s)); /* The space between stream blocks */
+        flex-shrink: 0; /* Prevent this group from shrinking */
+    }
+
+    /* Give the stream blocks a solid, predictable height */
+    .preloader-data-stream.control-block {
+        height: 120px;
+        padding: var(--space-m);
+        gap: var(--space-xs);
+    }
+    
+    .preloader-stream-header,
+    .preloader-stream-status {
+        font-size: 0.75em;
+    }
+    
+    .preloader-stream-output-text {
+        font-size: 0.7em;
+    }
+
+    .preloader-overall-progress {
+        margin-top: var(--space-l);
+        font-size: 0.9em;
+        flex-shrink: 0;
+    }
+
+    .preloader-progress-bar-container {
+        flex-shrink: 0;
+    }
+    
+    .preloader-engage-container {
+        margin-top: auto; /* THIS IS THE KEY: Pushes the button to the bottom */
+        padding-top: var(--space-l); /* Space above button */
+        padding-bottom: var(--space-m); /* Space below button */
+        transform: none;
+        flex-shrink: 0;
+    }
+    
+    #datastream-preloader .button-unit {
+        min-width: 80%;
+    }
+}

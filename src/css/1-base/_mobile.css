@@ -6,7 +6,6 @@
 
   /* --- 1. Global & Wrapper Adjustments --- */
   .app-wrapper {
-    /* Use dynamic viewport height to account for mobile browser UI */
     height: 100dvh;
     padding: var(--space-lg);
   }
@@ -14,16 +13,12 @@
   /* --- 2. Main Content Area: Layout Reset & Re-ordering with CSS Grid --- */
   .main-content-area {
     display: grid;
-    grid-template-columns: 1fr; /* A single column */
-    /* CRITICAL: The top row is flexible (1fr), the bottom row is fixed to its content size (auto). */
-    /* This allows the top panel to shrink while the dials remain a constant size. */
+    grid-template-columns: 1fr;
     grid-template-rows: 1fr auto;
     grid-template-areas:
       "center-panel"
       "dial-controls";
-    /* REFINEMENT: Bezel thickness reduced from 2rem to 0.75rem */
-    gap: var(--space-xl);
-    /* CRITICAL: The grid MUST have a defined height for `fr` units to work correctly. */
+    gap: var(--space-md);
     height: 100%;
     max-width: 500px;
     margin: 0 auto;
@@ -32,90 +27,107 @@
 
   /* --- 3. Panel Placement, Hiding, and Styling --- */
 
-  /* Hide the entire left panel */
   .panel-bezel.left-panel {
     display: none;
   }
 
-  /* Place the center panel in its designated grid area */
+  /* Set internal bezel gap for all panels on mobile */
+  .panel-bezel {
+      gap: var(--space-md);
+  }
+
   .panel-bezel.center-panel {
     grid-area: center-panel;
-    
-    /* CRITICAL: We no longer control width directly. Height is the driver. */
+    padding: var(--space-md);
     width: auto;
-    height: 100%; /* Fill the flexible grid row completely. */
-    max-width: 100%; /* Prevent overflowing the grid column. */
-    
-    /* CRITICAL: The aspect ratio now calculates the panel's WIDTH based on its flexible HEIGHT. */
-    /* REFINEMENT: Aspect ratio adjusted to 1:3 */
+    height: 100%;
+    max-width: 100%;
     aspect-ratio: 1 / 3;
-    
-    /* CRITICAL: Center the now-narrower panel horizontally within its grid track. */
     justify-self: center;
   }
 
-  /* Ensure the flex children of center-panel respect the aspect-ratio. */
   .panel-bezel.center-panel .top-section {
-    flex: 3; /* 75% of the available space */
-    min-height: 0; /* Critical for allowing flex items to shrink */
-    /* REFINEMENT: Reduce side padding to make lens appear wider */
+    flex: 3;
+    min-height: 0;
+    padding-top: var(--space-lg);
     padding-left: var(--space-lg);
     padding-right: var(--space-lg);
-  }
-  .panel-bezel.center-panel .lower-section {
-    flex: 1; /* 25% of the available space */
-    height: auto; /* Override fixed desktop height */
-    min-height: 0; /* Critical for allowing flex items to shrink */
+    padding-bottom: var(--space-xl);
   }
 
-  /* REFINEMENT: Decrease margins on logo for a tighter layout */
+  .panel-bezel.center-panel .lower-section {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+  }
+
   #logo-container {
     margin: var(--space-md) var(--space-md) 0 var(--space-md);
   }
 
-  /* KEY FIX: Use an auto top margin to push the lens to the bottom of its flex container. */
   #lens-container {
     margin-top: auto;
     margin-bottom: 0;
   }
+  
+  /* Increase grill texture density on mobile */
+  .grill-placeholder {
+      background-size: 168.5px 114px;
+  }
 
-  /* The "Dial Lift" Technique: Repurpose the right panel as a container */
   .main-content-area > .panel-bezel.right-panel {
-    display: block; /* Un-hide the right panel to use it as a container */
+    display: block;
     grid-area: dial-controls;
-    
-    /* Strip all "bezel" styling to make it an invisible container */
     background: none;
     border: none;
     box-shadow: none;
     padding: 0;
-    overflow: visible; /* Ensure no clipping issues */
+    overflow: visible;
   }
 
-  /* Hide the parts of the right panel we don't need */
+  /*
+   * DEFINITIVE FIX: The lingering texture was on the ::after pseudo-element
+   * of the .panel-bezel itself. This rule explicitly hides it for the
+   * repurposed right panel on mobile.
+  */
+  .main-content-area > .panel-bezel.right-panel::after {
+    display: none;
+  }
+
   .main-content-area > .panel-bezel.right-panel > .top-section {
     display: none;
   }
 
-  /* Style the container for the dials */
   .right-panel .lower-section {
     display: flex;
     flex-direction: row;
-    gap: var(--space-lg);
-    height: auto; /* Let content define height */
-    padding: 0; /* Override desktop padding */
-    align-items: start; /* Align content to the top */
+    gap: 0;
+    height: auto;
+    padding: 0;
+    align-items: start;
+    
+    /* This rule is still correct for making the section transparent. */
+    background: transparent;
+    box-shadow: none;
   }
 
-  /* Ensure dial blocks take up 50% width each */
   .right-panel .hue-control-block {
     flex: 1 1 50%;
-    max-width: none; /* Override desktop max-width */
-    /* REFINEMENT: Increased internal padding by 2x for more space around dials/LCDs */
-    padding: var(--space-2xl);
+    max-width: none;
+    /* Set padding to a mid-point value (0.75rem). */
+    padding: var(--space-xl);
+  }
+  
+  /* Reduce dial height on mobile */
+  .right-panel .hue-control-block .dial-canvas-container {
+      height: 1.5rem;
+  }
+  
+  /* Adjust label background for mobile context */
+  .block-label-bottom {
+      background-color: oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
   }
 
-  /* Hide the side panels (control deck) on mobile */
   .side-panel, .compact-view-wrapper {
     display: none;
   }
