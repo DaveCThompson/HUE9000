@@ -7,30 +7,9 @@
  */
 import { HUE_ASSIGNMENT_ROW_HUES, DEFAULT_ASSIGNMENT_SELECTIONS, DEFAULT_DIAL_A_HUE } from './config/index.js';
 import { clamp } from './utils.js';
+import { EventEmitter } from './EventEmitter.js';
 
 const DEBUG_APP_STATE = false; // Global debug flag for appState logging (set to false to reduce console noise)
-
-// --- Simple Event Emitter Implementation ---
-class EventEmitter {
-  constructor() {
-    this.events = {};
-  }
-  on(eventName, listener) {
-    if (!this.events[eventName]) {
-      this.events[eventName] = [];
-    }
-    this.events[eventName].push(listener);
-    return () => {
-      this.off(eventName, listener);
-    };
-  }
-  off(eventName, listenerToRemove) {
-    if (!this.events[eventName]) return;
-    this.events[eventName] = this.events[eventName].filter(
-      listener => listener !== listenerToRemove
-    );
-  }
-}
 
 const emitter = new EventEmitter();
 
@@ -43,14 +22,7 @@ export function emit(eventName, payload) {
         }
         // console.log(`[AppState EMIT] Event: '${eventName}'. Payload:`, payloadSummary !== undefined ? payloadSummary : 'N/A', payload !== undefined && payloadSummary !== payload ? { fullPayload: payload } : '');
     }
-    if (!emitter.events[eventName]) return;
-    emitter.events[eventName].forEach(listener => {
-      try {
-        listener(payload);
-      } catch (error) {
-        console.error(`[AppState EMIT] Error in listener for '${eventName}':`, error, { payload });
-      }
-    });
+    emitter.emit(eventName, payload);
 }
 
 
@@ -138,26 +110,7 @@ export function updateDialState(dialId, newState) {
   
   const oldState = { ...dials[dialId] }; 
 
-  // --- FIX: Apply different logic for Dial A (hue wheel) and Dial B (linear intensity) ---
-  if (dialId === 'A') {
-      // Dial A is a hue wheel, so it should wrap around.
-      if (newState.hasOwnProperty('hue')) {
-          newState.hue = ((newState.hue % 360) + 360) % 360;
-      }
-      if (newState.hasOwnProperty('targetHue')) {
-          newState.targetHue = ((newState.targetHue % 360) + 360) % 360;
-      }
-  } else if (dialId === 'B') {
-      // Dial B is a linear intensity control. Its value should be clamped, not wrapped.
-      // The visual rotation can still accumulate indefinitely.
-      if (newState.hasOwnProperty('hue')) {
-          newState.hue = clamp(newState.hue, 0, 359.999);
-      }
-      if (newState.hasOwnProperty('targetHue')) {
-          newState.targetHue = clamp(newState.targetHue, 0, 359.999);
-      }
-  }
-
+  // REFACTOR: Removed wrapping/clamping logic. This is now the sole responsibility of the DialController.
   Object.assign(dials[dialId], newState);
 
   const hasRelevantChange = isInitialization ||
@@ -263,7 +216,7 @@ export function subscribe(eventName, listener) {
         if (DEBUG_APP_STATE) console.error(`[AppState Subscribe] Listener for event '${eventName}' is not a function.`);
         return () => {}; // Return a no-op unsubscriber
     }
-  return emitter.on(eventName, listener);
+  return emitter.subscribe(eventName, listener);
 }
 
 // Initialize default dial states if not already present (e.g. on first import)

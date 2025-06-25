@@ -171,10 +171,13 @@ export class DialController {
         this.rotation += rotationDelta;
         this.targetRotation = this.rotation;
         
+        // REFACTOR: Component-specific logic for wrapping/clamping is now co-located here.
         let newHue = this.hue + hueDelta;
         if (this.dialId === 'A') {
+            // Dial A is a hue wheel, so it should wrap around.
             newHue = ((newHue % 360) + 360) % 360;
-        } else {
+        } else { // Assumes Dial B
+            // Dial B is a linear intensity control. Its value should be clamped.
             newHue = this.gsap.utils.clamp(0, 359.999, newHue);
         }
         this.hue = newHue;

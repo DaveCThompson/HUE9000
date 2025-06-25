@@ -18,6 +18,7 @@ import { debounce } from './utils.js';
 import { HUE_ASSIGNMENT_ROW_HUES, TERMINAL_INTERACTION_DEBOUNCE_MS, MOBILE_BREAKPOINT } from './config/index.js';
 
 // Always-on Manager Classes
+import { DOMManager } from './DOMManager.js';
 import { DialManager } from './dialManager.js';
 import { LensManager } from './lensManager.js';
 import { ThemeManager } from './ThemeManager.js';
@@ -29,95 +30,13 @@ import { StartupSequenceManager } from './startupSequenceManager.js';
 import { MoodMatrixManager } from './MoodMatrixManager.js';
 import { IntensityDisplayManager } from './IntensityDisplayManager.js';
 import { AudioManager } from './AudioManager.js';
+import { MusicController } from './MusicController.js';
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
 
-// --- DOM Element Collection ---
-const domElements = {};
-
-// --- Music Controller Class ---
-class MusicController {
-    constructor(audioManager, appState, config) {
-        this.audioManager = audioManager;
-        this.appState = appState;
-        this.config = config;
-        this.lastResistiveStage = 0;
-
-        this.appState.subscribe('themeChanged', this.handleThemeChange.bind(this));
-        this.appState.subscribe('resistiveShutdownStageChanged', this.handleResistiveShutdownStageChange.bind(this));
-        
-        // Initial music set based on the starting theme
-        this.handleThemeChange(this.appState.getCurrentTheme());
-    }
-
-    handleThemeChange(newTheme) {
-        // Don't change music if we are in resistive shutdown mode
-        if (this.appState.getResistiveShutdownStage() > 0) {
-            return;
-        }
-
-        // console.log(`[MusicController] Theme changed to ${newTheme}. Setting music.`);
-        switch(newTheme) {
-            case 'light':
-                this.audioManager.playMusic('bgLight');
-                break;
-            case 'dark':
-            case 'dim':
-            default:
-                this.audioManager.playMusic('bgDim');
-                break;
-        }
-    }
-
-    handleResistiveShutdownStageChange({ newStage }) {
-        if (newStage > 0 && this.lastResistiveStage === 0) {
-            // Transitioning INTO resistive mode
-            // console.log('[MusicController] Resistive shutdown started. Setting music.');
-            this.audioManager.playMusic('bgResistive');
-        } else if (newStage === 0 && this.lastResistiveStage > 0) {
-            // Transitioning OUT OF resistive mode (reset)
-            // console.log('[MusicController] Resistive shutdown ended. Reverting to theme music.');
-            const currentTheme = this.appState.getCurrentTheme();
-            this.handleThemeChange(currentTheme);
-        }
-        this.lastResistiveStage = newStage;
-    }
-}
-
-
-function collectDomElements() {
-    domElements.root = document.documentElement;
-    domElements.body = document.body;
-    domElements.appWrapper = document.querySelector('.app-wrapper');
-    
-    domElements.preloaderRoot = document.getElementById('datastream-preloader');
-    domElements.streamFonts = document.getElementById('stream-fonts');
-    domElements.streamGraphics = document.getElementById('stream-graphics');
-    domElements.streamAudio = document.getElementById('stream-audio');
-    domElements.overallProgressPercentage = document.getElementById('overall-progress-percentage');
-    domElements.overallProgressBar = document.getElementById('overall-progress-bar');
-    domElements.engageButtonContainer = document.getElementById('engage-button-container');
-    domElements.preloaderEngageBtn = document.getElementById('preloader-engage-btn');
-    domElements.criticalErrorMessageElement = document.getElementById('critical-error-message');
-
-    domElements.controlDeck = document.getElementById('control-deck');
-    domElements.deckToggle = document.getElementById('deck-toggle');
-    domElements.allButtons = Array.from(document.querySelectorAll('.button-unit'));
-    domElements.dialA = document.getElementById('dial-canvas-container-A');
-    domElements.dialB = document.getElementById('dial-canvas-container-B');
-    domElements.lcdA = document.getElementById('hue-lcd-A');
-    domElements.lcdB = document.getElementById('hue-lcd-B');
-    domElements.terminalContainer = document.querySelector('.terminal-block .actual-lcd-screen-element');
-    domElements.terminalLcdContentElement = document.getElementById('terminal-lcd-content');
-    domElements.colorLensGradient = document.getElementById('color-lens-gradient');
-    domElements.lensSuperGlow = document.getElementById('lens-super-glow');
-    domElements.logoContainer = document.getElementById('logo-container');
-    domElements.hueAssignmentColumns = Array.from(document.querySelectorAll('.hue-assignment-column[data-assignment-target]'));
-}
-
-function createGridButtons(buttonManager) {
-    domElements.hueAssignmentColumns.forEach(columnEl => {
+function createGridButtons(buttonManager, domManager) {
+    domManager.hueAssignmentColumns.forEach(columnEl => {
         const groupId = columnEl.dataset.assignmentTarget;
         const labelEl = columnEl.querySelector('.control-group-label.label-top');
         columnEl.innerHTML = '';
@@ -253,6 +172,9 @@ async function initializeApp() {
     if (window.HUE9000_INITIALIZED) return;
     window.HUE9000_INITIALIZED = true;
 
+    // --- Retrieve DOM Manager ---
+    const domManager = serviceLocator.get('domElements');
+
     // --- Determine Viewport ---
     const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
     document.body.classList.toggle('is-mobile-viewport', isMobile);
@@ -307,8 +229,8 @@ async function initializeApp() {
         resistiveShutdownControllerInstance.init();
         
         // Create and discover buttons only on desktop
-        createGridButtons(buttonManager);
-        buttonManager.discoverButtons(domElements.allButtons);
+        createGridButtons(buttonManager, domManager);
+        buttonManager.discoverButtons(domManager.allButtons);
     }
 
     // --- Initialize remaining managers and setup ---
@@ -345,7 +267,11 @@ function setupResizeListener() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    collectDomElements();
+    // REFACTOR: Instantiate and initialize the DOMManager to collect all element references
+    // and register itself with the service locator.
+    const domManager = new DOMManager();
+    domManager.init();
+
     setupResizeListener();
 
     serviceLocator.register('gsap', gsap);
@@ -362,31 +288,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    let domElementsService;
-    try {
-        domElementsService = serviceLocator.get('domElements');
-    } catch (e) {
-        // Service not found, so register it
-    }
-    if (!domElementsService) {
-        serviceLocator.register('domElements', domElements);
-    }
-
     const audioManager = new AudioManager();
     serviceLocator.register('audioManager', audioManager);
     audioManager.init(); 
 
+    // REFACTOR: Populate the preloader DOM object from the new DOMManager instance.
     const preloaderDomForRun = {
-        body: domElements.body,
-        preloaderRoot: domElements.preloaderRoot,
-        streamFonts: domElements.streamFonts,
-        streamGraphics: domElements.streamGraphics,
-        streamAudio: domElements.streamAudio,
-        overallProgressPercentage: domElements.overallProgressPercentage,
-        overallProgressBar: domElements.overallProgressBar,
-        engageButton: domElements.preloaderEngageBtn, 
-        engageButtonContainer: domElements.engageButtonContainer,
-        criticalErrorMessageElement: domElements.criticalErrorMessageElement
+        body: domManager.body,
+        preloaderRoot: domManager.preloaderRoot,
+        streamFonts: domManager.streamFonts,
+        streamGraphics: domManager.streamGraphics,
+        streamAudio: domManager.streamAudio,
+        overallProgressPercentage: domManager.overallProgressPercentage,
+        overallProgressBar: domManager.overallProgressBar,
+        engageButton: domManager.preloaderEngageBtn, 
+        engageButtonContainer: domManager.engageButtonContainer,
+        criticalErrorMessageElement: domManager.criticalErrorMessageElement
     };
 
     runPreloader(preloaderDomForRun, gsap).then(initializeApp).catch(err => {
