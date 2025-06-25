@@ -227,10 +227,3 @@
     color: oklch(0.9 0.1 150); /* Greenish-cyan for values */
     font-weight: 500;
 }
-
-/* --- Mobile Overrides --- */
-@media (max-width: 768px) {
-  .side-panel, .compact-view-wrapper {
-    display: none;
-  }
-}

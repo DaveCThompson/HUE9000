@@ -54,10 +54,3 @@
 .dial-shading-top-fade      { stop-color: transparent; }
 .dial-shading-bottom-fade   { stop-color: transparent; }
 .dial-shading-bottom-shadow { stop-color: var(--dial-shading-bottom-shadow-color); transition: stop-color var(--transition-duration-medium) ease; }
-
-/* --- Mobile Overrides --- */
-@media (max-width: 768px) {
-  .right-panel .hue-control-block .dial-canvas-container {
-      height: 1.5rem;
-  }
-}

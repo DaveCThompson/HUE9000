@@ -18,7 +18,6 @@
 @import url('./1-base/_variables-theme-contract.css');
 @import url('./1-base/_layout.css');
 @import url('./1-base/_typography.css');
-/* @import url('./1-base/_effects.css'); /* REMOVED: File was empty/unused */
 @import url('./1-base/_dim-to-theme-transition.css');
 @import url('./1-base/_utilities.css');
 

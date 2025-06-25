@@ -3,7 +3,7 @@
 
 body.theme-light {
     /* --- Global Theme Adjustments --- */
-    --theme-component-opacity: 1.0; 
+    /* --theme-component-opacity: 1.0;  REMOVED: Redundant, matches contract default. */
     
     --theme-text-primary-l: 0.95;   --theme-text-primary-c: 0.005; --theme-text-primary-h: 240;
     --theme-text-secondary-l: 0.9; --theme-text-secondary-c: 0.008; --theme-text-secondary-h: 240; 
@@ -20,7 +20,7 @@ body.theme-light {
     --panel-bezel-grad-1-l: 0.99875; --panel-bezel-grad-2-l: 0.99725; --panel-bezel-grad-3-l: 0.9035;
     --panel-bezel-grad-4-l: 0.98375; --panel-bezel-grad-5-l: 0.99725; --panel-bezel-grad-6-l: 0.754;
     --panel-bezel-grad-7-l: 0.76025; --panel-bezel-grad-8-l: 0.80025; --panel-bezel-grad-9-l: 0.80475;
-    --panel-bezel-grad-c: 0; 
+    /* --panel-bezel-grad-c: 0; REMOVED: Redundant, matches contract default. */
     --panel-bezel-texture-opacity: 0.06; 
 
     --panel-shadow-outer-lowlight-color: oklch(0% 0 0 / 0.09);
@@ -112,7 +112,7 @@ body.theme-light {
 
 
     /* --- Component: Logo --- */
-    --logo-opacity: 1;
+    /* --logo-opacity: 1; REMOVED: Redundant, matches fallback in _logo.css */
     --logo-bg-l: 0.705; 
     --logo-text-l: 1; 
     --logo-dynamic-stroke-a: 0.3;

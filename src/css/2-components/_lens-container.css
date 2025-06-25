@@ -121,15 +121,3 @@
   filter: blur(0.25px);
   opacity: var(--lens-bezel-opacity, 1);
 }
-
-/* --- Mobile Overrides --- */
-@media (max-width: 768px) {
-  #logo-container {
-    margin: var(--space-md) var(--space-md) 0 var(--space-md);
-  }
-
-  #lens-container {
-    margin-top: auto;
-    margin-bottom: 0;
-  }
-}
