@@ -31,6 +31,10 @@ export class DialController {
             return;
         }
 
+        // FIX: Force the SVG's viewBox to stretch and fill the container,
+        // ignoring its original aspect ratio. This is key for non-square rendering.
+        this.svg.setAttribute('preserveAspectRatio', 'none');
+
         this.config = { // Local config for dial appearance/behavior
             NUM_RIDGES: 66, 
             RIDGE_WIDTH_FACTOR: 1.6,
@@ -82,14 +86,14 @@ export class DialController {
         this.unsubscribers.push(dialUpdateUnsub);
 
         const themeChangeUnsub = this.appState.subscribe('themeChanged', newTheme => {
-            if (this.debug) console.log(`[DialController ${this.dialId}] Detected themeChanged to '${newTheme}'. Forcing redraw.`);
+            // if (this.debug) console.log(`[DialController ${this.dialId}] Detected themeChanged to '${newTheme}'. Forcing redraw.`);
             requestAnimationFrame(() => this.forceRedraw());
         });
         this.unsubscribers.push(themeChangeUnsub);
 
         const envColorUnsub = this.appState.subscribe('targetColorChanged', payload => {
             if (payload.targetKey === 'env') {
-                if (this.debug) console.log(`[DialController ${this.dialId}] Detected ENV color change. Forcing redraw.`);
+                // if (this.debug) console.log(`[DialController ${this.dialId}] Detected ENV color change. Forcing redraw.`);
                 this.forceRedraw();
             }
         });
@@ -225,9 +229,13 @@ export class DialController {
     }
 
     forceRedraw() {
-        if (this.debug) console.log(`[DialController ${this.dialId}] forceRedraw() called.`);
+        // if (this.debug) console.log(`[DialController ${this.dialId}] forceRedraw() called.`);
         if (!this.svg) return; // Guard if SVG not found
-        this.svgWidth = this.svg.getBoundingClientRect().width;
+
+        // FIX: The rendering logic MUST use the SVG's internal viewBox coordinate system,
+        // not the element's pixel dimensions. We hard-code the known viewBox width as the basis for all calculations.
+        this.svgWidth = 200;
+
         this._updateAndCacheThemeStyles();
         this._draw();
     }

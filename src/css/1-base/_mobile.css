@@ -1,0 +1,141 @@
+/* src/css/mobile/_mobile.css */
+/* All mobile-specific styles for the HUE 9000 Interface v3.0 */
+
+/* --- Mobile Portrait Layout (max-width: 768px) --- */
+@media (max-width: 768px) {
+
+  /* --- 1. Global & Wrapper Adjustments --- */
+  .app-wrapper {
+    /* Use dynamic viewport height to account for mobile browser UI */
+    height: 100dvh;
+    padding: var(--space-lg);
+  }
+
+  /* --- 2. Main Content Area: Layout Reset & Re-ordering with CSS Grid --- */
+  .main-content-area {
+    display: grid;
+    grid-template-columns: 1fr; /* A single column */
+    /* CRITICAL: The top row is flexible (1fr), the bottom row is fixed to its content size (auto). */
+    /* This allows the top panel to shrink while the dials remain a constant size. */
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+      "center-panel"
+      "dial-controls";
+    /* REFINEMENT: Bezel thickness reduced from 2rem to 0.75rem */
+    gap: var(--space-xl);
+    /* CRITICAL: The grid MUST have a defined height for `fr` units to work correctly. */
+    height: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    align-items: stretch;
+  }
+
+  /* --- 3. Panel Placement, Hiding, and Styling --- */
+
+  /* Hide the entire left panel */
+  .panel-bezel.left-panel {
+    display: none;
+  }
+
+  /* Place the center panel in its designated grid area */
+  .panel-bezel.center-panel {
+    grid-area: center-panel;
+    
+    /* CRITICAL: We no longer control width directly. Height is the driver. */
+    width: auto;
+    height: 100%; /* Fill the flexible grid row completely. */
+    max-width: 100%; /* Prevent overflowing the grid column. */
+    
+    /* CRITICAL: The aspect ratio now calculates the panel's WIDTH based on its flexible HEIGHT. */
+    /* REFINEMENT: Aspect ratio adjusted to 1:3 */
+    aspect-ratio: 1 / 2.5;
+    
+    /* CRITICAL: Center the now-narrower panel horizontally within its grid track. */
+    justify-self: center;
+  }
+
+  /* Ensure the flex children of center-panel respect the aspect-ratio. */
+  .panel-bezel.center-panel .top-section {
+    flex: 3; /* 75% of the available space */
+    min-height: 0; /* Critical for allowing flex items to shrink */
+    /* REFINEMENT: Reduce side padding to make lens appear wider */
+    padding-left: var(--space-lg);
+    padding-right: var(--space-lg);
+  }
+  .panel-bezel.center-panel .lower-section {
+    flex: 1; /* 25% of the available space */
+    height: auto; /* Override fixed desktop height */
+    min-height: 0; /* Critical for allowing flex items to shrink */
+  }
+
+  /* REFINEMENT: Decrease margins on logo for a tighter layout */
+  #logo-container {
+    margin: var(--space-md) var(--space-md) var(--space-3xl) var(--space-md);
+  }
+
+  /* The "Dial Lift" Technique: Repurpose the right panel as a container */
+  .main-content-area > .panel-bezel.right-panel {
+    display: block; /* Un-hide the right panel to use it as a container */
+    grid-area: dial-controls;
+    
+    /* Strip all "bezel" styling to make it an invisible container */
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    overflow: visible; /* Ensure no clipping issues */
+  }
+
+  /* Hide the parts of the right panel we don't need */
+  .main-content-area > .panel-bezel.right-panel > .top-section {
+    display: none;
+  }
+
+  /* Style the container for the dials */
+  .right-panel .lower-section {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-lg);
+    height: auto; /* Let content define height */
+    padding: 0; /* Override desktop padding */
+    align-items: start; /* Align content to the top */
+  }
+
+  /* Ensure dial blocks take up 50% width each */
+  .right-panel .hue-control-block {
+    flex: 1 1 50%;
+    max-width: none; /* Override desktop max-width */
+    /* REFINEMENT: Increased internal padding by 2x for more space around dials/LCDs */
+    padding: var(--space-2xl);
+  }
+
+  /* Hide the side panels (control deck) on mobile */
+  .side-panel, .compact-view-wrapper {
+    display: none;
+  }
+}
+
+/* --- Mobile Landscape Layout (Scaled Desktop) --- */
+/* On a narrow device (like a phone) that is turned sideways */
+@media (orientation: landscape) and (max-height: 500px) {
+  /*
+    When a device with width > 768px (like a rotated iPhone) is in landscape,
+    the portrait media query above will not apply, and it will correctly fall back
+    to the default desktop flexbox layout. This query simply adds scaling on top
+    of the default desktop styles for a better fit on a small screen.
+  */
+  .app-wrapper {
+    /* Ensure the wrapper can contain the scaled content without huge padding */
+    padding: var(--space-lg);
+    /* Prevent vertical overflow */
+    overflow: hidden;
+    height: 100vh;
+  }
+  .main-content-area {
+    /* Scale the entire desktop UI down to fit */
+    transform: scale(0.75);
+    transform-origin: center center;
+    /* Adjust height to compensate for scaling and prevent overflow */
+    height: 100%;
+  }
+}

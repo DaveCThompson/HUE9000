@@ -5,9 +5,11 @@
  * 1. Base:      Foundational styles, variable contracts, utilities, and keyframes.
  * 2. Themes:    Variable overrides for different visual themes (dark, light, etc.).
  * 3. Components: Styles for individual UI components, which consume the variables.
+ * 4. Mobile:    Responsive overrides for mobile devices.
  *
  * This order ensures the CSS cascade works as intended: components are styled
- * using the final variable values defined by the active theme.
+ * using the final variable values defined by the active theme, and mobile
+ * styles can correctly override any of the above.
  */
 
 /* --- 1: Base --- */
@@ -46,6 +48,11 @@
 @import url('./2-components/_grill.css');
 @import url('./2-components/_terminal.css');
 @import url('./2-components/_v2-displays.css');
+
+
+/* --- 4: Mobile --- */
+/* Responsive overrides. Imported last to ensure correct cascade. */
+@import url('./1-base/_mobile.css');
 
 
 /* --- Base HTML/Body Styles --- */

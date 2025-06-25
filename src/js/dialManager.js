@@ -18,7 +18,7 @@ export class DialManager {
     this.debug = false;
   }
 
-  async init() { // Keep async if future operations require it, though current SVG injection is sync
+  init() {
     this.gsap = serviceLocator.get('gsap');
     this.dom = serviceLocator.get('domElements');
     this.audioManager = serviceLocator.get('audioManager');
@@ -47,6 +47,17 @@ export class DialManager {
         dialContainers.forEach(container => {
             if (container) {
                 container.innerHTML = dialSvgRawString;
+                const svgElement = container.querySelector('svg');
+                if (svgElement) {
+                    // FIX: Programmatically set viewBox and get the face rect
+                    svgElement.setAttribute('viewBox', '0 0 200 200');
+                    const faceRect = svgElement.querySelector('.dial-face');
+                    if (faceRect) {
+                        // FIX: Force the background rect to fill the new square viewBox
+                        faceRect.setAttribute('width', '200');
+                        faceRect.setAttribute('height', '200');
+                    }
+                }
             }
         });
         // if (this.debug) console.log('[DialManager] SVG dials injected successfully via ?raw import.');
