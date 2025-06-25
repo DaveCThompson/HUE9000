@@ -8,6 +8,7 @@ import { createAdvancedFlicker } from './animationUtils.js';
 import { shuffleArray } from './utils.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
+import { EventEmitter } from './EventEmitter.js';
 import { ADVANCED_FLICKER_PROFILES, RESISTIVE_SHUTDOWN_PARAMS } from './config/index.js';
 
 export const ButtonStates = {
@@ -22,15 +23,15 @@ export const ButtonStates = {
     PERMANENTLY_DISABLED: 'is-permanently-disabled'
 };
 
-export class ButtonManager {
+export class ButtonManager extends EventEmitter {
     constructor() {
+        super();
         this.gsap = null;
         this.aam = null; 
         this.audioManager = null; 
 
         this._buttons = new Map();
         this._buttonGroups = new Map();
-        this._eventListeners = {};
 
         this.mainPowerOffButtonInstance = null;
         this.debug = false;
@@ -46,18 +47,6 @@ export class ButtonManager {
         appState.subscribe('mainPowerOffButtonDisabledChanged', this.handleMainPowerOffButtonDisabledChange.bind(this));
 
         // if (this.debug) console.log('[ButtonManager INIT]');
-    }
-
-    on(eventName, callback) {
-        if (typeof callback !== 'function') return;
-        if (!this._eventListeners[eventName]) this._eventListeners[eventName] = [];
-        this._eventListeners[eventName].push(callback);
-    }
-
-    emit(eventName, data) {
-        if (this._eventListeners[eventName]) {
-            this._eventListeners[eventName].forEach(cb => cb(data));
-        }
     }
 
     discoverButtons(buttonElements) {

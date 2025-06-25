@@ -21,12 +21,12 @@ export class PhaseRunner {
     this.dom = serviceLocator.get('domElements');
     this.proxies = serviceLocator.get('proxies');
 
+    // CORRECTED: Only initialize managers that are guaranteed to exist for both mobile and desktop.
+    // Desktop-only managers like buttonManager will be retrieved on-demand.
     this.managers = {
-      buttonManager: serviceLocator.get('buttonManager'),
       dialManager: serviceLocator.get('dialManager'),
       lensManager: serviceLocator.get('lensManager'),
       lcdUpdater: serviceLocator.get('lcdUpdater'),
-      terminalManager: serviceLocator.get('terminalManager'),
       audioManager: serviceLocator.get('audioManager'),
     };
     // if (this.debug) console.log('[PhaseRunner INIT]');
@@ -200,12 +200,15 @@ export class PhaseRunner {
   _handleSimpleFlicker(tl, anim, position, currentPhaseConfig) { 
     let elements = [];
     let isButtonFlicker = false;
+    let buttonManager; // Will be retrieved only if needed
 
     if (anim.target === 'buttonGroup') {
-      elements = this.managers.buttonManager.getButtonsByGroupIds(anim.groups);
+      buttonManager = serviceLocator.get('buttonManager');
+      elements = buttonManager.getButtonsByGroupIds(anim.groups);
       isButtonFlicker = true;
     } else if (typeof anim.target === 'string') {
-        const buttonInstance = this.managers.buttonManager.getButtonByAriaLabel(anim.target);
+        buttonManager = serviceLocator.get('buttonManager');
+        const buttonInstance = buttonManager.getButtonByAriaLabel(anim.target);
         if (buttonInstance) {
             elements.push(buttonInstance.getElement()); // Get the DOM element
             isButtonFlicker = true;
@@ -230,7 +233,8 @@ export class PhaseRunner {
     const stagger = anim.stagger || 0;
     elements.forEach((el, index) => {
         if (isButtonFlicker) {
-            const buttonInstance = this.managers.buttonManager.getButtonInstance(el);
+            // buttonManager is guaranteed to be defined here due to the logic above
+            const buttonInstance = buttonManager.getButtonInstance(el);
             if (!buttonInstance) {
                 console.warn(`[PhaseRunner _handleSimpleFlicker | ${performance.now().toFixed(2)}ms] No button instance found for element:`, el, `in phase ${currentPhaseConfig.name}`);
                 return;
@@ -244,7 +248,7 @@ export class PhaseRunner {
               phaseContext: `PhaseRunner_P${currentPhaseConfig.phase}_${effectiveProfile}` 
             };
 
-            const flickerResult = this.managers.buttonManager.playFlickerToState(el, anim.state, flickerOptions);
+            const flickerResult = buttonManager.playFlickerToState(el, anim.state, flickerOptions);
 
             if (flickerResult && flickerResult.timeline) {
                 const childTlDuration = flickerResult.timeline.duration();

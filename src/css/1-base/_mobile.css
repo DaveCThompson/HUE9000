@@ -48,7 +48,7 @@
     
     /* CRITICAL: The aspect ratio now calculates the panel's WIDTH based on its flexible HEIGHT. */
     /* REFINEMENT: Aspect ratio adjusted to 1:3 */
-    aspect-ratio: 1 / 2.5;
+    aspect-ratio: 1 / 3;
     
     /* CRITICAL: Center the now-narrower panel horizontally within its grid track. */
     justify-self: center;
@@ -70,7 +70,13 @@
 
   /* REFINEMENT: Decrease margins on logo for a tighter layout */
   #logo-container {
-    margin: var(--space-md) var(--space-md) var(--space-3xl) var(--space-md);
+    margin: var(--space-md) var(--space-md) 0 var(--space-md);
+  }
+
+  /* KEY FIX: Use an auto top margin to push the lens to the bottom of its flex container. */
+  #lens-container {
+    margin-top: auto;
+    margin-bottom: 0;
   }
 
   /* The "Dial Lift" Technique: Repurpose the right panel as a container */

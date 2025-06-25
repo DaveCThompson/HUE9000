@@ -23,7 +23,7 @@ import { phase10Config } from './startupPhase10.js';
 import { phase11Config } from './startupPhase11.js';
 import { phase12Config } from './startupPhase12.js';
 
-export const phaseConfigs = [
+export const desktopPhaseConfigs = [
   phase0Config, phase1Config, phase2Config, phase3Config, phase4Config,
   phase5Config, phase6Config, phase7Config, phase8Config, phase9Config,
   phase10Config, phase11Config, phase12Config
@@ -43,17 +43,19 @@ export const startupMachine = createMachine({
     currentPhase: -1,
     isStepThroughMode: true,
     errorInfo: null,
-    themeTransitionCleanupPerformed: false,
+    // The FSM will now hold its own set of phases.
+    activePhaseConfigs: [], 
   },
   states: {
     IDLE: {
       on: {
         START_SEQUENCE: {
           target: 'RUNNING_PHASE',
+          // The event now provides the phase configs.
           actions: assign({
             isStepThroughMode: ({ event }) => event.isStepThroughMode,
+            activePhaseConfigs: ({ event }) => event.phaseConfigs,
             currentPhase: 0,
-            themeTransitionCleanupPerformed: false,
             errorInfo: null,
           })
         },
@@ -62,21 +64,21 @@ export const startupMachine = createMachine({
             actions: assign({
                 isStepThroughMode: ({ event }) => event.isStepThroughMode,
                 currentPhase: ({ event }) => event.phase,
-                themeTransitionCleanupPerformed: false,
+                // CORRECTED: This transition must also set the active phase list.
+                // It's a desktop-only feature, so we use the desktop configs.
+                activePhaseConfigs: desktopPhaseConfigs,
                 errorInfo: null,
             })
         }
       }
     },
     RUNNING_PHASE: {
-      entry: [
-        // This check is no longer needed here as cleanup is explicitly handled before COMPLETE state.
-      ],
       invoke: {
         id: 'phaseRunnerService',
         src: phaseRunnerService,
+        // Get the config directly from the FSM's own context.
         input: ({ context }) => ({
-          phaseConfig: phaseConfigs[context.currentPhase]
+          phaseConfig: context.activePhaseConfigs[context.currentPhase]
         }),
         onDone: {
           actions: assign({
@@ -102,7 +104,7 @@ export const startupMachine = createMachine({
         always: [
             {
                 target: 'COMPLETE',
-                guard: ({ context }) => context.currentPhase >= phaseConfigs.length
+                guard: ({ context }) => context.currentPhase >= context.activePhaseConfigs.length
             },
             {
                 target: 'RUNNING_PHASE',
@@ -129,15 +131,12 @@ export const startupMachine = createMachine({
     COMPLETE: {
       type: 'final',
       entry: [
-        // RECOMMENDED FIX: Perform cleanup BEFORE setting the app to interactive.
-        // This ensures the 1s transition is removed from the DOM before the
-        // ambient animation classes are applied, preventing the conflict.
+        // Perform cleanup directly, removing the circular dependency on startupSequenceManager.
         () => {
-            const ssm = serviceLocator.get('startupSequenceManager');
-            if (ssm && typeof ssm._performThemeTransitionCleanup === 'function') {
-                ssm._performThemeTransitionCleanup();
-            } else {
-                console.warn("[FSM] Could not find startupSequenceManager for pre-completion cleanup.");
+            const dom = serviceLocator.get('domElements');
+            if (dom.body.classList.contains('is-transitioning-from-dim')) {
+                dom.body.classList.remove('is-transitioning-from-dim');
+                document.querySelectorAll('.animate-on-dim-exit').forEach(el => el.classList.remove('animate-on-dim-exit'));
             }
         },
         // Now that cleanup is done, it is safe to emit the event that

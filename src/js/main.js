@@ -12,13 +12,12 @@ import { TextPlugin } from "gsap/TextPlugin";
 import * as appState from './appState.js';
 import * as config from './config/index.js';
 import { serviceLocator } from './serviceLocator.js';
-import { phaseConfigs } from './startupMachine.js';
+import { desktopPhaseConfigs } from './startupMachine.js';
 import { runPreloader } from './preloader.js';
 import { debounce } from './utils.js';
-import { HUE_ASSIGNMENT_ROW_HUES, TERMINAL_INTERACTION_DEBOUNCE_MS } from './config/index.js';
+import { HUE_ASSIGNMENT_ROW_HUES, TERMINAL_INTERACTION_DEBOUNCE_MS, MOBILE_BREAKPOINT } from './config/index.js';
 
-// Manager Classes
-import { ButtonManager } from './buttonManager.js';
+// Always-on Manager Classes
 import { DialManager } from './dialManager.js';
 import { LensManager } from './lensManager.js';
 import { ThemeManager } from './ThemeManager.js';
@@ -26,13 +25,10 @@ import { LcdUpdater } from './LcdUpdater.js';
 import { DynamicStyleManager } from './DynamicStyleManager.js';
 import { PhaseRunner } from './PhaseRunner.js';
 import AmbientAnimationManager from './AmbientAnimationManager.js';
-import resistiveShutdownControllerInstance from './resistiveShutdownController.js';
-import terminalManagerInstance from './terminalManager.js';
 import { StartupSequenceManager } from './startupSequenceManager.js';
 import { MoodMatrixManager } from './MoodMatrixManager.js';
 import { IntensityDisplayManager } from './IntensityDisplayManager.js';
 import { AudioManager } from './AudioManager.js';
-import { SidePanelManager } from './sidePanelManager.js';
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -167,6 +163,8 @@ function setupEventListeners() {
     appState.subscribe('dialUpdated', ({ id, state }) => {
         // GUARD: Only send terminal messages for interactions when the app is fully interactive.
         if (appState.getAppStatus() !== 'interactive') return;
+        // GUARD: Terminal does not exist on mobile.
+        if (!serviceLocator.get('terminalManager', true)) return; // Use safe get
 
         if (id === 'A' && !state.isDragging) {
             debouncedSendMoodMessage(state.hue);
@@ -177,6 +175,8 @@ function setupEventListeners() {
     appState.subscribe('dialBInteractionChange', (interactionState) => {
         // GUARD: Only send terminal messages for interactions when the app is fully interactive.
         if (appState.getAppStatus() !== 'interactive') return;
+        // GUARD: Terminal does not exist on mobile.
+        if (!serviceLocator.get('terminalManager', true)) return; // Use safe get
 
         if (interactionState === 'idle') {
             const powerPercent = appState.getTrueLensPower() * 100;
@@ -185,27 +185,26 @@ function setupEventListeners() {
     });
 
     appState.subscribe('buttonInteracted', ({ button }) => {
+        // This event only fires on desktop because ButtonManager is desktop-only.
+        const resistiveShutdownController = serviceLocator.get('resistiveShutdownController', true);
+        if (!resistiveShutdownController) return;
+
         const groupId = button.getGroupId();
         const value = button.getValue();
         const ariaLabel = button.getElement().getAttribute('aria-label');
 
         if (groupId === 'system-power') {
-            // Sound is handled by resistiveShutdownController
-            if (value === 'off') resistiveShutdownControllerInstance.handlePowerOffClick();
+            if (value === 'off') resistiveShutdownController.handlePowerOffClick();
             else if (value === 'on' && appState.getResistiveShutdownStage() > 0) appState.setResistiveShutdownStage(0);
         } 
         else if (groupId === 'light') {
             let stateTextForTerminal = 'OFF';
             if (button.isSelected()) {
-                // A button was just turned ON
                 if (ariaLabel.includes('Low')) {
                     appState.setTheme('dark');
                     const soundId = audioManager.play('auxModeLow', true);
                     if (soundId !== null) {
-                        // After 1 second, start a 1.5 second fade out.
-                        setTimeout(() => {
-                            audioManager.fadeOut('auxModeLow', 1.5, soundId);
-                        }, 1000);
+                        setTimeout(() => audioManager.fadeOut('auxModeLow', 1.5, soundId), 1000);
                     }
                     stateTextForTerminal = 'LOW';
                 } else if (ariaLabel.includes('High')) {
@@ -214,21 +213,14 @@ function setupEventListeners() {
                     stateTextForTerminal = 'HIGH';
                 }
             } else {
-                // This case handles deselection, reverting theme to dim if no other light is active.
                 const group = serviceLocator.get('buttonManager')._buttonGroups.get('light');
                 const anySelected = group ? Array.from(group).some(btn => btn.isSelected()) : false;
-                if (!anySelected) {
-                    appState.setTheme('dim');
-                }
+                if (!anySelected) appState.setTheme('dim');
                 audioManager.play('buttonPress', true);
             }
             
             appState.emit('requestTerminalMessage', {
-                type: 'interaction',
-                source: 'aux_light',
-                coalesce: true,
-                coalesceId: 'aux_light',
-                data: { state: stateTextForTerminal }
+                type: 'interaction', source: 'aux_light', coalesce: true, coalesceId: 'aux_light', data: { state: stateTextForTerminal }
             });
         } 
         else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
@@ -236,46 +228,41 @@ function setupEventListeners() {
             const hue = HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
             appState.setTargetColorProperties(groupId, hue);
             appState.emit('requestTerminalMessage', {
-                type: 'interaction',
-                source: 'hue_assign',
-                coalesce: true,
-                coalesceId: `hue_assign_${groupId}`,
-                data: { target: groupId.toUpperCase(), hue: hue }
+                type: 'interaction', source: 'hue_assign', coalesce: true, coalesceId: `hue_assign_${groupId}`, data: { target: groupId.toUpperCase(), hue: hue }
             });
         } 
         else if (button.config.type === 'action') {
             audioManager.play('buttonPress', true);
-            if (ariaLabel === 'Scan Button 1') {
-                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });
-            } else if (ariaLabel === 'Scan Button 2') {
-                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE', interrupt: true });
-            } else if (ariaLabel === 'Scan Button 3') {
-                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN3_MESSAGE', interrupt: true });
-            } else if (ariaLabel === 'Scan Button 4') {
-                appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN4_MESSAGE', interrupt: true });
-            }
+            if (ariaLabel === 'Scan Button 1') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });
+            else if (ariaLabel === 'Scan Button 2') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE', interrupt: true });
+            else if (ariaLabel === 'Scan Button 3') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN3_MESSAGE', interrupt: true });
+            else if (ariaLabel === 'Scan Button 4') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN4_MESSAGE', interrupt: true });
         }
     });
 
     document.body.addEventListener('click', (event) => {
         const buttonElement = event.target.closest('.button-unit:not(#preloader-engage-btn)'); 
-        if (buttonElement && serviceLocator.get('buttonManager')) {
-             serviceLocator.get('buttonManager').handleInteraction(buttonElement);
+        const buttonManager = serviceLocator.get('buttonManager', true); // Use safe get
+        if (buttonElement && buttonManager) {
+             buttonManager.handleInteraction(buttonElement);
         }
     });
 }
 
-function initializeApp() {
+async function initializeApp() {
     if (window.HUE9000_INITIALIZED) return;
     window.HUE9000_INITIALIZED = true;
 
-    // console.log('[Main INIT] HUE 9000 Project Decouple Initializing...');
-    
-    const audioManager = serviceLocator.get('audioManager'); 
+    // --- Determine Viewport ---
+    const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
+    document.body.classList.toggle('is-mobile-viewport', isMobile);
+    console.log(`[Main INIT] Viewport detected as: ${isMobile ? 'Mobile' : 'Desktop'}`);
+
+    // --- Always-on Managers (Core visual/audio components) ---
+    const audioManager = serviceLocator.get('audioManager');
     const themeManager = new ThemeManager();
     const lcdUpdater = new LcdUpdater();
     const dynamicStyleManager = new DynamicStyleManager();
-    const buttonManager = new ButtonManager();
     const dialManager = new DialManager();
     const lensManager = new LensManager();
     const ambientAnimationManager = new AmbientAnimationManager();
@@ -283,12 +270,11 @@ function initializeApp() {
     const startupSequenceManager = new StartupSequenceManager();
     const moodMatrixManager = new MoodMatrixManager();
     const intensityDisplayManager = new IntensityDisplayManager();
-    const sidePanelManager = new SidePanelManager();
-
+    
+    // Register always-on services
     serviceLocator.register('themeManager', themeManager);
     serviceLocator.register('lcdUpdater', lcdUpdater);
     serviceLocator.register('dynamicStyleManager', dynamicStyleManager);
-    serviceLocator.register('buttonManager', buttonManager);
     serviceLocator.register('dialManager', dialManager);
     serviceLocator.register('lensManager', lensManager);
     serviceLocator.register('ambientAnimationManager', ambientAnimationManager);
@@ -296,42 +282,85 @@ function initializeApp() {
     serviceLocator.register('startupSequenceManager', startupSequenceManager);
     serviceLocator.register('moodMatrixManager', moodMatrixManager);
     serviceLocator.register('intensityDisplayManager', intensityDisplayManager);
-    serviceLocator.register('sidePanelManager', sidePanelManager);
-    serviceLocator.register('resistiveShutdownController', resistiveShutdownControllerInstance);
-    serviceLocator.register('terminalManager', terminalManagerInstance);
 
+    // --- Conditional Desktop-Only Managers ---
+    if (!isMobile) {
+        console.log('[Main INIT] Initializing Desktop-only managers...');
+        // Use dynamic import() for code splitting and performance.
+        const { default: terminalManagerInstance } = await import('./terminalManager.js');
+        const { SidePanelManager } = await import('./sidePanelManager.js');
+        const { ButtonManager } = await import('./buttonManager.js');
+        const { default: resistiveShutdownControllerInstance } = await import('./resistiveShutdownController.js');
+
+        const sidePanelManager = new SidePanelManager();
+        const buttonManager = new ButtonManager();
+        
+        serviceLocator.register('terminalManager', terminalManagerInstance);
+        serviceLocator.register('sidePanelManager', sidePanelManager);
+        serviceLocator.register('buttonManager', buttonManager);
+        serviceLocator.register('resistiveShutdownController', resistiveShutdownControllerInstance);
+
+        // Initialize them after registering
+        terminalManagerInstance.init();
+        sidePanelManager.init();
+        buttonManager.init();
+        resistiveShutdownControllerInstance.init();
+        
+        // Create and discover buttons only on desktop
+        createGridButtons(buttonManager);
+        buttonManager.discoverButtons(domElements.allButtons);
+    }
+
+    // --- Initialize remaining managers and setup ---
     appState.setAppStatus('loading'); 
-    
     audioManager.postInitSubscribe();
-    
     startupSequenceManager.init();
-    phaseRunner.init(); 
-    const otherManagers = [
-        themeManager, lcdUpdater, dynamicStyleManager, buttonManager,
-        dialManager, lensManager, ambientAnimationManager, moodMatrixManager,
-        intensityDisplayManager, sidePanelManager, resistiveShutdownControllerInstance,
-        terminalManagerInstance
-    ];
-    otherManagers.forEach(manager => {
+    phaseRunner.init();
+    [ themeManager, lcdUpdater, dynamicStyleManager, dialManager, lensManager, ambientAnimationManager, moodMatrixManager, intensityDisplayManager ].forEach(manager => {
         if (typeof manager.init === 'function') manager.init();
     });
 
-    createGridButtons(buttonManager);
-    buttonManager.discoverButtons(domElements.allButtons);
     setupEventListeners();
-
-    // Instantiate and start the music controller
     new MusicController(audioManager, appState, config);
 
     startupSequenceManager.start(true); 
-    // console.log('[Main INIT] HUE 9000 Initialization Complete.');
+    console.log('[Main INIT] HUE 9000 Initialization Complete.');
+}
+
+function setupResizeListener() {
+    let wasMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
+    
+    const handleResize = debounce(() => {
+        const isNowMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
+        if (isNowMobile !== wasMobile) {
+            console.log(`[Resize Handler] Viewport changed across breakpoint. Reloading...`);
+            document.body.classList.add('is-reloading');
+            setTimeout(() => {
+                location.reload();
+            }, 300); // Wait for fade-out
+        }
+    }, 250);
+
+    window.addEventListener('resize', handleResize);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     collectDomElements();
+    setupResizeListener();
 
     serviceLocator.register('gsap', gsap);
-    serviceLocator.register('config', { ...config, phaseConfigs });
+    serviceLocator.register('config', { ...config, desktopPhaseConfigs });
+    
+    // Modify serviceLocator.get to allow for safe checks
+    const originalGet = serviceLocator.get.bind(serviceLocator);
+    serviceLocator.get = (name, safe = false) => {
+        try {
+            return originalGet(name);
+        } catch (e) {
+            if (safe) return null;
+            throw e;
+        }
+    };
     
     let domElementsService;
     try {
@@ -345,7 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const audioManager = new AudioManager();
     serviceLocator.register('audioManager', audioManager);
-
     audioManager.init(); 
 
     const preloaderDomForRun = {
@@ -361,5 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
         criticalErrorMessageElement: domElements.criticalErrorMessageElement
     };
 
-    runPreloader(preloaderDomForRun, gsap).then(initializeApp);
+    runPreloader(preloaderDomForRun, gsap).then(initializeApp).catch(err => {
+        console.error("Initialization failed after preloader:", err);
+    });
 });

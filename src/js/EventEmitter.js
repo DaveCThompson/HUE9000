@@ -14,6 +14,10 @@ export class EventEmitter {
      * @returns {Function} An unsubscribe function to remove this specific listener.
      */
     subscribe(eventName, listener) {
+        if (typeof listener !== 'function') {
+            console.error(`[EventEmitter] Listener for event '${eventName}' is not a function.`);
+            return () => {}; // Return a no-op unsubscriber
+        }
         if (!this.events[eventName]) {
             this.events[eventName] = [];
         }

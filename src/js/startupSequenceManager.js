@@ -5,10 +5,11 @@
  * (Project Decouple Refactor)
  */
 import { interpret } from 'xstate';
-import { startupMachine } from './startupMachine.js';
+import { startupMachine, desktopPhaseConfigs } from './startupMachine.js';
+import { mobileStartupPhase } from './startupMobile.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // ENSURE appState is imported
-import { STARTUP_L_REDUCTION_FACTORS, DEFAULT_DIAL_A_HUE } from './config/index.js';
+import { STARTUP_L_REDUCTION_FACTORS, DEFAULT_DIAL_A_HUE, MOBILE_BREAKPOINT } from './config/index.js';
 
 export class StartupSequenceManager {
   constructor() {
@@ -33,7 +34,13 @@ export class StartupSequenceManager {
   }
 
   start(isStepThroughMode = true) {
-    this._resetVisualsAndState(isStepThroughMode);
+    const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
+    const activePhaseList = isMobile ? [mobileStartupPhase] : desktopPhaseConfigs;
+    
+    // On mobile, the user experience should always be auto-play.
+    const effectiveStepThroughMode = isMobile ? false : isStepThroughMode;
+    
+    this._resetVisualsAndState();
 
     this.fsmInterpreter = interpret(startupMachine);
 
@@ -46,7 +53,12 @@ export class StartupSequenceManager {
     });
 
     this.fsmInterpreter.start();
-    this.fsmInterpreter.send({ type: 'START_SEQUENCE', isStepThroughMode });
+    // Send the chosen config list to the FSM.
+    this.fsmInterpreter.send({ 
+        type: 'START_SEQUENCE', 
+        isStepThroughMode: effectiveStepThroughMode,
+        phaseConfigs: activePhaseList 
+    });
   }
 
   playNextPhase() {
@@ -83,7 +95,7 @@ export class StartupSequenceManager {
     if (this.fsmInterpreter) {
       this.fsmInterpreter.stop();
     }
-    this._resetVisualsAndState(true); 
+    this._resetVisualsAndState(); 
     this.fsmInterpreter = interpret(startupMachine);
 
     this.fsmInterpreter.subscribe(snapshot => {
@@ -102,8 +114,8 @@ export class StartupSequenceManager {
     });
   }
 
-  _resetVisualsAndState(makeBodyVisible) {
-    // if (this.debug) console.log(`[SSM] _resetVisualsAndState called. Make Body Visible: ${makeBodyVisible}`);
+  _resetVisualsAndState() {
+    // if (this.debug) console.log(`[SSM] _resetVisualsAndState called.`);
     if (this.fsmInterpreter) {
       this.fsmInterpreter.stop();
       this.fsmInterpreter = null;
@@ -113,6 +125,7 @@ export class StartupSequenceManager {
     const dom = serviceLocator.get('domElements');
     const gsap = serviceLocator.get('gsap');
     const lcdUpdater = serviceLocator.get('lcdUpdater');
+    const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
 
     if (dom.body.classList.contains('pre-boot')) {
       dom.body.classList.remove('pre-boot');
@@ -120,29 +133,28 @@ export class StartupSequenceManager {
     
     gsap.killTweensOf([dom.body, this.LReductionProxy, this.opacityFactorProxy]);
 
-    if (makeBodyVisible) {
-        gsap.set(dom.body, { opacity: 1 });
-    }
+    gsap.set(dom.body, { opacity: 1 });
 
     this.LReductionProxy.value = STARTUP_L_REDUCTION_FACTORS.P0;
     this.opacityFactorProxy.value = 1.0 - this.LReductionProxy.value;
     dom.root.style.setProperty('--startup-L-reduction-factor', this.LReductionProxy.value.toFixed(3));
     dom.root.style.setProperty('--startup-opacity-factor', this.opacityFactorProxy.value.toFixed(3));
     dom.root.style.setProperty('--startup-opacity-factor-boosted', Math.min(1, this.opacityFactorProxy.value * 1.25).toFixed(3));
-    // if (this.debug) console.log(`[SSM Reset] Set L-reduction to ${this.LReductionProxy.value}`);
 
-    // Use the imported appState module directly
     appState.setAppStatus('starting-up');
     appState.setCurrentStartupPhaseNumber(-1);
     appState.setTheme('dim');
     appState.setTrueLensPower(0);
     appState.updateDialState('A', { hue: DEFAULT_DIAL_A_HUE, targetHue: DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0, isDragging: false });
     appState.updateDialState('B', { hue: 0, targetHue: 0, rotation: 0, targetRotation: 0, isDragging: false });
-    // if (this.debug) console.log('[SSM Reset] App state reset (status, theme, lens, dials).');
-
-    serviceLocator.get('buttonManager').setInitialDimStates();
+    
     serviceLocator.get('lensManager').directUpdateLensVisuals(0);
-    serviceLocator.get('terminalManager').reset();
+
+    // FIX: Add mobile guards for all desktop-only manager access
+    if (!isMobile) {
+      serviceLocator.get('buttonManager')?.setInitialDimStates();
+      serviceLocator.get('terminalManager')?.reset();
+    }
 
     const allLcds = [dom.terminalContainer, dom.lcdA, dom.lcdB];
     allLcds.forEach(lcd => {
@@ -150,7 +162,6 @@ export class StartupSequenceManager {
             lcdUpdater.setLcdState(lcd, 'unlit', { phaseContext: 'Reset' });
         }
     });
-    // if (this.debug) console.log('[SSM Reset] All managers reset to initial state.');
   }
 
   _performThemeTransitionCleanup() {
@@ -177,7 +188,7 @@ export class StartupSequenceManager {
 
   _getPhaseInfoFromSnapshot(snapshot) {
     const numericPhase = snapshot.context.currentPhase;
-    const phaseConfigs = serviceLocator.get('config').phaseConfigs; // Config is fine from locator
+    const phaseConfigs = snapshot.context.activePhaseConfigs || [];
     const phaseConfig = (phaseConfigs && numericPhase >= 0 && numericPhase < phaseConfigs.length) ? phaseConfigs[numericPhase] : null;
     
     let currentPhaseName = "N/A";

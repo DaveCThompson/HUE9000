@@ -56,3 +56,10 @@ export const V2_DISPLAY_PARAMS = {
     MOOD_FINE_DOTS: 36,
     RESONANCE_IDLE_DELAY_MS: 250
 };
+
+/** 
+ * @const {string} The CSS media query string for mobile viewports.
+ * NOTE TO DEV: This value MUST be kept in sync with the media queries in the CSS.
+ * e.g., @media (max-width: 768px) { ... }
+ */
+export const MOBILE_BREAKPOINT = '(max-width: 768px)';

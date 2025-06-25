@@ -128,9 +128,12 @@ export class SidePanelManager {
         const sequenceTab = document.getElementById('sequence-tab');
         if (!sequenceTab) return;
         let sequenceHtml = '<ul class="sequence-list">';
-        this.config.phaseConfigs.forEach(phase => {
-            sequenceHtml += `<li data-phase-num="${phase.phase}"><span>P${phase.phase}:</span> ${phase.name}</li>`;
-        });
+        // FIX: Changed phaseConfigs to desktopPhaseConfigs to match the property in the service object
+        if (this.config && this.config.desktopPhaseConfigs) {
+            this.config.desktopPhaseConfigs.forEach(phase => {
+                sequenceHtml += `<li data-phase-num="${phase.phase}"><span>P${phase.phase}:</span> ${phase.name}</li>`;
+            });
+        }
         sequenceHtml += '</ul>';
         sequenceTab.innerHTML = sequenceHtml;
     }
