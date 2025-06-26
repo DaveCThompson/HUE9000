@@ -5,7 +5,7 @@
     top: 0;
     bottom: 0;
     height: 100vh;
-    z-index: 8000; /* Lowered z-index */
+    z-index: var(--z-index-side-panel-expanded);
     display: flex;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none; /* The panel itself should not catch events */
@@ -36,7 +36,7 @@
     top: 0;
     bottom: 0;
     height: 100vh;
-    z-index: 9000; /* Higher z-index to be on top */
+    z-index: var(--z-index-side-panel-compact);
     display: flex;
     align-items: center; /* Center the compact-view vertically */
     pointer-events: none; /* The wrapper itself doesn't need events */
@@ -97,13 +97,6 @@
     color: oklch(0.9 0.01 240);
 }
 
-/* Active state for autoplay toggle */
-#seq-autoplay-toggle.is-active,
-#seq-autoplay-toggle.is-active .material-symbols-outlined {
-    color: oklch(0.9 0.1 150) !important; /* Greenish-cyan */
-}
-
-
 .panel-control-button:disabled,
 .panel-control-button:disabled .material-symbols-outlined,
 .panel-control-button:disabled .label-text {
@@ -132,13 +125,37 @@
     color: oklch(0.9 0.01 240);
 }
 
+/* PRD v2.2: Updated Panel Header */
 .panel-header {
     padding: 1rem;
     font-size: 1.2rem;
     font-weight: 500;
-    text-align: center;
     background-color: oklch(0.2 0 0 / 0.5);
     flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid oklch(0.3 0 0 / 0.5);
+}
+
+.panel-close-button {
+    background: none;
+    border: none;
+    color: oklch(0.7 0.01 240);
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.panel-close-button:hover {
+    background-color: oklch(0.8 0.01 240 / 0.1);
+    color: oklch(0.95 0.01 240);
+}
+
+.panel-close-button .material-symbols-outlined {
+    font-size: 1.5rem;
 }
 
 .panel-tabs {
@@ -181,49 +198,37 @@
 .panel-content::-webkit-scrollbar-thumb { background: oklch(0.4 0 0); border-radius: 0.25rem; } /* 4px -> rem */
 .panel-content::-webkit-scrollbar-thumb:hover { background: oklch(0.5 0 0); }
 
-/* Briefing Content Specifics (now inside the main panel) */
-#briefing-tab h3 {
+/* PRD v2.2: Content for new tabs */
+#about-tab h3, #highlights-tab h3, #contact-tab h3 {
     color: oklch(0.9 0.1 240);
     border-bottom: 1px solid oklch(0.8 0.1 240 / 0.5);
     padding-bottom: 0.5rem; margin-top: 0;
 }
-#briefing-tab p, #briefing-tab ul {
+#about-tab p, #about-tab ul, 
+#highlights-tab p, #highlights-tab ul,
+#contact-tab p, #contact-tab ul {
     font-family: 'Inter', sans-serif;
     font-size: 0.875rem; line-height: 1.6; /* 14px -> rem */
     color: oklch(0.8 0.01 240);
 }
-#briefing-tab hr {
+#about-tab hr, #highlights-tab hr, #contact-tab hr {
     border: none;
     border-top: 1px solid oklch(0.5 0.01 240 / 0.3);
     margin: 1rem 0;
 }
-#briefing-tab a { color: oklch(0.8 0.15 260); text-decoration: none; }
-#briefing-tab a:hover { text-decoration: underline; }
+#about-tab a, #highlights-tab a, #contact-tab a { color: oklch(0.8 0.15 260); text-decoration: none; }
+#about-tab a:hover, #highlights-tab a:hover, #contact-tab a:hover { text-decoration: underline; }
 
-/* Control Deck Specifics */
-.sequence-list, #state-tab ul { list-style: none; padding: 0; margin: 0; }
-.sequence-list li, #state-tab li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem;
-    border-bottom: 1px solid oklch(0.3 0 0 / 0.5);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.8125rem; /* 13px -> rem */
-    transition: background-color 0.2s ease;
+/* PRD v2.2: New Contact List Style */
+.contact-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0 0;
+}
+.contact-list li {
+    padding: 0.25rem 0;
 }
 
-.sequence-list li.is-complete {
-    color: oklch(0.6 0.01 240);
-    text-decoration: line-through;
-}
-.sequence-list li.is-active {
-    color: oklch(0.9 0.1 150); /* Greenish-cyan */
-    font-weight: bold;
-    background-color: oklch(0.8 0.01 150 / 0.1);
-}
 
-#state-tab .state-value {
-    color: oklch(0.9 0.1 150); /* Greenish-cyan for values */
-    font-weight: 500;
-}
+/* REMOVED: Legacy sequence/state list styles are no longer needed */
+.sequence-list, #state-tab ul { display: none; }

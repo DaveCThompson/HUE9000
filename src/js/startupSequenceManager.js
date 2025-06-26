@@ -88,7 +88,8 @@ export class StartupSequenceManager {
   }
 
   resetSequence() {
-    this.start(true);
+    // PRD v2.2: Reset should always trigger a new, autoplaying sequence.
+    this.start(false);
   }
 
   jumpToPhase(phaseNumber) {
@@ -141,16 +142,20 @@ export class StartupSequenceManager {
     dom.root.style.setProperty('--startup-opacity-factor', this.opacityFactorProxy.value.toFixed(3));
     dom.root.style.setProperty('--startup-opacity-factor-boosted', Math.min(1, this.opacityFactorProxy.value * 1.25).toFixed(3));
 
-    appState.setAppStatus('starting-up');
-    appState.setCurrentStartupPhaseNumber(-1);
-    appState.setTheme('dim');
-    appState.setTrueLensPower(0);
-    appState.updateDialState('A', { hue: DEFAULT_DIAL_A_HUE, targetHue: DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0, isDragging: false });
-    appState.updateDialState('B', { hue: 0, targetHue: 0, rotation: 0, targetRotation: 0, isDragging: false });
+    // PRD v2.2: Use the new single source of truth for resetting all application state.
+    // This replaces all the individual appState.set... calls.
+    appState.resetAppStateToDefaults();
     
+    // The functions below are still needed for visual/manager-specific resets.
     serviceLocator.get('lensManager').directUpdateLensVisuals(0);
 
-    // FIX: Add mobile guards for all desktop-only manager access
+    // Reset background music by calling the method on the registered controller.
+    const musicController = serviceLocator.get('musicController', true);
+    if (musicController && typeof musicController.reset === 'function') {
+        musicController.reset();
+    }
+
+    // Desktop-only manager resets
     if (!isMobile) {
       serviceLocator.get('buttonManager')?.setInitialDimStates();
       serviceLocator.get('terminalManager')?.reset();
@@ -162,6 +167,12 @@ export class StartupSequenceManager {
             lcdUpdater.setLcdState(lcd, 'unlit', { phaseContext: 'Reset' });
         }
     });
+
+    // Ensure the info panel is closed on reset.
+    const sidePanelManager = serviceLocator.get('sidePanelManager', true);
+    if(sidePanelManager && typeof sidePanelManager.close === 'function') {
+      sidePanelManager.close();
+    }
   }
 
   _performThemeTransitionCleanup() {

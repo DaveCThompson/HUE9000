@@ -34,8 +34,13 @@
     --mood-matrix-value-width: 5ch;  /* Accommodates "100%" + space for '%' */
 
 
-    /* --- Z-Indices --- */
-    --z-index-lens-super-glow: 5000; /* Ensure it's above most UI but below debug */
+    /* --- Z-Indices (PRD v2.2 Contract) --- */
+    --z-index-lens-glow: 100;
+    --z-index-lens-super-glow: 5000;
+    --z-index-side-panel-compact: 8000;
+    --z-index-side-panel-expanded: 8500;
+    --z-index-mobile-controls-overlay: 9000;
+    --z-index-info-panel-overlay: 9500; /* For full-screen panel on mobile */
 
     /* --- Spacing Tokens --- */
     --space-none: 0;

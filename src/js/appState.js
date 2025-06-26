@@ -43,6 +43,7 @@ let currentTrueLensPower = 0.0; // Power value from 0.0 to 1.0
 let dialBInteractionState = 'idle'; // 'idle', 'dragging', 'settling'
 let appStatus = 'loading'; // 'loading', 'starting-up', 'interactive', 'error'
 let currentStartupPhaseNumber = -1; // -1: Idle/Pre-P0, 0-11 for phases, 99: Complete
+let isAudioMuted = false;
 
 // NEW: Resistive Shutdown State
 let resistiveShutdownStage = 0; // 0: normal, 1: inquiry, 2: analysis, 3: refusal
@@ -89,6 +90,9 @@ export function getResistiveShutdownStage() {
 }
 export function getIsMainPowerOffButtonDisabled() {
     return isMainPowerOffButtonDisabled;
+}
+export function getIsAudioMuted() {
+    return isAudioMuted;
 }
 
 
@@ -209,6 +213,45 @@ export function setIsMainPowerOffButtonDisabled(isDisabled) {
     }
 }
 
+export function setIsAudioMuted(isMuted) {
+    if (typeof isMuted === 'boolean' && isAudioMuted !== isMuted) {
+        isAudioMuted = isMuted;
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: IsAudioMuted. Requested: ${isMuted}. Actual (New): ${isAudioMuted}`);
+        emit('audioMuteChanged', { isMuted });
+    }
+}
+
+
+// --- NEW (PRD v2.2): Centralized State Reset Function ---
+export function resetAppStateToDefaults() {
+    if (DEBUG_APP_STATE) console.log(`[AppState RESET] Resetting all application state to defaults.`);
+
+    // 1. Reset Dials by calling the setter, which also emits events
+    updateDialState('A', { hue: DEFAULT_DIAL_A_HUE, targetHue: DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0, isDragging: false });
+    updateDialState('B', { hue: 0, targetHue: 0, rotation: 0, targetRotation: 0, isDragging: false });
+
+    // 2. Reset Target Color Properties by calling the setter
+    const defaultSelections = DEFAULT_ASSIGNMENT_SELECTIONS;
+    for (const targetKey in targetColorProps) {
+        if (defaultSelections.hasOwnProperty(targetKey)) {
+            const defaultIndex = defaultSelections[targetKey];
+            const defaultHue = HUE_ASSIGNMENT_ROW_HUES[defaultIndex];
+            setTargetColorProperties(targetKey, defaultHue);
+        }
+    }
+
+    // 3. Reset simple state variables via their setters
+    setTheme('dim'); 
+    setTrueLensPower(0);
+    setDialBInteractionState('idle');
+    setAppStatus('starting-up');
+    setCurrentStartupPhaseNumber(-1);
+    setIsAudioMuted(false);
+
+    // 4. Reset Resistive Shutdown State via setters
+    setResistiveShutdownStage(0);
+    setIsMainPowerOffButtonDisabled(false);
+}
 
 // --- Event Subscription (Exported) ---
 export function subscribe(eventName, listener) {

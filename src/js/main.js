@@ -78,6 +78,28 @@ function setupEventListeners() {
         });
     }, TERMINAL_INTERACTION_DEBOUNCE_MS);
 
+    // --- Global Event Subscriptions ---
+
+    // SINGLE SOURCE OF TRUTH for reacting to mute state changes.
+    appState.subscribe('audioMuteChanged', ({ isMuted }) => {
+        // 1. Command the audio manager
+        audioManager.toggleMute(isMuted);
+
+        // 2. Update Desktop UI
+        const desktopMuteBtn = document.getElementById('audio-mute-toggle');
+        if (desktopMuteBtn) {
+            const icon = desktopMuteBtn.querySelector('.material-symbols-outlined');
+            if (icon) icon.textContent = isMuted ? 'volume_off' : 'volume_up';
+        }
+
+        // 3. Update Mobile UI
+        const mobileMuteBtn = document.getElementById('mobile-audio-btn');
+        if (mobileMuteBtn) {
+            const icon = mobileMuteBtn.querySelector('.material-symbols-outlined');
+            if (icon) icon.textContent = isMuted ? 'volume_off' : 'volume_up';
+        }
+    });
+
     // Listen for Dial A (Mood) updates
     appState.subscribe('dialUpdated', ({ id, state }) => {
         // GUARD: Only send terminal messages for interactions when the app is fully interactive.
@@ -174,6 +196,30 @@ function setupEventListeners() {
     });
 }
 
+// PRD v2.2: New function for mobile event listeners
+function setupMobileEventListeners() {
+    const startupManager = serviceLocator.get('startupSequenceManager');
+    const sidePanelManager = serviceLocator.get('sidePanelManager');
+
+    const mobileResetBtn = document.getElementById('mobile-reset-btn');
+    const mobileAudioBtn = document.getElementById('mobile-audio-btn');
+    const mobileInfoBtn = document.getElementById('mobile-info-btn');
+
+    if (mobileResetBtn) {
+        mobileResetBtn.addEventListener('click', () => startupManager.resetSequence());
+    }
+
+    if (mobileAudioBtn) {
+        mobileAudioBtn.addEventListener('click', () => {
+            appState.setIsAudioMuted(!appState.getIsAudioMuted());
+        });
+    }
+    
+    if (mobileInfoBtn) {
+        mobileInfoBtn.addEventListener('click', () => sidePanelManager.toggle());
+    }
+}
+
 async function initializeApp() {
     if (window.HUE9000_INITIALIZED) return;
     window.HUE9000_INITIALIZED = true;
@@ -237,6 +283,13 @@ async function initializeApp() {
         // Create and discover buttons only on desktop
         createGridButtons(buttonManager, domManager);
         buttonManager.discoverButtons(domManager.allButtons);
+    } else {
+        // PRD v2.2: On mobile, we still need the SidePanelManager for the info panel,
+        // but not the other desktop-only managers.
+        const { SidePanelManager } = await import('./sidePanelManager.js');
+        const sidePanelManager = new SidePanelManager();
+        serviceLocator.register('sidePanelManager', sidePanelManager);
+        sidePanelManager.init();
     }
 
     // --- Initialize remaining managers and setup ---
@@ -249,10 +302,19 @@ async function initializeApp() {
     });
 
     setupEventListeners();
-    new MusicController(audioManager, appState, config);
+    
+    // Instantiate MusicController and register it so it can be reset.
+    const musicController = new MusicController(audioManager, appState, config);
+    serviceLocator.register('musicController', musicController);
 
-    startupSequenceManager.start(true); 
+    // PRD v2.2: The startup sequence should play automatically.
+    startupSequenceManager.start(false); 
     console.log('[Main INIT] HUE 9000 Initialization Complete.');
+
+    // PRD v2.2: Add event listeners for new mobile overlay controls.
+    if (isMobile) {
+        setupMobileEventListeners();
+    }
 }
 
 function setupResizeListener() {
