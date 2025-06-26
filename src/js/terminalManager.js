@@ -19,6 +19,9 @@ import {
     TERMINAL_MAX_LINES_IN_DOM
 } from './config/index.js';
 
+// This value MUST be kept in sync with the `max-width` in `_terminal.css`.
+const TERMINAL_MAX_CHARS_PER_LINE = 65;
+
 class TerminalManager {
     constructor() {
         this._terminalContainerElement = null;
@@ -55,22 +58,37 @@ class TerminalManager {
     _setupDOM() {
         this._cursorElement = document.createElement('span');
         this._cursorElement.className = 'terminal-cursor';
+        const cursorInner = document.createElement('span');
+        cursorInner.className = 'cursor-inner';
+        this._cursorElement.appendChild(cursorInner);
         this.reset();
     }
 
     _interruptAndClear() {
+        // ROBUSTNESS FIX: Abort the current promise if it exists.
+        // The running `_processQueue` loop will now be responsible for cleaning up its own state.
         if (this._currentTypingPromise) {
             this._currentTypingPromise.abort = true;
-            this._currentTypingPromise = null;
+            this._currentTypingPromise = null; // We can clear our reference to it.
         }
-        if(this._gsap) this._gsap.killTweensOf(this); // Kill any pending delayed calls
+        
+        // Kill any pending delayed calls (like inter-line pauses).
+        if(this._gsap) this._gsap.killTweensOf(this); 
+        
+        // Clear the message queue of any pending work.
         this._messageQueue = [];
-        this._isTyping = false;
+        
+        // Clear the visual DOM content.
         if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
         if (this._cursorElement && this._cursorElement.parentNode) {
             this._cursorElement.parentNode.removeChild(this._cursorElement);
         }
+        
         this._isFirstLine = true; 
+        
+        // ROBUSTNESS FIX: DO NOT set `_isTyping = false` here.
+        // The currently running `_processQueue` instance must be the one to release the lock.
+        // We can, however, immediately set the cursor to idle.
         this._setCursorState('idle');
     }
 
@@ -99,8 +117,7 @@ class TerminalManager {
         // 3. Add to queue
         this._messageQueue.push(messageObject);
 
-        // 4. THE CRITICAL FIX: The Race-Condition-Proof Lock
-        // Only start processing if we are not *already* in the middle of the _processQueue loop.
+        // 4. Start processing ONLY if we are not already in a processing loop.
         if (!this._isTyping) {
             this._processQueue();
         }
@@ -113,35 +130,82 @@ class TerminalManager {
 
         while (this._messageQueue.length > 0) {
             const messageObject = this._messageQueue.shift();
-            this._setCursorState('typing');
-
-            // Thinking delay
+            
+            this._setCursorState('thinking');
             const delay = this._gsap.utils.random(
                 TERMINAL_THINKING_DELAY_MIN_MS,
                 TERMINAL_THINKING_DELAY_MAX_MS
             );
-            if (!this._isFirstLine) {
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-
-            // Create a new promise for the typing task
+            
             const typingPromise = {};
             this._currentTypingPromise = typingPromise;
+            
+            await new Promise(resolve => {
+                this._gsap.delayedCall(delay / 1000, resolve);
+            }).catch(() => {});
 
-            // Run the typing logic
+            // ROBUSTNESS FIX: Check for abortion immediately after any `await`.
+            if (typingPromise.abort) {
+                break;
+            }
+
+            this._setCursorState('typing');
             await this._typeMessage(messageObject, typingPromise);
 
             if (typingPromise.abort) {
-                // If we were aborted, exit the loop immediately
                 break;
             }
         }
 
+        // ROBUSTNESS FIX: This block is now the ONLY place where `_isTyping` is set to false.
         this._isTyping = false;
         this._currentTypingPromise = null;
         if (this._messageQueue.length === 0) {
             this._setCursorState('idle'); // Only go idle if queue is truly empty
         }
+    }
+
+    _breakTextIntoVisualLines(text) {
+        if (!text) return [''];
+        const lines = [];
+        const logicalLines = text.split('\n');
+
+        for (const logicalLine of logicalLines) {
+            const words = logicalLine.split(' ');
+            let currentLine = '';
+
+            for (const word of words) {
+                if (word.length > TERMINAL_MAX_CHARS_PER_LINE) {
+                    if (currentLine.length > 0) {
+                        lines.push(currentLine);
+                        currentLine = '';
+                    }
+                    let tempWord = word;
+                    while (tempWord.length > TERMINAL_MAX_CHARS_PER_LINE) {
+                        lines.push(tempWord.substring(0, TERMINAL_MAX_CHARS_PER_LINE));
+                        tempWord = tempWord.substring(TERMINAL_MAX_CHARS_PER_LINE);
+                    }
+                    currentLine = tempWord;
+                    continue;
+                }
+
+                if ((currentLine + ' ' + word).trim().length > TERMINAL_MAX_CHARS_PER_LINE && currentLine.length > 0) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    if (currentLine.length > 0) {
+                        currentLine += ' ';
+                    }
+                    currentLine += word;
+                }
+            }
+            if (currentLine.length > 0) {
+                lines.push(currentLine);
+            } else if (lines.length === 0 && logicalLines.length === 1) {
+                lines.push('');
+            }
+        }
+        return lines;
     }
 
     async _typeMessage(messageObject, promise) {
@@ -152,12 +216,18 @@ class TerminalManager {
                 this._addNewLineAndPrepareForTyping(true);
             }
         }
+        
+        const allVisualLines = [];
+        for (const logicalLine of messageObject.content) {
+            const visualLines = this._breakTextIntoVisualLines(logicalLine);
+            allVisualLines.push(...visualLines);
+        }
 
-        for (let i = 0; i < messageObject.content.length; i++) {
+        for (let i = 0; i < allVisualLines.length; i++) {
             if (promise.abort) return;
 
-            const lineText = messageObject.content[i];
-            this._addNewLineAndPrepareForTyping();
+            const lineText = allVisualLines[i];
+            this._addNewLineAndPrepareForTyping(false, messageObject.className);
 
             let speedPerChar;
             if (messageObject.type === 'startup') speedPerChar = TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
@@ -166,19 +236,23 @@ class TerminalManager {
 
             const typeOptions = { flicker: messageObject.flicker || false };
 
-            // Pass the promise down to be checked inside the loop
             await this._typeLine(lineText, speedPerChar, typeOptions, promise);
 
-            if (i < messageObject.content.length - 1) {
+            if (promise.abort) return;
+
+            if (i < allVisualLines.length - 1) {
                 await this._pauseAndBlink(TERMINAL_INTER_LINE_PAUSE_S || 0.4, promise);
             }
         }
         this._isFirstLine = false;
     }
 
-    _addNewLineAndPrepareForTyping(isSpacer = false) {
+    _addNewLineAndPrepareForTyping(isSpacer = false, className = null) {
         this._currentLineElement = document.createElement('div');
         this._currentLineElement.className = 'terminal-line';
+        if (className) {
+            this._currentLineElement.classList.add(className);
+        }
         
         this._currentTextSpan = null; // Reset span
         if (!isSpacer) {
@@ -191,12 +265,11 @@ class TerminalManager {
         
         this._limitMaxLines();
         this._isFirstLine = false;
-        return this._currentTextSpan; // Return the new span for potential use
+        return this._currentTextSpan;
     }
     
     async _typeLine(text, speedPerChar, options = {}, promise) {
-        if (!this._currentTextSpan) return;
-        if (promise.abort) return;
+        if (!this._currentTextSpan || promise.abort) return;
 
         const scrollContainer = this._terminalContentElement.parentElement;
         let flickerAnimation = null;
@@ -267,12 +340,25 @@ class TerminalManager {
         }
     }
 
-    _setCursorState(state) {
+    _setCursorState(state) { // state can be 'idle', 'typing', 'thinking'
         if (!this._cursorElement) return;
-        this._cursorElement.classList.toggle('is-blinking', state === 'idle');
-        this._gsap.set(this._cursorElement, { opacity: 1 });
-        if (state === 'idle' && !this._currentLineElement) {
-            this._addNewLineAndPrepareForTyping();
+        
+        this._cursorElement.classList.remove('is-blinking', 'is-solid', 'is-thinking');
+
+        switch (state) {
+            case 'idle':
+                this._cursorElement.classList.add('is-blinking');
+                break;
+            case 'typing':
+                this._cursorElement.classList.add('is-solid');
+                break;
+            case 'thinking':
+                this._cursorElement.classList.add('is-thinking');
+                break;
+        }
+
+        if (state === 'idle' && !this._cursorElement.parentElement) {
+             this._addNewLineAndPrepareForTyping();
         }
     }
 }

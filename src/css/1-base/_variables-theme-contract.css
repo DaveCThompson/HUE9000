@@ -279,4 +279,11 @@
     /* Theme-specific scaling factors for terminal glow */
     --theme-terminal-glow-opacity-factor: 1.0;
     --theme-terminal-glow-size-factor: 1.0;
+
+    /* Terminal Message Colors */
+    --terminal-text-color-default: inherit; /* Inherits from standard LCD text color */
+    --terminal-text-color-error-l: 0.75; --terminal-text-color-error-c: 0.22; --terminal-text-color-error-h: 25;
+    --terminal-text-color-warning-l: 0.85; --terminal-text-color-warning-c: 0.18; --terminal-text-color-warning-h: 85;
+    --terminal-text-color-success-l: 0.82; --terminal-text-color-success-c: 0.20; --terminal-text-color-success-h: 145;
+    --terminal-text-color-resist-l: 0.80; --terminal-text-color-resist-c: 0.20; --terminal-text-color-resist-h: 55;
 }

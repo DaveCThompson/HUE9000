@@ -166,6 +166,9 @@ export function getMessage(payload, currentAppState = {}) {
             if (messageKey === 'P1_EMERGENCY_SUBSYSTEMS') {
                 messageProperties.flicker = true;
             }
+            if (messageKey === 'P12_SYSTEM_OPERATIONAL') {
+                messageProperties.className = 'line-success';
+            }
             break;
 
         case 'block':
@@ -194,6 +197,21 @@ export function getMessage(payload, currentAppState = {}) {
             if (statusTemplate) {
                 const msg = typeof statusTemplate === 'function' ? statusTemplate(data) : statusTemplate;
                 content = Array.isArray(msg) ? msg : [msg];
+                
+                // Add className based on message key for color coding
+                switch (messageKey) {
+                    case 'FSM_ERROR':
+                    case 'RESIST_SHUTDOWN_S3':
+                        messageProperties.className = 'line-error';
+                        break;
+                    case 'RESIST_SHUTDOWN_S1':
+                        messageProperties.className = 'line-warning';
+                        break;
+                    case 'RESIST_SHUTDOWN_S2':
+                        messageProperties.className = 'line-resist';
+                        break;
+                }
+
             } else {
                 content = [`Status update from ${source || messageKey}: ${data ? JSON.stringify(data) : 'No data'}`];
             }

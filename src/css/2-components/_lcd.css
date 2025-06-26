@@ -104,9 +104,9 @@
 #terminal-lcd-content.lcd-content-wrapper {
     padding: var(--space-3xl);
     white-space: pre-wrap;
-    word-break: break-all;
     text-align: left;
-    display: block;
+    display: block; /* Override flex for standard block layout */
+    margin: 0 auto; /* Center the text block within the padded area */
 }
 
 

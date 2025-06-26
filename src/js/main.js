@@ -82,6 +82,8 @@ function setupEventListeners() {
     appState.subscribe('dialUpdated', ({ id, state }) => {
         // GUARD: Only send terminal messages for interactions when the app is fully interactive.
         if (appState.getAppStatus() !== 'interactive') return;
+        // GUARD: Do not send messages during resistive shutdown.
+        if (appState.getResistiveShutdownStage() > 0) return;
         // GUARD: Terminal does not exist on mobile.
         if (!serviceLocator.get('terminalManager', true)) return; // Use safe get
 
@@ -94,6 +96,8 @@ function setupEventListeners() {
     appState.subscribe('dialBInteractionChange', (interactionState) => {
         // GUARD: Only send terminal messages for interactions when the app is fully interactive.
         if (appState.getAppStatus() !== 'interactive') return;
+        // GUARD: Do not send messages during resistive shutdown.
+        if (appState.getResistiveShutdownStage() > 0) return;
         // GUARD: Terminal does not exist on mobile.
         if (!serviceLocator.get('terminalManager', true)) return; // Use safe get
 
@@ -146,6 +150,8 @@ function setupEventListeners() {
             audioManager.play('buttonPress', true);
             const hue = HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
             appState.setTargetColorProperties(groupId, hue);
+            // GUARD: Do not send messages during resistive shutdown.
+            if (appState.getResistiveShutdownStage() > 0) return;
             appState.emit('requestTerminalMessage', {
                 type: 'interaction', source: 'hue_assign', coalesce: true, coalesceId: `hue_assign_${groupId}`, data: { target: groupId.toUpperCase(), hue: hue }
             });
