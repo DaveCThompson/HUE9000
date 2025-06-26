@@ -35,6 +35,31 @@ import { MusicController } from './MusicController.js';
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
 
+/**
+ * Visual Viewport Watcher
+ * Sets a CSS custom property --visual-viewport-height to the actual visible
+ * height, accounting for on-screen keyboards and browser UI bars.
+ * This provides a robust solution for the '100vh' problem on mobile.
+ */
+function initVisualViewportWatcher() {
+    if (!window.visualViewport) {
+        console.warn('Visual Viewport API not supported. Falling back to CSS defaults.');
+        return;
+    }
+
+    const setViewportHeight = () => {
+        document.documentElement.style.setProperty(
+            '--visual-viewport-height',
+            `${window.visualViewport.height}px`
+        );
+    };
+
+    setViewportHeight(); // Set initial value
+
+    window.visualViewport.addEventListener('resize', setViewportHeight);
+}
+
+
 function createGridButtons(buttonManager, domManager) {
     domManager.hueAssignmentColumns.forEach(columnEl => {
         const groupId = columnEl.dataset.assignmentTarget;
@@ -335,6 +360,9 @@ function setupResizeListener() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Call this immediately to set the viewport height variable for mobile.
+    initVisualViewportWatcher();
+
     // REFACTOR: Instantiate and initialize the DOMManager to collect all element references
     // and register itself with the service locator.
     const domManager = new DOMManager();

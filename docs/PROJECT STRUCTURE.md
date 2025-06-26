@@ -1,14 +1,14 @@
-# HUE 9000 Project Structure (V2.1 - Post-Refactor)
+# HUE 9000 Project Structure (V2.2 - Post-Refactor & Path Fix)
 
-This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns after the "Project Decouple" refactoring and Vite-idiomatic asset migration.
+This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns. This version reflects the "Project Decouple" refactoring, Vite-idiomatic asset migration, and correction of CSS asset pathing.
 
 HUE9000_Project/
 ├── public/                     # Minimal static assets not processed by Vite (e.g., favicon.ico, robots.txt)
 ├── src/
 │   ├── assets/                 # All static assets processed by Vite
 │   │   ├── audio/              # Sound effects for the UI
-│   │   ├── svgs/               # Core SVG assets for components
-│   │   └── textures/           # Tiling textures for UI surfaces
+│   │   ├── svgs/               # Core, standalone SVG assets for components (e.g., logo, dial face)
+│   │   └── textures/           # Tiling textures and overlay patterns (e.g., .png, .svg for noise)
 │   │
 │   ├── js/                     # All application logic and component controllers
 │   │   ├── AmbientAnimationManager.js

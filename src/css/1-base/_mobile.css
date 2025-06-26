@@ -9,6 +9,14 @@
 /* --- Mobile Portrait Layout (max-width: 48rem) --- */
 @media (max-width: 48rem) { /* 768px -> rem */
 
+  /* --- DEFINITIVE FIX for Mobile Viewport Height --- */
+  /* Remove explicit height from body to prevent interference */
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow: hidden; /* Prevent bouncing/scrolling of the body itself */
+  }
+
   /* --- 0. New Mobile Overlay Controls (PRD v2.2) --- */
   #mobile-controls-overlay {
     display: flex;
@@ -62,7 +70,10 @@
 
   /* --- 1. Global & Wrapper Adjustments --- */
   .app-wrapper {
-    height: 100dvh;
+    /* Apply the viewport height directly to the main wrapper.
+       This is a more robust method than sizing the body.
+       It uses the JS variable with a modern CSS fallback. */
+    height: var(--visual-viewport-height, 100dvh);
     padding: var(--space-lg);
   }
 
@@ -74,7 +85,7 @@
     grid-template-areas:
       "center-panel"
       "dial-controls";
-    gap: var(--space-md);
+    gap: var(--space-lg); /* Increase gap to match top padding for more breathing room */
     height: 100%;
     max-width: 31.25rem; /* 500px -> rem */
     margin: 0 auto;

@@ -29,7 +29,7 @@ body {
 
     background-color: oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
     background-image:
-        url('../assets/textures/noise.svg'),
+        url('../../assets/textures/noise.svg'),
         linear-gradient(180deg,
             oklch(calc(var(--body-bg-top-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-top-c) var(--body-bg-top-h) / var(--body-bg-top-a)) 0%,
             oklch(calc(var(--body-bg-bottom-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a)) 100%

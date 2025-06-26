@@ -1,26 +1,41 @@
 {
   "name": "hue9000",
   "version": "1.0.0",
+  "description": "HUE 9000: Interactive diegetic UI demo with GSAP, XState & Howler",
+  "author": "Dave Thompson <dthompson@journaltech.com>",
+  "license": "ISC",
+  "keywords": [
+    "hue9000",
+    "diegetic-ui",
+    "gsap",
+    "xstate",
+    "howler",
+    "vanilla-js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/HUE9000.git"
+  },
+  "homepage": "https://your-username.github.io/HUE9000",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "gh-pages": "^6.3.0",
-    "vite": "^6.3.5"
+    "deploy": "gh-pages -d dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "gsap": "^3.13.0",
     "howler": "^2.2.4",
     "xstate": "^5.19.3"
   },
-  "description": ""
+  "devDependencies": {
+    "gh-pages": "^6.3.0",
+    "vite": "^6.3.5"
+  }
 }

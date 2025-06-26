@@ -95,7 +95,7 @@ body.preloader-active {
     box-sizing: border-box;
     width: 100%;
     background-color: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
-    background-image: url('../assets/textures/noise.svg');
+    background-image: url('../../assets/textures/noise.svg');
     background-size: 9.375rem 9.375rem; /* 150px -> rem */
     background-blend-mode: multiply;
     box-shadow: var(--panel-section-shadow-inner);
