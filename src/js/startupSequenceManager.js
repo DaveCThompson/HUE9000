@@ -9,7 +9,7 @@ import { startupMachine, desktopPhaseConfigs } from './startupMachine.js';
 import { mobileStartupPhase } from './startupMobile.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // ENSURE appState is imported
-import { STARTUP_L_REDUCTION_FACTORS, DEFAULT_DIAL_A_HUE, MOBILE_BREAKPOINT } from './config/index.js';
+import { STARTUP_L_REDUCTION_FACTORS, DEFAULT_DIAL_A_HUE, MOBILE_BREAKPOINT, HUE_ASSIGNMENT_ROW_HUES } from './config/index.js';
 
 export class StartupSequenceManager {
   constructor() {
@@ -145,6 +145,12 @@ export class StartupSequenceManager {
     // PRD v2.2: Use the new single source of truth for resetting all application state.
     // This replaces all the individual appState.set... calls.
     appState.resetAppStateToDefaults();
+    
+    // CORRECTED LOGIC: Apply mobile-specific overrides AFTER the global reset.
+    if (isMobile) {
+        // Set logo to blue by default on mobile.
+        appState.setTargetColorProperties('logo', HUE_ASSIGNMENT_ROW_HUES[4]);
+    }
     
     // The functions below are still needed for visual/manager-specific resets.
     serviceLocator.get('lensManager').directUpdateLensVisuals(0);

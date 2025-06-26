@@ -225,10 +225,12 @@ function setupEventListeners() {
 function setupMobileEventListeners() {
     const startupManager = serviceLocator.get('startupSequenceManager');
     const sidePanelManager = serviceLocator.get('sidePanelManager');
+    const audioManager = serviceLocator.get('audioManager');
 
     const mobileResetBtn = document.getElementById('mobile-reset-btn');
     const mobileAudioBtn = document.getElementById('mobile-audio-btn');
     const mobileInfoBtn = document.getElementById('mobile-info-btn');
+    const mobileLightBtn = document.getElementById('mobile-light-btn');
 
     if (mobileResetBtn) {
         mobileResetBtn.addEventListener('click', () => startupManager.resetSequence());
@@ -242,6 +244,48 @@ function setupMobileEventListeners() {
     
     if (mobileInfoBtn) {
         mobileInfoBtn.addEventListener('click', () => sidePanelManager.toggle());
+    }
+
+    if (mobileLightBtn) {
+        const updateLightButtonIcon = (theme) => {
+            if (!mobileLightBtn) return;
+            const icon = mobileLightBtn.querySelector('.material-symbols-outlined');
+            if (icon) {
+                switch (theme) {
+                    case 'dim':
+                        icon.textContent = 'lightbulb_circle';
+                        icon.style.fontVariationSettings = "'FILL' 0";
+                        break;
+                    case 'dark':
+                        icon.textContent = 'lightbulb';
+                        icon.style.fontVariationSettings = "'FILL' 0";
+                        break;
+                    case 'light':
+                        icon.textContent = 'lightbulb';
+                        icon.style.fontVariationSettings = "'FILL' 1";
+                        break;
+                }
+            }
+        };
+
+        mobileLightBtn.addEventListener('click', () => {
+            const currentTheme = appState.getCurrentTheme();
+            if (currentTheme === 'light') {
+                // From HIGH to LOW
+                appState.setTheme('dark');
+                const soundId = audioManager.play('auxModeLow', true);
+                if (soundId !== null) {
+                    setTimeout(() => audioManager.fadeOut('auxModeLow', 1.5, soundId), 1000);
+                }
+            } else {
+                // Handles both 'dim' (initial) and 'dark' states, moves to HIGH
+                appState.setTheme('light');
+                audioManager.play('auxModeHigh', true);
+            }
+        });
+
+        appState.subscribe('themeChanged', updateLightButtonIcon);
+        updateLightButtonIcon(appState.getCurrentTheme());
     }
 }
 

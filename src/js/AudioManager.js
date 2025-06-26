@@ -7,6 +7,7 @@ import { Howl, Howler } from 'howler';
 import { serviceLocator } from './serviceLocator.js';
 import { EventEmitter } from './EventEmitter.js'; // Simple event emitter
 import { AUDIO_CONFIG } from './config/index.js';
+import * as appState from './appState.js'; // IMPORT appState
 
 export class AudioManager extends EventEmitter {
     constructor() {
@@ -35,7 +36,27 @@ export class AudioManager extends EventEmitter {
         Howler.volume(AUDIO_CONFIG.masterVolume);
         // console.log(`[AM] AudioManager INIT. MasterVol: ${AUDIO_CONFIG.masterVolume}`);
         this._loadAllSounds();
+        this._setupVisibilityChangeHandler();
         this.isReadyState = true;
+    }
+
+    /**
+     * Handles the Page Visibility API to automatically mute audio when the
+     * page is not visible (e.g., tab backgrounded, screen off on mobile).
+     */
+    _setupVisibilityChangeHandler() {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                // Mute all audio when the page is not visible.
+                Howler.mute(true);
+            } else {
+                // When the page becomes visible again, restore the mute state
+                // to the user's preference stored in appState.
+                Howler.mute(appState.getIsAudioMuted());
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
     }
 
     postInitSubscribe() {
