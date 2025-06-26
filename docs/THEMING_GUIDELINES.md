@@ -10,8 +10,8 @@ This document outlines the principles and conventions for theming the HUE 9000 i
 2.  **Dynamic Theming via CSS Variables and JavaScript:** (As before)
     *   **Critical for Theme Overrides:** Selectors like `body.theme-dark` or `body.theme-light` are essential for overriding variables defined in `_variables-theme-contract.css`.
 
-3.  **DIM Mode Theming (`theme-dim.css`) & Startup Factors:**
-    *   `theme-dim.css` defines the *base* visual characteristics for the startup/dim state.
+3.  **DIM Mode Theming (`_theme-dim.css`) & Startup Factors:**
+    *   `_theme-dim.css` defines the *base* visual characteristics for the startup/dim state.
     *   During the startup sequence (Phases P0-P8), these base visuals are further attenuated by three CSS custom properties animated by GSAP in each `startupPhaseX.js` module:
         *   `--startup-L-reduction-factor`: Reduces the Lightness (L) channel of OKLCH colors. Used for backgrounds, bezels, and labels.
         *   `--startup-opacity-factor`: Reduces the opacity of various visual effects (textures, glows, text shadows).
@@ -19,18 +19,18 @@ This document outlines the principles and conventions for theming the HUE 9000 i
     *   **Button States in DIM Mode (Phases P0-P9 of startup):**
         *   `is-unlit`: Default state for most buttons after P0. Extremely faint.
         *   `is-dimly-lit`: Applied via flicker profiles. Buttons in this state are achromatic (grayscale) and faintly lit.
-        *   `.is-energized` (with `theme-dim.css` overrides): Used for MAIN PWR and AUX buttons. These buttons adopt a "dark theme energized" appearance even while the rest of the UI is dim. They flicker *from* `is-dimly-lit` *to this state*.
+        *   `.is-energized` (with `_theme-dim.css` overrides): Used for MAIN PWR and AUX buttons. These buttons adopt a "dark theme energized" appearance even while the rest of the UI is dim. They flicker *from* `is-dimly-lit` *to this state*.
 
 4.  **Transition from DIM Mode & Energizing (Startup Phase P10):**
     *   A 1-second visual transition for key global elements is orchestrated by `startupSequenceManager.js` and CSS.
         *   JavaScript (`startupPhase10.js`) adds the `.animate-on-dim-exit` class to elements defined in `config.selectorsForDimExitAnimation`.
         *   The `body.is-transitioning-from-dim` class is added to `<body>`.
+        *   A CSS rule in `_dim-to-theme-transition.css` (targeting `body.is-transitioning-from-dim .animate-on-dim-exit`) applies the 1-second transition to a specific list of properties. (Previously, the file was named `_startup-transition.css` and its import location was critical, now handled by layers).
         *   `appStateService.setTheme('dark')` is called, which removes `body.theme-dim` and adds `body.theme-dark`.
-        *   A CSS rule in `_startup-transition.css` (targeting `body.is-transitioning-from-dim .animate-on-dim-exit`) applies the 1-second transition to a specific list of properties.
         *   Cleanup of these classes is handled by an FSM action (`performThemeTransitionCleanupIfNeeded`) upon entry to Phase P11.
     *   **Button Energizing Flicker (SCAN, HUE ASSN, FIT EVAL):**
         *   Concurrently, `buttonManager.flickerDimlyLitToEnergizedStartup()` orchestrates flicker animations for buttons that were in the `is-dimly-lit` state.
-        *   These buttons flicker from their `is-dimly-lit` appearance directly *to* their final `is-energized` state, as defined by `theme-dark.css`.
+        *   These buttons flicker from their `is-dimly-lit` appearance directly *to* their final `is-energized` state, as defined by `_theme-dark.css`.
         *   MAIN PWR and AUX buttons, already `.is-energized`, visually adapt due to the global theme change without needing to re-flicker.
 
 ## Specific Component Guidelines
@@ -41,22 +41,22 @@ This document outlines the principles and conventions for theming the HUE 9000 i
     *   Dial LCDs (A & B) are styled with `.lcd--unlit`. Their content (V2 Displays) is hidden.
 *   **DIM Mode (Phases P6-P9):**
     *   In P6, the Dial LCD screens flicker to `.lcd--dimly-lit`, and their V2 Display content becomes visible.
-    *   In `theme-dim`, all `dimly-lit` and `unlit` LCD states are achromatic (grayscale), with text lightness defined in `theme-dim.css`. The V2 Displays use `--mood-matrix-value-text-l` and `--mood-matrix-value-base-chroma: 0` from `theme-dim.css` to appear grayscale.
+    *   In `_theme-dim.css`, all `dimly-lit` and `unlit` LCD states are achromatic (grayscale), with text lightness defined in `_theme-dim.css`. The V2 Displays use `--mood-matrix-value-text-l` and `--mood-matrix-value-base-chroma: 0` from `_theme-dim.css` to appear grayscale.
 *   **Theme Transition (Phase P10):**
     *   All LCDs are explicitly set to an 'active' state (i.e., the `.lcd--dimly-lit` class is removed) by a `call` function in `startupPhase10.js`.
-    *   This cleanup is critical. It allows their `background-image` and `color` properties to transition smoothly to the `theme-dark` values as the underlying CSS variables change.
+    *   This cleanup is critical. It allows their `background-image` and `color` properties to transition smoothly to the `_theme-dark.css` values as the underlying CSS variables change.
 
 ### 2. Dials
-*   **DIM Mode:** Dials are unlit until Phase 6. Their visibility is controlled by the global `--startup-opacity-factor-boosted` variable. They are rendered using variables from `theme-dim.css` (attenuated by startup factors).
-*   **Theme Transition (Phase P10):** Dials are redrawn in their full-color state as defined by `theme-dark.css` variables. The `DialController`'s direct subscription to the `themeChanged` event in `appState` ensures this redraw happens reliably.
+*   **DIM Mode:** Dials are unlit until Phase 6. Their visibility is controlled by the global `--startup-opacity-factor-boosted` variable. They are rendered using variables from `_theme-dim.css` (attenuated by startup factors).
+*   **Theme Transition (Phase P10):** Dials are redrawn in their full-color state as defined by `_theme-dark.css` variables. The `DialController`'s direct subscription to the `themeChanged` event in `appState` ensures this redraw happens reliably.
 
 ### 3. Buttons (`button-unit` System)
 *   **Color Source:**
-    *   In DIM mode, button appearance is defined by `is-unlit`, `is-dimly-lit`, or special `.is-energized` styles in `theme-dim.css`, all attenuated by startup factors.
-    *   In Full Theme (P10+), `is-energized` buttons use themed variables from `theme-dark.css` or `theme-light.css`.
+    *   In DIM mode, button appearance is defined by `is-unlit`, `is-dimly-lit`, or special `.is-energized` styles in `_theme-dim.css`, all attenuated by startup factors.
+    *   In Full Theme (P10+), `is-energized` buttons use themed variables from `_theme-dark.css` or `_theme-light.css`.
 *   **Text Color:**
-    *   Button text is explicitly black or very dark in `theme-dim` for `is-unlit` and `is-dimly-lit` states.
-    *   For `.is-energized` buttons in `theme-dim` (like MAIN PWR, AUX), text color matches the dark theme energized style for consistency.
+    *   Button text is explicitly black or very dark in `_theme-dim.css` for `is-unlit` and `is-dimly-lit` states.
+    *   For `.is-energized` buttons in `_theme-dim.css` (like MAIN PWR, AUX), text color matches the dark theme energized style for consistency.
 *   **Transition from DIM (Phase P10):**
     *   SCAN, HUE ASSN, and FIT EVAL buttons flicker from `is-dimly-lit` to their final `.is-energized` states. This animation runs concurrently with the global 1s CSS transition.
 *   **High-Performance Glow Mechanism (IMPORTANT):**
@@ -66,15 +66,15 @@ This document outlines the principles and conventions for theming the HUE 9000 i
     *   **Theming Implication:** To theme the selected button glow, you must target the `background-color` and `filter: blur()` of the `.button-unit::after` pseudo-element. To theme the unselected glow, you target the `box-shadow` property on the `.button-unit` itself.
 
 ### 4. Lens Display & Glows
-*   **Bezel:** The lens bezel rings (`#lens-container::before/::after`) have their L-values attenuated by `--startup-L-reduction-factor` during startup. Their base opacity is set by `--lens-bezel-opacity` in `theme-dim.css`. They transition to their full metallic conic gradient in P10.
+*   **Bezel:** The lens bezel rings (`#lens-container::before/::after`) have their L-values attenuated by `--startup-L-reduction-factor` during startup. Their base opacity is set by `--lens-bezel-opacity` in `_theme-dim.css`. They transition to their full metallic conic gradient in P10.
 *   **Glow System (`outer-glow`, `super-glow`):**
     *   This is a complex system driven by the `--lens-power` CSS variable (updated by JS).
-    *   **DIM Mode Overrides:** `theme-dim.css` significantly alters the glow appearance. It uses variables like `--lens-outer-glow-dim-scale-multiplier` and `--base-outer-glow-blur` to make the glows larger, more diffuse, and more prominent during the dim state, creating a signature "standby" effect.
-    *   **Full Theme:** In `theme-dark` or `theme-light`, these overrides are removed, and the glows become tighter and more responsive to the raw `--lens-power` value.
+    *   **DIM Mode Overrides:** `_theme-dim.css` significantly alters the glow appearance. It uses variables like `--lens-outer-glow-dim-scale-multiplier` and `--base-outer-glow-blur` to make the glows larger, more diffuse, and more prominent during the dim state, creating a signature "standby" effect.
+    *   **Full Theme:** In `_theme-dark.css` or `_theme-light.css`, these overrides are removed, and the glows become tighter and more responsive to the raw `--lens-power` value.
 
 ### 5. Terminal Text Glow
 *   The terminal has a themeable text glow effect. The base color and bloom size are defined in `_variables-theme-contract.css`.
-*   Each theme (`theme-dim`, `theme-dark`, `theme-light`) can adjust the glow's final appearance by overriding two scaling factors:
+*   Each theme (`_theme-dim.css`, `_theme-dark.css`, `_theme-light.css`) can adjust the glow's final appearance by overriding two scaling factors:
     *   `--theme-terminal-glow-opacity-factor`
     *   `--theme-terminal-glow-size-factor`
-*   This allows `theme-dim` to have a bright, full-sized glow while `theme-light` can have a more subtle, smaller glow, without duplicating the `text-shadow` rule.
+*   This allows `_theme-dim.css` to have a bright, full-sized glow while `_theme-light.css` can have a more subtle, smaller glow, without duplicating the `text-shadow` rule.

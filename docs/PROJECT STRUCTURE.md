@@ -45,16 +45,17 @@ HUE9000_Project/
 │   │
 │   └── css/
 │       ├── 1-base/             # Foundational styles, variables, and utilities
+│       │   ├── _base.css           
 │       │   ├── _variables-structural.css
 │       │   ├── _variables-theme-contract.css
 │       │   ├── _layout.css
 │       │   ├── _typography.css
-│       │   ├── _dim-to-theme-transition.css  # CORRECTED: Formerly _startup-transition.css
+│       │   ├── _dim-to-theme-transition.css
+│       │   ├── _mobile.css             
 │       │   └── _utilities.css
-│       │   # _effects.css - DEPRECATED: File was empty and has been removed.
 │       │
 │       ├── 2-components/       # Styles for individual, self-contained components
-│       │   ├── _preloader.css  # CORRECTED: Formerly _preloader-v2.css
+│       │   ├── _preloader.css
 │       │   ├── _side-panels.css
 │       │   ├── _panel-bezel.css
 │       │   ├── _button-unit.css
@@ -68,7 +69,7 @@ HUE9000_Project/
 │       │   ├── _color-chips.css
 │       │   ├── _grill.css
 │       │   ├── _terminal.css
-│       │   └── _dial-displays.css # CORRECTED: Formerly _v2-displays.css
+│       │   └── _dial-displays.css
 │       │
 │       ├── 3-themes/           # Theme-specific overrides of contract variables
 │       │   ├── _theme-dim.css
