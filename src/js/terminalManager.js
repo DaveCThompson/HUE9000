@@ -257,6 +257,8 @@ class TerminalManager {
         this._currentTextSpan = null; // Reset span
         if (!isSpacer) {
             this._currentTextSpan = document.createElement('span');
+            // FIX: Initialize data-text attribute for CA effect
+            this._currentTextSpan.dataset.text = '';
             this._currentLineElement.appendChild(this._currentTextSpan);
             this._currentLineElement.appendChild(this._cursorElement);
         }
@@ -271,7 +273,7 @@ class TerminalManager {
     async _typeLine(text, speedPerChar, options = {}, promise) {
         if (!this._currentTextSpan || promise.abort) return;
 
-        const scrollContainer = this._terminalContentElement.parentElement;
+        const scrollContainer = this._terminalContainerElement; // Corrected scroll target
         let flickerAnimation = null;
 
         if (options.flicker) {
@@ -282,6 +284,8 @@ class TerminalManager {
             if (promise.abort) return;
             const oldScrollHeight = scrollContainer ? scrollContainer.scrollHeight : 0;
             this._currentTextSpan.textContent += char;
+            // FIX: Update data-text attribute for CA effect
+            this._currentTextSpan.dataset.text = this._currentTextSpan.textContent;
 
             if (options.flicker) {
                 this._gsap.set(this._currentTextSpan, { autoAlpha: 1 });
@@ -322,7 +326,7 @@ class TerminalManager {
     }
 
     _scrollTerminal(instant = false) {
-        const scrollContainer = this._terminalContentElement.parentElement;
+        const scrollContainer = this._terminalContainerElement; // Corrected scroll target
         if (scrollContainer) {
             this._gsap.to(scrollContainer, {
                 scrollTop: scrollContainer.scrollHeight,

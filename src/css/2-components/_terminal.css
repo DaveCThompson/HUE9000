@@ -16,50 +16,31 @@
 }
 
 
-/* Scanline effect on the terminal's container */
-.lcd-container.actual-lcd-screen-element::before {
+/* FIX: Apply phosphor mask to the non-scrolling parent container */
+.actual-lcd-screen-element::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
+    z-index: 1; /* Sits below other overlays */
     pointer-events: none;
-    z-index: 1;
-    background-image: repeating-linear-gradient(
-        transparent,
-        transparent calc(var(--terminal-scanline-thickness) * 3),
-        var(--terminal-scanline-color) calc(var(--terminal-scanline-thickness) * 3),
-        var(--terminal-scanline-color) calc(var(--terminal-scanline-thickness) * 4)
+    background-image: repeating-radial-gradient(
+        circle at 1px 1px,
+        var(--terminal-phosphor-mask-color),
+        transparent 2px
     );
-    background-size: 100% calc(var(--terminal-scanline-thickness) * 8);
-    background-position: 0 0;
-    opacity: calc(0.3 * var(--startup-opacity-factor, 0));
-    animation:
-        terminalScanlineMove 8s linear infinite,
-        terminalJitter 0.07s steps(1, end) infinite;
+    background-size: var(--terminal-phosphor-mask-size) var(--terminal-phosphor-mask-size);
+    mix-blend-mode: var(--terminal-phosphor-blend-mode);
+    opacity: var(--startup-opacity-factor);
+    transition: opacity var(--transition-duration-medium) ease;
     border-radius: inherit;
-    will-change: background-position; /* Performance hint */
 }
 
-@keyframes terminalScanlineMove {
-    from { background-position-y: 0; }
-    to { background-position-y: calc(var(--terminal-scanline-thickness) * -8); }
-}
-
-@keyframes terminalJitter {
-    0%, 100% { background-position-x: 0; }
-    25%      { background-position-x: -1px; }
-    50%      { background-position-x: 1px; }
-    75%      { background-position-x: -2px; }
-}
 
 .terminal-line {
     overflow-wrap: break-word; /* Ensure long words without spaces can break */
     display: block; /* CRITICAL FIX: Was 'flex', which prevented lines from stacking. */
     line-height: 1.7;
     color: inherit; /* Inherit color from the content wrapper */
-    text-shadow: inherit;
 }
 
 /* Color-coded line styles */
@@ -87,6 +68,8 @@
     margin-left: 0.125rem; /* 2px -> rem */
     user-select: none;
     vertical-align: text-bottom;
+    position: relative; /* Ensure z-index is applied */
+    z-index: 5; /* Sit on top of all screen effects */
     /* FIX: Correct vertical alignment on subsequent lines */
     transform: translateY(-0.05em);
 }

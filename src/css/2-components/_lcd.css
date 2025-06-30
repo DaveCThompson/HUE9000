@@ -19,10 +19,23 @@
         calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor))
         var(--dynamic-lcd-hue)
     );
-    background-image: radial-gradient(ellipse at center,
-        oklch(var(--lcd-active-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
-        oklch(calc(var(--lcd-active-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 100%
-    );
+    /* FIX: Add static scanlines to the container's background */
+    background-image:
+        /* The scanlines */
+        repeating-linear-gradient(
+            transparent 0, transparent 50%,
+            oklch(85% var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue) / var(--lcd-scanline-opacity, 0.12)) 50%,
+            oklch(85% var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue) / var(--lcd-scanline-opacity, 0.12)) 100%
+        ),
+        /* The main radial gradient */
+        radial-gradient(ellipse at center,
+            oklch(var(--lcd-active-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
+            oklch(calc(var(--lcd-active-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue)) 100%
+        );
+    background-size: 100% var(--lcd-scanline-thickness, 3px), 100% 100%;
+    background-position: 0 0, 0 0;
+    background-repeat: repeat, no-repeat;
+
     border: 1px solid oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
     box-shadow: var(--lcd-active-shadow-inner-glow);
 
@@ -34,11 +47,40 @@
         opacity var(--transition-duration-medium) ease;
 }
 
-.terminal-block .actual-lcd-screen-element {
+/* FIX: The lcd-container is now a flex child within the new scroll wrapper for the terminal */
+.lcd-scroll-wrapper .lcd-container {
     flex-grow: 1;
     min-height: 0;
 }
 
+/* Universal Screen Effects (Sweep ONLY) */
+#sweep-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    border-radius: inherit;
+    will-change: background-position;
+    /* FIX: Remove scanlines from here, leaving only the sweep line */
+    background-image:
+        linear-gradient(to bottom,
+            transparent,
+            transparent calc(50% - 1px),
+            oklch(95% calc(var(--dynamic-lcd-chroma) * 0.5) var(--dynamic-lcd-hue) / var(--lcd-sweep-opacity, 0.045)) calc(50% - 1px),
+            oklch(95% calc(var(--dynamic-lcd-chroma) * 0.5) var(--dynamic-lcd-hue) / var(--lcd-sweep-opacity, 0.045)) calc(50% + 1px),
+            transparent calc(50% + 1px),
+            transparent
+        );
+    /* FIX: Only one background size is needed now */
+    background-size: 100% 200%;
+    animation: lcdSweep var(--lcd-sweep-speed, 5s) linear infinite;
+}
+
+
+/* Pause animations when observer fires */
+.lcd-container.effects-paused #sweep-overlay {
+    animation-play-state: paused;
+}
 
 /* CRT Overlay on the container */
 .lcd-container::after {
@@ -61,9 +103,8 @@
 /* --- 2. LCD Content Wrapper (The Inner, Padded Area) --- */
 .lcd-content-wrapper {
     position: relative;
-    z-index: 2;
+    z-index: 3; /* Sits above overlays (z-index 2), below disruption/cursor (z-index 4/5) */
     width: 100%;
-    flex-grow: 1;
     box-sizing: border-box;
 
     padding: var(--space-md);
@@ -73,21 +114,24 @@
     line-height: 1.4;
     color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
 
-    --terminal-text-glow-color: oklch(
-        from var(--terminal-text-glow-color-base)
-        l c h / calc(var(--terminal-text-glow-opacity) * var(--theme-terminal-glow-opacity-factor) * var(--harmonic-resonance-glow-opacity, 1))
-    );
+    /* FIX: Remove text-shadow. It will be applied by JS during disruptions. */
+    text-shadow: none;
 
-    text-shadow:
-        0 0 calc(var(--terminal-text-bloom-size) * 0.3 * var(--theme-terminal-glow-size-factor)) var(--terminal-text-glow-color),
-        0 0 calc(var(--terminal-text-bloom-size) * 1.0 * var(--theme-terminal-glow-size-factor)) var(--terminal-text-glow-color);
+    transition: color var(--transition-duration-medium) ease;
+}
 
-    transition: color var(--transition-duration-medium) ease, text-shadow var(--transition-duration-medium) ease;
+/* FIX: Add jitter effect during disruption */
+.lcd-content-wrapper.is-disrupting {
+    animation: lcdJitter 0.05s steps(2, end) infinite;
+}
+
+@keyframes lcdJitter {
+    from { transform: translateY(calc(var(--lcd-jitter-intensity-px) * -1)); }
+    to   { transform: translateY(var(--lcd-jitter-intensity-px)); }
 }
 
 .lcd-container.is-resonating .lcd-content-wrapper {
-    --terminal-text-bloom-size: calc(1rem * var(--harmonic-resonance-glow-scale, 1)); /* 16px -> rem */
-    transition: color var(--transition-duration-medium) ease, text-shadow 0.3s ease-out;
+    transition: color var(--transition-duration-medium) ease;
 }
 
 
@@ -100,6 +144,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-grow: 1; /* Ensure it fills the non-scrolling container */
 }
 #terminal-lcd-content.lcd-content-wrapper {
     padding: var(--space-3xl);
@@ -122,7 +167,8 @@
     color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
     text-shadow: none;
 }
-.lcd-container.lcd--unlit::after {
+.lcd-container.lcd--unlit::after,
+.lcd-container.lcd--unlit #sweep-overlay {
     opacity: 0 !important;
 }
 
@@ -132,17 +178,24 @@
         calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor))
         var(--dynamic-lcd-hue)
     );
-    background-image: radial-gradient(ellipse at center,
-        oklch(var(--lcd-dimly-lit-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
-        oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100%
-    );
+    background-image:
+        /* Scanlines */
+        repeating-linear-gradient(
+            transparent 0, transparent 50%,
+            oklch(85% calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-scanline-opacity, 0.12)) 50%,
+            oklch(85% calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-scanline-opacity, 0.12)) 100%
+        ),
+        /* Radial Gradient */
+        radial-gradient(ellipse at center,
+            oklch(var(--lcd-dimly-lit-grad-start-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 0%,
+            oklch(calc(var(--lcd-dimly-lit-grad-end-l) * 0.8) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue)) 100%
+        );
     border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
     box-shadow: var(--lcd-dimly-lit-shadow);
 }
 .lcd-container.lcd--dimly-lit .lcd-content-wrapper {
     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
-    --terminal-text-glow-opacity: 0.7;
-    --terminal-text-bloom-size: 0.625rem; /* 10px -> rem */
+    text-shadow: none; /* Turn off CA effect in dimly-lit state for clarity */
 }
 .lcd-container.lcd--dimly-lit::after {
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0));
@@ -161,5 +214,23 @@
     align-items: baseline;
     line-height: 1.7;
     color: inherit;
-    text-shadow: inherit;
+}
+
+/* --- 5. New Effects & Keyframes --- */
+
+.disruption-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    background: oklch(95% var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue));
+    opacity: 0; /* Controlled by JS */
+    border-radius: inherit;
+    mix-blend-mode: soft-light;
+}
+
+/* FIX: Reverse sweep direction */
+@keyframes lcdSweep {
+    from { background-position-y: 100%; }
+    to { background-position-y: -100%; }
 }

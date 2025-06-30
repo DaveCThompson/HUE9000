@@ -61,11 +61,11 @@ KEY ARCHITECTURAL DECISIONS:
 }
 
 /* --- SHARED COMPONENT STYLES --- */
-.display-container__row--name { font-size: 1rem; font-weight: 500; letter-spacing: 0.05em; color: var(--display-color-on); text-shadow: inherit; transition: color 0.2s ease-out, text-shadow 0.2s ease-out; } /* 16px -> rem */
+.display-container__row--name { font-size: 1rem; font-weight: 500; letter-spacing: 0.05em; color: var(--display-color-on); transition: color 0.2s ease-out; } /* 16px -> rem */
 .fine-dot-row { display: flex; width: 100%; gap: var(--display-dot-gap); }
 .fine-dot { flex: 1; height: var(--display-dot-height); border-radius: var(--display-dot-radius); transition: background-color 0.1s linear, box-shadow 0.2s ease-out; }
 .fine-dot--off { background-color: var(--display-color-off-dot); box-shadow: none; }
-.fine-dot--on { background-color: var(--display-color-on); box-shadow: 0 0 0.25rem var(--terminal-text-glow-color); } /* 4px -> rem */
+.fine-dot--on { background-color: var(--display-color-on); }
 .fine-dot--in-progress-1 { background-color: oklch(from var(--display-color-on) l c h / 0.65); }
 .fine-dot--in-progress-2 { background-color: oklch(from var(--display-color-on) l c h / 0.40); }
 .fine-dot--in-progress-3 { background-color: oklch(from var(--display-color-on) l c h / 0.20); }
@@ -73,15 +73,15 @@ KEY ARCHITECTURAL DECISIONS:
 /* --- MOOD MATRIX SPECIFIC STYLES --- */
 .mood-matrix__row--major-blocks { display: flex; justify-content: center; gap: var(--display-block-gap); width: 100%; }
 .major-block { flex: 1; height: var(--display-block-size); border-radius: var(--display-block-radius); display: flex; justify-content: center; align-items: center; font-size: 0.6875rem; font-weight: 500; transition: background-color 0.2s ease-out, color 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out; } /* 11px -> rem */
-.major-block--off { background-color: var(--display-color-off-bg); color: var(--display-color-off-dot); opacity: 0.7; box-shadow: none; text-shadow: none; }
-.major-block--in-progress { background-color: var(--display-color-off-bg); color: var(--display-color-on); opacity: 1; text-shadow: inherit; box-shadow: none; }
-.major-block--on { background-color: var(--display-color-on); color: var(--display-color-text-dark); opacity: 1; text-shadow: none; box-shadow: 0 0 0.3125rem var(--terminal-text-glow-color); } /* 5px -> rem */
+.major-block--off { background-color: var(--display-color-off-bg); color: var(--display-color-off-dot); opacity: 0.7; box-shadow: none; }
+.major-block--in-progress { background-color: var(--display-color-off-bg); color: var(--display-color-on); opacity: 1; box-shadow: none; }
+.major-block--on { background-color: var(--display-color-on); color: var(--display-color-text-dark); opacity: 1; text-shadow: none; }
 
 /* --- INTENSITY DISPLAY SPECIFIC STYLES --- */
 .intensity-display__row--bars { display: flex; width: 100%; gap: var(--display-block-gap); align-items: flex-end; }
 .intensity-bar { flex: 1; height: var(--display-block-size); border-radius: var(--display-dot-radius); transition: background-color 0.1s linear, box-shadow 0.2s ease-out; }
 .intensity-bar--unselected { background-color: var(--display-color-off-dot); box-shadow: none; }
-.intensity-bar--selected { background-color: var(--display-color-on); box-shadow: 0 0 0.25rem var(--terminal-text-glow-color); } /* 4px -> rem */
+.intensity-bar--selected { background-color: var(--display-color-on); }
 
 /*
 ========================================================================

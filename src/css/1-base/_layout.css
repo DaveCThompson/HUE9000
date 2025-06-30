@@ -90,6 +90,31 @@ body.pre-boot #terminal-lcd-content { /* Target the inner content div for termin
     flex-direction: column;
     padding: var(--space-3xl);
 }
+/* FIX: Structure for non-scrolling overlays. The outer element is a position reference. */
+.left-panel .terminal-block .actual-lcd-screen-element {
+    flex-grow: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* Context for overlays */
+}
+/* FIX: Ensure the LCD container fills the available space */
+.left-panel .terminal-block .actual-lcd-screen-element > .lcd-container {
+    flex-grow: 1;
+    min-height: 0;
+}
+/* FIX: The new inner wrapper is now the scroll container. */
+.left-panel .terminal-block .lcd-scroll-wrapper {
+    flex-grow: 1;
+    min-height: 0;
+    overflow: auto;
+    /* Hide scrollbars elegantly */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+.left-panel .terminal-block .lcd-scroll-wrapper::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
 .left-panel .scan-button-block {
     flex: 1 1 0;
     display: flex;

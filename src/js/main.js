@@ -31,6 +31,7 @@ import { MoodMatrixManager } from './MoodMatrixManager.js';
 import { IntensityDisplayManager } from './IntensityDisplayManager.js';
 import { AudioManager } from './AudioManager.js';
 import { MusicController } from './MusicController.js';
+import disruptionManagerInstance from './DisruptionManager.js';
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -325,6 +326,7 @@ async function initializeApp() {
     serviceLocator.register('startupSequenceManager', startupSequenceManager);
     serviceLocator.register('moodMatrixManager', moodMatrixManager);
     serviceLocator.register('intensityDisplayManager', intensityDisplayManager);
+    serviceLocator.register('disruptionManager', disruptionManagerInstance);
 
     // --- Conditional Desktop-Only Managers ---
     if (!isMobile) {
@@ -366,7 +368,7 @@ async function initializeApp() {
     audioManager.postInitSubscribe();
     startupSequenceManager.init();
     phaseRunner.init();
-    [ themeManager, lcdUpdater, dynamicStyleManager, dialManager, lensManager, ambientAnimationManager, moodMatrixManager, intensityDisplayManager ].forEach(manager => {
+    [ themeManager, lcdUpdater, dynamicStyleManager, dialManager, lensManager, ambientAnimationManager, moodMatrixManager, intensityDisplayManager, disruptionManagerInstance ].forEach(manager => {
         if (typeof manager.init === 'function') manager.init();
     });
 

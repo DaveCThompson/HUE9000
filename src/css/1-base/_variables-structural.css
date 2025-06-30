@@ -140,4 +140,10 @@
     --startup-L-reduction-factor: 0.85; /* Initial P0 value, JS will update. Range 0.0 (no reduction) to 1.0 (max reduction) */
     --startup-opacity-factor: 0.15;   /* Initial P0 value, JS will update. Range 0.0 (transparent) to 1.0 (full base opacity) */
     --startup-opacity-factor-boosted: clamp(0, calc(var(--startup-opacity-factor, 0) * 1.25), 1); /* For elements needing a faster fade-in */
+
+    /* --- NEW: LCD Effects Structural Vars --- */
+    --lcd-sweep-speed: 5s;
+    --lcd-scanline-thickness: 3px;
+    --lcd-jitter-intensity-px: 0.5px;
+    --lcd-chroma-aberration-offset-px: 0.75px; /* Reduced for sharp baseline */
 }

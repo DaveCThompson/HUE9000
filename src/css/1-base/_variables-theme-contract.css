@@ -268,9 +268,21 @@
     --terminal-text-drop-shadow-offset-y: 0.03125rem; /* 0.5px -> rem */
     --terminal-text-drop-shadow-blur: 0rem; /* 0px -> rem */
     --terminal-text-drop-shadow-color: oklch(0 0 0 / 0.2);
-    --terminal-scanline-color: oklch(var(--lcd-active-text-l) var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue) / 0.05);
-    --terminal-scanline-thickness: 1px; /* Keep 1px */
+    --terminal-scanline-color: oklch(var(--lcd-active-text-l) var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue) / calc(0.15 * var(--startup-opacity-factor, 0)));
+    --terminal-scanline-thickness: 1px;
     --terminal-scanline-animation-duration: 8s;
+    --terminal-jitter-animation-duration: 0.07s;
+
+    --terminal-phosphor-mask-color: oklch(0 0 0 / 0.35);
+    --terminal-phosphor-mask-size: 3px;
+    --terminal-phosphor-blend-mode: overlay;
+
+    /* FIX: Remove alpha from base color, increase final opacity */
+    --terminal-bloom-aberration-color-1: oklch(0.8 0.15 40); /* Faint Red, no alpha */
+    --terminal-bloom-aberration-color-2: oklch(0.8 0.15 250); /* Faint Blue, no alpha */
+    --lcd-chroma-aberration-offset: 1px;
+    --lcd-chroma-red-opacity: 0.9;
+    --lcd-chroma-blue-opacity: 0.9;
 
     /* Terminal Text Glow - Unified Variables */
     --terminal-text-glow-color-base: oklch(0.85 0.10 160);
@@ -286,4 +298,11 @@
     --terminal-text-color-warning-l: 0.85; --terminal-text-color-warning-c: 0.18; --terminal-text-color-warning-h: 85;
     --terminal-text-color-success-l: 0.82; --terminal-text-color-success-c: 0.20; --terminal-text-color-success-h: 145;
     --terminal-text-color-resist-l: 0.80; --terminal-text-color-resist-c: 0.20; --terminal-text-color-resist-h: 55;
+
+    /* --- NEW: LCD Effects Themeable Vars --- */
+    --lcd-sweep-opacity: 0.045; /* Halved for subtlety */
+    --lcd-scanline-opacity: 0.12;
+    /* FIX: Renamed and moved from old location */
+    --lcd-chroma-red-opacity: 0.9; /* Was 0.5 */
+    --lcd-chroma-blue-opacity: 0.9; /* Was 0.5 */
 }

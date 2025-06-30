@@ -2,6 +2,7 @@
 export * from './animations.js';
 export * from './audio.js';
 export * from './dials.js';
+export * from './effects.js';
 export * from './flickerProfiles.js';
 export * from './interaction.js';
 export * from './lens.js';

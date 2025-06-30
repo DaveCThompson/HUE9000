@@ -167,8 +167,15 @@
                         </div>
                        </div>
                      <div class="control-block terminal-block">
-                         <div class="actual-lcd-screen-element lcd-container">
-                            <div id="terminal-lcd-content" class="lcd-content-wrapper" aria-live="polite"></div>
+                         <div class="actual-lcd-screen-element">
+                            <div class="lcd-container">
+                                <div class="lcd-scroll-wrapper">
+                                    <div id="terminal-lcd-content" class="lcd-content-wrapper" aria-live="polite"></div>
+                                </div>
+                            </div>
+                            <!-- Overlays are siblings to lcd-container so they don't scroll -->
+                            <div class="disruption-overlay"></div>
+                            <div id="sweep-overlay" class="overlay"></div>
                          </div>
                          <div class="block-label-bottom block-label-bottom--descriptor">TERMINAL</div>
                       </div>
@@ -254,6 +261,8 @@
                     <div class="control-block hue-control-block joined-block-pair__item joined-block-pair__item--left">
                         <div class="hue-lcd-display lcd-container" id="hue-lcd-A" aria-live="polite">
                             <div class="lcd-content-wrapper"></div>
+                            <div class="disruption-overlay"></div>
+                            <div id="sweep-overlay" class="overlay"></div>
                         </div>
                         <div id="dial-canvas-container-A" class="dial-canvas-container" data-dial-id="A" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="41" aria-labelledby="dial-A-label">
                             <div class="dial-shadow-host"></div>
@@ -263,6 +272,8 @@
                     <div class="control-block hue-control-block joined-block-pair__item joined-block-pair__item--right">
                         <div class="hue-lcd-display lcd-container" id="hue-lcd-B" aria-live="polite">
                             <div class="lcd-content-wrapper"></div>
+                            <div class="disruption-overlay"></div>
+                            <div id="sweep-overlay" class="overlay"></div>
                         </div>
                         <div id="dial-canvas-container-B" class="dial-canvas-container" data-dial-id="B" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="0" aria-labelledby="dial-B-label">
                             <div class="dial-shadow-host"></div>
