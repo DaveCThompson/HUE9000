@@ -131,9 +131,11 @@ export const startupMachine = createMachine({
     COMPLETE: {
       type: 'final',
       entry: [
-        // Perform cleanup directly, removing the circular dependency on startupSequenceManager.
+        // Perform all visual cleanup before setting app status to interactive.
         () => {
             const dom = serviceLocator.get('domElements');
+            // FIX: Remove the startup-state class from the body.
+            dom.body.classList.remove('is-starting-up');
             if (dom.body.classList.contains('is-transitioning-from-dim')) {
                 dom.body.classList.remove('is-transitioning-from-dim');
                 document.querySelectorAll('.animate-on-dim-exit').forEach(el => el.classList.remove('animate-on-dim-exit'));

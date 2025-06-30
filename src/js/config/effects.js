@@ -25,11 +25,37 @@ export const LCD_CHROMA_BLUE_OPACITY = 0.5;
  * @property {number} JITTER_PEAK_PX - Peak intensity (in px) for the jitter effect.
  * @property {number} CHROMA_OFFSET_PEAK_PX - Peak offset (in px) for chromatic aberration.
  * @property {number} PERIODIC_TRIGGER_INTERVAL_S - Average interval for random disruptions.
+ * @property {object[]} FLICKER_KEYFRAMES - The GSAP keyframe array for the flicker animation.
  */
 export const DISRUPTION_PARAMS = {
     DURATION_S: 2.25,
-    FLICKER_PEAK: 0.25,
     JITTER_PEAK_PX: 8.0,
     CHROMA_OFFSET_PEAK_PX: 6.0,
-    PERIODIC_TRIGGER_INTERVAL_S: 25
+    PERIODIC_TRIGGER_INTERVAL_S: 25,
+    // FIX: Redesigned keyframes for a faster, more complex, and less bright flicker.
+    // This animation now has 11 distinct pulses.
+    FLICKER_KEYFRAMES: [
+        { opacity: 0.08, duration: 0.02 }, // 1
+        { opacity: 0.0,  duration: 0.04 },
+        { opacity: 0.05, duration: 0.02 }, // 2
+        { opacity: 0.0,  duration: 0.08 },
+        { opacity: 0.09, duration: 0.015}, // 3 (peak)
+        { opacity: 0.0,  duration: 0.03 },
+        { opacity: 0.04, duration: 0.02 }, // 4
+        { opacity: 0.0,  duration: 0.06 },
+        { opacity: 0.07, duration: 0.02 }, // 5
+        { opacity: 0.0,  duration: 0.04 },
+        { opacity: 0.03, duration: 0.01 }, // 6
+        { opacity: 0.0,  duration: 0.05 },
+        { opacity: 0.06, duration: 0.02 }, // 7
+        { opacity: 0.0,  duration: 0.03 },
+        { opacity: 0.08, duration: 0.015}, // 8
+        { opacity: 0.0,  duration: 0.04 },
+        { opacity: 0.05, duration: 0.02 }, // 9
+        { opacity: 0.0,  duration: 0.07 },
+        { opacity: 0.07, duration: 0.015}, // 10
+        { opacity: 0.0,  duration: 0.03 },
+        { opacity: 0.04, duration: 0.02 }, // 11
+        { opacity: 0.0,  duration: 0.4 }   // Final fade out
+    ]
 };

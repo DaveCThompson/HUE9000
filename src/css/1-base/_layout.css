@@ -2,7 +2,21 @@
 /* Main page structure, panel layout rules. Uses structural variables. */
 
 /* --- Pre-Boot Styling for LCDs to prevent FOUC --- */
-body.pre-boot .actual-lcd-screen-element,
+/* FIX: More aggressive hiding for the terminal to prevent FOUC. */
+body.pre-boot .actual-lcd-screen-element {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* FIX: Add a dedicated rule to hide the terminal during the entire startup sequence.
+   This prevents it from flashing into view between the preloader and JS init.
+   The class is added/removed by the StartupSequenceManager/FSM. */
+body.is-starting-up .actual-lcd-screen-element {
+    visibility: hidden;
+}
+
+
+body.pre-boot .actual-lcd-screen-element .lcd-container,
 body.pre-boot .hue-lcd-display {
     box-shadow: none !important;
     background-image: none !important;
@@ -17,7 +31,7 @@ body.pre-boot .hue-lcd-display .lcd-value {
     visibility: hidden !important;
 }
 
-body.pre-boot #terminal-lcd-content { /* Target the inner content div for terminal */
+body.pre-boot .actual-lcd-screen-element #terminal-lcd-content {
     opacity: 0 !important;
     visibility: hidden !important;
     color: oklch(0 0 0 / 0) !important; /* Ensure text inside is also initially transparent */

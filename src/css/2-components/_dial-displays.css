@@ -72,9 +72,9 @@ KEY ARCHITECTURAL DECISIONS:
 
 /* --- MOOD MATRIX SPECIFIC STYLES --- */
 .mood-matrix__row--major-blocks { display: flex; justify-content: center; gap: var(--display-block-gap); width: 100%; }
-.major-block { flex: 1; height: var(--display-block-size); border-radius: var(--display-block-radius); display: flex; justify-content: center; align-items: center; font-size: 0.6875rem; font-weight: 500; transition: background-color 0.2s ease-out, color 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out; text-shadow: inherit; } /* 11px -> rem */
+.major-block { flex: 1; height: var(--display-block-size); border-radius: var(--display-block-radius); display: flex; justify-content: center; align-items: center; font-size: 0.6875rem; font-weight: 500; transition: background-color 0.2s ease-out, color 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out, text-shadow 0.2s ease-out; } /* 11px -> rem */
 .major-block--off { background-color: var(--display-color-off-bg); color: var(--display-color-off-dot); opacity: 0.7; box-shadow: none; text-shadow: none; }
-.major-block--in-progress { background-color: var(--display-color-off-bg); color: var(--display-color-on); opacity: 1; }
+.major-block--in-progress { background-color: var(--display-color-off-bg); color: var(--display-color-on); opacity: 1; text-shadow: inherit; }
 .major-block--on { background-color: var(--display-color-on); color: var(--display-color-text-dark); opacity: 1; text-shadow: none; }
 
 /* --- INTENSITY DISPLAY SPECIFIC STYLES --- */
@@ -96,7 +96,8 @@ V2 DISPLAY CHROMATIC ABERRATION
 */
 
 /* --- Text Elements (e.g., "CALM", "100%") --- */
-.display-container__row--name {
+.display-container__row--name,
+.major-block--in-progress {
     text-shadow:
         /* Red Ghost */
         var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.7),
@@ -121,7 +122,6 @@ V2 DISPLAY CHROMATIC ABERRATION
  * "In-progress" elements get a dimmer shadow to match their
  * reduced base opacity, achieving the desired visual fidelity.
  */
-.major-block--in-progress,
 .fine-dot--in-progress-1 {
     box-shadow:
         var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.45), /* Reduced alpha */

@@ -26,8 +26,8 @@ class DisruptionManager {
         this.gsap = serviceLocator.get('gsap');
         this.dom = serviceLocator.get('domElements');
         
-        const terminalParent = this.dom.terminalContainer?.closest('.actual-lcd-screen-element');
-        this.allLcdParents = [terminalParent, this.dom.lcdA, this.dom.lcdB].filter(Boolean);
+        // FIX: The terminal's parent is now correctly identified as dom.terminalContainer
+        this.allLcdParents = [this.dom.terminalContainer, this.dom.lcdA, this.dom.lcdB].filter(Boolean);
         
         this.disruptionOverlays = this.allLcdParents.map(parent => parent.querySelector('.disruption-overlay')).filter(Boolean);
         this.lcdContentWrappers = this.allLcdParents.map(parent => parent.querySelector('.lcd-content-wrapper')).filter(Boolean);
@@ -82,6 +82,16 @@ class DisruptionManager {
         if (this.isDisrupting || (status !== 'interactive' && status !== 'starting-up')) return;
         this.isDisrupting = true;
         
+        // FIX: Filter targets to only animate those that are currently visible.
+        const activeLcds = this.allLcdParents.filter(parent => !parent.classList.contains('lcd--unlit'));
+        const activeOverlays = activeLcds.map(parent => parent.querySelector('.disruption-overlay')).filter(Boolean);
+        const activeContentWrappers = activeLcds.map(parent => parent.querySelector('.lcd-content-wrapper')).filter(Boolean);
+        
+        if (activeLcds.length === 0) {
+            this.isDisrupting = false;
+            return; // No visible LCDs to disrupt
+        }
+
         const D_PARAMS = { ...DISRUPTION_PARAMS };
         const halfDuration = D_PARAMS.DURATION_S / 2;
         const rootEl = document.documentElement;
@@ -91,27 +101,20 @@ class DisruptionManager {
         
         const tl = this.gsap.timeline({
             onStart: () => {
-                this.lcdContentWrappers.forEach(el => el.classList.add('is-disrupting'));
+                activeContentWrappers.forEach(el => el.classList.add('is-disrupting'));
             },
             onComplete: () => {
                 this.isDisrupting = false;
-                this.lcdContentWrappers.forEach(el => el.classList.remove('is-disrupting'));
+                activeContentWrappers.forEach(el => el.classList.remove('is-disrupting'));
                 // Return to default state by setting the final offset to 0
                 this.gsap.set(rootEl, { '--_ca-current-offset': '0px' });
             }
         });
 
-        // Fast, low-amplitude background flicker (10-15% brightness boost)
-        tl.to(this.disruptionOverlays, {
-            keyframes: [
-                { opacity: 0.15, duration: 0.02 }, // quick flash
-                { opacity: 0.05, duration: 0.04 }, // dim
-                { opacity: 0.18, duration: 0.02 }, // another quick flash
-                { opacity: 0.03, duration: 0.06 }, // longer dim
-                { opacity: 0.12, duration: 0.03 }, // final small flash
-                { opacity: 0.0, duration: 0.3 }    // fade out
-            ],
-            ease: 'steps(1)'
+        // FIX: Use the new configurable keyframe array from the config file.
+        tl.to(activeOverlays, {
+            keyframes: D_PARAMS.FLICKER_KEYFRAMES,
+            ease: 'none'
         }, 0);
 
         // --- Chromatic Aberration Spread ---

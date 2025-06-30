@@ -78,12 +78,14 @@
 
 
 /* Pause animations when observer fires */
-.lcd-container.effects-paused #sweep-overlay {
+.lcd-container.effects-paused #sweep-overlay,
+.actual-lcd-screen-element.effects-paused #sweep-overlay {
     animation-play-state: paused;
 }
 
 /* CRT Overlay on the container */
-.lcd-container::after {
+.lcd-container::after,
+.actual-lcd-screen-element > .lcd-container::after { /* Add target for terminal */
     content: '';
     position: absolute;
     inset: 0;
@@ -125,7 +127,7 @@
 }
 
 /* FIX: Add jitter effect during disruption */
-.lcd-content-wrapper.is-disrupting {
+.is-disrupting {
     animation: lcdJitter 0.05s steps(2, end) infinite;
 }
 
@@ -134,7 +136,8 @@
     to   { transform: translateY(var(--lcd-jitter-intensity-px)); }
 }
 
-.lcd-container.is-resonating .lcd-content-wrapper {
+.lcd-container.is-resonating .lcd-content-wrapper,
+.actual-lcd-screen-element.is-resonating .lcd-content-wrapper {
     transition: color var(--transition-duration-medium) ease;
 }
 
@@ -159,24 +162,30 @@
 }
 
 
-/* --- 3. State Modifications --- */
+/* --- 3. State Modifications (REFACTORED for Terminal) --- */
 
-.lcd-container.lcd--unlit {
+/* UNLIT STATE */
+.lcd-container.lcd--unlit,
+.actual-lcd-screen-element.lcd--unlit .lcd-container {
     background-image: none !important;
     background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
     border-color: oklch(var(--lcd-unlit-border-l) var(--lcd-unlit-border-c) var(--lcd-unlit-border-h) / var(--lcd-unlit-border-a));
     box-shadow: var(--lcd-unlit-shadow);
 }
-.lcd-container.lcd--unlit .lcd-content-wrapper {
+.lcd-container.lcd--unlit .lcd-content-wrapper,
+.actual-lcd-screen-element.lcd--unlit .lcd-content-wrapper {
     color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
     text-shadow: none;
 }
 .lcd-container.lcd--unlit::after,
-.lcd-container.lcd--unlit #sweep-overlay {
+.actual-lcd-screen-element.lcd--unlit #sweep-overlay,
+.actual-lcd-screen-element.lcd--unlit .lcd-container::after {
     opacity: 0 !important;
 }
 
-.lcd-container.lcd--dimly-lit {
+/* DIMLY-LIT STATE */
+.lcd-container.lcd--dimly-lit,
+.actual-lcd-screen-element.lcd--dimly-lit .lcd-container {
     background-color: oklch(
         var(--lcd-dimly-lit-grad-end-l)
         calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor))
@@ -197,11 +206,13 @@
     border-color: oklch(var(--lcd-active-border-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-border-a));
     box-shadow: var(--lcd-dimly-lit-shadow);
 }
-.lcd-container.lcd--dimly-lit .lcd-content-wrapper {
+.lcd-container.lcd--dimly-lit .lcd-content-wrapper,
+.actual-lcd-screen-element.lcd--dimly-lit .lcd-content-wrapper {
     color: oklch(var(--lcd-dimly-lit-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-dimly-lit-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-dimly-lit-text-a));
     text-shadow: none; /* Turn off CA effect in dimly-lit state for clarity */
 }
-.lcd-container.lcd--dimly-lit::after {
+.lcd-container.lcd--dimly-lit::after,
+.actual-lcd-screen-element.lcd--dimly-lit .lcd-container::after {
     opacity: calc(var(--lcd-crt-overlay-opacity, 0.2) * 0.5 * var(--startup-opacity-factor, 0));
 }
 
@@ -231,7 +242,8 @@
     background: oklch(95% var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue));
     opacity: 0; /* Controlled by JS */
     border-radius: inherit;
-    mix-blend-mode: soft-light;
+    /* FIX: Change blend mode for a more pronounced flicker */
+    mix-blend-mode: screen;
 }
 
 /* FIX: Reverse sweep direction */

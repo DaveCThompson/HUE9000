@@ -128,6 +128,8 @@ export class StartupSequenceManager {
     const lcdUpdater = serviceLocator.get('lcdUpdater');
     const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
 
+    // FIX: Add a dedicated class to manage startup visibility states.
+    dom.body.classList.add('is-starting-up');
     if (dom.body.classList.contains('pre-boot')) {
       dom.body.classList.remove('pre-boot');
     }

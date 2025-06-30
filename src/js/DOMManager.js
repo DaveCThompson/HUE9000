@@ -23,8 +23,8 @@ export class DOMManager {
         this.dialB = document.getElementById('dial-canvas-container-B');
         this.lcdA = document.getElementById('hue-lcd-A');
         this.lcdB = document.getElementById('hue-lcd-B');
-        // FIX: Target the correct scrollable container for the terminal.
-        this.terminalContainer = document.querySelector('.terminal-block .lcd-scroll-wrapper');
+        // FIX: Target the correct component-level element for the terminal.
+        this.terminalContainer = document.querySelector('.terminal-block .actual-lcd-screen-element');
         this.terminalLcdContentElement = document.getElementById('terminal-lcd-content');
         this.colorLensGradient = document.getElementById('color-lens-gradient');
         this.lensSuperGlow = document.getElementById('lens-super-glow');
