@@ -46,6 +46,14 @@ export const phase1Config = {
         ease: 'power1.inOut'
       },
       position: 0 // Body fade-in starts at T=0, concurrently with terminal visual flicker.
+    },
+    {
+      type: 'call',
+      function: (disruptionManager) => {
+        disruptionManager.triggerDisruption();
+      },
+      deps: ['disruptionManager'],
+      position: 1.2
     }
   ]
 };

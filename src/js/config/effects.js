@@ -27,7 +27,7 @@ export const LCD_CHROMA_BLUE_OPACITY = 0.5;
  * @property {number} PERIODIC_TRIGGER_INTERVAL_S - Average interval for random disruptions.
  */
 export const DISRUPTION_PARAMS = {
-    DURATION_S: 1.5,
+    DURATION_S: 2.25,
     FLICKER_PEAK: 0.25,
     JITTER_PEAK_PX: 8.0,
     CHROMA_OFFSET_PEAK_PX: 6.0,

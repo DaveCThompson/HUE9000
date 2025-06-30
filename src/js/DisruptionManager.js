@@ -78,7 +78,8 @@ class DisruptionManager {
     }
 
     triggerDisruption() {
-        if (this.isDisrupting || appState.getAppStatus() !== 'interactive') return;
+        const status = appState.getAppStatus();
+        if (this.isDisrupting || (status !== 'interactive' && status !== 'starting-up')) return;
         this.isDisrupting = true;
         
         const D_PARAMS = { ...DISRUPTION_PARAMS };
@@ -100,15 +101,15 @@ class DisruptionManager {
             }
         });
 
-        // --- Fast background flicker ---
+        // Fast, low-amplitude background flicker (10-15% brightness boost)
         tl.to(this.disruptionOverlays, {
             keyframes: [
-                { opacity: 0.25, duration: 0.03 },
-                { opacity: 0.05, duration: 0.03 },
-                { opacity: 0.30, duration: 0.02 },
-                { opacity: 0.02, duration: 0.05 },
-                { opacity: 0.22, duration: 0.03 },
-                { opacity: 0.0, duration: 0.25 }
+                { opacity: 0.15, duration: 0.02 }, // quick flash
+                { opacity: 0.05, duration: 0.04 }, // dim
+                { opacity: 0.18, duration: 0.02 }, // another quick flash
+                { opacity: 0.03, duration: 0.06 }, // longer dim
+                { opacity: 0.12, duration: 0.03 }, // final small flash
+                { opacity: 0.0, duration: 0.3 }    // fade out
             ],
             ease: 'steps(1)'
         }, 0);
