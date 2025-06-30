@@ -8,10 +8,10 @@ body.pre-boot .actual-lcd-screen-element {
     visibility: hidden !important;
 }
 
-/* FIX: Add a dedicated rule to hide the terminal during the entire startup sequence.
-   This prevents it from flashing into view between the preloader and JS init.
-   The class is added/removed by the StartupSequenceManager/FSM. */
-body.is-starting-up .actual-lcd-screen-element {
+/* FIX: Add dedicated rules to hide the terminal during the entire startup sequence AND
+   during the "bridge" state between preloader and main app init. */
+body.is-starting-up .actual-lcd-screen-element,
+body.post-preload-hiding .actual-lcd-screen-element {
     visibility: hidden;
 }
 

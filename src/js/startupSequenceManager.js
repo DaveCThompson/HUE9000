@@ -133,6 +133,10 @@ export class StartupSequenceManager {
     if (dom.body.classList.contains('pre-boot')) {
       dom.body.classList.remove('pre-boot');
     }
+    // FIX: Remove the temporary "bridge" class now that JS has taken over.
+    if (dom.body.classList.contains('post-preload-hiding')) {
+        dom.body.classList.remove('post-preload-hiding');
+    }
     
     gsap.killTweensOf([dom.body, this.LReductionProxy, this.opacityFactorProxy]);
 

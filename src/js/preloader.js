@@ -245,7 +245,8 @@ export function runPreloader(preloaderDomElements, gsap) {
                 duration: PRELOADER_CONFIG.preloaderFadeOutDurationMs / 1000,
                 onComplete: () => {
                     preloaderRoot.style.display = 'none';
-                    // Remove the isolation class so the main theme can take over
+                    // FIX: Add the "bridge" class to hide the terminal before handing off to main.js
+                    body.classList.add('post-preload-hiding');
                     body.classList.remove('preloader-active');
                     resolveMainPreloaderPromise();
                 }
