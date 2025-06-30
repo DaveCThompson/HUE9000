@@ -61,7 +61,7 @@ KEY ARCHITECTURAL DECISIONS:
 }
 
 /* --- SHARED COMPONENT STYLES --- */
-.display-container__row--name { font-size: 1rem; font-weight: 500; letter-spacing: 0.05em; color: var(--display-color-on); transition: color 0.2s ease-out; } /* 16px -> rem */
+.display-container__row--name { font-size: 1rem; font-weight: 500; letter-spacing: 0.05em; color: var(--display-color-on); text-shadow: inherit; transition: color 0.2s ease-out; } /* 16px -> rem */
 .fine-dot-row { display: flex; width: 100%; gap: var(--display-dot-gap); }
 .fine-dot { flex: 1; height: var(--display-dot-height); border-radius: var(--display-dot-radius); transition: background-color 0.1s linear, box-shadow 0.2s ease-out; }
 .fine-dot--off { background-color: var(--display-color-off-dot); box-shadow: none; }
@@ -72,9 +72,9 @@ KEY ARCHITECTURAL DECISIONS:
 
 /* --- MOOD MATRIX SPECIFIC STYLES --- */
 .mood-matrix__row--major-blocks { display: flex; justify-content: center; gap: var(--display-block-gap); width: 100%; }
-.major-block { flex: 1; height: var(--display-block-size); border-radius: var(--display-block-radius); display: flex; justify-content: center; align-items: center; font-size: 0.6875rem; font-weight: 500; transition: background-color 0.2s ease-out, color 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out; } /* 11px -> rem */
-.major-block--off { background-color: var(--display-color-off-bg); color: var(--display-color-off-dot); opacity: 0.7; box-shadow: none; }
-.major-block--in-progress { background-color: var(--display-color-off-bg); color: var(--display-color-on); opacity: 1; box-shadow: none; }
+.major-block { flex: 1; height: var(--display-block-size); border-radius: var(--display-block-radius); display: flex; justify-content: center; align-items: center; font-size: 0.6875rem; font-weight: 500; transition: background-color 0.2s ease-out, color 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out; text-shadow: inherit; } /* 11px -> rem */
+.major-block--off { background-color: var(--display-color-off-bg); color: var(--display-color-off-dot); opacity: 0.7; box-shadow: none; text-shadow: none; }
+.major-block--in-progress { background-color: var(--display-color-off-bg); color: var(--display-color-on); opacity: 1; }
 .major-block--on { background-color: var(--display-color-on); color: var(--display-color-text-dark); opacity: 1; text-shadow: none; }
 
 /* --- INTENSITY DISPLAY SPECIFIC STYLES --- */
@@ -83,12 +83,61 @@ KEY ARCHITECTURAL DECISIONS:
 .intensity-bar--unselected { background-color: var(--display-color-off-dot); box-shadow: none; }
 .intensity-bar--selected { background-color: var(--display-color-on); }
 
+
 /*
 ========================================================================
-HARMONIC RESONANCE STYLES
-========================================================================
-The .is-resonating class is now applied to the parent .lcd-container.
-The pulsating glow effect is inherited from the styles defined in _lcd.css
-for the .lcd-content-wrapper. No additional rules are needed here.
+V2 DISPLAY CHROMATIC ABERRATION
 ========================================================================
 */
+/*
+ * Apply a CA effect to all display elements. The shadow's intensity
+ * is linked to the element's base color opacity, fulfilling the
+ * PRD's visual fidelity requirement.
+*/
+
+/* --- Text Elements (e.g., "CALM", "100%") --- */
+.display-container__row--name {
+    text-shadow:
+        /* Red Ghost */
+        var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.7),
+        /* Blue Ghost */
+        calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.7);
+}
+
+/* --- Box Elements (Bars, Blocks, Dots) --- */
+/*
+ * Lit elements get a full-strength shadow.
+ * The shadow will be clipped by the parent's overflow:hidden.
+ */
+.major-block--on,
+.intensity-bar--selected,
+.fine-dot--on {
+    box-shadow:
+        var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.7),
+        calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.7);
+}
+
+/*
+ * "In-progress" elements get a dimmer shadow to match their
+ * reduced base opacity, achieving the desired visual fidelity.
+ */
+.major-block--in-progress,
+.fine-dot--in-progress-1 {
+    box-shadow:
+        var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.45), /* Reduced alpha */
+        calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.45); /* Reduced alpha */
+}
+
+.fine-dot--in-progress-2 {
+    box-shadow:
+        var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.25), /* Further reduced alpha */
+        calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.25); /* Further reduced alpha */
+}
+
+/* The dimmest in-progress dots and off-states have no shadow */
+.fine-dot--in-progress-3,
+.major-block--off,
+.intensity-bar--unselected,
+.fine-dot--off {
+    box-shadow: none;
+}

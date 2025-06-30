@@ -113,10 +113,14 @@
     font-weight: 500;
     line-height: 1.4;
     color: oklch(var(--lcd-active-text-l) calc(var(--dynamic-lcd-chroma) * var(--lcd-base-chroma-factor)) var(--dynamic-lcd-hue) / var(--lcd-active-text-a));
-
-    /* FIX: Remove text-shadow. It will be applied by JS during disruptions. */
+    
+    /* Add clip-path to contain the CA shadows */
+    clip-path: inset(0);
+    
+    /* The text-shadow will be applied to child elements directly.
+       Ensure no shadow is inherited or applied here. */
     text-shadow: none;
-
+    
     transition: color var(--transition-duration-medium) ease;
 }
 
@@ -214,6 +218,7 @@
     align-items: baseline;
     line-height: 1.7;
     color: inherit;
+    text-shadow: inherit;
 }
 
 /* --- 5. New Effects & Keyframes --- */

@@ -18,8 +18,8 @@ class DisruptionManager {
         this.lastTick = 0;
         this.nextInterval = 0;
         
-        // Proxy object for GSAP to tween
-        this.caProxy = { factor: 1.0 };
+        // FIX: Proxy object for GSAP to tween, representing effect strength from 0 to 1
+        this.caProxy = { strength: 0.0 };
     }
 
     init() {
@@ -76,22 +76,6 @@ class DisruptionManager {
             observer.observe(this.dom.appWrapper);
         }
     }
-    
-    _applyCaEffect(factor) {
-        const offset = DISRUPTION_PARAMS.CHROMA_OFFSET_PEAK_PX * (factor - 1);
-        
-        const textShadowString = `${offset.toFixed(2)}px 0 0 oklch(80% 0.15 40 / 0.9), ${-offset.toFixed(2)}px 0 0 oklch(80% 0.15 250 / 0.9)`;
-        const boxShadowString = `${offset.toFixed(2)}px 0 0 oklch(80% 0.15 40 / 0.9), ${-offset.toFixed(2)}px 0 0 oklch(80% 0.15 250 / 0.9)`;
-
-        this.lcdContentWrappers.forEach(el => {
-            el.style.textShadow = textShadowString;
-        });
-        
-        const litBlocks = document.querySelectorAll('.major-block--on, .major-block--in-progress, .intensity-bar--selected, .fine-dot--on');
-        litBlocks.forEach(el => {
-            el.style.boxShadow = boxShadowString;
-        });
-    }
 
     triggerDisruption() {
         if (this.isDisrupting || appState.getAppStatus() !== 'interactive') return;
@@ -99,8 +83,10 @@ class DisruptionManager {
         
         const D_PARAMS = { ...DISRUPTION_PARAMS };
         const halfDuration = D_PARAMS.DURATION_S / 2;
+        const rootEl = document.documentElement;
         
-        this.caProxy.factor = 1.0;
+        // Ensure the proxy starts at 0
+        this.caProxy.strength = 0.0;
         
         const tl = this.gsap.timeline({
             onStart: () => {
@@ -108,14 +94,9 @@ class DisruptionManager {
             },
             onComplete: () => {
                 this.isDisrupting = false;
-                this.lcdContentWrappers.forEach(el => {
-                    el.classList.remove('is-disrupting');
-                    el.style.textShadow = ''; // Clear inline style
-                });
-                 const litBlocks = document.querySelectorAll('.major-block--on, .major-block--in-progress, .intensity-bar--selected, .fine-dot--on');
-                litBlocks.forEach(el => {
-                    el.style.boxShadow = ''; // Clear inline style
-                });
+                this.lcdContentWrappers.forEach(el => el.classList.remove('is-disrupting'));
+                // Return to default state by setting the final offset to 0
+                this.gsap.set(rootEl, { '--_ca-current-offset': '0px' });
             }
         });
 
@@ -132,19 +113,29 @@ class DisruptionManager {
             ease: 'steps(1)'
         }, 0);
 
-
         // --- Chromatic Aberration Spread ---
+        // We tween a JS proxy object, and on each update, we calculate the final
+        // pixel value and set it to a CSS variable. This avoids calc() in CSS.
+        const peakOffsetRem = 0.5; // 0.5rem for red, -0.5rem for blue = 1rem total separation
+        const peakOffsetPx = peakOffsetRem * 16; 
+
         tl.to(this.caProxy, { 
-            factor: 10, // Multiplier for the peak offset
+            strength: 1.0, // from 0 to 1
             duration: halfDuration, 
             ease: 'power2.in',
-            onUpdate: () => this._applyCaEffect(this.caProxy.factor)
+            onUpdate: () => {
+                const currentOffset = (peakOffsetPx * this.caProxy.strength).toFixed(2);
+                rootEl.style.setProperty('--_ca-current-offset', `${currentOffset}px`);
+            }
         }, 0)
           .to(this.caProxy, { 
-            factor: 1, 
+            strength: 0.0, // from 1 to 0
             duration: halfDuration, 
             ease: 'power2.out',
-            onUpdate: () => this._applyCaEffect(this.caProxy.factor)
+            onUpdate: () => {
+                const currentOffset = (peakOffsetPx * this.caProxy.strength).toFixed(2);
+                rootEl.style.setProperty('--_ca-current-offset', `${currentOffset}px`);
+            }
         }, halfDuration);
     }
 

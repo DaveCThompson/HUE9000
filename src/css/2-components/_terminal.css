@@ -113,3 +113,25 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+
+/*
+========================================================================
+TERMINAL CHROMATIC ABERRATION
+========================================================================
+*/
+/*
+ * Apply the CA text-shadow effect to every line in the terminal.
+ * This uses the global --_ca-current-offset variable animated by JS.
+ * The shadow color is based on the line's own text color, ensuring
+ * that error messages (red) get a red-tinted shadow, etc., for
+ * maximum visual fidelity.
+*/
+.terminal-line {
+    text-shadow:
+        /* Red Ghost Tint */
+        var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.7),
+        /* Blue Ghost Tint */
+        calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.7),
+        /* Base Glow using the line's own color */
+        0 0 5px oklch(from currentColor l c h / 0.5);
+}
