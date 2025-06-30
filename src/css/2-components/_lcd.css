@@ -61,7 +61,6 @@
     z-index: 2;
     border-radius: inherit;
     will-change: background-position;
-    /* FIX: Remove scanlines from here, leaving only the sweep line */
     background-image:
         linear-gradient(to bottom,
             transparent,
@@ -71,11 +70,20 @@
             transparent calc(50% + 1px),
             transparent
         );
-    /* FIX: Only one background size is needed now */
     background-size: 100% 200%;
     animation: lcdSweep var(--lcd-sweep-speed, 5s) linear infinite;
+    /* FIX: Make the sweep overlay hidden by default. */
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity var(--transition-duration-medium) ease, visibility var(--transition-duration-medium) ease;
 }
 
+/* FIX: Explicitly make the sweep overlay visible only when its parent is NOT unlit. */
+.lcd-container:not(.lcd--unlit) #sweep-overlay,
+.actual-lcd-screen-element:not(.lcd--unlit) #sweep-overlay {
+    visibility: visible;
+    opacity: 1;
+}
 
 /* Pause animations when observer fires */
 .lcd-container.effects-paused #sweep-overlay,
@@ -177,8 +185,8 @@
     color: oklch(var(--lcd-unlit-text-l) var(--lcd-unlit-text-c) var(--lcd-unlit-text-h) / var(--lcd-unlit-text-a));
     text-shadow: none;
 }
+/* FIX: Removed the redundant sweep overlay hiding rule, as it's now hidden by default. */
 .lcd-container.lcd--unlit::after,
-.actual-lcd-screen-element.lcd--unlit #sweep-overlay,
 .actual-lcd-screen-element.lcd--unlit .lcd-container::after {
     opacity: 0 !important;
 }
