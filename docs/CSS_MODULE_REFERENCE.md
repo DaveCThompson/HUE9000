@@ -51,7 +51,7 @@ Sets the base font family and defines shared text styles.
 Manages the synchronized visual transition from DIM mode to a full theme.
 *   **Core Responsibilities:**
     *   Contains a single, highly specific CSS rule targeting `body.is-transitioning-from-dim .animate-on-dim-exit`.
-    *   This rule is activated by JavaScript during startup phase P10 to apply a smooth, 1-second transition to specific CSS properties (e.g., `background-color`, `border-color`, `opacity`).
+    *   This rule is activated by JavaScript during startup phase P11 to apply a smooth, 1-second transition to specific CSS properties (e.g., `background-color`, `border-color`, `opacity`).
     *   **All pixel values in this file have been converted to `rem`** to support responsive scaling.
 
 ### `_utilities.css`
@@ -63,8 +63,8 @@ Provides simple, reusable helper classes.
 ### `_mobile.css`
 Contains responsive overrides for mobile devices.
 *   **Core Responsibilities:**
-    *   Adjusts the main content area to a single-column grid layout for portrait orientation on smaller screens.
-    *   Hides certain desktop-only panels.
+    *   Uses a CSS Grid (`grid-template-areas`) to completely re-order the main content panels into a single-column layout for portrait orientation.
+    *   Hides desktop-only UI elements (like the left-panel compact view) and restyles others (like the info panel) to be full-screen overlays.
     *   **All pixel values in this file have been converted to `rem`** to support responsive scaling.
 
 ## 2-components/ (Individual Component Styles)
@@ -77,10 +77,11 @@ Styles the initial loading screen.
     *   **All pixel values in this file have been converted to `rem`** (except for explicit `1px` lines) to support responsive scaling.
 
 ### `_side-panels.css`
-Styles the slide-out left and right panels.
+Styles the slide-out info panel.
 *   **Core Responsibilities:**
-    *   Defines the appearance of the compact vertical bar (`.compact-view`) and the expanded panel content (`.expanded-view`).
-    *   Manages the `transform` applied to `.app-wrapper` when a panel is open.
+    *   Defines the appearance of the compact vertical bar (`.compact-view`) for desktop and the expanded panel content (`.expanded-view`).
+    *   Manages the `transform` applied to `.app-wrapper` when a panel is open on desktop.
+    *   Is adapted by `_mobile.css` to make the panel a full-screen overlay that slides in from the right.
     *   **All pixel values in this file have been converted to `rem`** (except for explicit `1px` lines) to support responsive scaling.
 
 ### `_panel-bezel.css`

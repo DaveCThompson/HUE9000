@@ -10,7 +10,7 @@ This document details the phased startup sequence for the HUE 9000 interface, or
     *   Elements activate in stages. Their visual appearance during startup is heavily influenced by two CSS custom properties animated by GSAP within each phase module:
         *   `--startup-L-reduction-factor`: Ranges from a high value (e.g., 0.40) down to 0.0 (no lightness reduction). Affects `oklch()` L-values.
         *   `--startup-opacity-factor`: Derived as `1.0 - L-reduction-factor`. Affects opacity of textures, glows, text shadows.
-    *   The `config.js` file (`STARTUP_L_REDUCTION_FACTORS`) defines the target L-reduction factor for each phase.
+    *   The `config/sequences.js` file (`STARTUP_L_REDUCTION_FACTORS`) defines the target L-reduction factor for each phase.
 *   **Button States (CSS Classes applied by `Button.js` components, managed by `buttonManager.js`):**
     *   **Initial (P0):** All buttons are set to `is-unlit` by `buttonManager.setInitialDimStates()`.
     *   **During `theme-dim` (Phases P0-P10):**
@@ -22,7 +22,7 @@ This document details the phased startup sequence for the HUE 9000 interface, or
     *   **During Theme Transition & `theme-dark` (Phases P11-P12):**
         *   `.is-energized` (and `.is-selected` where appropriate): Full power, styled by `theme-dark.css` variables. SCAN, FIT EVAL buttons flicker from `is-dimly-lit` to this state in P11.
 *   **LCD/Terminal Visuals During Startup:**
-    *   **Terminal Flicker (P1):** The initial terminal message in P1 uses a special composed animation (`specialTerminalFlicker: true` in phase config) that flickers both the screen container and the text itself.
+    *   **Terminal Flicker (P1):** The initial terminal message in P1 is accompanied by a `terminalScreenFlickerToDimlyLit` profile for the container. The text itself is typed by the terminal manager.
     *   **Subsequent Terminal Messages (P2+):** Startup messages (triggered by `terminalMessageKey`) are typed onto the next line by `terminalManager`.
     *   **Screen Background Flicker (P6):** Dial LCDs (A & B) use the `lcdScreenFlickerToDimlyLit` profile for their visual power-on. The `lcdPowerOn` sound is timed to play concurrently with the start of this visual flicker.
     *   **Theme Transition (P11):** LCD backgrounds transition via CSS. A `background-color` fallback in `_lcd.css` helps minimize visual glitches.
@@ -41,17 +41,18 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 1)
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
-    1.  **`T=0.0s`:** Terminal `specialTerminalFlicker` ("INITIATING..."), dimming factors animate, body fades in.
+    1.  **`T=0.0s`:** Terminal container flickers on (`terminalScreenFlickerToDimlyLit`), terminal begins typing "INITIATING...", dimming factors animate, body fades in.
     2.  **`T=1.075s`:** **Audio:** `terminalBoot` sound.
-*   **Visual Outcome:** Terminal flickers on. Body visible.
+    3.  **`T=1.2s`:** **Visual Effect:** `DisruptionManager` is triggered.
+*   **Visual Outcome:** Terminal flickers on, displays a visual glitch. Body visible.
 
 ### Phase 2: Activating Backup Power Systems (`startupPhase2.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 2)
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.0s`:** Terminal message "P2_BACKUP_POWER", dimming factors animate.
-    2.  **`T=0.1s`:** MAIN PWR buttons flicker to `is-dimly-lit`.
-    3.  **`T=1.3s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
+    2.  **`T=0.01s`:** MAIN PWR buttons flicker to `is-dimly-lit`.
+    3.  **`T=0.80s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
 *   **Visual Outcome:** Main power buttons dimly visible.
 
 ### Phase 3: Main Power Online (`startupPhase3.js`)
@@ -59,13 +60,13 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.0s`:** Terminal message "P3_MAIN_POWER_ONLINE", dimming factors animate.
-    2.  **`T=0.1s`:** MAIN PWR "ON" flickers to `.is-energized.is-selected`; "OFF" to `.is-energized`.
-    3.  **`T=0.15s`:** **Audio:** `buttonEnergize` sound.
+    2.  **`T=0.0s`:** MAIN PWR "ON" flickers to `.is-energized.is-selected`; "OFF" to `.is-energized`.
+    3.  **`T=0.7s`:** **Audio:** `buttonEnergize` sound.
 *   **Visual Outcome:** Main power buttons appear energized (dim theme variant).
 
 ### Phase 4: Reactivating Optical Core (`startupPhase4.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 4)
-*   **Phase Duration:** Approx 4.5s.
+*   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.0s`:** Terminal message "P4_OPTICAL_CORE_REACTIVATE", dimming factors animate.
     2.  **`T=0.1s`:** Lens energize sequence begins. **Audio:** `lensStartup` sound.
@@ -76,8 +77,8 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.0s`:** Terminal message "P5_DIAGNOSTIC_INTERFACE", dimming factors animate.
-    2.  **`T=0.1s`:** SCAN/FIT EVAL buttons (BTN1-4) flicker to `is-dimly-lit`.
-    3.  **`T=1.3s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
+    2.  **`T=0.01s`:** SCAN/FIT EVAL buttons (BTN1-4) flicker to `is-dimly-lit`.
+    3.  **`T=0.8s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
 *   **Visual Outcome:** BTN1-4 dimly visible.
 
 ### Phase 6: Initializing Mood and Intensity Controls (`startupPhase6.js`)
@@ -85,9 +86,10 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.0s`:** Terminal message "P6_MOOD_INTENSITY_CONTROLS", dimming factors animate.
-    2.  **`T=0.5s`:** Dials (MOOD, INTENSITY) become visually active.
-    3.  **`T=1.5s`:** Dial LCDs (A & B) flicker to `lcd--dimly-lit`. **Audio:** `lcdPowerOn` sound (with `forceRestart: true`).
-    4.  **`T=1.8s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
+    2.  **`T=0.1s`:** Dials (MOOD, INTENSITY) become visually active.
+    3.  **`T=0.2s`:** Dial LCDs (A & B) flicker to `lcd--dimly-lit`.
+    4.  **`T=0.24s`:** **Audio:** `lcdPowerOn` sound (with `forceRestart: true`).
+    5.  **`T=0.5s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
 *   **Visual Outcome:** Dials active, then their LCDs dimly lit.
 
 ### Phase 7: Initializing Hue Correction Systems (`startupPhase7.js`)
@@ -95,8 +97,8 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.0s`:** Terminal message "P7_HUE_CORRECTION_SYSTEMS", dimming factors animate.
-    2.  **`T=0.1s`:** Hue Assignment buttons flicker to `is-dimly-lit`. (Note: `playStateTransitionEcho` is skipped).
-    3.  **`T=1.3s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
+    2.  **`T=0.11s`:** Hue Assignment buttons flicker to `is-dimly-lit`. (Note: `playStateTransitionEcho` is skipped).
+    3.  **`T=0.9s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
 *   **Visual Outcome:** Hue Assignment buttons dimly visible and stable.
 
 ### Phase 8: Energizing Hue Assignment Matrix (`startupPhase8.js`)
@@ -114,24 +116,23 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Phase Duration:** Approx 3.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.0s`:** Terminal message "P9_EXTERNAL_LIGHTING_CONTROLS", dimming factors animate to final (0.0 L-reduction).
-    2.  **`T=0.1s`:** AUX LIGHT buttons flicker to `is-dimly-lit`.
-    3.  **`T=1.3s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
+    2.  **`T=0.01s`:** AUX LIGHT buttons flicker to `is-dimly-lit`.
+    3.  **`T=0.8s`:** **Audio:** `itemAppear` sound (with `forceRestart: true`).
 *   **Visual Outcome:** Aux light buttons dimly visible. UI at full `theme-dim` base appearance.
 
 ### Phase 10: Activating Auxiliary Lighting: Low Intensity (`startupPhase10.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 10)
-*   **Phase Duration:** Approx 3.5s.
+*   **Phase Duration:** Approx 2.5s.
 *   **Key Actions & Timing:**
     1.  **`T=0.0s`:** Terminal message "P10_AUX_LIGHTING_LOW".
-    2.  **`T=0.1s`:** AUX LIGHT "LOW" flickers to `.is-energized.is-selected`; "HIGH" to `.is-energized`.
-    3.  **`T=0.25s`:** **Audio:** `buttonEnergize` sound.
+    2.  **`T=0.15s`:** AUX LIGHT "LOW" flickers to `.is-energized.is-selected`; "HIGH" to `.is-energized`. **Audio:** `buttonEnergize` sound.
 *   **Visual Outcome:** Aux lights energized, "LOW" selected (dim theme variant).
 
 ### Phase 11: Engaging Ambient Theme (`startupPhase11.js`)
 *   **FSM State:** `RUNNING_PHASE` (context.currentPhase: 11)
 *   **Phase Duration:** Approx 1.5s.
 *   **Key Actions & Timing:**
-    1.  **`T=0.5s`:** LCDs set to 'active'. `appState.setTheme('dark')`; CSS theme transition begins.
+    1.  **`T=0.5s`:** LCDs set to 'active'. `appState.setTheme('dark')` is called. The `.animate-on-dim-exit` class triggers the 1-second CSS transition.
     2.  **`T=0.6s`:** SCAN, FIT EVAL buttons flicker to `.is-energized`. **Audio:** `themeEngage` sound.
 *   **Visual Outcome:** Global theme transitions to dark. Remaining diagnostic buttons energize.
 
@@ -149,22 +150,17 @@ This document details the phased startup sequence for the HUE 9000 interface, or
 *   **Phase Stalling:** If the startup sequence hangs on a particular phase:
     *   Check the browser console for errors.
     *   Verify the `duration` in the corresponding `startupPhaseX.js` config.
-    *   Ensure all GSAP timelines created within that phase have `onComplete` callbacks that are reachable and that any promises (e.g., from `createAdvancedFlicker`) are correctly `await`ed or chained.
-    *   Use `PhaseRunner` logs: `[PhaseRunner] Executing Phase X...` and `[PhaseRunner] <<<< COMPLETED >>>> Phase X...` to track FSM progress.
+    *   Ensure all GSAP timelines created within that phase have `onComplete` callbacks that are reachable. `PhaseRunner` now pads the timeline to match the configured duration, which should prevent most stalls.
+    *   Use `PhaseRunner` logs: `[PhaseRunner] Executing Phase X...` and `[PhaseRunner] <<<< MASTER TL COMPLETED >>>> Phase X...` to track FSM progress.
 *   **Sound Issues (Missing/Delayed/Incorrect):**
     *   **`forceRestart: true`:** For sounds that need to play reliably even if recently triggered (common in startup or rapid UI clicks), ensure `forceRestart: true` is set in their `type: 'audio'` definition in `startupPhaseX.js` or in direct `audioManager.play()` calls in `main.js`.
     *   **Timing (`position`):** The `position` property in `type: 'audio'` definitions is critical. If a sound seems misaligned with visuals, adjust this value.
-    *   **Loading:** While most critical sounds are now preloaded or `forceRestart`ed, ensure the sound file exists and is not corrupted. Use `AudioManager` debug logs (`A_LOAD_INIT`, `A_LOAD_DONE`, `A_PLAY_ATTEMPT`, etc.) to trace loading and playback attempts.
-    *   **P6 Sounds:** If P6 sounds (`itemAppear`, `lcdPowerOn`) are missing, check `PhaseRunner` logs:
-        *   `[P_RUNNER_P6_AUDIO_BUILD_ENTRY]` (should appear for each audio anim in P6 config).
-        *   `[P_RUNNER_SCHED P6_SOUND_...]` (should appear, confirming scheduling).
-        *   `[P_RUNNER_P6_TL_DEBUG]` (confirms P6 timeline duration is sufficient).
+    *   **Loading:** While most critical sounds are now preloaded, ensure the sound file exists and is not corrupted. Use `AudioManager` debug logs to trace loading and playback attempts.
 *   **Visual Flickering/Glitches:**
     *   **Button `is-dimly-lit` Inconsistency (P7 Solved):** This was due to overlapping `playStateTransitionEcho` animations and the interaction of GSAP's `clearProps` with CSS. The fix involved skipping echoes for P7 Hue Assignment buttons and using selective `clearProps` in `Button.setState` to preserve GSAP-set light opacity. If similar issues appear elsewhere, these are good areas to check.
     *   **CSS Transitions:** Unintended CSS transitions on properties GSAP is also animating can cause conflicts. Inspect elements for active transitions.
     *   **`clearProps` Usage:** Be cautious with `gsap.set(element, { clearProps: "all" })`. If a GSAP animation is meant to leave a persistent inline style (like opacity), `clearProps: "all"` will remove it. Use selective clearing (e.g., `clearProps: "transform,filter"`) or ensure CSS correctly defines the desired final state.
-    *   **Glow Effects:** Glows are often `box-shadow`. Ensure the CSS variables controlling glow (`--btn-glow-opacity`, `--btn-glow-size`, `--btn-glow-color`) are correctly set by animations and that the CSS rules using them are well-defined for each theme and button state.
+    *   **Glow Effects:** Glows are often `box-shadow` or a `filter: blur()` on a pseudo-element. Ensure the CSS variables controlling glow (`--btn-glow-opacity`, `--btn-glow-size`, `--btn-glow-color`) are correctly set by animations and that the CSS rules using them are well-defined for each theme and button state.
 *   **General Debugging:**
     *   Use browser developer tools to inspect element classes, computed styles, and console logs.
     *   Temporarily simplify complex animations or comment out sections in `startupPhaseX.js` files to isolate problematic behavior.
-    *   Increase verbosity of debug logs in relevant managers if needed.
