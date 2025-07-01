@@ -19,8 +19,8 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0..1,0" />
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-BAFcWEe1.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-B4QKHolW.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-B6OmpVhU.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-DOfWe0oL.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -86,7 +86,7 @@
             <button class="mobile-control-button" id="mobile-light-btn" aria-label="Cycle Auxiliary Light">
                 <span class="material-symbols-outlined">lightbulb_circle</span>
             </button>
-            <!-- NEW: Vertical Slider (moved inside this group) -->
+            <!-- DEFINITIVE SLIDER STRUCTURE -->
             <div class="mobile-slider-container" id="mobile-color-slider-container" 
                  aria-label="Environment and Logo Color" 
                  role="slider" 
@@ -95,8 +95,11 @@
                  aria-valuemax="11" 
                  aria-valuenow="0"
                  aria-valuetext="Colorless">
-                <div class="mobile-slider-track" id="mobile-slider-track">
-                    <div class="mobile-slider-thumb" id="mobile-slider-thumb">
+                <div class="mobile-slider-track" id="mobile-slider-track"></div>
+                <!-- JS positions this parent div -->
+                <div class="mobile-slider-thumb" id="mobile-slider-thumb">
+                    <!-- CSS rotates this child div -->
+                    <div class="thumb-icon-wrapper">
                         <span class="material-symbols-outlined thumb-icon">drag_handle</span>
                     </div>
                 </div>
