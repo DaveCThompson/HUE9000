@@ -1,13 +1,11 @@
 /**
  * @module terminalManager
- * @description Manages the HUE 9000 terminal display, including typing effects,
- * message queuing, cursor, scrolling, and startup flicker effects.
- * (Project Decouple Refactor)
+ * @description Manages the HUE 9000 terminal display, including rich text,
+ * command sequences, typing effects, cursor, and scrolling.
  */
 import { getMessage } from './terminalMessages.js';
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js'; // IMPORT appState directly
-import { createAdvancedFlicker } from './animationUtils.js'; // Import flicker utility
+import * as appState from './appState.js';
 import {
     TERMINAL_THINKING_DELAY_MIN_MS,
     TERMINAL_THINKING_DELAY_MAX_MS,
@@ -19,43 +17,40 @@ import {
     TERMINAL_MAX_LINES_IN_DOM
 } from './config/index.js';
 
-// This value MUST be kept in sync with the `max-width` in `_terminal.css`.
-// FIX: The original value of 65 was too wide for the panel's rendered width,
-// causing the browser to perform its own awkward wrapping. This more conservative
-// value ensures the JS-formatted lines fit within the CSS container.
-const TERMINAL_MAX_CHARS_PER_LINE = 45;
-
 class TerminalManager {
     constructor() {
         this._terminalContainerElement = null;
         this._terminalContentElement = null;
+        this._scrollWrapperElement = null;
         this._gsap = null;
-        this._lcdUpdater = null; 
 
         this._messageQueue = [];
-        this._isTyping = false;
+        this._isProcessing = false;
         this._currentLineElement = null;
-        this._currentTextSpan = null; 
         this._cursorElement = null;
-        this._isFirstLine = true; 
-        this.debug = false;
-        this._currentTypingPromise = null; // To manage the active typing process
+        this._isFirstLine = true;
+        this._currentProcessPromise = null;
+        
+        this._commandHandlers = {
+            'pause': this._handlePauseCommand.bind(this),
+            'displayText': this._handleDisplayTextCommand.bind(this),
+            'spinner': this._handleSpinnerCommand.bind(this),
+        };
     }
 
     init() {
         const dom = serviceLocator.get('domElements');
         this._terminalContainerElement = dom.terminalContainer;
         this._terminalContentElement = dom.terminalLcdContentElement;
+        this._scrollWrapperElement = this._terminalContainerElement.querySelector('.lcd-scroll-wrapper');
         this._gsap = serviceLocator.get('gsap');
-        this._lcdUpdater = serviceLocator.get('lcdUpdater'); 
 
         this._setupDOM();
         appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
-        // if (this.debug) console.log(`[TM | ${performance.now().toFixed(2)}ms] TerminalManager INIT`);
     }
 
     reset() {
-        this._interruptAndClear(); // Use the new interrupt method for a full reset
+        this._interruptAndClear();
     }
 
     _setupDOM() {
@@ -68,38 +63,25 @@ class TerminalManager {
     }
 
     _interruptAndClear() {
-        // ROBUSTNESS FIX: Abort the current promise if it exists.
-        // The running `_processQueue` loop will now be responsible for cleaning up its own state.
-        if (this._currentTypingPromise) {
-            this._currentTypingPromise.abort = true;
-            this._currentTypingPromise = null; // We can clear our reference to it.
+        if (this._currentProcessPromise) {
+            this._currentProcessPromise.abort = true;
+            this._currentProcessPromise = null;
         }
-        
-        // Kill any pending delayed calls (like inter-line pauses).
-        if(this._gsap) this._gsap.killTweensOf(this); 
-        
-        // Clear the message queue of any pending work.
+        if (this._gsap) this._gsap.killTweensOf(this);
         this._messageQueue = [];
-        
-        // Clear the visual DOM content.
+
         if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
-        if (this._cursorElement && this._cursorElement.parentNode) {
-            this._cursorElement.parentNode.removeChild(this._cursorElement);
-        }
-        
-        this._isFirstLine = true; 
-        
-        // ROBUSTNESS FIX: DO NOT set `_isTyping = false` here.
-        // The currently running `_processQueue` instance must be the one to release the lock.
-        // We can, however, immediately set the cursor to idle.
+        if (this._cursorElement.parentNode) this._cursorElement.parentNode.removeChild(this._cursorElement);
+        if (this._scrollWrapperElement) this._scrollWrapperElement.scrollTop = 0;
+
+        this._isFirstLine = true;
         this._setCursorState('idle');
     }
 
     _handleRequestTerminalMessage(payload) {
-        const messageData = getMessage(payload, appState);
+        const messageData = getMessage(payload);
         const messageObject = { ...payload, ...messageData };
 
-        // 1. Handle immediate commands (interrupts and clears)
         if (messageObject.type === 'command' && messageObject.command === 'clear') {
             this._interruptAndClear();
             return;
@@ -107,112 +89,64 @@ class TerminalManager {
         if (messageObject.interrupt) {
             this._interruptAndClear();
         }
-
-        // 2. Handle message coalescing for status updates
         if (messageObject.coalesce) {
             const existingIndex = this._messageQueue.findIndex(m => m.coalesceId === messageObject.coalesceId);
             if (existingIndex > -1) {
-                this._messageQueue[existingIndex] = messageObject; // Replace old with new
-                return; // Don't queue again and don't start a new process
+                this._messageQueue[existingIndex] = messageObject;
+                return;
             }
         }
-
-        // 3. Add to queue
         this._messageQueue.push(messageObject);
-
-        // 4. Start processing ONLY if we are not already in a processing loop.
-        if (!this._isTyping) {
+        if (!this._isProcessing) {
             this._processQueue();
         }
     }
 
     async _processQueue() {
-        if (this._isTyping) return; // Redundant guard, but safe
-
-        this._isTyping = true; // Set the lock IMMEDIATELY
+        if (this._isProcessing) return;
+        this._isProcessing = true;
 
         while (this._messageQueue.length > 0) {
             const messageObject = this._messageQueue.shift();
-            
+            const processPromise = {};
+            this._currentProcessPromise = processPromise;
+
             this._setCursorState('thinking');
-            const delay = this._gsap.utils.random(
-                TERMINAL_THINKING_DELAY_MIN_MS,
-                TERMINAL_THINKING_DELAY_MAX_MS
-            );
-            
-            const typingPromise = {};
-            this._currentTypingPromise = typingPromise;
-            
-            await new Promise(resolve => {
-                this._gsap.delayedCall(delay / 1000, resolve);
-            }).catch(() => {});
+            const delay = this._gsap.utils.random(TERMINAL_THINKING_DELAY_MIN_MS, TERMINAL_THINKING_DELAY_MAX_MS);
+            await new Promise(resolve => this._gsap.delayedCall(delay / 1000, resolve));
+            if (processPromise.abort) break;
 
-            // ROBUSTNESS FIX: Check for abortion immediately after any `await`.
-            if (typingPromise.abort) {
-                break;
+            if (messageObject.beforeTyping && Array.isArray(messageObject.beforeTyping)) {
+                for (const command of messageObject.beforeTyping) {
+                    if (processPromise.abort) break;
+                    const handler = this._commandHandlers[command.command];
+                    if (handler) {
+                        await handler(command.params, processPromise);
+                    } else {
+                        console.warn(`[Terminal] Unknown command: ${command.command}`);
+                    }
+                }
             }
-
+            if (processPromise.abort) break;
+            
             this._setCursorState('typing');
-            await this._typeMessage(messageObject, typingPromise);
-
-            if (typingPromise.abort) {
-                break;
-            }
+            await this._typeMessage(messageObject, processPromise);
         }
 
-        // ROBUSTNESS FIX: This block is now the ONLY place where `_isTyping` is set to false.
-        this._isTyping = false;
-        this._currentTypingPromise = null;
+        this._isProcessing = false;
+        this._currentProcessPromise = null;
         if (this._messageQueue.length === 0) {
-            this._setCursorState('idle'); // Only go idle if queue is truly empty
+            this._setCursorState('idle');
         }
     }
 
     _breakTextIntoVisualLines(text) {
         if (!text) return [''];
-        const lines = [];
-        const logicalLines = text.split('\n');
-
-        for (const logicalLine of logicalLines) {
-            const words = logicalLine.split(' ');
-            let currentLine = '';
-
-            for (const word of words) {
-                if (word.length > TERMINAL_MAX_CHARS_PER_LINE) {
-                    if (currentLine.length > 0) {
-                        lines.push(currentLine);
-                    }
-                    let tempWord = word;
-                    while (tempWord.length > TERMINAL_MAX_CHARS_PER_LINE) {
-                        lines.push(tempWord.substring(0, TERMINAL_MAX_CHARS_PER_LINE));
-                        tempWord = tempWord.substring(TERMINAL_MAX_CHARS_PER_LINE);
-                    }
-                    currentLine = tempWord;
-                    continue;
-                }
-
-                const potentialNextLine = currentLine.length > 0 ? `${currentLine} ${word}` : word;
-                
-                // REFINEMENT: Use potentialNextLine.length directly.
-                if (potentialNextLine.length > TERMINAL_MAX_CHARS_PER_LINE && currentLine.length > 0) {
-                    lines.push(currentLine);
-                    currentLine = word;
-                } else {
-                    currentLine = potentialNextLine;
-                }
-            }
-            
-            if (currentLine.length > 0) {
-                lines.push(currentLine);
-            } else if (lines.length === 0 && logicalLines.length === 1) {
-                lines.push('');
-            }
-        }
-        return lines;
+        return text.split('\n'); // CSS handles all visual wrapping
     }
 
     async _typeMessage(messageObject, promise) {
-        if (promise.abort) return;
+        if (promise.abort || !messageObject.content) return;
 
         if (!this._isFirstLine && messageObject.formatting.spacingBefore > 0) {
             for (let i = 0; i < messageObject.formatting.spacingBefore; i++) {
@@ -220,31 +154,25 @@ class TerminalManager {
             }
         }
         
-        const allVisualLines = [];
-        for (const logicalLine of messageObject.content) {
-            const visualLines = this._breakTextIntoVisualLines(logicalLine);
-            allVisualLines.push(...visualLines);
-        }
+        const allLogicalLines = messageObject.content;
 
-        for (let i = 0; i < allVisualLines.length; i++) {
+        for (let i = 0; i < allLogicalLines.length; i++) {
             if (promise.abort) return;
 
-            const lineText = allVisualLines[i];
+            const lineSegments = allLogicalLines[i];
             this._addNewLineAndPrepareForTyping(false, messageObject.className);
-
-            let speedPerChar;
+            
+            let speedPerChar = TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
             if (messageObject.type === 'startup') speedPerChar = TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
             else if (messageObject.type === 'block') speedPerChar = TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR;
-            else speedPerChar = TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR;
-
+            
             const typeOptions = { flicker: messageObject.flicker || false };
 
-            await this._typeLine(lineText, speedPerChar, typeOptions, promise);
-
+            await this._typeLine(lineSegments, speedPerChar, typeOptions, promise);
             if (promise.abort) return;
 
-            if (i < allVisualLines.length - 1) {
-                await this._pauseAndBlink(TERMINAL_INTER_LINE_PAUSE_S || 0.4, promise);
+            if (i < allLogicalLines.length - 1) {
+                await this._pauseAndBlink(TERMINAL_INTER_LINE_PAUSE_S, promise);
             }
         }
         this._isFirstLine = false;
@@ -253,71 +181,48 @@ class TerminalManager {
     _addNewLineAndPrepareForTyping(isSpacer = false, className = null) {
         this._currentLineElement = document.createElement('div');
         this._currentLineElement.className = 'terminal-line';
-        if (className) {
-            this._currentLineElement.classList.add(className);
-        }
+        if (className) this._currentLineElement.classList.add(className);
         
-        this._currentTextSpan = null; // Reset span
         if (!isSpacer) {
-            this._currentTextSpan = document.createElement('span');
-            this._currentLineElement.appendChild(this._currentTextSpan);
             this._currentLineElement.appendChild(this._cursorElement);
         }
         
         this._terminalContentElement.appendChild(this._currentLineElement);
-        
         this._limitMaxLines();
         this._isFirstLine = false;
-        return this._currentTextSpan;
     }
     
-    async _typeLine(text, speedPerChar, options = {}, promise) {
-        if (!this._currentTextSpan || promise.abort) return;
-
-        // FIX: If the line is meant to be empty, just add a non-breaking space
-        // to ensure it takes up vertical space, then exit immediately.
-        if (text === '') {
-            this._currentTextSpan.innerHTML = ' ';
+    async _typeLine(lineSegments, speedPerChar, options = {}, promise) {
+        if (!this._currentLineElement || promise.abort) return;
+        
+        if (!Array.isArray(lineSegments) || lineSegments.length === 0) {
+            this._currentLineElement.innerHTML = ' '; // Non-breaking space for empty lines
             return;
         }
 
-        const scrollContainer = this._terminalContainerElement;
-        let flickerAnimation = null;
+        const segmentSpans = lineSegments.map(segment => {
+            const span = document.createElement('span');
+            if (segment && segment.styles && Array.isArray(segment.styles)) {
+                span.classList.add(...segment.styles.map(s => `tm-text--${s}`));
+            }
+            this._currentLineElement.insertBefore(span, this._cursorElement);
+            return span;
+        });
 
-        if (options.flicker) {
-            flickerAnimation = createAdvancedFlicker(this._currentTextSpan, 'textFlickerToDimlyLit', { gsapInstance: this._gsap });
-        }
-        
-        for (const char of text) {
+        for (let i = 0; i < lineSegments.length; i++) {
             if (promise.abort) return;
-            const oldScrollHeight = scrollContainer ? scrollContainer.scrollHeight : 0;
-            this._currentTextSpan.textContent += char;
+            const segmentText = String(lineSegments[i]?.text || '');
+            const targetSpan = segmentSpans[i];
 
-            if (options.flicker) {
-                this._gsap.set(this._currentTextSpan, { autoAlpha: 1 });
-            }
-            
-            if (scrollContainer) {
-                const newScrollHeight = scrollContainer.scrollHeight;
-                if (newScrollHeight > oldScrollHeight) {
-                    this._scrollTerminal();
-                }
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, speedPerChar));
-        }
-
-        if (flickerAnimation) {
-            if (flickerAnimation.completionPromise) {
-                await flickerAnimation.completionPromise;
-            } else {
-                await new Promise(resolve => this._gsap.delayedCall(flickerAnimation.timeline.duration(), resolve));
+            for (const char of segmentText) {
+                if (promise.abort) return;
+                targetSpan.textContent += char;
+                this._scrollTerminal();
+                await new Promise(resolve => setTimeout(resolve, speedPerChar));
             }
         }
-        
         this._scrollTerminal();
     }
-
 
     _pauseAndBlink(durationSeconds, promise) {
         return new Promise(resolve => {
@@ -332,10 +237,14 @@ class TerminalManager {
     }
 
     _scrollTerminal(instant = false) {
-        const scrollContainer = this._terminalContainerElement; // Corrected scroll target
-        if (scrollContainer) {
-            this._gsap.to(scrollContainer, {
-                scrollTop: scrollContainer.scrollHeight,
+        const container = this._scrollWrapperElement;
+        if (!container) return;
+        const scrollThreshold = 50;
+        const isUserAtBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + scrollThreshold;
+        
+        if (isUserAtBottom) {
+            this._gsap.to(container, {
+                scrollTop: container.scrollHeight,
                 duration: instant ? 0 : TERMINAL_SCROLL_DURATION_S,
                 ease: 'power2.out'
             });
@@ -350,25 +259,58 @@ class TerminalManager {
         }
     }
 
-    _setCursorState(state) { // state can be 'idle', 'typing', 'thinking'
+    _setCursorState(state) {
         if (!this._cursorElement) return;
-        
         this._cursorElement.classList.remove('is-blinking', 'is-solid', 'is-thinking');
-
         switch (state) {
-            case 'idle':
-                this._cursorElement.classList.add('is-blinking');
-                break;
-            case 'typing':
-                this._cursorElement.classList.add('is-solid');
-                break;
-            case 'thinking':
-                this._cursorElement.classList.add('is-thinking');
-                break;
+            case 'idle': this._cursorElement.classList.add('is-blinking'); break;
+            case 'typing': this._cursorElement.classList.add('is-solid'); break;
+            case 'thinking': this._cursorElement.classList.add('is-thinking'); break;
         }
-
         if (state === 'idle' && !this._cursorElement.parentElement) {
              this._addNewLineAndPrepareForTyping();
+        }
+    }
+    
+    // --- Command Handlers ---
+    async _handlePauseCommand({ duration = 500 }, promise) {
+        if (promise.abort) return;
+        await new Promise(resolve => setTimeout(resolve, duration));
+    }
+    
+    async _handleDisplayTextCommand({ text }, promise) {
+        if (promise.abort) return;
+        const messageObject = {
+            content: [[{ text }]],
+            formatting: { spacingBefore: 0 },
+            type: 'status'
+        };
+        await this._typeMessage(messageObject, promise);
+    }
+    
+    async _handleSpinnerCommand({ duration = 1500, text = 'PROCESSING...' }, promise) {
+        if (promise.abort) return;
+        this._setCursorState('thinking');
+        
+        const spinnerLine = document.createElement('div');
+        spinnerLine.className = 'terminal-line terminal-spinner-line';
+        
+        const spinnerCursor = this._cursorElement.cloneNode(true);
+        spinnerCursor.classList.remove('is-blinking', 'is-solid');
+        spinnerCursor.classList.add('is-thinking');
+        
+        const textNode = document.createElement('span');
+        textNode.textContent = text;
+        
+        spinnerLine.appendChild(spinnerCursor);
+        spinnerLine.appendChild(textNode);
+        this._terminalContentElement.appendChild(spinnerLine);
+        this._scrollTerminal();
+        
+        await new Promise(resolve => setTimeout(resolve, duration));
+        
+        if (!promise.abort) {
+            this._terminalContentElement.removeChild(spinnerLine);
         }
     }
 }

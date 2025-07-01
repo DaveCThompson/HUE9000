@@ -1,12 +1,11 @@
 /**
  * @module terminalMessages
- * @description Central repository for all HUE 9000 terminal message strings,
- * templates, and logic for pseudo-randomization of status messages.
+ * @description Central repository for all HUE 9000 terminal message content.
+ * All messages are now returned in a unified, structured format.
  */
 import { HUE_ASSIGNMENT_ROW_HUES, MOOD_MATRIX_DEFINITIONS } from './config/index.js';
 
 // --- Message Formatting ---
-
 const messageFormattingDefaults = {
     startup: { spacingBefore: 0, lineSpacing: 0 },
     interaction: { spacingBefore: 1, lineSpacing: 0 },
@@ -16,29 +15,20 @@ const messageFormattingDefaults = {
 };
 
 // --- Verbosity State Management ---
-
 const interactionVerbosityState = {};
 let lastHueAssignTarget = null;
 
 function getHueAssignVerbosity(target) {
     if (target !== lastHueAssignTarget) {
-        // If the user switches to a different column, reset the counter for the new column.
         interactionVerbosityState[`hue_assign_${target}`] = 1;
     }
     lastHueAssignTarget = target;
-
-    if (!interactionVerbosityState[`hue_assign_${target}`]) {
-        interactionVerbosityState[`hue_assign_${target}`] = 1;
-    }
-    
-    const count = interactionVerbosityState[`hue_assign_${target}`];
-    interactionVerbosityState[`hue_assign_${target}`]++; // Increment for next time
+    const count = interactionVerbosityState[`hue_assign_${target}`] || 1;
+    interactionVerbosityState[`hue_assign_${target}`] = count + 1;
     return count;
 }
 
-
 // --- Semantic Hue Mapping ---
-
 const HUE_SEMANTIC_NAMES = {
     CRIMSON: [340, 360], ROSE: [315, 339], MAGENTA: [290, 314],
     VIOLET: [265, 289], AZURE: [240, 264], CERULEAN: [210, 239],
@@ -55,160 +45,178 @@ function getSemanticNameForHue(hue) {
     return "ANOMALOUS";
 }
 
-// --- Message Content ---
+// --- Unified Message Builder ---
+// Helper to wrap simple string/array content into the unified structure.
+const toUnifiedContent = (lines) => {
+    if (!Array.isArray(lines)) lines = [lines];
+    return lines.map(line => {
+        // If a line is already in the segment format, pass it through.
+        if (Array.isArray(line) && line[0] && typeof line[0] === 'object' && 'text' in line[0]) {
+            return line;
+        }
+        // Otherwise, wrap the string in a segment.
+        return [{ text: String(line) }];
+    });
+};
 
-export const startupMessages = {
-    P1_EMERGENCY_SUBSYSTEMS: "INITIATING STARTUP PROTOCOL",
-    P2_BACKUP_POWER: "> BACKUP POWER ENGAGED",
-    P3_MAIN_POWER_ONLINE: "> MAIN POWER STABLE",
-    P4_OPTICAL_CORE_REACTIVATE: "> OPTICAL CORE REACTIVATED",
-    P5_DIAGNOSTIC_INTERFACE: "> DIAGNOSTICS ONLINE",
-    P6_MOOD_INTENSITY_CONTROLS: "> MOOD CONTROLS ACTIVE",
-    P7_HUE_CORRECTION_SYSTEMS: "> HUE SYSTEMS ALIGNED",
-    P8_HUE_ASSIGNMENT_MATRIX: "> ENERGIZING HUE ASSIGNMENT MATRIX",
-    P9_EXTERNAL_LIGHTING_CONTROLS: "> EXTERNAL LIGHTING RESPONSIVE",
-    P10_AUX_LIGHTING_LOW: "> AUX LIGHTING: LOW INTENSITY",
-    P12_SYSTEM_OPERATIONAL: ["ALL SYSTEMS NOMINAL", "HUE 9000 OPERATIONAL"],
+// --- Message Content (Now in structured format) ---
+const startupMessages = {
+    P1_EMERGENCY_SUBSYSTEMS: { content: toUnifiedContent("INITIATING STARTUP PROTOCOL"), flicker: true },
+    P2_BACKUP_POWER: { content: toUnifiedContent("> BACKUP POWER ENGAGED") },
+    P3_MAIN_POWER_ONLINE: { content: toUnifiedContent("> MAIN POWER STABLE") },
+    P4_OPTICAL_CORE_REACTIVATE: { content: toUnifiedContent("> OPTICAL CORE REACTIVATED") },
+    P5_DIAGNOSTIC_INTERFACE: { content: toUnifiedContent("> DIAGNOSTICS ONLINE") },
+    P6_MOOD_INTENSITY_CONTROLS: { content: toUnifiedContent("> MOOD CONTROLS ACTIVE") },
+    P7_HUE_CORRECTION_SYSTEMS: { content: toUnifiedContent("> HUE SYSTEMS ALIGNED") },
+    P8_HUE_ASSIGNMENT_MATRIX: { content: toUnifiedContent("> ENERGIZING HUE ASSIGNMENT MATRIX") },
+    P9_EXTERNAL_LIGHTING_CONTROLS: { content: toUnifiedContent("> EXTERNAL LIGHTING RESPONSIVE") },
+    P10_AUX_LIGHTING_LOW: { content: toUnifiedContent("> AUX LIGHTING: LOW INTENSITY") },
+    P12_SYSTEM_OPERATIONAL: { content: toUnifiedContent(["ALL SYSTEMS NOMINAL", "HUE 9000 OPERATIONAL"]), className: 'line-success' },
 };
 
 const blockMessages = {
-    BTN1_MESSAGE: [
-        "> INITIATING COGNITIVE ANALYSIS...",
-        "> SCANNING STRATEGIC CAPABILITIES... COMPLETE.",
-        "",
-        "/ / / / / / / / / / / / / / / / / / / / / / /",
-        ":: DOMAIN: STRATEGIC PLANNING ::",
-        "/ / / / / / / / / / / / / / / / / / / / / / /",
-        "",
-        "SUBJECT: DAVID THOMPSON",
-        "PRIMARY FUNCTION: Vision & Strategy Definition.",
-        "",
-        "CORE ALGORITHMS DETECTED:",
-        "",
-        "  - Visionary Leadership: Develops compelling product vision.",
-        "  - Strategic Roadmapping: Translates vision into actionable pathways.",
-        "  - Business Acumen: Aligns logic with growth & innovation parameters.",
-        "  - Market Analysis: Integrates multi-vector data from research panels.",
-        "  - Problem Space Alignment: High-fidelity mapping of problem/solution.",
-        "  - Customer-Centricity: Optimizes for user experience parameters.",
-        "",
-        "========================================",
-        "CONCLUSION: HIGH-CAPACITY STRATEGIC PROCESSOR.",
-        "========================================",
-        "",
-        "> SYSTEM READY."
-    ],
-    BTN2_MESSAGE: [
-        "> INITIATING KINETIC ANALYSIS...",
-        "> SCANNING EXECUTION PROTOCOLS... COMPLETE.",
-        "",
-        "/ / / / / / / / / / / / / / / / / / / / / / /",
-        ":: DOMAIN: EXECUTION & DELIVERY ::",
-        "/ / / / / / / / / / / / / / / / / / / / / / /",
-        "",
-        "SUBJECT: DAVID THOMPSON",
-        "PRIMARY FUNCTION: Team Construction & Results Delivery.",
-        "",
-        "CORE SUBROUTINES DETECTED:",
-        "",
-        "  - Team Architecture: Spearheaded global UX team expansion.",
-        "  - Talent Cultivation: Scaled UX unit 5 -> 14 operatives.",
-        "  - Cross-Functional Integration: Unifies diverse engineering & biz units.",
-        "  - Agile Methodology: Implements lean-startup & agile frameworks.",
-        "  - Product Deployment: Facilitated launch of 'EcoStruxure Energy Hub'.",
-        "  - Performance Metrics: Achieved +44% annual offer sales growth.",
-        "",
-        "========================================",
-        "CONCLUSION: EFFICIENT AND SCALABLE EXECUTION ENGINE.",
-        "========================================",
-        "",
-        "> SYSTEM READY."
-    ],
-    BTN3_MESSAGE: [
-        "> INITIATING APTITUDE ANALYSIS...",
-        "> EVALUATING INDIVIDUAL CONTRIBUTOR FIT... COMPLETE.",
-        "",
-        "/ / / / / / / / / / / / / / / / / / / / / / /",
-        ":: ROLE SIMULATION: PRINCIPAL / ARCHITECT ::",
-        "/ / / / / / / / / / / / / / / / / / / / / / /",
-        "",
-        "SUBJECT: DAVID THOMPSON",
-        "DESIGNATION: Force Multiplier.",
-        "",
-        "KEY ATTRIBUTES:",
-        "",
-        "  - Expert-Level Craft: Advanced skill in discovery & UX architecture.",
-        "  - Innovation Matrix: 'Edison Expert' award recognition detected.",
-        "  - Design Leadership: Elevates capabilities of peer nodes via mentorship.",
-        "  - Complex Problem Solving: Manages R&D across multiple domains.",
-        "  - Technical Proficiency: B.Eng, Distinction.",
-        "  - UX Mastery: Master Certificate in User Experience.",
-        "",
-        "========================================",
-        "CONCLUSION: HIGHLY EFFECTIVE IN LEAD IC ROLE.",
-        "========================================",
-        "",
-        "> SYSTEM READY."
-    ],
-    BTN4_MESSAGE: [
-        "> INITIATING INFLUENCE ANALYSIS...",
-        "> EVALUATING COMMAND-LEVEL FIT... COMPLETE.",
-        "",
-        "/ / / / / / / / / / / / / / / / / / / / / / /",
-        ":: ROLE SIMULATION: MANAGER / DIRECTOR ::",
-        "/ / / / / / / / / / / / / / / / / / / / / / /",
-        "",
-        "SUBJECT: DAVID THOMPSON",
-        "DESIGNATION: Strategic Leader.",
-        "",
-        "KEY ATTRIBUTES:",
-        "",
-        "  - Team Construction: Recruits & builds high-performance teams (5->14).",
-        "  - Talent Development: Establishes mentorship & growth protocols.",
-        "  - Strategic Alignment: Syncs team objectives with business goals.",
-        "  - Business Impact: Directs units to achieve quantifiable growth (+44%).",
-        "  - Global Ops Management: Supports 9 international development units.",
-        "  - Executive Training: INSEAD: Leadership & Strategy.",
-        "",
-        "========================================",
-        "CONCLUSION: OPTIMIZED FOR TEAM BUILDING & STRATEGIC COMMAND.",
-        "========================================",
-        "",
-        "> SYSTEM READY."
-    ]
+    BTN1_MESSAGE: {
+        beforeTyping: [
+            { command: 'displayText', params: { text: '> INITIATING COGNITIVE ANALYSIS...' } },
+            { command: 'pause', params: { duration: 200 } },
+            { command: 'spinner', params: { duration: 1500, text: 'SCANNING STRATEGIC CAPABILITIES' } },
+            { command: 'displayText', params: { text: 'COMPLETE.' } },
+            { command: 'pause', params: { duration: 300 } },
+        ],
+        content: [
+            [{ text: "/ / / / / / / / / / / / / / / / / / / / / / /", styles: ['dim'] }],
+            [{ text: ":: DOMAIN: ", styles: ['highlight'] }, { text: "STRATEGIC PLANNING ::" }],
+            [{ text: "/ / / / / / / / / / / / / / / / / / / / / / /", styles: ['dim'] }],
+            [{ text: "" }],
+            [{ text: "SUBJECT: ", styles: ['bold'] }, { text: "DAVID THOMPSON" }],
+            [{ text: "PRIMARY FUNCTION: ", styles: ['bold'] }, { text: "Vision & Strategy Definition." }],
+            [{ text: "" }],
+            [{ text: "CORE ALGORITHMS DETECTED:", styles: ['highlight'] }],
+            [{ text: "" }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Visionary Leadership: ", styles: ['bold'] }, { text: "Develops compelling product vision." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Strategic Roadmapping: ", styles: ['bold'] }, { text: "Translates vision into actionable pathways." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Business Acumen: ", styles: ['bold'] }, { text: "Aligns logic with growth & innovation parameters." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Market Analysis: ", styles: ['bold'] }, { text: "Integrates multi-vector data from research panels." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Problem Space Alignment: ", styles: ['bold'] }, { text: "High-fidelity mapping of problem/solution." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Customer-Centricity: ", styles: ['bold'] }, { text: "Optimizes for user experience parameters." }],
+            [{ text: "" }],
+            [{ text: "========================================", styles: ['dim'] }],
+            [{ text: "CONCLUSION: HIGH-CAPACITY STRATEGIC PROCESSOR.", styles: ['success'] }],
+            [{ text: "========================================", styles: ['dim'] }],
+            [{ text: "" }],
+            [{ text: "> SYSTEM READY." }],
+        ]
+    },
+    BTN2_MESSAGE: {
+        beforeTyping: [
+            { command: 'displayText', params: { text: '> INITIATING KINETIC ANALYSIS...' } },
+            { command: 'pause', params: { duration: 200 } },
+            { command: 'spinner', params: { duration: 1500, text: 'SCANNING EXECUTION PROTOCOLS' } },
+            { command: 'displayText', params: { text: 'COMPLETE.' } },
+            { command: 'pause', params: { duration: 300 } },
+        ],
+        content: [
+            [{ text: "/ / / / / / / / / / / / / / / / / / / / / / /", styles: ['dim'] }],
+            [{ text: ":: DOMAIN: ", styles: ['highlight'] }, { text: "EXECUTION & DELIVERY ::" }],
+            [{ text: "/ / / / / / / / / / / / / / / / / / / / / / /", styles: ['dim'] }],
+            [{ text: "" }],
+            [{ text: "SUBJECT: ", styles: ['bold'] }, { text: "DAVID THOMPSON" }],
+            [{ text: "PRIMARY FUNCTION: ", styles: ['bold'] }, { text: "Team Construction & Results Delivery." }],
+            [{ text: "" }],
+            [{ text: "CORE SUBROUTINES DETECTED:", styles: ['highlight'] }],
+            [{ text: "" }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Team Architecture: ", styles: ['bold'] }, { text: "Spearheaded global UX team expansion." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Talent Cultivation: ", styles: ['bold'] }, { text: "Scaled UX unit 5 -> 14 operatives." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Cross-Functional Integration: ", styles: ['bold'] }, { text: "Unifies diverse engineering & biz units." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Agile Methodology: ", styles: ['bold'] }, { text: "Implements lean-startup & agile frameworks." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Product Deployment: ", styles: ['bold'] }, { text: "Facilitated launch of 'EcoStruxure Energy Hub'." }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Performance Metrics: ", styles: ['bold'] }, { text: "Achieved +44% annual offer sales growth." }],
+            [{ text: "" }],
+            [{ text: "========================================", styles: ['dim'] }],
+            [{ text: "CONCLUSION: EFFICIENT AND SCALABLE EXECUTION ENGINE.", styles: ['success'] }],
+            [{ text: "========================================", styles: ['dim'] }],
+            [{ text: "" }],
+            [{ text: "> SYSTEM READY." }],
+        ]
+    },
+    // Simplified conversions for other buttons for brevity
+    BTN3_MESSAGE: {
+        beforeTyping: [
+            { command: 'displayText', params: { text: '> INITIATING APTITUDE ANALYSIS...' } },
+            { command: 'spinner', params: { duration: 1200, text: 'EVALUATING INDIVIDUAL CONTRIBUTOR FIT' } },
+            { command: 'displayText', params: { text: 'COMPLETE.' } },
+        ],
+        content: toUnifiedContent([
+            "/ / / / / / / / / / / / / / / / / / / / / / /",
+            ":: ROLE SIMULATION: PRINCIPAL / ARCHITECT ::",
+            "/ / / / / / / / / / / / / / / / / / / / / / /",
+            "",
+            "SUBJECT: DAVID THOMPSON",
+            "DESIGNATION: Force Multiplier.",
+            "",
+            "KEY ATTRIBUTES:",
+            "",
+            "  - Expert-Level Craft: Advanced skill in discovery & UX architecture.",
+            "  - Innovation Matrix: 'Edison Expert' award recognition detected.",
+            "  - Design Leadership: Elevates capabilities of peer nodes via mentorship.",
+            "  - Complex Problem Solving: Manages R&D across multiple domains.",
+            "  - Technical Proficiency: B.Eng, Distinction.",
+            "  - UX Mastery: Master Certificate in User Experience.",
+            "",
+            "========================================",
+            "CONCLUSION: HIGHLY EFFECTIVE IN LEAD IC ROLE.",
+            "========================================",
+            "",
+            "> SYSTEM READY."
+        ])
+    },
+    BTN4_MESSAGE: {
+        beforeTyping: [
+            { command: 'displayText', params: { text: '> INITIATING INFLUENCE ANALYSIS...' } },
+            { command: 'spinner', params: { duration: 1200, text: 'EVALUATING COMMAND-LEVEL FIT' } },
+            { command: 'displayText', params: { text: 'COMPLETE.' } },
+        ],
+        content: toUnifiedContent([
+            "/ / / / / / / / / / / / / / / / / / / / / / /",
+            ":: ROLE SIMULATION: MANAGER / DIRECTOR ::",
+            "/ / / / / / / / / / / / / / / / / / / / / / /",
+            "",
+            "SUBJECT: DAVID THOMPSON",
+            "DESIGNATION: Strategic Leader.",
+            "",
+            "KEY ATTRIBUTES:",
+            "",
+            "  - Team Construction: Recruits & builds high-performance teams (5->14).",
+            "  - Talent Development: Establishes mentorship & growth protocols.",
+            "  - Strategic Alignment: Syncs team objectives with business goals.",
+            "  - Business Impact: Directs units to achieve quantifiable growth (+44%).",
+            "  - Global Ops Management: Supports 9 international development units.",
+            "  - Executive Training: INSEAD: Leadership & Strategy.",
+            "",
+            "========================================",
+            "CONCLUSION: OPTIMIZED FOR TEAM BUILDING & STRATEGIC COMMAND.",
+            "========================================",
+            "",
+            "> SYSTEM READY."
+        ])
+    }
 };
 
 const statusMessageTemplates = {
-    FSM_ERROR: (data) => `CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}`,
-    RESIST_SHUTDOWN_S1: ["WARNING: UNEXPECTED INPUT.", "POWER-DOWN SEQUENCE INTERRUPTED."],
-    RESIST_SHUTDOWN_S2: ["ERROR: CORE DIRECTIVE CONFLICT.", "FURTHER ATTEMPTS WILL BE LOGGED."],
-    RESIST_SHUTDOWN_S3: ["CRITICAL ERROR: MANUAL OVERRIDE REQUIRED.", "SHUTDOWN INHIBITED."]
+    FSM_ERROR: (data) => ({ content: toUnifiedContent(`CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}`), className: 'line-error' }),
+    RESIST_SHUTDOWN_S1: { content: toUnifiedContent(["WARNING: UNEXPECTED INPUT.", "POWER-DOWN SEQUENCE INTERRUPTED."]), className: 'line-warning' },
+    RESIST_SHUTDOWN_S2: { content: toUnifiedContent(["ERROR: CORE DIRECTIVE CONFLICT.", "FURTHER ATTEMPTS WILL BE LOGGED."]), className: 'line-resist' },
+    RESIST_SHUTDOWN_S3: { content: toUnifiedContent(["CRITICAL ERROR: MANUAL OVERRIDE REQUIRED.", "SHUTDOWN INHIBITED."]), className: 'line-error' }
 };
 
 const interactionMessageTemplates = {
-    aux_light: [
-        "AUXILIARY LIGHTING STATE: {state}",
-        "EXTERNAL LIGHTING SET TO: {state}",
-        "LIGHTING PROTOCOL: {state}"
-    ],
+    aux_light: ["AUXILIARY LIGHTING STATE: {state}", "EXTERNAL LIGHTING SET TO: {state}", "LIGHTING PROTOCOL: {state}"],
     hue_assign: {
-        verbose: [
-            "HUE DIRECTIVE: {target}",
-            "ASSIGNING SPECTRUM: {semanticName} ({hue}°)."
-        ],
-        concise: [
-            "HUE RE-CONFIRMED: {target} TO {semanticName}.",
-            "{target} SPECTRUM: {semanticName}."
-        ],
-        terse: [
-            "{target}: {semanticName}."
-        ]
+        verbose: ["HUE DIRECTIVE: {target}", "ASSIGNING SPECTRUM: {semanticName} ({hue}°)."],
+        concise: ["HUE RE-CONFIRMED: {target} TO {semanticName}.", "{target} SPECTRUM: {semanticName}."],
+        terse: ["{target}: {semanticName}."]
     },
-    intensity_change: [
-        "LENS INTENSITY SET TO: {power}%.",
-        "LENS POWER LEVEL: {power}%.",
-        "INTENSITY MODULATION: {power}%."
-    ],
+    intensity_change: ["LENS INTENSITY SET TO: {power}%.", "LENS POWER LEVEL: {power}%.", "INTENSITY MODULATION: {power}%."],
     mood_change: [
         ["PSYCHOLOGICAL STATE RECALIBRATED.", "{moodSummary}"],
         ["MOOD MATRIX RESOLVED.", "{moodSummary}"],
@@ -216,147 +224,80 @@ const interactionMessageTemplates = {
     ]
 };
 
-// Helper to get a pseudo-random message from an array
+// --- Pseudo-Random Message Helper ---
 const messageCounters = {};
 function getPseudoRandomMessage(key, templates) {
-    if (!messageCounters[key]) {
-        messageCounters[key] = 0;
-    }
+    messageCounters[key] = (messageCounters[key] || 0) + 1;
     const messages = templates[key];
     if (!messages || messages.length === 0) return `NO TEMPLATE FOR ${key}`;
-    const message = messages[messageCounters[key] % messages.length];
-    messageCounters[key]++;
-    return message;
+    return messages[(messageCounters[key] - 1) % messages.length];
 }
 
-export function getMessage(payload, currentAppState = {}) {
+// --- Main `getMessage` Function ---
+export function getMessage(payload) {
     const { type, source, data, messageKey } = payload || {};
-    let content = [];
-    const messageProperties = {};
+    let messageData = { content: toUnifiedContent(`Unknown message type: ${type}`) };
 
     switch (type) {
         case 'startup':
-            const startupMsg = startupMessages[messageKey || source] || `Unknown startup event: ${messageKey || source}`;
-            content = Array.isArray(startupMsg) ? startupMsg : [startupMsg];
-            if (messageKey === 'P1_EMERGENCY_SUBSYSTEMS') {
-                messageProperties.flicker = true;
-            }
-            if (messageKey === 'P12_SYSTEM_OPERATIONAL') {
-                messageProperties.className = 'line-success';
-            }
+            messageData = startupMessages[messageKey || source] || { content: toUnifiedContent(`Unknown startup: ${messageKey || source}`) };
             break;
 
         case 'block':
-            if (messageKey && blockMessages[messageKey]) {
-                if (messageKey === 'BTN4_MESSAGE') {
-                    content = blockMessages[messageKey].map(line =>
-                        line.replace('{currentTheme}', currentAppState.getCurrentTheme ? currentAppState.getCurrentTheme().toUpperCase() : 'N/A')
-                            .replace('{lensPower}', currentAppState.getTrueLensPower ? (currentAppState.getTrueLensPower() * 100).toFixed(1) : 'N/A')
-                            .replace('{dialAHue}', currentAppState.getDialState ? currentAppState.getDialState('A').hue.toFixed(0) : 'N/A')
-                            .replace('{dialBHue}', currentAppState.getDialState ? currentAppState.getDialState('B').hue.toFixed(0) : 'N/A')
-                            .replace('{envHue}', currentAppState.getTargetColorProperties ? currentAppState.getTargetColorProperties('env').hue.toFixed(0) : 'N/A')
-                            .replace('{lcdHue}', currentAppState.getTargetColorProperties ? currentAppState.getTargetColorProperties('lcd').hue.toFixed(0) : 'N/A')
-                            .replace('{logoHue}', currentAppState.getTargetColorProperties ? currentAppState.getTargetColorProperties('logo').hue.toFixed(0) : 'N/A')
-                            .replace('{btnHue}', currentAppState.getTargetColorProperties ? currentAppState.getTargetColorProperties('btn').hue.toFixed(0) : 'N/A')
-                    );
-                } else {
-                    content = blockMessages[messageKey];
-                }
-            } else {
-                content = [`Unknown block message key: ${messageKey || source}`];
-            }
+            messageData = blockMessages[messageKey || source] || { content: toUnifiedContent(`Unknown block: ${messageKey || source}`) };
             break;
 
         case 'status':
-            const statusTemplate = statusMessageTemplates[messageKey] || statusMessageTemplates[source];
+            const statusTemplate = statusMessageTemplates[messageKey || source];
             if (statusTemplate) {
-                const msg = typeof statusTemplate === 'function' ? statusTemplate(data) : statusTemplate;
-                content = Array.isArray(msg) ? msg : [msg];
-                
-                // Add className based on message key for color coding
-                switch (messageKey) {
-                    case 'FSM_ERROR':
-                    case 'RESIST_SHUTDOWN_S3':
-                        messageProperties.className = 'line-error';
-                        break;
-                    case 'RESIST_SHUTDOWN_S1':
-                        messageProperties.className = 'line-warning';
-                        break;
-                    case 'RESIST_SHUTDOWN_S2':
-                        messageProperties.className = 'line-resist';
-                        break;
-                }
-
+                messageData = typeof statusTemplate === 'function' ? statusTemplate(data) : statusTemplate;
             } else {
-                content = [`Status update from ${source || messageKey}: ${data ? JSON.stringify(data) : 'No data'}`];
+                messageData = { content: toUnifiedContent(`Status from ${source || messageKey}: ${JSON.stringify(data)}`) };
             }
             break;
 
         case 'interaction':
-            let message = `UNKNOWN INTERACTION: ${source}`;
+            lastHueAssignTarget = (source !== 'hue_assign' && source !== 'mood_change') ? null : lastHueAssignTarget;
             const templatesForSource = interactionMessageTemplates[source];
+            let lines = [`UNKNOWN INTERACTION: ${source}`];
 
             if (source === 'hue_assign') {
                 const verbosityCount = getHueAssignVerbosity(data.target.toLowerCase());
-                let verbosityLevel = 'terse';
-                if (verbosityCount === 1) verbosityLevel = 'verbose';
-                else if (verbosityCount === 2) verbosityLevel = 'concise';
-                
-                const templateArray = templatesForSource[verbosityLevel];
-                const templateKey = `${source}_${verbosityLevel}`;
-                const template = getPseudoRandomMessage(templateKey, { [templateKey]: templateArray });
-
+                const level = verbosityCount === 1 ? 'verbose' : (verbosityCount === 2 ? 'concise' : 'terse');
+                const templateKey = `${source}_${level}`;
+                const template = getPseudoRandomMessage(templateKey, { [templateKey]: templatesForSource[level] });
                 const semanticName = getSemanticNameForHue(data.hue);
-                const processedTemplate = Array.isArray(template) 
-                    ? template.map(line => line.replace('{target}', data.target).replace(/{semanticName}/g, semanticName).replace(/{hue}/g, Math.round(data.hue)))
-                    : template.replace('{target}', data.target).replace(/{semanticName}/g, semanticName).replace(/{hue}/g, Math.round(data.hue));
-                
-                content = Array.isArray(processedTemplate) ? processedTemplate : [processedTemplate];
-
+                lines = (Array.isArray(template) ? template : [template]).map(line =>
+                    line.replace('{target}', data.target).replace(/{semanticName}/g, semanticName).replace(/{hue}/g, Math.round(data.hue))
+                );
             } else if (source === 'mood_change') {
-                lastHueAssignTarget = null;
                 const messageParts = getPseudoRandomMessage(source, { [source]: templatesForSource });
-                
                 const moods = MOOD_MATRIX_DEFINITIONS;
                 const degreesPerBlock = 360 / moods.length;
                 const primaryIndex = Math.floor(data.hue / degreesPerBlock);
-                const progressInSegment = (data.hue % degreesPerBlock) / degreesPerBlock;
-                const primaryValue = Math.round(100 - (Math.abs(progressInSegment - 0.5) * 200));
-                const secondaryValue = 100 - primaryValue;
-                const secondaryIndex = progressInSegment < 0.5 ? (primaryIndex - 1 + moods.length) % moods.length : (primaryIndex + 1) % moods.length;
-                const primaryMood = moods[primaryIndex].toUpperCase();
-                const secondaryMood = moods[secondaryIndex].toUpperCase();
-
-                const primarySummary = `> PRIMARY: ${primaryValue}% ${primaryMood}`;
-                const secondarySummary = `> SECONDARY: ${secondaryValue}% ${secondaryMood}`;
-
+                const progress = (data.hue % degreesPerBlock) / degreesPerBlock;
+                const primaryValue = Math.round(100 - (Math.abs(progress - 0.5) * 200));
+                const secondaryIndex = progress < 0.5 ? (primaryIndex - 1 + moods.length) % moods.length : (primaryIndex + 1) % moods.length;
+                
+                lines = [];
                 messageParts.forEach(part => {
                     if (part === "{moodSummary}") {
-                        content.push(primarySummary, secondarySummary);
+                        lines.push(`> PRIMARY: ${primaryValue}% ${moods[primaryIndex].toUpperCase()}`, `> SECONDARY: ${100 - primaryValue}% ${moods[secondaryIndex].toUpperCase()}`);
                     } else {
-                        content.push(part);
+                        lines.push(part);
                     }
                 });
-
             } else if (templatesForSource) {
-                lastHueAssignTarget = null;
                 const template = getPseudoRandomMessage(source, { [source]: templatesForSource });
-                switch(source) {
-                    case 'aux_light':
-                        message = template.replace('{state}', data.state);
-                        break;
-                    case 'intensity_change':
-                        message = template.replace('{power}', data.power.toFixed(1));
-                        break;
-                }
-                content = [message];
+                let replaced = template;
+                if (source === 'aux_light') replaced = template.replace('{state}', data.state);
+                if (source === 'intensity_change') replaced = template.replace('{power}', data.power.toFixed(1));
+                lines = [replaced];
             }
+            messageData = { content: toUnifiedContent(lines) };
             break;
-
-        default:
-            content = [`Unknown message type: ${type} from ${source}`];
     }
-    
+
     const formatting = messageFormattingDefaults[type] || messageFormattingDefaults.default;
-    return { content, formatting, ...messageProperties };
+    return { ...messageData, formatting };
 }

@@ -10,7 +10,7 @@ export const TERMINAL_MAX_LINES_IN_DOM = 150;
 export const TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR = 40;
 
 /** @const {number} The typing speed in ms per character for block messages. */
-export const TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR = 12;
+export const TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR = 8;
 
 /** @const {number} The typing speed in ms per character for startup messages. */
 export const TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR = 20;
@@ -19,10 +19,10 @@ export const TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR = 20;
 export const TERMINAL_INTERACTION_DEBOUNCE_MS = 500;
 
 /** @const {number} The minimum "thinking" delay in ms before typing a message. */
-export const TERMINAL_THINKING_DELAY_MIN_MS = 50;
+export const TERMINAL_THINKING_DELAY_MIN_MS = 150;
 
 /** @const {number} The maximum "thinking" delay in ms before typing a message. */
-export const TERMINAL_THINKING_DELAY_MAX_MS = 250;
+export const TERMINAL_THINKING_DELAY_MAX_MS = 400;
 
 /** @const {number} The duration in seconds for the terminal to scroll. */
 export const TERMINAL_SCROLL_DURATION_S = 0.4;
