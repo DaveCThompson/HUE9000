@@ -271,7 +271,14 @@ class TerminalManager {
     async _typeLine(text, speedPerChar, options = {}, promise) {
         if (!this._currentTextSpan || promise.abort) return;
 
-        const scrollContainer = this._terminalContainerElement; // Corrected scroll target
+        // FIX: If the line is meant to be empty, just add a non-breaking space
+        // to ensure it takes up vertical space, then exit immediately.
+        if (text === '') {
+            this._currentTextSpan.innerHTML = ' ';
+            return;
+        }
+
+        const scrollContainer = this._terminalContainerElement;
         let flickerAnimation = null;
 
         if (options.flicker) {
