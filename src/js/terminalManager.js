@@ -20,7 +20,10 @@ import {
 } from './config/index.js';
 
 // This value MUST be kept in sync with the `max-width` in `_terminal.css`.
-const TERMINAL_MAX_CHARS_PER_LINE = 65;
+// FIX: The original value of 65 was too wide for the panel's rendered width,
+// causing the browser to perform its own awkward wrapping. This more conservative
+// value ensures the JS-formatted lines fit within the CSS container.
+const TERMINAL_MAX_CHARS_PER_LINE = 45;
 
 class TerminalManager {
     constructor() {
@@ -178,7 +181,6 @@ class TerminalManager {
                 if (word.length > TERMINAL_MAX_CHARS_PER_LINE) {
                     if (currentLine.length > 0) {
                         lines.push(currentLine);
-                        currentLine = '';
                     }
                     let tempWord = word;
                     while (tempWord.length > TERMINAL_MAX_CHARS_PER_LINE) {
@@ -189,16 +191,17 @@ class TerminalManager {
                     continue;
                 }
 
-                if ((currentLine + ' ' + word).trim().length > TERMINAL_MAX_CHARS_PER_LINE && currentLine.length > 0) {
+                const potentialNextLine = currentLine.length > 0 ? `${currentLine} ${word}` : word;
+                
+                // REFINEMENT: Use potentialNextLine.length directly.
+                if (potentialNextLine.length > TERMINAL_MAX_CHARS_PER_LINE && currentLine.length > 0) {
                     lines.push(currentLine);
                     currentLine = word;
                 } else {
-                    if (currentLine.length > 0) {
-                        currentLine += ' ';
-                    }
-                    currentLine += word;
+                    currentLine = potentialNextLine;
                 }
             }
+            
             if (currentLine.length > 0) {
                 lines.push(currentLine);
             } else if (lines.length === 0 && logicalLines.length === 1) {
