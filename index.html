@@ -85,6 +85,25 @@
             <button class="mobile-control-button" id="mobile-light-btn" aria-label="Cycle Auxiliary Light">
                 <span class="material-symbols-outlined">lightbulb_circle</span>
             </button>
+            <!-- DEFINITIVE SLIDER STRUCTURE -->
+            <div class="mobile-slider-container" id="mobile-color-slider-container" 
+                 aria-label="Environment and Logo Color" 
+                 role="slider" 
+                 aria-orientation="vertical" 
+                 aria-valuemin="0" 
+                 aria-valuemax="11" 
+                 aria-valuenow="0"
+                 aria-valuetext="Colorless">
+                <div class="mobile-slider-track" id="mobile-slider-track">
+                    <!-- The thumb is a SIBLING of the track for independent scaling -->
+                </div>
+                <!-- MODIFIED: New thumb structure for outer/inner circles -->
+                <div class="mobile-slider-thumb" id="mobile-slider-thumb">
+                    <div class="thumb-outer">
+                        <div class="thumb-inner"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

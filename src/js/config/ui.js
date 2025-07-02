@@ -21,6 +21,22 @@ export const HUE_ASSIGNMENT_ROW_HUES = [
   40.0   // 11: Red
 ];
 
+/** @const {string[]} Human-readable names for hues, for accessibility. Must match HUE_ASSIGNMENT_ROW_HUES. */
+export const MOBILE_SLIDER_HUE_NAMES = [
+    "Colorless",
+    "Pink-Red",
+    "Magenta",
+    "Purple",
+    "Blue",
+    "Sky Blue",
+    "Cyan",
+    "Teal",
+    "Green",
+    "Yellow",
+    "Orange",
+    "Red"
+];
+
 /** @const {object.<string, number>} The default selected row index for each assignment target. */
 export const DEFAULT_ASSIGNMENT_SELECTIONS = {
     env: 0,

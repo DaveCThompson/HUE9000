@@ -1,4 +1,4 @@
-/* src/css/mobile/_mobile.css */
+/* src/css/1-base/_mobile.css */
 /* All mobile-specific styles for the HUE 9000 Interface v3.0 */
 
 /* PRD v2.2: Hide mobile controls by default on desktop */
@@ -41,6 +41,7 @@
   .mobile-controls-group.is-vertical {
       flex-direction: column;
       gap: var(--space-lg);
+      align-items: center; /* Center items for a clean column */
   }
 
   .mobile-control-button {
@@ -66,6 +67,97 @@
 
   .mobile-control-button .material-symbols-outlined {
     font-size: 1.5rem; /* 24px */
+  }
+
+  /* --- FINAL, FINAL SLIDER STYLES --- */
+  .mobile-slider-container {
+      pointer-events: all;
+      width: 2.5rem;
+      height: 12rem;
+      background-color: oklch(0.1 0 0 / 0.7);
+      backdrop-filter: blur(0.25rem);
+      -webkit-backdrop-filter: blur(0.25rem);
+      border: 1px solid oklch(0.3 0 0 / 0.5);
+      border-radius: 1.25rem;
+      position: relative;
+      cursor: pointer;
+      touch-action: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      /* Add padding to constrain the track and thumb travel */
+      padding: 1.25rem 0;
+  }
+
+  .mobile-slider-track {
+      width: 0.25rem;
+      height: 100%;
+      border-radius: 1.25rem; /* Use large radius to maintain pill shape on scale */
+      position: relative;
+      background: grey;
+      opacity: 0.625; /* Normal state opacity for the track */
+      transition: transform var(--transition-duration-medium) ease-out, opacity 0.2s ease-in-out;
+      transform-origin: center;
+  }
+  
+  .mobile-slider-container:hover .mobile-slider-track,
+  .mobile-slider-container.is-dragging .mobile-slider-track {
+      transform: scaleX(2);
+      opacity: 1.0;
+  }
+
+  /* --- Thumb Styles --- */
+
+  .mobile-slider-thumb {
+      position: absolute;
+      top: 0; /* JS will set this to a pixel value */
+      left: 50%;
+      width: 1.75rem; /* Set to max interaction size for stable centering */
+      height: 1.75rem;
+      transform: translate(-50%, -50%); 
+      will-change: top;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 1.0; /* Always fully opaque */
+  }
+  
+  .thumb-outer {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 50%;
+      background-color: oklch(0.8 0.01 240); /* Same as mobile icons */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: width 0.2s ease-in-out, height 0.2s ease-in-out;
+  }
+  
+  .mobile-slider-container:hover .thumb-outer,
+  .mobile-slider-container.is-dragging .thumb-outer {
+      width: 1.75rem;
+      height: 1.75rem;
+  }
+
+  /* MODIFIED: The inner circle of the thumb */
+  .thumb-inner {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+      background-color: oklch(0.705 0 0); /* Default grey, JS will override */
+      border: 2px solid #222222; /* Stroke is now always visible */
+      box-sizing: border-box;
+      /* Border color no longer transitions */
+      transition: width 0.2s ease-in-out, height 0.2s ease-in-out;
+  }
+
+  /* MODIFIED: Interaction state scales the inner circle */
+  .mobile-slider-container:hover .thumb-inner,
+  .mobile-slider-container.is-dragging .thumb-inner {
+      width: 1.25rem;
+      height: 1.25rem;
+      /* border-color is now inherited, no need to set it here */
   }
 
   /* --- 1. Global & Wrapper Adjustments --- */

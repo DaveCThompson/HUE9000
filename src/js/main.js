@@ -32,6 +32,7 @@ import { IntensityDisplayManager } from './IntensityDisplayManager.js';
 import { AudioManager } from './AudioManager.js';
 import { MusicController } from './MusicController.js';
 import disruptionManagerInstance from './DisruptionManager.js';
+import { MobileColorSlider } from "./MobileColorSlider.js";
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -288,6 +289,10 @@ function setupMobileEventListeners() {
         appState.subscribe('themeChanged', updateLightButtonIcon);
         updateLightButtonIcon(appState.getCurrentTheme());
     }
+
+    // NEW: Initialize the mobile color slider
+    const mobileColorSlider = new MobileColorSlider({ audioManager });
+    mobileColorSlider.init();
 }
 
 async function initializeApp() {

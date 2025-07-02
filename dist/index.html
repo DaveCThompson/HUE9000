@@ -19,8 +19,8 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0..1,0" />
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-LY6v8BG-.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-C6Un7hgF.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-B81SQnyh.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-CMSA-xwi.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -86,6 +86,24 @@
             <button class="mobile-control-button" id="mobile-light-btn" aria-label="Cycle Auxiliary Light">
                 <span class="material-symbols-outlined">lightbulb_circle</span>
             </button>
+            <!-- DEFINITIVE SLIDER STRUCTURE -->
+            <div class="mobile-slider-container" id="mobile-color-slider-container" 
+                 aria-label="Environment and Logo Color" 
+                 role="slider" 
+                 aria-orientation="vertical" 
+                 aria-valuemin="0" 
+                 aria-valuemax="11" 
+                 aria-valuenow="0"
+                 aria-valuetext="Colorless">
+                <div class="mobile-slider-track" id="mobile-slider-track">
+                    <!-- The thumb is now INSIDE the track for relative positioning -->
+                    <div class="mobile-slider-thumb" id="mobile-slider-thumb">
+                        <div class="thumb-icon-wrapper">
+                            <span class="material-symbols-outlined thumb-icon">drag_handle</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -183,13 +201,13 @@
                   </div>
                  <div class="panel-section lower-section">
                      <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--left" data-group-id="skill-scan-group">
-                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 1"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 1</div></div>
-                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 2"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 2</div></div>
+                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Think"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">THINK</div></div>
+                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Build"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BUILD</div></div>
                          <div class="block-label-bottom block-label-bottom--descriptor">SKILL SCAN</div>
                      </div>
                     <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--right" data-group-id="fit-eval-group">
-                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 3"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 3</div></div>
-                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan Button 4"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BTN 4</div></div>
+                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Craft"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">CRAFT</div></div>
+                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Lead"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">LEAD</div></div>
                    <div class="block-label-bottom block-label-bottom--descriptor">FIT EVAL</div>
                    </div>
                  </div>
