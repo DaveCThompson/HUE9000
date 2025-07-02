@@ -154,8 +154,12 @@ export class StartupSequenceManager {
     
     // CORRECTED LOGIC: Apply mobile-specific overrides AFTER the global reset.
     if (isMobile) {
-        // Set logo to blue by default on mobile.
-        appState.setTargetColorProperties('logo', HUE_ASSIGNMENT_ROW_HUES[4]);
+        // On mobile, the color slider controls env, logo, and lcd.
+        // We want it to start at the "colorless" position.
+        const colorlessHue = HUE_ASSIGNMENT_ROW_HUES[0]; // This is `null` in the config
+        appState.setTargetColorProperties('env', colorlessHue);
+        appState.setTargetColorProperties('logo', colorlessHue);
+        appState.setTargetColorProperties('lcd', colorlessHue);
     }
     
     // The functions below are still needed for visual/manager-specific resets.

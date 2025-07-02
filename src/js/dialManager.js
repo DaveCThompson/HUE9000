@@ -15,6 +15,7 @@ export class DialManager {
     this.gsap = null;
     this.dom = {};
     this.audioManager = null;
+    this.hapticManager = null; // Add haptic manager property
     this.debug = false;
   }
 
@@ -22,6 +23,7 @@ export class DialManager {
     this.gsap = serviceLocator.get('gsap');
     this.dom = serviceLocator.get('domElements');
     this.audioManager = serviceLocator.get('audioManager');
+    this.hapticManager = serviceLocator.get('hapticFeedbackManager'); // Get haptic manager
 
     // if (this.debug) console.log('[DialManager INIT]');
 
@@ -34,8 +36,8 @@ export class DialManager {
         const dialId = container.dataset.dialId;
         if (dialId) {
             if (this.dialInstances[dialId]) this.dialInstances[dialId].destroy();
-            // Pass imported appState to DialController constructor, removing config
-            this.dialInstances[dialId] = new DialController(container, dialId, appState, this.gsap, this.audioManager);
+            // Pass imported appState and now the haptic manager to DialController constructor
+            this.dialInstances[dialId] = new DialController(container, dialId, appState, this.gsap, this.audioManager, this.hapticManager);
         }
     });
   }

@@ -1,141 +1,109 @@
-/* src/css/2-components/_side-panels.css */
+/* src/css/components/_side-panels.css (REFACTORED for v2.2) */
 
-.side-panel {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    height: 100vh;
-    z-index: var(--z-index-side-panel-expanded);
-    display: flex;
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    pointer-events: none; /* The panel itself should not catch events */
-}
-
-/* --- Left Panel (Control Deck) --- */
-.side-panel.left-panel {
-    left: 0;
-    transform: translateX(-100%);
-}
-.side-panel.left-panel.is-expanded {
-    transform: translateX(0);
-    pointer-events: all; /* Allow events when expanded */
-}
-
-/* --- App Wrapper Shift --- */
-.app-wrapper {
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform;
-}
-.app-wrapper.left-panel-expanded {
-    transform: translateX(21.875rem) scale(0.95); /* 350px -> rem */
-}
-
-/* --- Compact View Wrapper (The always-visible bar) --- */
+/* --- Compact View Bar (Desktop Left) --- */
 .compact-view-wrapper {
     position: fixed;
-    top: 0;
-    bottom: 0;
-    height: 100vh;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
     z-index: var(--z-index-side-panel-compact);
-    display: flex;
-    align-items: center; /* Center the compact-view vertically */
-    pointer-events: none; /* The wrapper itself doesn't need events */
-}
-.compact-view-wrapper.left-panel { left: 0; }
-/* Removed .right-panel wrapper rule */
-
-/* --- Compact View (The Vertical Bar Content) --- */
-.compact-view {
-    width: 3rem; /* 48px -> rem */
-    height: auto; /* Let content define height */
-    background-color: oklch(0.1 0 0 / 0.8);
-    backdrop-filter: blur(0.625rem); /* 10px -> rem */
-    -webkit-backdrop-filter: blur(0.625rem); /* 10px -> rem */
+    background-color: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / 0.7);
+    backdrop-filter: blur(0.25rem);
+    -webkit-backdrop-filter: blur(0.25rem);
     border: 1px solid oklch(0.3 0 0 / 0.5);
-    border-left: none; /* For left panel */
-    border-radius: 0 0.5rem 0.5rem 0; /* 8px -> rem */
+    border-left: none;
+    border-radius: 0 var(--space-lg) var(--space-lg) 0;
+    box-shadow: var(--panel-shadow-outer);
+    padding: var(--space-lg);
+    transition: transform var(--transition-duration-medium) ease-in-out;
+}
+
+.app-wrapper.left-panel-expanded .compact-view-wrapper {
+    transform: translateY(-50%) translateX(-100%);
+}
+
+.compact-view {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 0.75rem 0;
-    gap: 0.75rem;
-    pointer-events: all; /* The actual bar needs events */
+    gap: var(--space-lg);
 }
 
 .panel-control-button {
-    background: none;
-    border: none;
-    color: oklch(0.7 0 0); /* Muted grey for the text label */
-    cursor: pointer;
-    padding: 0.4rem;
-    font-size: 1.25rem; /* 20px -> rem */
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.2rem;
-    width: 100%;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: oklch(0.8 0.01 240);
+    cursor: pointer;
+    border-radius: var(--space-xs);
+    padding: var(--space-sm);
     transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.panel-control-button.hidden {
-    display: none;
-}
-
-/* Style the new Material Symbols icons */
-.panel-control-button .material-symbols-outlined {
-    font-size: 1.5rem; /* 24px -> rem */
-    color: oklch(0.7 0 0); /* Muted grey for icon */
-    transition: color 0.2s ease;
+    font-family: 'IBM Plex Mono', monospace;
 }
 
 .panel-control-button:hover {
     background-color: oklch(0.8 0.01 240 / 0.1);
 }
 
-.panel-control-button:hover .label-text,
-.panel-control-button:hover .material-symbols-outlined {
-    color: oklch(0.9 0.01 240);
+.panel-control-button .material-symbols-outlined {
+    font-size: 1.5rem;
 }
 
-.panel-control-button:disabled,
-.panel-control-button:disabled .material-symbols-outlined,
-.panel-control-button:disabled .label-text {
-    color: oklch(0.4 0 0) !important;
-    cursor: not-allowed;
-    background-color: transparent !important;
-}
-
-
-/* Re-orient the text label to be horizontal */
 .panel-control-button .label-text {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.625rem; /* 10px -> rem */
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    margin-top: var(--space-xs);
+    font-weight: 500;
 }
 
-/* --- Expanded View (The Main Panel Content) --- */
-.expanded-view {
-    width: 21.875rem; /* 350px -> rem */
+/* --- Expanded Info Panel --- */
+.side-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 20rem; /* Same as left panel min-width */
     height: 100%;
-    background-color: oklch(0.15 0 0 / 0.85);
-    backdrop-filter: blur(0.625rem); /* 10px -> rem */
-    -webkit-backdrop-filter: blur(0.625rem); /* 10px -> rem */
+    background-color: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / 0.85);
+    backdrop-filter: blur(0.5rem);
+    -webkit-backdrop-filter: blur(0.5rem);
     border-right: 1px solid oklch(0.3 0 0 / 0.5);
+    box-shadow: var(--panel-shadow-outer);
+    z-index: var(--z-index-side-panel-expanded);
+    transform: translateX(-100%);
+    transition: transform var(--transition-duration-medium) ease-in-out;
     display: flex;
     flex-direction: column;
-    color: oklch(0.9 0.01 240);
 }
 
-/* PRD v2.2: Updated Panel Header */
+.side-panel.is-expanded {
+    transform: translateX(0);
+}
+
+.expanded-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    padding: var(--space-2xl);
+    overflow-y: auto;
+}
+
+/* Header */
 .panel-header {
-    padding: 1rem;
-    font-size: 1.2rem;
-    font-weight: 500;
-    background-color: oklch(0.2 0 0 / 0.5);
-    flex-shrink: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid oklch(0.3 0 0 / 0.5);
+    margin-bottom: var(--space-xl);
+    flex-shrink: 0;
+}
+
+.panel-header span {
+    font-size: 1.1em;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: oklch(var(--theme-text-secondary-l) var(--theme-text-secondary-c) var(--theme-text-secondary-h));
 }
 
 .panel-close-button {
@@ -143,92 +111,168 @@
     border: none;
     color: oklch(0.7 0.01 240);
     cursor: pointer;
-    padding: 0.25rem;
-    line-height: 1;
+    padding: var(--space-sm);
     border-radius: 50%;
-    transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .panel-close-button:hover {
     background-color: oklch(0.8 0.01 240 / 0.1);
-    color: oklch(0.95 0.01 240);
+    color: oklch(0.9 0.01 240);
 }
 
-.panel-close-button .material-symbols-outlined {
-    font-size: 1.5rem;
-}
-
+/* Tabs */
 .panel-tabs {
     display: flex;
+    gap: var(--space-sm);
+    border-bottom: 1px solid oklch(0.3 0 0 / 0.5);
+    margin-bottom: var(--space-xl);
     flex-shrink: 0;
 }
 
 .panel-tab-button {
-    flex: 1;
-    padding: 0.75rem;
     background: none;
     border: none;
-    border-bottom: 0.125rem solid oklch(0.5 0.01 240 / 0.3); /* 2px -> rem */
-    color: oklch(0.7 0.01 240);
+    border-bottom: 2px solid transparent;
+    color: oklch(0.6 0.01 240);
+    padding: var(--space-lg) var(--space-xl);
     cursor: pointer;
-    font-family: 'Inter', sans-serif;
+    font-size: 0.9em;
     font-weight: 500;
-    transition: all 0.2s ease;
+    text-transform: uppercase;
+    transition: color 0.2s ease, border-color 0.2s ease;
+    transform: translateY(1px);
 }
 
-.panel-tab-button.active, .panel-tab-button:hover {
+.panel-tab-button:hover {
+    color: oklch(0.8 0.01 240);
+}
+
+.panel-tab-button.active {
     color: oklch(0.95 0.01 240);
-    background-color: oklch(0.8 0.01 240 / 0.1);
-    border-bottom-color: oklch(0.8 0.1 240);
+    border-bottom-color: oklch(0.95 0.01 240);
 }
 
+/* Content */
 .panel-content {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 1rem;
-    position: relative;
+    font-size: 0.95em;
+    line-height: 1.6;
 }
 
-.panel-tab-content { display: none; }
-.panel-tab-content.active { display: block; }
-
-/* Scrollbar styling */
-.panel-content::-webkit-scrollbar { width: 0.5rem; } /* 8px -> rem */
-.panel-content::-webkit-scrollbar-track { background: oklch(0.2 0 0); }
-.panel-content::-webkit-scrollbar-thumb { background: oklch(0.4 0 0); border-radius: 0.25rem; } /* 4px -> rem */
-.panel-content::-webkit-scrollbar-thumb:hover { background: oklch(0.5 0 0); }
-
-/* PRD v2.2: Content for new tabs */
-#about-tab h3, #highlights-tab h3, #contact-tab h3 {
-    color: oklch(0.9 0.1 240);
-    border-bottom: 1px solid oklch(0.8 0.1 240 / 0.5);
-    padding-bottom: 0.5rem; margin-top: 0;
+.panel-tab-content {
+    display: none;
 }
-#about-tab p, #about-tab ul, 
-#highlights-tab p, #highlights-tab ul,
-#contact-tab p, #contact-tab ul {
-    font-family: 'Inter', sans-serif;
-    font-size: 0.875rem; line-height: 1.6; /* 14px -> rem */
-    color: oklch(0.8 0.01 240);
+
+.panel-tab-content.active {
+    display: block;
+    animation: content-fade-in 0.4s ease-out;
 }
-#about-tab hr, #highlights-tab hr, #contact-tab hr {
+
+@keyframes content-fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.panel-tab-content h3 {
+    margin-top: 0;
+    color: oklch(var(--theme-text-secondary-l) var(--theme-text-secondary-c) var(--theme-text-secondary-h));
+}
+
+.panel-tab-content hr {
     border: none;
-    border-top: 1px solid oklch(0.5 0.01 240 / 0.3);
-    margin: 1rem 0;
+    border-top: 1px solid oklch(0.3 0 0 / 0.5);
+    margin: var(--space-xl) 0;
 }
-#about-tab a, #highlights-tab a, #contact-tab a { color: oklch(0.8 0.15 260); text-decoration: none; }
-#about-tab a:hover, #highlights-tab a:hover, #contact-tab a:hover { text-decoration: underline; }
 
-/* PRD v2.2: New Contact List Style */
-.contact-list {
+.panel-tab-content ul {
+    padding-left: var(--space-2xl);
+}
+
+.panel-tab-content ul.contact-list {
     list-style: none;
-    padding: 0;
-    margin: 1rem 0 0 0;
-}
-.contact-list li {
-    padding: 0.25rem 0;
+    padding-left: 0;
 }
 
+.panel-tab-content a {
+    color: oklch(0.8 0.1 240);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
 
-/* REMOVED: Legacy sequence/state list styles are no longer needed */
-.sequence-list, #state-tab ul { display: none; }
+.panel-tab-content a:hover {
+    color: oklch(0.9 0.1 240);
+    text-decoration: underline;
+}
+
+/* --- NEW: Settings Toggle Styles --- */
+.settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+}
+
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.setting-item__label {
+    font-weight: 500;
+}
+
+.setting-item__control .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 3.25rem; /* 52px */
+    height: 1.75rem; /* 28px */
+}
+
+.setting-item__control .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.setting-item__control .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: oklch(0.2 0 0 / 0.5);
+    transition: .3s;
+    border-radius: 1.75rem;
+    border: 1px solid oklch(0.3 0 0 / 0.5);
+}
+
+.setting-item__control .slider:before {
+    position: absolute;
+    content: "";
+    height: 1.25rem; /* 20px */
+    width: 1.25rem; /* 20px */
+    left: 0.25rem; /* 4px */
+    bottom: 0.25rem; /* 4px */
+    background-color: oklch(0.7 0.01 240);
+    transition: .3s;
+    border-radius: 50%;
+}
+
+.setting-item__control input:checked + .slider {
+    background-color: oklch(0.8 0.1 240 / 0.3);
+}
+
+.setting-item__control input:checked + .slider:before {
+    transform: translateX(1.5rem); /* 24px */
+    background-color: oklch(0.9 0.1 240);
+}
+
+.setting-item__control input:focus-visible + .slider {
+    box-shadow: 0 0 0 2px oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h)), 0 0 0 4px oklch(0.8 0.1 240);
+}

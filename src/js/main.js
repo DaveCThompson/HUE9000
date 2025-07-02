@@ -33,6 +33,8 @@ import { AudioManager } from './AudioManager.js';
 import { MusicController } from './MusicController.js';
 import disruptionManagerInstance from './DisruptionManager.js';
 import { MobileColorSlider } from "./MobileColorSlider.js";
+import { hapticFeedbackManager } from "./hapticFeedbackManager.js";
+import { createMobileInteraction } from "./mobileInteraction.js";
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -233,20 +235,21 @@ function setupMobileEventListeners() {
     const mobileAudioBtn = document.getElementById('mobile-audio-btn');
     const mobileInfoBtn = document.getElementById('mobile-info-btn');
     const mobileLightBtn = document.getElementById('mobile-light-btn');
+    const hapticsToggle = document.getElementById('haptics-toggle');
 
-    if (mobileResetBtn) {
-        mobileResetBtn.addEventListener('click', () => startupManager.resetSequence());
-    }
+    createMobileInteraction(mobileResetBtn, {
+        onClick: () => startupManager.resetSequence()
+    });
 
-    if (mobileAudioBtn) {
-        mobileAudioBtn.addEventListener('click', () => {
-            appState.setIsAudioMuted(!appState.getIsAudioMuted());
-        });
-    }
+    createMobileInteraction(mobileAudioBtn, {
+        onClick: () => appState.setIsAudioMuted(!appState.getIsAudioMuted()),
+        hapticType: 'toggleOn' // Use a slightly different haptic for toggles
+    });
     
-    if (mobileInfoBtn) {
-        mobileInfoBtn.addEventListener('click', () => sidePanelManager.toggle());
-    }
+    createMobileInteraction(mobileInfoBtn, {
+        onClick: () => sidePanelManager.toggle(),
+        hapticType: 'toggleOn'
+    });
 
     if (mobileLightBtn) {
         const updateLightButtonIcon = (theme) => {
@@ -270,28 +273,38 @@ function setupMobileEventListeners() {
             }
         };
 
-        mobileLightBtn.addEventListener('click', () => {
-            const currentTheme = appState.getCurrentTheme();
-            if (currentTheme === 'light') {
-                // From HIGH to LOW
-                appState.setTheme('dark');
-                const soundId = audioManager.play('auxModeLow', true);
-                if (soundId !== null) {
-                    setTimeout(() => audioManager.fadeOut('auxModeLow', 1.5, soundId), 1000);
+        createMobileInteraction(mobileLightBtn, {
+            onClick: () => {
+                const currentTheme = appState.getCurrentTheme();
+                if (currentTheme === 'light') {
+                    appState.setTheme('dark');
+                    const soundId = audioManager.play('auxModeLow', true);
+                    if (soundId !== null) {
+                        setTimeout(() => audioManager.fadeOut('auxModeLow', 1.5, soundId), 1000);
+                    }
+                } else {
+                    appState.setTheme('light');
+                    audioManager.play('auxModeHigh', true);
                 }
-            } else {
-                // Handles both 'dim' (initial) and 'dark' states, moves to HIGH
-                appState.setTheme('light');
-                audioManager.play('auxModeHigh', true);
-            }
+            },
+            hapticType: 'toggleOn'
         });
 
         appState.subscribe('themeChanged', updateLightButtonIcon);
         updateLightButtonIcon(appState.getCurrentTheme());
     }
 
+    // NEW: Listener for the haptics toggle in the info panel
+    if (hapticsToggle) {
+        hapticsToggle.addEventListener('change', (event) => {
+            appState.setIsHapticsEnabled(event.target.checked);
+        });
+        // Sync the toggle's visual state with appState on load
+        hapticsToggle.checked = appState.getIsHapticsEnabled();
+    }
+
     // NEW: Initialize the mobile color slider
-    const mobileColorSlider = new MobileColorSlider({ audioManager });
+    const mobileColorSlider = new MobileColorSlider();
     mobileColorSlider.init();
 }
 
@@ -321,6 +334,7 @@ async function initializeApp() {
     const intensityDisplayManager = new IntensityDisplayManager();
     
     // Register always-on services
+    serviceLocator.register('hapticFeedbackManager', hapticFeedbackManager); // NEW
     serviceLocator.register('themeManager', themeManager);
     serviceLocator.register('lcdUpdater', lcdUpdater);
     serviceLocator.register('dynamicStyleManager', dynamicStyleManager);

@@ -1,6 +1,7 @@
 import { gsap } from "gsap";
 import * as appState from './appState.js';
 import { HUE_ASSIGNMENT_ROW_HUES, MOBILE_SLIDER_HUE_NAMES } from './config/index.js';
+import { serviceLocator } from "./serviceLocator.js";
 
 /**
  * @class MobileColorSlider
@@ -28,6 +29,7 @@ export class MobileColorSlider {
     #isDragging = false;
     #stateUpdatePending = false;
     #audioManager;
+    #hapticManager;
     #trackRect = null;
     #containerRect = null;
 
@@ -35,8 +37,11 @@ export class MobileColorSlider {
      * @param {object} dependencies - Dependencies from serviceLocator.
      * @param {AudioManager} dependencies.audioManager - The application's audio manager.
      */
-    constructor({ audioManager }) {
-        this.#audioManager = audioManager;
+    constructor() {
+        // console.log('[MobileColorSlider] Constructor called.');
+        this.#audioManager = serviceLocator.get('audioManager');
+        this.#hapticManager = serviceLocator.get('hapticFeedbackManager');
+        // console.log('[MobileColorSlider] Haptic Manager instance:', this.#hapticManager ? 'FOUND' : 'NOT FOUND');
         this.#container = document.getElementById('mobile-color-slider-container');
         this.#track = document.getElementById('mobile-slider-track');
         this.#thumb = document.getElementById('mobile-slider-thumb');
@@ -50,6 +55,7 @@ export class MobileColorSlider {
      * Initializes the component, sets up listeners and initial state.
      */
     init() {
+        // console.log('[MobileColorSlider] init() called.');
         if (!this.#container || !this.#track || !this.#thumb || !this.#thumbInner) {
             console.warn('[MobileColorSlider] Could not initialize. Required DOM elements not found.');
             return;
@@ -61,6 +67,7 @@ export class MobileColorSlider {
 
         // Use pointerdown on the container for unified click/drag handling
         this.#container.addEventListener('pointerdown', this.#onDragStart);
+        // console.log('[MobileColorSlider] "pointerdown" event listener attached to container.');
         appState.subscribe('targetColorChanged', this.#onExternalStateChange);
     }
 
@@ -154,6 +161,9 @@ export class MobileColorSlider {
     #handlePointerAction = (event) => {
         event.preventDefault();
         
+        // Add a subtle vibration on each move event to simulate a dial "scrubbing"
+        this.#hapticManager.triggerSliderScrub();
+
         if (!this.#trackRect) this._recalculateDimensions();
         if (!this.#trackRect || this.#trackRect.height === 0) return;
 
@@ -169,9 +179,9 @@ export class MobileColorSlider {
             hueIndex = 0;
             targetHue = this.#CONFIG.HUES[0];
         } else {
+            const colorRangeCount = this.#CONFIG.HUES.length - 1;
             const colorRangePercent = (clampedPercent - this.#CONFIG.COLORLESS_ZONE_PERCENT) / (100 - this.#CONFIG.COLORLESS_ZONE_PERCENT);
-            const colorStepCount = this.#CONFIG.HUES.length - 1;
-            hueIndex = Math.round(colorRangePercent * (colorStepCount - 1)) + 1;
+            hueIndex = Math.round(colorRangePercent * (colorRangeCount - 1)) + 1;
             hueIndex = Math.max(1, Math.min(this.#CONFIG.HUES.length - 1, hueIndex));
             targetHue = this.#CONFIG.HUES[hueIndex];
         }
@@ -196,12 +206,14 @@ export class MobileColorSlider {
     };
 
     #onDragStart = (event) => {
+        console.log(`[MobileColorSlider] #onDragStart fired! isPrimary: ${event.isPrimary}`);
         this.#isDragging = true;
         this.#stateUpdatePending = false;
         this._recalculateDimensions();
         this.#container.classList.add('is-dragging');
         this.#container.setPointerCapture(event.pointerId);
         this.#audioManager.play('dialLoop', true, 0.2);
+        this.#hapticManager.triggerClick();
         
         this.#handlePointerAction(event);
 
@@ -214,6 +226,7 @@ export class MobileColorSlider {
         this.#container.releasePointerCapture(event.pointerId);
         this.#container.classList.remove('is-dragging');
         this.#audioManager.stop('dialLoop');
+        this.#hapticManager.triggerToggleOff();
         
         this.#updateThumbFromState();
         

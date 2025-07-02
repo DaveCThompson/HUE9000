@@ -14,12 +14,14 @@ export class DialController {
      * @param {object} appStateModule - The imported appState module.
      * @param {object} gsapInstance - The GSAP instance.
      * @param {object} audioManagerInstance - The AudioManager instance.
+     * @param {object} hapticManagerInstance - The HapticFeedbackManager instance.
      */
-    constructor(containerElement, dialId, appStateModule, gsapInstance, audioManagerInstance) {
+    constructor(containerElement, dialId, appStateModule, gsapInstance, audioManagerInstance, hapticManagerInstance) {
         // Dependencies
         this.appState = appStateModule; // Use passed-in appState
         this.gsap = gsapInstance; // Use passed-in GSAP
         this.audioManager = audioManagerInstance; // Use passed-in AudioManager
+        this.hapticManager = hapticManagerInstance; // Use passed-in HapticManager
 
         // Element & State
         this.containerElement = containerElement;
@@ -162,6 +164,7 @@ export class DialController {
         }
         
         if (this.audioManager) this.audioManager.play('dialLoop');
+        if (this.hapticManager) this.hapticManager.triggerClick();
         
         // Start broadcasting state on every animation frame
         this.gsap.ticker.add(this.updateLoop);
@@ -192,6 +195,8 @@ export class DialController {
         }
         this.hue = newHue;
 
+        if (this.hapticManager) this.hapticManager.triggerSliderScrub();
+
         // Only update the local SVG visual instantly. State is broadcast by the ticker.
         this._draw();
     }
@@ -202,6 +207,7 @@ export class DialController {
         this.containerElement.classList.remove('is-dragging');
 
         if (this.audioManager) this.audioManager.stop('dialLoop');
+        if (this.hapticManager) this.hapticManager.triggerToggleOff();
 
         // Stop broadcasting state on every frame
         this.gsap.ticker.remove(this.updateLoop);

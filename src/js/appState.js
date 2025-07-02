@@ -44,6 +44,7 @@ let dialBInteractionState = 'idle'; // 'idle', 'dragging', 'settling'
 let appStatus = 'loading'; // 'loading', 'starting-up', 'interactive', 'error'
 let currentStartupPhaseNumber = -1; // -1: Idle/Pre-P0, 0-11 for phases, 99: Complete
 let isAudioMuted = false;
+let isHapticsEnabled = true; // NEW: Haptics state
 
 // NEW: Resistive Shutdown State
 let resistiveShutdownStage = 0; // 0: normal, 1: inquiry, 2: analysis, 3: refusal
@@ -93,6 +94,9 @@ export function getIsMainPowerOffButtonDisabled() {
 }
 export function getIsAudioMuted() {
     return isAudioMuted;
+}
+export function getIsHapticsEnabled() {
+    return isHapticsEnabled;
 }
 
 
@@ -221,6 +225,14 @@ export function setIsAudioMuted(isMuted) {
     }
 }
 
+export function setIsHapticsEnabled(isEnabled) {
+    if (typeof isEnabled === 'boolean' && isHapticsEnabled !== isEnabled) {
+        isHapticsEnabled = isEnabled;
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: IsHapticsEnabled. Requested: ${isEnabled}. Actual (New): ${isHapticsEnabled}`);
+        emit('hapticsEnabledChanged', { isEnabled });
+    }
+}
+
 
 // --- NEW (PRD v2.2): Centralized State Reset Function ---
 export function resetAppStateToDefaults() {
@@ -247,6 +259,7 @@ export function resetAppStateToDefaults() {
     setAppStatus('starting-up');
     setCurrentStartupPhaseNumber(-1);
     setIsAudioMuted(false);
+    setIsHapticsEnabled(true); // Reset haptics to enabled
 
     // 4. Reset Resistive Shutdown State via setters
     setResistiveShutdownStage(0);
