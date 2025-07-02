@@ -17,13 +17,9 @@ import { serviceLocator } from './serviceLocator.js';
 export function createMobileInteraction(element, { onClick, hapticType = 'click' }) {
     if (!element) return;
 
-    // console.log(`[createMobileInteraction] Attaching to element:`, element.id || element.className);
-
     const hapticManager = serviceLocator.get('hapticFeedbackManager');
-    // console.log(`[createMobileInteraction] Haptic Manager for ${element.id || 'element'}:`, hapticManager ? 'FOUND' : 'NOT FOUND');
 
     const handleInteraction = (event) => {
-        console.log(`[handleInteraction] POINTERUP event received for: ${element.id || element.className}. Is primary: ${event.isPrimary}`);
         // We only care about primary pointer actions (e.g., left-click, single touch)
         if (event.isPrimary === false) return;
 

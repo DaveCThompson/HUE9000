@@ -9,7 +9,6 @@ class HapticFeedbackManager {
     constructor() {
         // Check for Vibration API support once at instantiation.
         this.isSupported = 'vibrate' in navigator;
-        console.log(`[HapticFeedbackManager] Initialized. Vibration API Supported: ${this.isSupported}`);
     }
 
     /**
@@ -17,10 +16,7 @@ class HapticFeedbackManager {
      * @returns {boolean}
      */
     _canTrigger() {
-        const hapticsEnabled = appState.getIsHapticsEnabled();
-        const canTrigger = this.isSupported && hapticsEnabled;
-        console.log(`[HapticFeedbackManager] _canTrigger check: isSupported=${this.isSupported}, isEnabled=${hapticsEnabled} -> ${canTrigger}`);
-        return canTrigger;
+        return this.isSupported && appState.getIsHapticsEnabled();
     }
 
     /**
@@ -28,7 +24,6 @@ class HapticFeedbackManager {
      */
     triggerClick() {
         if (this._canTrigger()) {
-            console.log('[HapticFeedbackManager] Triggering: click (10ms)');
             navigator.vibrate(10); // A very short, sharp pulse
         }
     }
@@ -38,7 +33,6 @@ class HapticFeedbackManager {
      */
     triggerToggleOn() {
         if (this._canTrigger()) {
-            console.log('[HapticFeedbackManager] Triggering: toggleOn (20ms)');
             navigator.vibrate(20); // A soft but distinct pulse
         }
     }
@@ -48,7 +42,6 @@ class HapticFeedbackManager {
      */
     triggerToggleOff() {
         if (this._canTrigger()) {
-            console.log('[HapticFeedbackManager] Triggering: toggleOff (15ms)');
             navigator.vibrate(15);
         }
     }
@@ -58,7 +51,6 @@ class HapticFeedbackManager {
      */
     triggerSliderScrub() {
         if (this._canTrigger()) {
-            console.log('[HapticFeedbackManager] Triggering: sliderScrub (5ms)');
             navigator.vibrate(5); // Barely perceptible, like a tiny notch
         }
     }

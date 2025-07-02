@@ -38,10 +38,8 @@ export class MobileColorSlider {
      * @param {AudioManager} dependencies.audioManager - The application's audio manager.
      */
     constructor() {
-        // console.log('[MobileColorSlider] Constructor called.');
         this.#audioManager = serviceLocator.get('audioManager');
         this.#hapticManager = serviceLocator.get('hapticFeedbackManager');
-        // console.log('[MobileColorSlider] Haptic Manager instance:', this.#hapticManager ? 'FOUND' : 'NOT FOUND');
         this.#container = document.getElementById('mobile-color-slider-container');
         this.#track = document.getElementById('mobile-slider-track');
         this.#thumb = document.getElementById('mobile-slider-thumb');
@@ -55,7 +53,6 @@ export class MobileColorSlider {
      * Initializes the component, sets up listeners and initial state.
      */
     init() {
-        // console.log('[MobileColorSlider] init() called.');
         if (!this.#container || !this.#track || !this.#thumb || !this.#thumbInner) {
             console.warn('[MobileColorSlider] Could not initialize. Required DOM elements not found.');
             return;
@@ -67,7 +64,6 @@ export class MobileColorSlider {
 
         // Use pointerdown on the container for unified click/drag handling
         this.#container.addEventListener('pointerdown', this.#onDragStart);
-        // console.log('[MobileColorSlider] "pointerdown" event listener attached to container.');
         appState.subscribe('targetColorChanged', this.#onExternalStateChange);
     }
 
@@ -206,7 +202,6 @@ export class MobileColorSlider {
     };
 
     #onDragStart = (event) => {
-        console.log(`[MobileColorSlider] #onDragStart fired! isPrimary: ${event.isPrimary}`);
         this.#isDragging = true;
         this.#stateUpdatePending = false;
         this._recalculateDimensions();
