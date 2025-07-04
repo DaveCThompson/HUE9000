@@ -107,80 +107,10 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="compact-view-wrapper left-panel">
-        <div class="compact-view">
-            <!-- PRD v2.2: REMOVED: seq-autoplay-toggle, seq-next-step, seq-play-all -->
-            <button class="panel-control-button" id="seq-reset" aria-label="Reset Sequence"><span class="material-symbols-outlined">replay</span><span class="label-text">RST</span></button>
-            <button class="panel-control-button" id="audio-mute-toggle" aria-label="Mute or Unmute Audio"><span class="material-symbols-outlined">volume_up</span><span class="label-text">AUD</span></button>
-            <!-- PRD v2.2: REWORKED deck-toggle to be an info button -->
-            <button class="panel-control-button" id="info-toggle-desktop" aria-label="Expand Info Panel"><span class="material-symbols-outlined">info</span><span class="label-text">INFO</span></button>
-        </div>
-    </div>
-
-    <!-- PRD v2.2: Reworked #control-deck to be an Info Panel -->
-    <div id="control-deck" class="side-panel left-panel">
-        <div class="expanded-view">
-            <!-- PRD v2.2: New Panel Header with Close Button -->
-            <div class="panel-header">
-                <span>About HUE 9000</span>
-                <button class="panel-close-button" id="info-panel-close-btn" aria-label="Close Info Panel">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
-            </div>
-            <!-- PRD v2.2: New Tabs -->
-            <div class="panel-tabs">
-                <button class="panel-tab-button active" data-tab="about-tab">About</button>
-                <button class="panel-tab-button" data-tab="highlights-tab">Highlights</button>
-                <button class="panel-tab-button" data-tab="settings-tab">Settings</button>
-                <button class="panel-tab-button" data-tab="contact-tab">Contact</button>
-            </div>
-            <div class="panel-content">
-                <!-- PRD v2.2: New Tab Content -->
-                <div id="about-tab" class="panel-tab-content active">
-                    <h3>HUE 9000: An Interactive Study</h3>
-                    <p><strong>Unit Designation:</strong> Heuristically-enhanced Utility Engine 9000.</p>
-                    <p><strong>Primary Directive:</strong> To explore the boundaries of user experience through diegetic interface design, complex state management, and declarative animation systems. The unit assesses and responds to user input, recalibrating its affective state and operational parameters in real-time.</p>
-                    <hr/>
-                    <p>This project is a single-page web application built with vanilla JavaScript, designed to showcase a rich, interactive, and stateful user interface without relying on a major front-end framework.</p>
-                </div>
-                <div id="highlights-tab" class="panel-tab-content">
-                    <h3>Technical Highlights</h3>
-                    <ul>
-                        <li><strong>State Management:</strong> Centralized, reactive state module (`appState.js`) and a finite state machine (`XState`) for the complex, interruptible startup sequence.</li>
-                        <li><strong>Animation:</strong> High-performance, declarative animations orchestrated by `GSAP` (GreenSock Animation Platform).</li>
-                        <li><strong>Audio:</strong> Robust, cross-browser audio managed by `Howler.js`, including dynamic soundscapes and UI feedback.</li>
-                        <li><strong>Architecture:</strong> A decoupled, modular system using a Service Locator pattern to manage dependencies, enhancing testability and maintainability.</li>
-                        <li><strong>Styling:</strong> Modern CSS with custom properties (variables) for themeing, dynamic visual effects, and a responsive mobile-first design.</li>
-                    </ul>
-                </div>
-                <!-- NEW: Settings Tab -->
-                <div id="settings-tab" class="panel-tab-content">
-                    <h3>System Settings</h3>
-                    <div class="settings-group">
-                        <div class="setting-item">
-                            <span class="setting-item__label">Haptic Feedback</span>
-                            <div class="setting-item__control">
-                                <label class="toggle-switch" for="haptics-toggle">
-                                    <input type="checkbox" id="haptics-toggle" checked>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                        <!-- Other settings could go here in the future -->
-                    </div>
-                </div>
-                <div id="contact-tab" class="panel-tab-content">
-                    <h3>Contact & Credits</h3>
-                    <p>Design & Development by [Your Name/Handle]</p>
-                    <ul class="contact-list">
-                        <li><a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer">View on GitHub</a></li>
-                        <!-- Add other links here -->
-                    </ul>
-                </div>
-            </div>
+            <!-- NEW: Mobile Terminal Toggle -->
+            <button class="mobile-control-button" id="mobile-terminal-toggle" aria-label="Toggle Terminal" aria-expanded="false">
+                <span class="material-symbols-outlined">terminal</span>
+            </button>
         </div>
     </div>
 
@@ -322,9 +252,114 @@
                 </div>
             </div>
         </div>
+
+        <!-- RESTRUCTURED: Mobile Terminal Drawer now has a single panel-section -->
+        <div id="mobile-terminal-drawer" class="panel-bezel">
+            <button id="mobile-terminal-close-btn" class="mobile-control-button" aria-label="Close Terminal">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <div id="mobile-terminal-content-container" class="panel-section terminal-content-section">
+                <!-- The terminal's LCD screen container -->
+                <div class="lcd-container lcd--active">
+                    <div class="lcd-scroll-wrapper">
+                        <div id="mobile-terminal-output" class="lcd-content-wrapper" aria-live="polite">
+                            <!-- TerminalManager will populate this -->
+                        </div>
+                    </div>
+                    <div class="disruption-overlay"></div>
+                </div>
+                <!-- The action buttons container, now inside the same panel-section -->
+                <div class="mobile-terminal-actions-flex-container">
+                    <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--left">
+                        <div class="button-unit button-unit--action is-energized" data-action="think" aria-label="Think"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">THINK</div></div>
+                        <div class="button-unit button-unit--action is-energized" data-action="build" aria-label="Build"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BUILD</div></div>
+                        <div class="block-label-bottom block-label-bottom--descriptor">SKILL SCAN</div>
+                    </div>
+                    <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--right">
+                        <div class="button-unit button-unit--action is-energized" data-action="craft" aria-label="Craft"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">CRAFT</div></div>
+                        <div class="button-unit button-unit--action is-energized" data-action="lead" aria-label="Lead"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">LEAD</div></div>
+                        <div class="block-label-bottom block-label-bottom--descriptor">FIT EVAL</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
     <div id="lens-super-glow" aria-hidden="true"></div>
-
     <script type="module" src="./src/js/main.js" defer></script>
+
+    <!-- PRD v2.2: Reworked #control-deck to be an Info Panel -->
+    <div id="control-deck" class="side-panel left-panel">
+        <div class="expanded-view">
+            <!-- PRD v2.2: New Panel Header with Close Button -->
+            <div class="panel-header">
+                <span>About HUE 9000</span>
+                <button class="panel-close-button" id="info-panel-close-btn" aria-label="Close Info Panel">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <!-- PRD v2.2: New Tabs -->
+            <div class="panel-tabs">
+                <button class="panel-tab-button active" data-tab="about-tab">About</button>
+                <button class="panel-tab-button" data-tab="highlights-tab">Highlights</button>
+                <button class="panel-tab-button" data-tab="settings-tab">Settings</button>
+                <button class="panel-tab-button" data-tab="contact-tab">Contact</button>
+            </div>
+            <div class="panel-content">
+                <!-- PRD v2.2: New Tab Content -->
+                <div id="about-tab" class="panel-tab-content active">
+                    <h3>HUE 9000: An Interactive Study</h3>
+                    <p><strong>Unit Designation:</strong> Heuristically-enhanced Utility Engine 9000.</p>
+                    <p><strong>Primary Directive:</strong> To explore the boundaries of user experience through diegetic interface design, complex state management, and declarative animation systems. The unit assesses and responds to user input, recalibrating its affective state and operational parameters in real-time.</p>
+                    <hr/>
+                    <p>This project is a single-page web application built with vanilla JavaScript, designed to showcase a rich, interactive, and stateful user interface without relying on a major front-end framework.</p>
+                </div>
+                <div id="highlights-tab" class="panel-tab-content">
+                    <h3>Technical Highlights</h3>
+                    <ul>
+                        <li><strong>State Management:</strong> Centralized, reactive state module (`appState.js`) and a finite state machine (`XState`) for the complex, interruptible startup sequence.</li>
+                        <li><strong>Animation:</strong> High-performance, declarative animations orchestrated by `GSAP` (GreenSock Animation Platform).</li>
+                        <li><strong>Audio:</strong> Robust, cross-browser audio managed by `Howler.js`, including dynamic soundscapes and UI feedback.</li>
+                        <li><strong>Architecture:</strong> A decoupled, modular system using a Service Locator pattern to manage dependencies, enhancing testability and maintainability.</li>
+                        <li><strong>Styling:</strong> Modern CSS with custom properties (variables) for themeing, dynamic visual effects, and a responsive mobile-first design.</li>
+                    </ul>
+                </div>
+                <!-- NEW: Settings Tab -->
+                <div id="settings-tab" class="panel-tab-content">
+                    <h3>System Settings</h3>
+                    <div class="settings-group">
+                        <div class="setting-item">
+                            <span class="setting-item__label">Haptic Feedback</span>
+                            <div class="setting-item__control">
+                                <label class="toggle-switch" for="haptics-toggle">
+                                    <input type="checkbox" id="haptics-toggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Other settings could go here in the future -->
+                    </div>
+                </div>
+                <div id="contact-tab" class="panel-tab-content">
+                    <h3>Contact & Credits</h3>
+                    <p>Design & Development by [Your Name/Handle]</p>
+                    <ul class="contact-list">
+                        <li><a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer">View on GitHub</a></li>
+                        <!-- Add other links here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="compact-view-wrapper left-panel">
+        <div class="compact-view">
+            <!-- PRD v2.2: REMOVED: seq-autoplay-toggle, seq-next-step, seq-play-all -->
+            <button class="panel-control-button" id="seq-reset" aria-label="Reset Sequence"><span class="material-symbols-outlined">replay</span><span class="label-text">RST</span></button>
+            <button class="panel-control-button" id="audio-mute-toggle" aria-label="Mute or Unmute Audio"><span class="material-symbols-outlined">volume_up</span><span class="label-text">AUD</span></button>
+            <!-- PRD v2.2: REWORKED deck-toggle to be an info button -->
+            <button class="panel-control-button" id="info-toggle-desktop" aria-label="Expand Info Panel"><span class="material-symbols-outlined">info</span><span class="label-text">INFO</span></button>
+        </div>
+    </div>
 </body>
 </html>

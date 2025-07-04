@@ -188,6 +188,8 @@ export class MobileColorSlider {
         appState.setTargetColorProperties('env', targetHue);
         appState.setTargetColorProperties('logo', targetHue);
         appState.setTargetColorProperties('lcd', targetHue);
+        // NEW: Also update the button hue
+        appState.setTargetColorProperties('btn', targetHue);
 
         this.#updateAriaAttributes(hueIndex);
 

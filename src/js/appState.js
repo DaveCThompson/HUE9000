@@ -44,11 +44,15 @@ let dialBInteractionState = 'idle'; // 'idle', 'dragging', 'settling'
 let appStatus = 'loading'; // 'loading', 'starting-up', 'interactive', 'error'
 let currentStartupPhaseNumber = -1; // -1: Idle/Pre-P0, 0-11 for phases, 99: Complete
 let isAudioMuted = false;
-let isHapticsEnabled = true; // NEW: Haptics state
+let isHapticsEnabled = true;
 
-// NEW: Resistive Shutdown State
+// Resistive Shutdown State
 let resistiveShutdownStage = 0; // 0: normal, 1: inquiry, 2: analysis, 3: refusal
 let isMainPowerOffButtonDisabled = false;
+
+// NEW: Mobile Terminal State
+let isMobileTerminalOpen = false;
+let hasUnreadTerminalMessages = false;
 
 
 // --- State Getter Functions (Exported) ---
@@ -97,6 +101,12 @@ export function getIsAudioMuted() {
 }
 export function getIsHapticsEnabled() {
     return isHapticsEnabled;
+}
+export function getIsMobileTerminalOpen() {
+    return isMobileTerminalOpen;
+}
+export function getHasUnreadTerminalMessages() {
+    return hasUnreadTerminalMessages;
 }
 
 
@@ -233,6 +243,22 @@ export function setIsHapticsEnabled(isEnabled) {
     }
 }
 
+export function setIsMobileTerminalOpen(isOpen) {
+    if (typeof isOpen === 'boolean' && isMobileTerminalOpen !== isOpen) {
+        isMobileTerminalOpen = isOpen;
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: IsMobileTerminalOpen. Requested: ${isOpen}. Actual (New): ${isMobileTerminalOpen}`);
+        emit('mobileTerminalStateChanged', { isOpen });
+    }
+}
+
+export function setHasUnreadTerminalMessages(hasUnread) {
+    if (typeof hasUnread === 'boolean' && hasUnreadTerminalMessages !== hasUnread) {
+        hasUnreadTerminalMessages = hasUnread;
+        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: HasUnreadTerminalMessages. Requested: ${hasUnread}. Actual (New): ${hasUnreadTerminalMessages}`);
+        emit('unreadTerminalMessagesChanged', { hasUnread });
+    }
+}
+
 
 // --- NEW (PRD v2.2): Centralized State Reset Function ---
 export function resetAppStateToDefaults() {
@@ -264,6 +290,10 @@ export function resetAppStateToDefaults() {
     // 4. Reset Resistive Shutdown State via setters
     setResistiveShutdownStage(0);
     setIsMainPowerOffButtonDisabled(false);
+
+    // 5. Reset Mobile Terminal State
+    setIsMobileTerminalOpen(false);
+    setHasUnreadTerminalMessages(false);
 }
 
 // --- Event Subscription (Exported) ---

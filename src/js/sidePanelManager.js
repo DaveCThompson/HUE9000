@@ -25,6 +25,8 @@ export class SidePanelManager {
      * Called by desktop and mobile "Info" buttons.
      */
     toggle() {
+        // Guard: Don't do anything if the core panel element doesn't exist.
+        if (!this.dom.controlDeck) return;
         const isExpanded = this.dom.controlDeck.classList.toggle('is-expanded');
         this.dom.appWrapper.classList.toggle('left-panel-expanded', isExpanded);
     }
@@ -34,6 +36,8 @@ export class SidePanelManager {
      * Called by the 'X' button in the panel header.
      */
     close() {
+        // Guard: Don't do anything if the core panel element doesn't exist.
+        if (!this.dom.controlDeck) return;
         this.dom.controlDeck.classList.remove('is-expanded');
         this.dom.appWrapper.classList.remove('left-panel-expanded');
     }
@@ -81,6 +85,9 @@ export class SidePanelManager {
      * Sets up the click handlers for the tabs within the info panel.
      */
     _setupTabControls() {
+        // Guard: This entire feature is desktop-only and depends on the control deck.
+        if (!this.dom.controlDeck) return;
+
         const allTabs = this.dom.controlDeck.querySelectorAll('.panel-tab-button');
         allTabs.forEach(tab => {
             tab.addEventListener('click', () => {

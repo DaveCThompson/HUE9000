@@ -29,6 +29,10 @@
     padding: var(--space-lg);
     z-index: var(--z-index-mobile-controls-overlay);
     pointer-events: none; /* Pass clicks through unless on a button */
+    /* NEW: Add transition properties to move in sync with the main content */
+    transform-origin: bottom center;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1), filter 0.6s ease-out;
+    will-change: transform, filter;
   }
   
   .mobile-controls-group {
@@ -58,8 +62,36 @@
     align-items: center;
     color: oklch(0.8 0.01 240);
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease-out;
+    transition: background-color 0.2s ease, transform 0.1s ease-out, border-color 0.3s ease;
     outline: none; /* Remove default outline on general focus */
+    position: relative;
+  }
+
+  /* Notification Pulse for Terminal Button */
+  #mobile-terminal-toggle.has-notification::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 50%;
+    border: 2px solid oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0);
+    animation: terminal-notification-pulse 1.5s infinite;
+  }
+
+  @keyframes terminal-notification-pulse {
+    0% {
+      transform: scale(0.95);
+      border-color: oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0);
+    }
+    50% {
+      border-color: oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0.8);
+    }
+    100% {
+      transform: scale(1.15);
+      border-color: oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0);
+    }
   }
   
   /* ACCESSIBILITY: Add a visible outline only for keyboard/assistive tech focus */
@@ -82,7 +114,17 @@
 
   .mobile-control-button .material-symbols-outlined {
     font-size: 1.5rem; /* 24px */
+    transition: transform 0.3s ease-in-out;
   }
+
+  /* MODIFIED: The terminal toggle button now fades out instead of rotating */
+  body.mobile-terminal-is-open #mobile-terminal-toggle {
+      opacity: 0;
+      transform: translateY(-2rem);
+      pointer-events: none;
+      transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  }
+
 
   /* --- FINAL, FINAL SLIDER STYLES --- */
   .mobile-slider-container {
@@ -203,6 +245,8 @@
        It uses the JS variable with a modern CSS fallback. */
     height: var(--visual-viewport-height, 100dvh);
     padding: var(--space-lg);
+    /* NEW: Add perspective for 3D transforms */
+    perspective: 1500px;
   }
 
   /* --- 2. Main Content Area: Global Layout Reset & Re-ordering with CSS Grid --- */
@@ -218,7 +262,26 @@
     max-width: 31.25rem; /* 500px -> rem */
     margin: 0 auto;
     align-items: stretch;
+    /* REPLACED: New animation properties for vertical carousel transition */
+    transform-origin: bottom center;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1), filter 0.6s ease-out;
+    will-change: transform, filter;
   }
+
+  /* REPLACED: Open state for main content area now moves UP */
+  body.mobile-terminal-is-open .main-content-area {
+    transform: translateY(-100%) scale(0.9) rotateX(10deg);
+    filter: blur(4px) brightness(0.6);
+    pointer-events: none;
+  }
+
+  /* NEW: Sync the mobile controls overlay with the main content's movement */
+  body.mobile-terminal-is-open #mobile-controls-overlay {
+      transform: translateY(-100%) scale(0.9) rotateX(10deg);
+      filter: blur(4px) brightness(0.6);
+      pointer-events: none;
+  }
+
 
   /* --- 3. Panel Placement, Hiding, and Global Styling --- */
 
@@ -322,8 +385,8 @@
     padding: var(--space-xl);
   }
 
-  /* Adjust label background for mobile context (affects all labels) */
-  .block-label-bottom {
+  /* REFINED: Make the label background override more specific */
+  .main-content-area > .panel-bezel.right-panel .block-label-bottom {
       background-color: oklch(var(--body-bg-bottom-l) var(--body-bg-bottom-c) var(--body-bg-bottom-h) / var(--body-bg-bottom-a));
   }
 
@@ -342,12 +405,101 @@
     margin-top: auto;
     margin-bottom: var(--space-xl);
   }
+
+  /* REPLACED: Mobile Terminal Drawer now slides from the bottom */
+  #mobile-terminal-drawer {
+    position: fixed;
+    inset: 0; /* Cover the whole screen */
+    width: 100%;
+    height: 100%;
+    z-index: var(--z-index-side-panel-expanded);
+    /* Start off-screen at the bottom, and slightly scaled down */
+    transform: translateY(105%) scale(0.95);
+    transform-origin: center center;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: transform;
+    display: flex;
+    flex-direction: column;
+    /* Padding is now inside the inner sections for better edge-to-edge look */
+    padding: 0;
+  }
+  
+  body.mobile-terminal-is-open #mobile-terminal-drawer {
+    transform: translateY(0) scale(1);
+  }
+
+  /* NEW: Close button for the terminal drawer */
+  #mobile-terminal-close-btn {
+      position: absolute;
+      top: var(--space-lg);
+      right: var(--space-lg);
+      z-index: 10; /* Ensure it's above terminal content */
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.4s ease-out 0.3s, transform 0.4s ease-out 0.3s;
+  }
+
+  body.mobile-terminal-is-open #mobile-terminal-close-btn {
+      opacity: 1;
+      transform: scale(1);
+  }
+
+  /* MODIFIED: The single panel-section now controls the layout of its children */
+  #mobile-terminal-drawer .terminal-content-section {
+    flex-grow: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column; /* Stack terminal and buttons vertically */
+    padding: var(--space-2xl) var(--space-lg) 0 var(--space-lg);
+  }
+
+  /* MODIFIED: The LCD container now grows to fill the space above the buttons */
+  #mobile-terminal-drawer .lcd-container {
+    flex-grow: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+  }
+  #mobile-terminal-drawer .lcd-scroll-wrapper {
+      flex-grow: 1;
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+  }
+  #mobile-terminal-drawer .lcd-scroll-wrapper::-webkit-scrollbar {
+      display: none;
+  }
+
+  /* MODIFIED: These styles now apply to the button container, which is a flex-child */
+  .mobile-terminal-actions-flex-container {
+    flex-shrink: 0; /* Prevent this section from shrinking */
+    border-top: 1px solid oklch(var(--panel-section-border-l) var(--panel-section-border-c) var(--panel-section-border-h) / 0.3);
+    padding: var(--space-xl); /* Outer padding for the button area */
+    display: flex;
+    gap: 0;
+    justify-content: space-between;
+    margin-top: var(--space-lg); /* Add some space between terminal and buttons */
+  }
+  
+  .mobile-terminal-actions-flex-container .scan-button-block {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    padding: var(--space-xl);
+  }
+
+  .mobile-terminal-actions-flex-container .button-unit {
+    width: 100%;
+    height: 3rem;
+  }
 }
 
 /* --- Mobile Landscape Layout (Scaled Desktop) --- */
 /* On a narrow device (like a phone) that is turned sideways */
 @media (orientation: landscape) and (max-height: 31.25rem) { /* 500px -> rem */
-  /* ... no changes here ... */
   .app-wrapper {
     padding: var(--space-lg);
     overflow: hidden;

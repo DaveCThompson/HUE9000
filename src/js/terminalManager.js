@@ -14,7 +14,8 @@ import {
     TERMINAL_TYPING_SPEED_STATUS_MS_PER_CHAR,
     TERMINAL_INTER_LINE_PAUSE_S,
     TERMINAL_SCROLL_DURATION_S,
-    TERMINAL_MAX_LINES_IN_DOM
+    TERMINAL_MAX_LINES_IN_DOM,
+    MOBILE_BREAKPOINT
 } from './config/index.js';
 
 class TerminalManager {
@@ -39,12 +40,7 @@ class TerminalManager {
     }
 
     init() {
-        const dom = serviceLocator.get('domElements');
-        this._terminalContainerElement = dom.terminalContainer;
-        this._terminalContentElement = dom.terminalLcdContentElement;
-        this._scrollWrapperElement = this._terminalContainerElement.querySelector('.lcd-scroll-wrapper');
         this._gsap = serviceLocator.get('gsap');
-
         this._setupDOM();
         appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
     }
@@ -54,6 +50,21 @@ class TerminalManager {
     }
 
     _setupDOM() {
+        const dom = serviceLocator.get('domElements');
+        const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
+
+        // Adapt to mobile or desktop container
+        if (isMobile && document.getElementById('mobile-terminal-drawer')) {
+            this._terminalContainerElement = document.getElementById('mobile-terminal-drawer');
+            // TARGET THE NEW, DEEPER ELEMENT FOR CONSISTENCY
+            this._terminalContentElement = document.getElementById('mobile-terminal-output');
+            this._scrollWrapperElement = this._terminalContainerElement?.querySelector('.lcd-scroll-wrapper');
+        } else {
+            this._terminalContainerElement = dom.terminalContainer;
+            this._terminalContentElement = dom.terminalLcdContentElement;
+            this._scrollWrapperElement = this._terminalContainerElement?.querySelector('.lcd-scroll-wrapper');
+        }
+
         this._cursorElement = document.createElement('span');
         this._cursorElement.className = 'terminal-cursor';
         const cursorInner = document.createElement('span');
@@ -71,7 +82,7 @@ class TerminalManager {
         this._messageQueue = [];
 
         if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
-        if (this._cursorElement.parentNode) this._cursorElement.parentNode.removeChild(this._cursorElement);
+        if (this._cursorElement && this._cursorElement.parentNode) this._cursorElement.parentNode.removeChild(this._cursorElement);
         if (this._scrollWrapperElement) this._scrollWrapperElement.scrollTop = 0;
 
         this._isFirstLine = true;
@@ -79,6 +90,11 @@ class TerminalManager {
     }
 
     _handleRequestTerminalMessage(payload) {
+        const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
+        if (isMobile && !appState.getIsMobileTerminalOpen()) {
+            appState.setHasUnreadTerminalMessages(true);
+        }
+        
         const messageData = getMessage(payload);
         const messageObject = { ...payload, ...messageData };
 
@@ -179,6 +195,7 @@ class TerminalManager {
     }
 
     _addNewLineAndPrepareForTyping(isSpacer = false, className = null) {
+        if (!this._terminalContentElement) return;
         this._currentLineElement = document.createElement('div');
         this._currentLineElement.className = 'terminal-line';
         if (className) this._currentLineElement.classList.add(className);
@@ -252,6 +269,7 @@ class TerminalManager {
     }
 
     _limitMaxLines() {
+        if (!this._terminalContentElement) return;
         while (this._terminalContentElement.childElementCount > TERMINAL_MAX_LINES_IN_DOM) {
             if (this._terminalContentElement.firstChild) {
                 this._terminalContentElement.removeChild(this._terminalContentElement.firstChild);
@@ -267,7 +285,7 @@ class TerminalManager {
             case 'typing': this._cursorElement.classList.add('is-solid'); break;
             case 'thinking': this._cursorElement.classList.add('is-thinking'); break;
         }
-        if (state === 'idle' && !this._cursorElement.parentElement) {
+        if (state === 'idle' && this._terminalContentElement && !this._cursorElement.parentElement) {
              this._addNewLineAndPrepareForTyping();
         }
     }
@@ -289,7 +307,7 @@ class TerminalManager {
     }
     
     async _handleSpinnerCommand({ duration = 1500, text = 'PROCESSING...' }, promise) {
-        if (promise.abort) return;
+        if (promise.abort || !this._terminalContentElement) return;
         this._setCursorState('thinking');
         
         const spinnerLine = document.createElement('div');
@@ -309,7 +327,7 @@ class TerminalManager {
         
         await new Promise(resolve => setTimeout(resolve, duration));
         
-        if (!promise.abort) {
+        if (!promise.abort && this._terminalContentElement.contains(spinnerLine)) {
             this._terminalContentElement.removeChild(spinnerLine);
         }
     }

@@ -334,7 +334,7 @@ async function initializeApp() {
     const intensityDisplayManager = new IntensityDisplayManager();
     
     // Register always-on services
-    serviceLocator.register('hapticFeedbackManager', hapticFeedbackManager); // NEW
+    serviceLocator.register('hapticFeedbackManager', hapticFeedbackManager); // Corrected registration order
     serviceLocator.register('themeManager', themeManager);
     serviceLocator.register('lcdUpdater', lcdUpdater);
     serviceLocator.register('dynamicStyleManager', dynamicStyleManager);
@@ -374,12 +374,22 @@ async function initializeApp() {
         createGridButtons(buttonManager, domManager);
         buttonManager.discoverButtons(domManager.allButtons);
     } else {
-        // PRD v2.2: On mobile, we still need the SidePanelManager for the info panel,
-        // but not the other desktop-only managers.
+        // On mobile, we still need the SidePanelManager and TerminalManager
+        const { default: terminalManagerInstance } = await import('./terminalManager.js');
         const { SidePanelManager } = await import('./sidePanelManager.js');
+        const { MobileTerminalManager } = await import('./MobileTerminalManager.js'); // NEW
+
         const sidePanelManager = new SidePanelManager();
+        const mobileTerminalManager = new MobileTerminalManager();
+        
+        serviceLocator.register('terminalManager', terminalManagerInstance);
         serviceLocator.register('sidePanelManager', sidePanelManager);
+        serviceLocator.register('mobileTerminalManager', mobileTerminalManager);
+
+        // Initialize mobile-specific managers after all dependencies are registered
+        terminalManagerInstance.init();
         sidePanelManager.init();
+        mobileTerminalManager.init(); 
     }
 
     // --- Initialize remaining managers and setup ---
