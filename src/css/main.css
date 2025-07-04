@@ -40,6 +40,11 @@
 @import url('./2-components/_grill.css') layer(components);
 @import url('./2-components/_terminal.css') layer(components);
 @import url('./2-components/_dial-displays.css') layer(components);
+/* V2.4 REFACTOR: Import new mobile component stylesheets */
+@import url('./2-components/_mobile-controls-overlay.css') layer(components);
+@import url('./2-components/_mobile-color-slider.css') layer(components);
+@import url('./2-components/_mobile-terminal-drawer.css') layer(components);
+
 
 /* --- 3: Themes Layer --- */
 @import url('./3-themes/_theme-dim.css') layer(themes);

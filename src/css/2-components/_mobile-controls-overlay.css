@@ -1,0 +1,120 @@
+/* src/css/2-components/_mobile-controls-overlay.css */
+/* NEW FILE: Contains styles exclusively for the mobile overlay controls. */
+
+@media (max-width: 48rem) { /* 768px -> rem */
+
+  /* --- Mobile Overlay Controls --- */
+  #mobile-controls-overlay {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Align to top to accommodate vertical group */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: var(--space-lg);
+    z-index: var(--z-index-mobile-controls-overlay);
+    pointer-events: none; /* Pass clicks through unless on a button */
+    /* NEW: Add transition properties to move in sync with the main content */
+    transform-origin: bottom center;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1), filter 0.6s ease-out;
+    will-change: transform, filter;
+  }
+  
+  .mobile-controls-group {
+    display: flex;
+    gap: var(--space-md);
+    pointer-events: all; /* Make the group clickable to "punch through" the overlay */
+  }
+
+  /* Style for new vertically stacked group */
+  .mobile-controls-group.is-vertical {
+      flex-direction: column;
+      gap: var(--space-lg);
+      align-items: center; /* Center items for a clean column */
+  }
+
+  .mobile-control-button {
+    pointer-events: all; /* Buttons are clickable */
+    background-color: oklch(0.1 0 0 / 0.7);
+    backdrop-filter: blur(0.25rem);
+    -webkit-backdrop-filter: blur(0.25rem);
+    border: 1px solid oklch(0.3 0 0 / 0.5);
+    border-radius: 50%;
+    width: 2.5rem; /* 40px */
+    height: 2.5rem; /* 40px */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: oklch(0.8 0.01 240);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease-out, border-color 0.3s ease;
+    outline: none; /* Remove default outline on general focus */
+    position: relative;
+  }
+
+  /* Notification Pulse for Terminal Button */
+  #mobile-terminal-toggle.has-notification::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 50%;
+    border: 2px solid oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0);
+    animation: terminal-notification-pulse 1.5s infinite;
+  }
+
+  @keyframes terminal-notification-pulse {
+    0% {
+      transform: scale(0.95);
+      border-color: oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0);
+    }
+    50% {
+      border-color: oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0.8);
+    }
+    100% {
+      transform: scale(1.15);
+      border-color: oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0);
+    }
+  }
+  
+  /* ACCESSIBILITY: Add a visible outline only for keyboard/assistive tech focus */
+  .mobile-control-button:focus-visible {
+    outline: 2px solid oklch(0.9 0.1 240);
+    outline-offset: 2px;
+  }
+  
+  /* UX: Only show hover effects on devices that can actually hover */
+  @media (hover: hover) {
+    .mobile-control-button:hover {
+      background-color: oklch(0.8 0.01 240 / 0.1);
+    }
+  }
+
+  /* Provide tactile feedback on press */
+  .mobile-control-button:active {
+      transform: scale(0.92);
+  }
+
+  .mobile-control-button .material-symbols-outlined {
+    font-size: 1.5rem; /* 24px */
+    transition: transform 0.3s ease-in-out;
+  }
+
+  /* MODIFIED: The terminal toggle button now fades out instead of rotating */
+  body.mobile-terminal-is-open #mobile-terminal-toggle {
+      opacity: 0;
+      transform: translateY(-2rem);
+      pointer-events: none;
+      transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  }
+
+  /* NEW: Sync the mobile controls overlay with the main content's movement */
+  body.mobile-terminal-is-open #mobile-controls-overlay {
+      transform: translateY(-100%) scale(0.9) rotateX(10deg);
+      filter: blur(4px) brightness(0.6);
+      pointer-events: none;
+  }
+}

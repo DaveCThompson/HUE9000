@@ -1,13 +1,26 @@
 /* src/css/1-base/_mobile.css */
 /* All mobile-specific styles for the HUE 9000 Interface v3.0 */
 
-/* PRD v2.2: Hide mobile controls by default on desktop */
-#mobile-controls-overlay {
+/* V2.4 BUG FIX: Hide mobile-only elements by default on all viewports. */
+/* This prevents them from appearing when "Request Desktop Site" is used. */
+#mobile-controls-overlay,
+#mobile-terminal-drawer {
     display: none;
 }
 
+
 /* --- Mobile Portrait Layout (max-width: 48rem) --- */
 @media (max-width: 48rem) { /* 768px -> rem */
+
+  /* V2.4.1 FIX: Restore display properties for mobile-only elements inside the media query. */
+  /* This ensures these rules override the desktop default due to specificity and layer order. */
+  #mobile-controls-overlay {
+    display: flex;
+  }
+  #mobile-terminal-drawer {
+    display: flex;
+  }
+
 
   /* --- DEFINITIVE FIX for Mobile Viewport Height --- */
   /* Remove explicit height from body to prevent interference */
@@ -15,227 +28,6 @@
     height: auto;
     min-height: 100%;
     overflow: hidden; /* Prevent bouncing/scrolling of the body itself */
-  }
-
-  /* --- 0. New Mobile Overlay Controls (PRD v2.2) --- */
-  #mobile-controls-overlay {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start; /* Align to top to accommodate vertical group */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    padding: var(--space-lg);
-    z-index: var(--z-index-mobile-controls-overlay);
-    pointer-events: none; /* Pass clicks through unless on a button */
-    /* NEW: Add transition properties to move in sync with the main content */
-    transform-origin: bottom center;
-    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1), filter 0.6s ease-out;
-    will-change: transform, filter;
-  }
-  
-  .mobile-controls-group {
-    display: flex;
-    gap: var(--space-md);
-    pointer-events: all; /* Make the group clickable to "punch through" the overlay */
-  }
-
-  /* Style for new vertically stacked group */
-  .mobile-controls-group.is-vertical {
-      flex-direction: column;
-      gap: var(--space-lg);
-      align-items: center; /* Center items for a clean column */
-  }
-
-  .mobile-control-button {
-    pointer-events: all; /* Buttons are clickable */
-    background-color: oklch(0.1 0 0 / 0.7);
-    backdrop-filter: blur(0.25rem);
-    -webkit-backdrop-filter: blur(0.25rem);
-    border: 1px solid oklch(0.3 0 0 / 0.5);
-    border-radius: 50%;
-    width: 2.5rem; /* 40px */
-    height: 2.5rem; /* 40px */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: oklch(0.8 0.01 240);
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease-out, border-color 0.3s ease;
-    outline: none; /* Remove default outline on general focus */
-    position: relative;
-  }
-
-  /* Notification Pulse for Terminal Button */
-  #mobile-terminal-toggle.has-notification::after {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 50%;
-    border: 2px solid oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0);
-    animation: terminal-notification-pulse 1.5s infinite;
-  }
-
-  @keyframes terminal-notification-pulse {
-    0% {
-      transform: scale(0.95);
-      border-color: oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0);
-    }
-    50% {
-      border-color: oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0.8);
-    }
-    100% {
-      transform: scale(1.15);
-      border-color: oklch(0.85 0.20 var(--dynamic-ui-accent-hue) / 0);
-    }
-  }
-  
-  /* ACCESSIBILITY: Add a visible outline only for keyboard/assistive tech focus */
-  .mobile-control-button:focus-visible {
-    outline: 2px solid oklch(0.9 0.1 240);
-    outline-offset: 2px;
-  }
-  
-  /* UX: Only show hover effects on devices that can actually hover */
-  @media (hover: hover) {
-    .mobile-control-button:hover {
-      background-color: oklch(0.8 0.01 240 / 0.1);
-    }
-  }
-
-  /* Provide tactile feedback on press */
-  .mobile-control-button:active {
-      transform: scale(0.92);
-  }
-
-  .mobile-control-button .material-symbols-outlined {
-    font-size: 1.5rem; /* 24px */
-    transition: transform 0.3s ease-in-out;
-  }
-
-  /* MODIFIED: The terminal toggle button now fades out instead of rotating */
-  body.mobile-terminal-is-open #mobile-terminal-toggle {
-      opacity: 0;
-      transform: translateY(-2rem);
-      pointer-events: none;
-      transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-  }
-
-
-  /* --- FINAL, FINAL SLIDER STYLES --- */
-  .mobile-slider-container {
-      pointer-events: all;
-      width: 2.5rem;
-      height: 12rem;
-      background-color: oklch(0.1 0 0 / 0.7);
-      backdrop-filter: blur(0.25rem);
-      -webkit-backdrop-filter: blur(0.25rem);
-      border: 1px solid oklch(0.3 0 0 / 0.5);
-      border-radius: 1.25rem;
-      position: relative;
-      cursor: pointer;
-      touch-action: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      /* Add padding to constrain the track and thumb travel */
-      padding: 1.25rem 0;
-      outline: none; /* Remove default focus outline */
-  }
-
-  /* ACCESSIBILITY: Add visible outline for keyboard focus */
-  .mobile-slider-container:focus-visible {
-      outline: 2px solid oklch(0.9 0.1 240);
-      outline-offset: 2px;
-  }
-
-  .mobile-slider-track {
-      width: 0.25rem;
-      height: 100%;
-      border-radius: 1.25rem; /* Use large radius to maintain pill shape on scale */
-      position: relative;
-      background: grey;
-      opacity: 0.625; /* Normal state opacity for the track */
-      transition: transform var(--transition-duration-medium) ease-out, opacity 0.2s ease-in-out;
-      transform-origin: center;
-  }
-  
-  /* UX: Apply hover styles ONLY on devices that support true hovering */
-  @media (hover: hover) {
-    .mobile-slider-container:hover .mobile-slider-track {
-        transform: scaleX(2);
-        opacity: 1.0;
-    }
-    .mobile-slider-container:hover .thumb-outer {
-        width: 1.75rem;
-        height: 1.75rem;
-    }
-    .mobile-slider-container:hover .thumb-inner {
-        width: 1.25rem;
-        height: 1.25rem;
-    }
-  }
-
-  /* The .is-dragging class will still work on touch, which is what we want. */
-  .mobile-slider-container.is-dragging .mobile-slider-track {
-      transform: scaleX(2);
-      opacity: 1.0;
-  }
-
-  /* --- Thumb Styles --- */
-
-  .mobile-slider-thumb {
-      position: absolute;
-      top: 0; /* JS will set this to a pixel value */
-      left: 50%;
-      width: 1.75rem; /* Set to max interaction size for stable centering */
-      height: 1.75rem;
-      transform: translate(-50%, -50%); 
-      will-change: top;
-      z-index: 2;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      opacity: 1.0; /* Always fully opaque */
-  }
-  
-  .thumb-outer {
-      width: 1rem;
-      height: 1rem;
-      border-radius: 50%;
-      background-color: oklch(0.8 0.01 240); /* Same as mobile icons */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      transition: width 0.2s ease-in-out, height 0.2s ease-in-out;
-  }
-  
-  .mobile-slider-container.is-dragging .thumb-outer {
-      width: 1.75rem;
-      height: 1.75rem;
-  }
-
-  /* MODIFIED: The inner circle of the thumb */
-  .thumb-inner {
-      width: 0.75rem;
-      height: 0.75rem;
-      border-radius: 50%;
-      background-color: oklch(0.705 0 0); /* Default grey, JS will override */
-      border: 2px solid #222222; /* Stroke is now always visible */
-      box-sizing: border-box;
-      /* Border color no longer transitions */
-      transition: width 0.2s ease-in-out, height 0.2s ease-in-out, background-color 0.2s ease-in-out;
-  }
-
-  /* MODIFIED: Interaction state scales the inner circle */
-  .mobile-slider-container.is-dragging .thumb-inner {
-      width: 1.25rem;
-      height: 1.25rem;
-      /* border-color is now inherited, no need to set it here */
   }
 
   /* --- 1. Global & Wrapper Adjustments --- */
@@ -274,14 +66,6 @@
     filter: blur(4px) brightness(0.6);
     pointer-events: none;
   }
-
-  /* NEW: Sync the mobile controls overlay with the main content's movement */
-  body.mobile-terminal-is-open #mobile-controls-overlay {
-      transform: translateY(-100%) scale(0.9) rotateX(10deg);
-      filter: blur(4px) brightness(0.6);
-      pointer-events: none;
-  }
-
 
   /* --- 3. Panel Placement, Hiding, and Global Styling --- */
 
@@ -404,96 +188,6 @@
   #lens-container {
     margin-top: auto;
     margin-bottom: var(--space-xl);
-  }
-
-  /* REPLACED: Mobile Terminal Drawer now slides from the bottom */
-  #mobile-terminal-drawer {
-    position: fixed;
-    inset: 0; /* Cover the whole screen */
-    width: 100%;
-    height: 100%;
-    z-index: var(--z-index-side-panel-expanded);
-    /* Start off-screen at the bottom, and slightly scaled down */
-    transform: translateY(105%) scale(0.95);
-    transform-origin: center center;
-    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
-    will-change: transform;
-    display: flex;
-    flex-direction: column;
-    /* Padding is now inside the inner sections for better edge-to-edge look */
-    padding: 0;
-  }
-  
-  body.mobile-terminal-is-open #mobile-terminal-drawer {
-    transform: translateY(0) scale(1);
-  }
-
-  /* NEW: Close button for the terminal drawer */
-  #mobile-terminal-close-btn {
-      position: absolute;
-      top: var(--space-lg);
-      right: var(--space-lg);
-      z-index: 10; /* Ensure it's above terminal content */
-      opacity: 0;
-      transform: scale(0.8);
-      transition: opacity 0.4s ease-out 0.3s, transform 0.4s ease-out 0.3s;
-  }
-
-  body.mobile-terminal-is-open #mobile-terminal-close-btn {
-      opacity: 1;
-      transform: scale(1);
-  }
-
-  /* MODIFIED: The single panel-section now controls the layout of its children */
-  #mobile-terminal-drawer .terminal-content-section {
-    flex-grow: 1;
-    min-height: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column; /* Stack terminal and buttons vertically */
-    padding: var(--space-2xl) var(--space-lg) 0 var(--space-lg);
-  }
-
-  /* MODIFIED: The LCD container now grows to fill the space above the buttons */
-  #mobile-terminal-drawer .lcd-container {
-    flex-grow: 1;
-    min-height: 0;
-    position: relative;
-    display: flex;
-  }
-  #mobile-terminal-drawer .lcd-scroll-wrapper {
-      flex-grow: 1;
-      min-height: 0;
-      overflow-y: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-  }
-  #mobile-terminal-drawer .lcd-scroll-wrapper::-webkit-scrollbar {
-      display: none;
-  }
-
-  /* MODIFIED: These styles now apply to the button container, which is a flex-child */
-  .mobile-terminal-actions-flex-container {
-    flex-shrink: 0; /* Prevent this section from shrinking */
-    border-top: 1px solid oklch(var(--panel-section-border-l) var(--panel-section-border-c) var(--panel-section-border-h) / 0.3);
-    padding: var(--space-xl); /* Outer padding for the button area */
-    display: flex;
-    gap: 0;
-    justify-content: space-between;
-    margin-top: var(--space-lg); /* Add some space between terminal and buttons */
-  }
-  
-  .mobile-terminal-actions-flex-container .scan-button-block {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xl);
-    padding: var(--space-xl);
-  }
-
-  .mobile-terminal-actions-flex-container .button-unit {
-    width: 100%;
-    height: 3rem;
   }
 }
 

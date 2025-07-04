@@ -1,0 +1,94 @@
+/* src/css/2-components/_mobile-terminal-drawer.css */
+/* NEW FILE: Contains styles exclusively for the mobile terminal drawer. */
+
+@media (max-width: 48rem) { /* 768px -> rem */
+  
+  #mobile-terminal-drawer {
+    display: flex; /* Overrides the default 'display: none' for mobile */
+    position: fixed;
+    inset: 0; /* Cover the whole screen */
+    width: 100%;
+    height: 100%;
+    z-index: var(--z-index-side-panel-expanded);
+    /* Start off-screen at the bottom, and slightly scaled down */
+    transform: translateY(105%) scale(0.95);
+    transform-origin: center center;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: transform;
+    flex-direction: column;
+    /* Padding is now inside the inner sections for better edge-to-edge look */
+    padding: 0;
+  }
+  
+  body.mobile-terminal-is-open #mobile-terminal-drawer {
+    transform: translateY(0) scale(1);
+  }
+
+  /* NEW: Close button for the terminal drawer */
+  #mobile-terminal-close-btn {
+      position: absolute;
+      top: var(--space-lg);
+      right: var(--space-lg);
+      z-index: 10; /* Ensure it's above terminal content */
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.4s ease-out 0.3s, transform 0.4s ease-out 0.3s;
+  }
+
+  body.mobile-terminal-is-open #mobile-terminal-close-btn {
+      opacity: 1;
+      transform: scale(1);
+  }
+
+  /* MODIFIED: The single panel-section now controls the layout of its children */
+  #mobile-terminal-drawer .terminal-content-section {
+    flex-grow: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column; /* Stack terminal and buttons vertically */
+    padding: var(--space-2xl) var(--space-lg) 0 var(--space-lg);
+  }
+
+  /* MODIFIED: The LCD container now grows to fill the space above the buttons */
+  #mobile-terminal-drawer .lcd-container {
+    flex-grow: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+  }
+  #mobile-terminal-drawer .lcd-scroll-wrapper {
+      flex-grow: 1;
+      min-height: 0;
+      overflow-y: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+  }
+  #mobile-terminal-drawer .lcd-scroll-wrapper::-webkit-scrollbar {
+      display: none;
+  }
+
+  /* MODIFIED: These styles now apply to the button container, which is a flex-child */
+  .mobile-terminal-actions-flex-container {
+    flex-shrink: 0; /* Prevent this section from shrinking */
+    border-top: 1px solid oklch(var(--panel-section-border-l) var(--panel-section-border-c) var(--panel-section-border-h) / 0.3);
+    padding: var(--space-xl); /* Outer padding for the button area */
+    display: flex;
+    gap: 0;
+    justify-content: space-between;
+    margin-top: var(--space-lg); /* Add some space between terminal and buttons */
+  }
+  
+  .mobile-terminal-actions-flex-container .scan-button-block {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    padding: var(--space-xl);
+  }
+
+  .mobile-terminal-actions-flex-container .button-unit {
+    width: 100%;
+    height: 3rem;
+  }
+}
