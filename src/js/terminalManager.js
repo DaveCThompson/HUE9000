@@ -6,6 +6,7 @@
 import { getMessage } from './terminalMessages.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js';
+import { ScanSequencePlayer } from './ScanSequencePlayer.js';
 import {
     TERMINAL_THINKING_DELAY_MIN_MS,
     TERMINAL_THINKING_DELAY_MAX_MS,
@@ -31,7 +32,9 @@ class TerminalManager {
         this._cursorElement = null;
         this._isFirstLine = true;
         this._currentProcessPromise = null;
-        
+        this._activeScanPlayer = null;
+        this._activeScanObserver = null; // For auto-scrolling
+
         this._commandHandlers = {
             'pause': this._handlePauseCommand.bind(this),
             'displayText': this._handleDisplayTextCommand.bind(this),
@@ -53,10 +56,8 @@ class TerminalManager {
         const dom = serviceLocator.get('domElements');
         const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
 
-        // Adapt to mobile or desktop container
         if (isMobile && document.getElementById('mobile-terminal-drawer')) {
             this._terminalContainerElement = document.getElementById('mobile-terminal-drawer');
-            // TARGET THE NEW, DEEPER ELEMENT FOR CONSISTENCY
             this._terminalContentElement = document.getElementById('mobile-terminal-output');
             this._scrollWrapperElement = this._terminalContainerElement?.querySelector('.lcd-scroll-wrapper');
         } else {
@@ -74,18 +75,34 @@ class TerminalManager {
     }
 
     _interruptAndClear() {
+        this._interruptCurrentTask(); // Use the task-specific interrupt
+        if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
+        this._isFirstLine = true;
+        this._setCursorState('idle');
+    }
+
+    _interruptCurrentTask() {
+        if (this._activeScanPlayer) {
+            this._activeScanPlayer.kill();
+            this._activeScanPlayer = null;
+        }
+        if (this._activeScanObserver) {
+            this._activeScanObserver.disconnect();
+            this._activeScanObserver = null;
+        }
+
         if (this._currentProcessPromise) {
             this._currentProcessPromise.abort = true;
             this._currentProcessPromise = null;
         }
+
         if (this._gsap) this._gsap.killTweensOf(this);
         this._messageQueue = [];
+        this._isProcessing = false;
 
-        if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
-        if (this._cursorElement && this._cursorElement.parentNode) this._cursorElement.parentNode.removeChild(this._cursorElement);
-        if (this._scrollWrapperElement) this._scrollWrapperElement.scrollTop = 0;
-
-        this._isFirstLine = true;
+        if (this._cursorElement && this._cursorElement.parentNode) {
+            this._cursorElement.parentNode.removeChild(this._cursorElement);
+        }
         this._setCursorState('idle');
     }
 
@@ -102,9 +119,13 @@ class TerminalManager {
             this._interruptAndClear();
             return;
         }
+
         if (messageObject.interrupt) {
             this._interruptAndClear();
+        } else if (messageObject.type === 'scan') {
+            this._interruptCurrentTask();
         }
+
         if (messageObject.coalesce) {
             const existingIndex = this._messageQueue.findIndex(m => m.coalesceId === messageObject.coalesceId);
             if (existingIndex > -1) {
@@ -124,6 +145,12 @@ class TerminalManager {
 
         while (this._messageQueue.length > 0) {
             const messageObject = this._messageQueue.shift();
+
+            if (messageObject.type === 'scan' && messageObject.scanConfig) {
+                await this._executeScanSequence(messageObject);
+                continue; 
+            }
+
             const processPromise = {};
             this._currentProcessPromise = processPromise;
 
@@ -156,13 +183,72 @@ class TerminalManager {
         }
     }
 
+    async _executeScanSequence(messageObject) {
+        const scanContainer = this._initiateScanProcess();
+
+        this._activeScanPlayer = new ScanSequencePlayer(scanContainer, messageObject.scanConfig);
+        try {
+            await this._activeScanPlayer.play();
+        } catch (error) {
+            if (error.message.indexOf('interrupted') === -1) {
+                console.error("Scan sequence failed:", error);
+            }
+            return; 
+        } finally {
+            this._activeScanPlayer = null;
+            if (this._activeScanObserver) {
+                this._activeScanObserver.disconnect();
+                this._activeScanObserver = null;
+            }
+        }
+        // The conclusion message is now solely handled by the ScanSequencePlayer.
+    }
+    
+    _initiateScanProcess() {
+        if (this._cursorElement) this._cursorElement.style.display = 'none';
+
+        const scanAnimationContainer = document.createElement('div');
+        scanAnimationContainer.className = 'scan-animation-container';
+        
+        this._terminalContentElement.appendChild(scanAnimationContainer);
+        
+        // Use a ResizeObserver to auto-scroll as the scan animation expands
+        this._activeScanObserver = new ResizeObserver(() => {
+            this._scrollTerminal(true);
+        });
+        this._activeScanObserver.observe(scanAnimationContainer);
+
+        this._scrollTerminal(true);
+        return scanAnimationContainer;
+    }
+
+    _logSystemMessage(message, type = 'success') {
+        if (!this._terminalContentElement) return;
+        const line = document.createElement('div');
+        line.className = `terminal-line line-${type}`;
+        const prompt = document.createElement('span');
+        prompt.textContent = '> ';
+        const text = document.createElement('span');
+        text.textContent = message;
+        line.append(prompt, text);
+        this._terminalContentElement.appendChild(line);
+        this._limitMaxLines();
+        this._scrollTerminal(true);
+    }
+
     _breakTextIntoVisualLines(text) {
         if (!text) return [''];
-        return text.split('\n'); // CSS handles all visual wrapping
+        return text.split('\n');
     }
 
     async _typeMessage(messageObject, promise) {
-        if (promise.abort || !messageObject.content) return;
+        if (promise.abort) return;
+        if (!messageObject.content) {
+            if (this._cursorElement) this._cursorElement.style.display = '';
+            return;
+        }
+
+        if (this._cursorElement) this._cursorElement.style.display = '';
 
         if (!this._isFirstLine && messageObject.formatting.spacingBefore > 0) {
             for (let i = 0; i < messageObject.formatting.spacingBefore; i++) {
@@ -174,7 +260,6 @@ class TerminalManager {
 
         for (let i = 0; i < allLogicalLines.length; i++) {
             if (promise.abort) return;
-
             const lineSegments = allLogicalLines[i];
             this._addNewLineAndPrepareForTyping(false, messageObject.className);
             
@@ -182,9 +267,7 @@ class TerminalManager {
             if (messageObject.type === 'startup') speedPerChar = TERMINAL_TYPING_SPEED_STARTUP_MS_PER_CHAR;
             else if (messageObject.type === 'block') speedPerChar = TERMINAL_TYPING_SPEED_BLOCK_MS_PER_CHAR;
             
-            const typeOptions = { flicker: messageObject.flicker || false };
-
-            await this._typeLine(lineSegments, speedPerChar, typeOptions, promise);
+            await this._typeLine(lineSegments, speedPerChar, {}, promise);
             if (promise.abort) return;
 
             if (i < allLogicalLines.length - 1) {
@@ -213,7 +296,7 @@ class TerminalManager {
         if (!this._currentLineElement || promise.abort) return;
         
         if (!Array.isArray(lineSegments) || lineSegments.length === 0) {
-            this._currentLineElement.innerHTML = ' '; // Non-breaking space for empty lines
+            this._currentLineElement.innerHTML = ' ';
             return;
         }
 
@@ -230,7 +313,6 @@ class TerminalManager {
             if (promise.abort) return;
             const segmentText = String(lineSegments[i]?.text || '');
             const targetSpan = segmentSpans[i];
-
             for (const char of segmentText) {
                 if (promise.abort) return;
                 targetSpan.textContent += char;
@@ -290,7 +372,6 @@ class TerminalManager {
         }
     }
     
-    // --- Command Handlers ---
     async _handlePauseCommand({ duration = 500 }, promise) {
         if (promise.abort) return;
         await new Promise(resolve => setTimeout(resolve, duration));
@@ -309,24 +390,18 @@ class TerminalManager {
     async _handleSpinnerCommand({ duration = 1500, text = 'PROCESSING...' }, promise) {
         if (promise.abort || !this._terminalContentElement) return;
         this._setCursorState('thinking');
-        
         const spinnerLine = document.createElement('div');
         spinnerLine.className = 'terminal-line terminal-spinner-line';
-        
         const spinnerCursor = this._cursorElement.cloneNode(true);
         spinnerCursor.classList.remove('is-blinking', 'is-solid');
         spinnerCursor.classList.add('is-thinking');
-        
         const textNode = document.createElement('span');
         textNode.textContent = text;
-        
         spinnerLine.appendChild(spinnerCursor);
         spinnerLine.appendChild(textNode);
         this._terminalContentElement.appendChild(spinnerLine);
         this._scrollTerminal();
-        
         await new Promise(resolve => setTimeout(resolve, duration));
-        
         if (!promise.abort && this._terminalContentElement.contains(spinnerLine)) {
             this._terminalContentElement.removeChild(spinnerLine);
         }

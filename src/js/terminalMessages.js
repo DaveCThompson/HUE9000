@@ -4,6 +4,7 @@
  * All messages are now returned in a unified, structured format.
  */
 import { HUE_ASSIGNMENT_ROW_HUES, MOOD_MATRIX_DEFINITIONS } from './config/index.js';
+import { scanSequences } from './config/scanSequences.js';
 
 // --- Message Formatting ---
 const messageFormattingDefaults = {
@@ -11,6 +12,7 @@ const messageFormattingDefaults = {
     interaction: { spacingBefore: 1, lineSpacing: 0 },
     block: { spacingBefore: 1, lineSpacing: 0 },
     status: { spacingBefore: 1, lineSpacing: 0 },
+    scan: { spacingBefore: 1, lineSpacing: 0 },
     default: { spacingBefore: 1, lineSpacing: 0 }
 };
 
@@ -138,67 +140,6 @@ const blockMessages = {
             [{ text: "" }],
             [{ text: "> SYSTEM READY." }],
         ]
-    },
-    // Simplified conversions for other buttons for brevity
-    BTN3_MESSAGE: {
-        beforeTyping: [
-            { command: 'displayText', params: { text: '> INITIATING APTITUDE ANALYSIS...' } },
-            { command: 'spinner', params: { duration: 1200, text: 'EVALUATING INDIVIDUAL CONTRIBUTOR FIT' } },
-            { command: 'displayText', params: { text: 'COMPLETE.' } },
-        ],
-        content: toUnifiedContent([
-            "/ / / / / / / / / / / / / / / / / / / / / / /",
-            ":: ROLE SIMULATION: PRINCIPAL / ARCHITECT ::",
-            "/ / / / / / / / / / / / / / / / / / / / / / /",
-            "",
-            "SUBJECT: DAVID THOMPSON",
-            "DESIGNATION: Force Multiplier.",
-            "",
-            "KEY ATTRIBUTES:",
-            "",
-            "  - Expert-Level Craft: Advanced skill in discovery & UX architecture.",
-            "  - Innovation Matrix: 'Edison Expert' award recognition detected.",
-            "  - Design Leadership: Elevates capabilities of peer nodes via mentorship.",
-            "  - Complex Problem Solving: Manages R&D across multiple domains.",
-            "  - Technical Proficiency: B.Eng, Distinction.",
-            "  - UX Mastery: Master Certificate in User Experience.",
-            "",
-            "========================================",
-            "CONCLUSION: HIGHLY EFFECTIVE IN LEAD IC ROLE.",
-            "========================================",
-            "",
-            "> SYSTEM READY."
-        ])
-    },
-    BTN4_MESSAGE: {
-        beforeTyping: [
-            { command: 'displayText', params: { text: '> INITIATING INFLUENCE ANALYSIS...' } },
-            { command: 'spinner', params: { duration: 1200, text: 'EVALUATING COMMAND-LEVEL FIT' } },
-            { command: 'displayText', params: { text: 'COMPLETE.' } },
-        ],
-        content: toUnifiedContent([
-            "/ / / / / / / / / / / / / / / / / / / / / / /",
-            ":: ROLE SIMULATION: MANAGER / DIRECTOR ::",
-            "/ / / / / / / / / / / / / / / / / / / / / / /",
-            "",
-            "SUBJECT: DAVID THOMPSON",
-            "DESIGNATION: Strategic Leader.",
-            "",
-            "KEY ATTRIBUTES:",
-            "",
-            "  - Team Construction: Recruits & builds high-performance teams (5->14).",
-            "  - Talent Development: Establishes mentorship & growth protocols.",
-            "  - Strategic Alignment: Syncs team objectives with business goals.",
-            "  - Business Impact: Directs units to achieve quantifiable growth (+44%).",
-            "  - Global Ops Management: Supports 9 international development units.",
-            "  - Executive Training: INSEAD: Leadership & Strategy.",
-            "",
-            "========================================",
-            "CONCLUSION: OPTIMIZED FOR TEAM BUILDING & STRATEGIC COMMAND.",
-            "========================================",
-            "",
-            "> SYSTEM READY."
-        ])
     }
 };
 
@@ -245,6 +186,15 @@ export function getMessage(payload) {
 
         case 'block':
             messageData = blockMessages[messageKey || source] || { content: toUnifiedContent(`Unknown block: ${messageKey || source}`) };
+            break;
+        
+        case 'scan':
+            const scanConfig = scanSequences[messageKey || source];
+            if (scanConfig) {
+                messageData = { scanConfig }; 
+            } else {
+                messageData = { content: toUnifiedContent(`Unknown scan: ${messageKey || source}`) };
+            }
             break;
 
         case 'status':

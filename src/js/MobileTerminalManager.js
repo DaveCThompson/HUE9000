@@ -133,14 +133,15 @@ export class MobileTerminalManager {
         const actionLower = action.toLowerCase();
         this.audioManager.play('buttonPress', true);
         let messageKey = '';
+        let type = 'block'; // Default type
         switch (actionLower) {
             case 'think': messageKey = 'BTN1_MESSAGE'; break;
             case 'build': messageKey = 'BTN2_MESSAGE'; break;
-            case 'craft': messageKey = 'BTN3_MESSAGE'; break;
-            case 'lead':  messageKey = 'BTN4_MESSAGE'; break;
+            case 'craft': messageKey = 'BTN3_SCAN'; type = 'scan'; break;
+            case 'lead':  messageKey = 'BTN4_SCAN'; type = 'scan'; break;
             default: return;
         }
-        appState.emit('requestTerminalMessage', { type: 'block', messageKey, interrupt: true });
+        appState.emit('requestTerminalMessage', { type, messageKey, interrupt: true });
     }
 
     toggle() {

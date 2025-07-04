@@ -10,3 +10,4 @@ export * from './preloader.js';
 export * from './sequences.js';
 export * from './terminal.js';
 export * from './ui.js';
+export * from './scanSequences.js';

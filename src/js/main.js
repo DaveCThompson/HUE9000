@@ -211,8 +211,8 @@ function setupEventListeners() {
             audioManager.play('buttonPress', true);
             if (ariaLabel === 'Think') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });
             else if (ariaLabel === 'Build') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE', interrupt: true });
-            else if (ariaLabel === 'Craft') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN3_MESSAGE', interrupt: true });
-            else if (ariaLabel === 'Lead') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN4_MESSAGE', interrupt: true });
+            else if (ariaLabel === 'Craft') appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN3_SCAN' });
+            else if (ariaLabel === 'Lead') appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN4_SCAN' });
         }
     });
 

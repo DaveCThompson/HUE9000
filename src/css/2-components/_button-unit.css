@@ -431,3 +431,12 @@
     animation: idleLightDrift var(--light-idle-duration) var(--light-idle-delay) ease-in-out infinite forwards;
     will-change: opacity;
 }
+
+/* --- Scan State Visual Lockout --- */
+body.is-scan-active .scan-button-block .button-unit {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+    filter: grayscale(50%);
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
