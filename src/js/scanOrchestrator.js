@@ -6,84 +6,93 @@
  */
 import { createActor } from 'xstate';
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js'; // ADDED: Import appState for event emitting
 import { createScanMachine } from './scanFsm.js';
-import { renderBarFill } from './renderers/barFill.js';
-import { renderTypeWindow } from './renderers/typeWindow.js';
-import { rendererRegistry } from './renderers/index.js';
+import { rendererRegistry } from './scanRenderers.js';
 import { fromPromise } from 'xstate';
 
 export class ScanOrchestrator {
     constructor() {
         this.gsap = serviceLocator.get('gsap');
-        this.terminalManager = serviceLocator.get('terminalManager');
         this.activeScanActor = null;
-        this.onCompleteCallback = null;
-
-        this._registerRenderers();
         this._handleEscapeKey = this._handleEscapeKey.bind(this);
     }
 
-    _registerRenderers() {
-        rendererRegistry.register('barFill', renderBarFill);
-        rendererRegistry.register('typeWindow', renderTypeWindow);
-    }
-
-    async startScan(scanConfig, onCompleteCallback) {
+    /**
+     * @method startScan
+     * @description Simplified method that receives a container and orchestrates the scan within it.
+     * This is now a fire-and-forget method that signals completion via a global event.
+     * @param {object} scanConfig - The configuration for the scan sequence.
+     * @param {HTMLElement} scanContainer - The DOM element to render the scan UI into.
+     */
+    async startScan(scanConfig, scanContainer) {
+        console.log('%c[DEBUG] Entered ScanOrchestrator.startScan()', 'color: lightblue');
         if (this.activeScanActor) {
             console.warn("ScanOrchestrator: A scan is already in progress. Aborting new request.");
             return;
         }
-        this.onCompleteCallback = onCompleteCallback;
-
-        const scanContainer = await this.terminalManager.prepareForTakeover();
         if (!scanContainer) {
-            console.error("ScanOrchestrator: Failed to get scan container from TerminalManager.");
-            this._cleanup(false);
+            console.error("Scan container not provided to ScanOrchestrator.");
+            appState.emit('scanComplete', { wasAborted: true }); // Emit event to unlock UI on error
             return;
         }
         
-        const { uiElements, subJobTargets } = this._createUI(scanContainer, scanConfig);
+        try {
+            const { uiElements, subJobTargets } = this._createUI(scanContainer, scanConfig);
 
-        const machineImplementation = {
-            actors: {
-                gsap: this.gsap,
-                runIntroAnimation: fromPromise(({ input }) => this._runIntroAnimation(input)),
-                runOutroAnimation: fromPromise(({ input }) => this._runOutroAnimation(input))
-            },
-            actions: {
-                logError: ({ context, event }) => {
-                    console.error("Scan FSM Error:", event.data, "Context:", context);
+            const machineImplementation = {
+                actors: {
+                    gsap: this.gsap,
+                    runIntroAnimation: fromPromise(({ input }) => this._runIntroAnimation(input)),
+                    runOutroAnimation: fromPromise(({ input }) => this._runOutroAnimation(input))
+                },
+                actions: {
+                    logError: ({ context, event }) => {
+                        console.error("Scan FSM Error:", event.data, "Context:", context);
+                    }
                 }
-            }
-        };
+            };
 
-        const scanMachine = createScanMachine(scanConfig, machineImplementation);
-        
-        this.activeScanActor = createActor(scanMachine);
-        
-        this.activeScanActor.subscribe(snapshot => {
-            if (snapshot.event) {
-                if (snapshot.event.type === 'xstate.done.actor.job-renderer-0') this._updateA11yRegion(`${snapshot.context.subJobs[0].title} complete.`);
-                if (snapshot.event.type === 'xstate.done.actor.job-renderer-1') this._updateA11yRegion(`${snapshot.context.subJobs[1].title} complete.`);
-                if (snapshot.event.type === 'xstate.done.actor.job-renderer-2') this._updateA11yRegion(`${snapshot.context.subJobs[2].title} complete.`);
-            }
+            const scanMachine = createScanMachine(scanConfig, machineImplementation);
+            this.activeScanActor = createActor(scanMachine);
             
-            if (snapshot.done) {
-                this._cleanup(snapshot.value === 'aborted');
-            }
-        });
+            this.activeScanActor.subscribe(snapshot => {
+                // MODIFIED: More detailed logging to diagnose the deadlock.
+                console.log(`%c[FSM_SUB] Snapshot received. Value:`, 'color: cyan;', snapshot.value);
+                console.log(`%c[FSM_SUB] Is snapshot.done? ->`, 'color: cyan; font-weight: bold;', snapshot.done);
+                // console.log('%c[FSM_SUB] Full snapshot object:', 'color: cyan;', snapshot);
 
-        document.addEventListener('keydown', this._handleEscapeKey);
-        this._updateA11yRegion(`Evaluation started for ${scanConfig.scanTarget}.`);
+                // ROBUSTNESS FIX: Check for final state using .matches() as a fallback to .done
+                const isDone = snapshot.done || snapshot.matches('completed') || snapshot.matches('aborted') || snapshot.matches('error');
 
-        this.activeScanActor.start();
-        this.activeScanActor.send({
-            type: 'START',
-            input: {
-                ui: uiElements,
-                subJobTargets: subJobTargets
-            }
-        });
+                if (isDone) {
+                    console.log('%c[Orchestrator] ✅ Final state detected. Entering cleanup.', 'color: green; font-weight: bold;');
+                    const wasAborted = snapshot.matches('aborted');
+                    
+                    this._cleanup();
+                    
+                    console.log(`%c[Orchestrator] Emitting 'scanComplete' event with payload: { wasAborted: ${wasAborted} }`, 'color: orange; font-weight: bold;');
+                    appState.emit('scanComplete', { wasAborted });
+                }
+            });
+
+            document.addEventListener('keydown', this._handleEscapeKey);
+            this._updateA11yRegion(`Evaluation started for ${scanConfig.scanTarget}.`);
+
+            this.activeScanActor.start();
+            this.activeScanActor.send({
+                type: 'START',
+                input: {
+                    ui: uiElements,
+                    subJobTargets: subJobTargets
+                }
+            });
+            console.log('%c[DEBUG] Exiting ScanOrchestrator.startScan() after starting actor.', 'color: lightblue');
+        } catch (error) {
+            console.error('%c[DEBUG] CRITICAL ERROR in ScanOrchestrator.startScan:', 'color: red; font-weight: bold;', error);
+            this._cleanup();
+            appState.emit('scanComplete', { wasAborted: true }); // Ensure UI unlocks on any failure
+        }
     }
 
     _handleEscapeKey(event) {
@@ -143,22 +152,29 @@ export class ScanOrchestrator {
     }
     
     _runIntroAnimation({ ui }) {
-        return new Promise(resolve => {
-            const headerElements = [
-                ui.mainTitleContainer,
-                ui.scanTargetContainer,
-                ui.progressContainer,
-                ui.subJobsContainer
-            ];
-            this.gsap.from(headerElements, {
-                autoAlpha: 0,
-                y: 10,
-                stagger: 0.15,
-                duration: 0.4,
-                delay: 0.1,
-                onComplete: resolve
+        // ADDED: Diagnostic logging and error handling
+        console.log('%c[FSM_ACTOR] >>>> _runIntroAnimation INVOKED', 'color: magenta; font-weight: bold;');
+        try {
+            return new Promise(resolve => {
+                const headerElements = [
+                    ui.mainTitleContainer,
+                    ui.scanTargetContainer,
+                    ui.progressContainer,
+                    ui.subJobsContainer
+                ];
+                this.gsap.from(headerElements, {
+                    autoAlpha: 0,
+                    y: 10,
+                    stagger: 0.15,
+                    duration: 0.4,
+                    delay: 0.1,
+                    onComplete: resolve
+                });
             });
-        });
+        } catch (e) {
+            console.error('%c[FSM_ACTOR] >>>> FATAL: Synchronous error in _runIntroAnimation', 'color: red; font-weight: bold;', e);
+            return Promise.reject(e); // Ensure the actor receives a rejection
+        }
     }
 
     _runOutroAnimation({ ui, conclusionMessage }) {
@@ -186,20 +202,16 @@ export class ScanOrchestrator {
         });
     }
 
-    async _cleanup(wasAborted) {
+    _cleanup() {
+        console.log('%c[DEBUG] Entered ScanOrchestrator._cleanup()', 'color: lightblue');
         document.removeEventListener('keydown', this._handleEscapeKey);
-        
-        await this.terminalManager.cleanupAfterScan(wasAborted);
-
-        // This must be called AFTER the UI has been cleaned up.
         document.body.classList.remove('is-scan-active');
-
-        if (this.onCompleteCallback) {
-            this.onCompleteCallback(wasAborted);
+        if (this.activeScanActor) {
+            // Unsubscribe all listeners before stopping to prevent race conditions on the final snapshot
+            this.activeScanActor.stop();
         }
-        
         this.activeScanActor = null;
-        this.onCompleteCallback = null;
+        console.log('%c[DEBUG] Exited ScanOrchestrator._cleanup()', 'color: lightblue');
     }
 
     _createStyledElement(tag, className, textContent = '') {

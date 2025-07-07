@@ -25,39 +25,56 @@ HUE9000_Project/
 │   │   │   ├── terminal.js
 │   │   │   └── ui.js
 │   │   │
-│   │   ├── AmbientAnimationManager.js
-│   │   ├── animationUtils.js
-│   │   ├── appState.js
+│   │   ├── AnimationManager.js
+│   │   ├── AppState.js
 │   │   ├── AudioManager.js
 │   │   ├── Button.js
 │   │   ├── buttonManager.js
+│   │   ├── DebugManager.js
 │   │   ├── DialController.js
 │   │   ├── dialManager.js
 │   │   ├── DisruptionManager.js
 │   │   ├── DOMManager.js
 │   │   ├── DynamicStyleManager.js
 │   │   ├── EventEmitter.js
+│   │   ├── HapticFeedbackManager.js
 │   │   ├── IntensityDisplay.js
 │   │   ├── IntensityDisplayManager.js
 │   │   ├── LcdUpdater.js
 │   │   ├── lensManager.js
 │   │   ├── main.js             # Application entry point
+│   │   ├── MobileColorSlider.js
+│   │   ├── MobileInteraction.js
+│   │   ├── MobileTerminalManager.js
 │   │   ├── MoodMatrix.js
 │   │   ├── MoodMatrixManager.js
 │   │   ├── MusicController.js
 │   │   ├── PhaseRunner.js
 │   │   ├── preloader.js
-│   │   ├── resistiveShutdownController.js
-│   │   ├── serviceLocator.js
+│   │   ├── ResistiveShutdownController.js
+│   │   ├── ScanSim.js
+│   │   ├── scanRenderers.js
+│   │   ├── scanSimulator.js
+│   │   ├── ServiceLocator.js
 │   │   ├── sidePanelManager.js
-│   │   ├── startupSequenceManager.js
 │   │   ├── startupMachine.js   # XState FSM definition for startup
-│   │   ├── startupPhase0.js    # (Declarative configs for each startup phase)
-│   │   ├── ...
-│   │   ├── startupPhase12.js
 │   │   ├── startupMobile.js
-│   │   ├── terminalManager.js
-│   │   ├── terminalMessages.js
+│   │   ├── startupPhase0.js
+│   │   ├── startupPhase1.js
+│   │   ├── startupPhase2.js
+│   │   ├── startupPhase3.js
+│   │   ├── startupPhase4.js
+│   │   ├── startupPhase5.js
+│   │   ├── startupPhase6.js
+│   │   ├── startupPhase7.js
+│   │   ├── startupPhase8.js
+│   │   ├── startupPhase9.js
+│   │   ├── startupPhase10.js
+│   │   ├── startupPhase11.js
+│   │   ├── startupPhase12.js
+│   │   ├── StartupSequenceManager.js
+│   │   ├── TerminalManager.js
+│   │   ├── TerminalMessages.js
 │   │   ├── ThemeManager.js
 │   │   └── utils.js
 │   │
@@ -84,8 +101,12 @@ HUE9000_Project/
 │       │   ├── _lens-outer-glow.css
 │       │   ├── _lens-super-glow.css
 │       │   ├── _logo.css
+│       │   ├── _mobile-color-slider.css
+│       │   ├── _mobile-controls-overlay.css
+│       │   ├── _mobile-terminal-drawer.css
 │       │   ├── _panel-bezel.css
 │       │   ├── _preloader.css
+│       │   ├── _scan-sequence.css
 │       │   ├── _side-panels.css
 │       │   └── _terminal.css
 │       │

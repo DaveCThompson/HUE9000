@@ -45,63 +45,38 @@ class TerminalManager {
         this._gsap = serviceLocator.get('gsap');
         this._setupDOM();
         appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
+        // ADDED: Subscribe to the global scan completion event.
+        appState.subscribe('scanComplete', ({ wasAborted }) => this.concludeScan(wasAborted));
     }
 
     reset() {
         this._interruptAndClear();
     }
 
-    // --- Public Command API for ScanOrchestrator ---
+    async concludeScan(wasAborted) {
+        console.log('%c[TerminalManager] ✅ Event "scanComplete" received! Running concludeScan().', 'color: green; font-weight: bold;', { wasAborted });
+        // FIX: The scan content should persist. We no longer clean it up here.
+        // The responsibility for clearing the old scan is now in _initiateScan.
+        
+        console.log('%c[TerminalManager] Current _isTakeoverActive state:', 'color: green;', this._isTakeoverActive);
+        this._isTakeoverActive = false;
+        console.log('%c[TerminalManager] Set _isTakeoverActive to:', 'color: green; font-weight: bold;', this._isTakeoverActive);
 
-    async prepareForTakeover() {
-        this._isTakeoverActive = true;
-        this._interruptCurrentTask();
-        this._setCursorState('thinking');
-
-        // Create a dedicated container for the scan UI
-        if (!this._scanContainerElement) {
-            this._scanContainerElement = document.createElement('div');
-            this._scanContainerElement.className = 'scan-animation-container';
+        if (wasAborted) {
+            appState.emit('requestTerminalMessage', {
+                type: 'status',
+                source: 'scan',
+                messageKey: 'SCAN_ABORTED',
+                interrupt: true
+            });
         }
         
-        await new Promise(resolve => {
-            const tl = this._gsap.timeline({ onComplete: resolve });
-            tl.to(this._terminalContentElement.children, {
-                autoAlpha: 0.5,
-                duration: 0.1,
-            });
-            tl.call(() => {
-                // Clear content and append the scan container
-                this._terminalContentElement.innerHTML = '';
-                this._terminalContentElement.appendChild(this._scanContainerElement);
-            });
-             tl.set(this._terminalContentElement, { autoAlpha: 1 });
-        });
-
-        return this._scanContainerElement;
+        this._processQueue();
+        console.log('%c[TerminalManager] Exited concludeScan() and started queue processing.', 'color: green;');
     }
 
-    cleanupAfterScan(wasAborted) {
-        return new Promise(resolve => {
-            if (this._scanContainerElement && this._scanContainerElement.parentNode) {
-                this._gsap.to(this._scanContainerElement, {
-                    autoAlpha: 0,
-                    duration: 0.3,
-                    onComplete: () => {
-                        this._scanContainerElement.innerHTML = '';
-                        resolve();
-                    }
-                });
-            } else {
-                resolve();
-            }
-        });
-    }
-
-    getScanContainer() {
-        return this._scanContainerElement;
-    }
-
+    // REMOVED: The _cleanupScanContainer function was the source of the bug.
+    // Its logic is no longer needed as _initiateScan now handles preparation.
 
     // --- Internal Methods ---
 
@@ -152,7 +127,6 @@ class TerminalManager {
 
     _handleRequestTerminalMessage(payload) {
         if (this._isTakeoverActive && payload.type !== 'scan') {
-            // Queue non-scan messages if a scan is active
             this._messageQueue.push({ ...payload, ...getMessage(payload) });
             return;
         }
@@ -193,41 +167,49 @@ class TerminalManager {
     }
 
     async _initiateScan(payload) {
-        if (this._isTakeoverActive) return; // Prevent concurrent scans
+        if (this._isTakeoverActive) return;
 
         this._isTakeoverActive = true;
         this._interruptCurrentTask();
+        this._setCursorState('thinking');
 
         const scanConfig = getMessage(payload);
         if (!scanConfig || !scanConfig.subJobs) {
             console.error("Invalid or missing scan configuration for payload:", payload);
-            this._onScanComplete();
+            await this.concludeScan(true); // Still clean up on config error
             return;
         }
-
-        const scanOrchestrator = serviceLocator.get('scanOrchestrator');
-        await scanOrchestrator.startScan(scanConfig, (wasAborted) => this._onScanComplete(wasAborted));
-    }
-
-    _onScanComplete(wasAborted) {
-        this._isTakeoverActive = false;
-        if (wasAborted) {
-            appState.emit('requestTerminalMessage', {
-                type: 'status',
-                source: 'scan',
-                messageKey: 'SCAN_ABORTED',
-                interrupt: true
-            });
+        
+        // FIX: Re-architected preparation logic for robustness.
+        // Always clear the terminal and create a fresh scan container for each run.
+        if (this._terminalContentElement) {
+            this._terminalContentElement.innerHTML = '';
         }
-        this._processQueue();
+
+        this._scanContainerElement = document.createElement('div');
+        this._scanContainerElement.className = 'scan-animation-container';
+        
+        // Ensure the container is visible. This fixes the bug where a second
+        // scan would be invisible.
+        this._gsap.set(this._scanContainerElement, { autoAlpha: 1 });
+
+        if (this._terminalContentElement) {
+            this._terminalContentElement.appendChild(this._scanContainerElement);
+        }
+        
+        const scanOrchestrator = serviceLocator.get('scanOrchestrator');
+        // Fire-and-forget. Cleanup is handled by the 'scanComplete' event listener.
+        scanOrchestrator.startScan(scanConfig, this._scanContainerElement);
     }
 
     async _processQueue() {
-        if (this._isProcessing || this._isTakeoverActive) return;
+        if (this._isProcessing || this._isTakeoverActive) {
+            return;
+        }
         this._isProcessing = true;
 
         while (this._messageQueue.length > 0) {
-            if (this._isTakeoverActive) break; // Re-check before processing next item
+            if (this._isTakeoverActive) break; 
             
             const messageObject = this._messageQueue.shift();
 

@@ -212,7 +212,7 @@ function setupEventListeners() {
         else if (button.config.type === 'action') {
             audioManager.play('buttonPress', true);
             const actionLabel = button.getElement().getAttribute('aria-label');
-
+            
             switch (actionLabel) {
                 case 'Think':
                     appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });

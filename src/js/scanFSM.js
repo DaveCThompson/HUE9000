@@ -3,10 +3,10 @@
  * @description Defines the hierarchical XState machine for managing a scan sequence.
  */
 import { createMachine, fromPromise, assign } from 'xstate';
-import { rendererRegistry } from './renderers/index.js';
+import { rendererRegistry } from './scanRenderers.js'; // MODIFIED: Corrected import path to fix build error
 
 /**
- * Creates and configures the scan sequence finite state machine.
+ * Creates and in-configures the scan sequence finite state machine.
  * @param {object} config - The specific scan sequence configuration.
  * @param {object} implementation - An object containing implementations for actions, actors (services), etc.
  * @returns {object} An XState machine instance.
