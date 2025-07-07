@@ -27,7 +27,7 @@ export function renderBarFill(target, jobConfig, gsap) {
 
                 const barFill = document.createElement('div');
                 barFill.className = 'scan-progressive-bar-fill';
-                barFill.style.backgroundColor = `oklch(0.85 0.20 ${jobConfig.hue})`;
+                // MODIFIED: Removed inline style for background-color. It's now handled by CSS.
                 
                 barWrapper.appendChild(barFill);
                 const lineWrapper = document.createElement('div');
@@ -63,7 +63,7 @@ export function renderBarFill(target, jobConfig, gsap) {
 
                 const barFill = document.createElement('div');
                 barFill.className = 'scan-progressive-bar-fill';
-                barFill.style.backgroundColor = `oklch(0.85 0.20 ${jobConfig.hue})`;
+                // MODIFIED: Removed inline style for background-color.
                 barFill.style.width = '100%';
                 
                 barWrapper.appendChild(barFill);

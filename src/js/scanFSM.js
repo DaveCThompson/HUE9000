@@ -27,8 +27,10 @@ export function createScanMachine(config, implementation) {
                 ({ context }) => {
                     const { ui, subJobs, subJobTargets } = context;
                     const jobUI = subJobTargets[index];
-                    if (jobUI.el.classList.contains('is-queued')) {
-                        jobUI.el.classList.remove('is-queued');
+                    // MODIFIED: Check the wrapper for 'is-queued' and reveal it.
+                    if (jobUI.wrapper.classList.contains('is-queued')) {
+                        jobUI.wrapper.classList.remove('is-queued');
+                        // MODIFIED: Add 'is-active' to the title element for styling.
                         jobUI.el.classList.add('is-active');
                         jobUI.spinner.textContent = 'progress_activity';
                         gsap.set([ui.scanTargetName, jobUI.spinner, jobUI.title], { color: `oklch(0.85 0.20 ${subJobs[index].hue})` });
@@ -52,6 +54,7 @@ export function createScanMachine(config, implementation) {
                         ({ context }) => {
                             const { ui, subJobs, subJobTargets } = context;
                             const jobUI = subJobTargets[index];
+                            // MODIFIED: Check the title element for 'is-active' state.
                             if (jobUI.el.classList.contains('is-active')) {
                                 jobUI.el.classList.remove('is-active');
                                 jobUI.el.classList.add('is-complete');

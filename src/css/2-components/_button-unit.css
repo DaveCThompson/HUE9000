@@ -413,6 +413,17 @@
     background-color: oklch(0.80 0.16 50);
 }
 
+.button-unit.is-flashing-tint-red::before {
+    background-color: oklch(0.7 0.28 25 / 0.6);
+}
+.button-unit.is-flashing-tint-red {
+    border-color: oklch(0.7 0.28 25 / 0.8);
+}
+.button-unit.is-flashing-tint-red .light {
+    background-color: oklch(0.7 0.28 25);
+}
+
+
 /* --- HIGH-PERFORMANCE IDLE LIGHT DRIFT --- */
 /* UPDATED: New keyframes driven by base and variation. */
 @keyframes idleLightDrift {

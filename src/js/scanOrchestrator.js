@@ -107,6 +107,8 @@ export class ScanOrchestrator {
 
         const elements = {
             container,
+            // NEW: Wrapper for the header elements
+            headerGroup: this._createStyledElement('div', 'scan-header-group'),
             mainTitleContainer: this._createStyledElement('div', 'scan-main-title-container'),
             progressContainer: this._createStyledElement('div', 'scan-progress-container'),
             scanTargetContainer: this._createStyledElement('div', 'scan-target-container'),
@@ -128,18 +130,23 @@ export class ScanOrchestrator {
         elements.scanTargetName = this._createStyledElement('span', 'scan-target-name', context.scanTarget);
         elements.scanTargetContainer.append(elements.scanTargetLabel, elements.scanTargetName);
 
-        container.append(
-            elements.a11yLiveRegion,
+        // Append header elements to the new group
+        elements.headerGroup.append(
             elements.mainTitleContainer,
             elements.scanTargetContainer,
-            elements.progressContainer,
+            elements.progressContainer
+        );
+
+        container.append(
+            elements.a11yLiveRegion,
+            elements.headerGroup, // Append the group instead of individual elements
             elements.subJobsContainer
         );
 
         const subJobTargets = [];
         context.subJobs.forEach(job => {
-            const jobWrapper = this._createStyledElement('div', 'scan-job-wrapper');
-            const jobEl = this._createStyledElement('div', 'scan-sub-job is-queued');
+            const jobWrapper = this._createStyledElement('div', 'scan-job-wrapper is-queued');
+            const jobEl = this._createStyledElement('div', 'scan-sub-job');
             const spinner = this._createStyledElement('span', 'material-symbols-outlined scan-spinner', 'radio_button_unchecked');
             const title = this._createStyledElement('span', 'scan-sub-job-title', job.title);
             jobEl.append(spinner, title);
@@ -156,10 +163,9 @@ export class ScanOrchestrator {
         console.log('%c[FSM_ACTOR] >>>> _runIntroAnimation INVOKED', 'color: magenta; font-weight: bold;');
         try {
             return new Promise(resolve => {
+                // MODIFIED: Target the new header group for a smoother animation
                 const headerElements = [
-                    ui.mainTitleContainer,
-                    ui.scanTargetContainer,
-                    ui.progressContainer,
+                    ui.headerGroup,
                     ui.subJobsContainer
                 ];
                 this.gsap.from(headerElements, {

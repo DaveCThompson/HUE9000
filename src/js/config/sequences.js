@@ -69,6 +69,7 @@ export const selectorsForDimExitAnimation = [
  * @typedef {object} ResistiveShutdownStageParams
  * @property {string} BUTTON_FLASH_PROFILE_NAME - The flicker profile for the power button.
  * @property {string} BUTTON_FLASH_GLOW_COLOR - The temporary glow color for the button flash.
+ * @property {string} BUTTON_TINT_CLASS - The temporary CSS class for the button tint flash.
  * @property {string} TERMINAL_MESSAGE_KEY - The key for the terminal message for this stage.
  * @property {number} LENS_ANIM_DURATION_S - The duration of the lens animation for this stage.
  * @property {string} DIAL_A_HUE_TARGET_MODE - The targeting mode for Dial A's hue.
@@ -92,6 +93,7 @@ export const RESISTIVE_SHUTDOWN_PARAMS = {
     STAGE_1: {
         BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistYellow',
         BUTTON_FLASH_GLOW_COLOR: 'oklch(0.85 0.15 85)',
+        BUTTON_TINT_CLASS: 'is-flashing-tint-yellow',
         TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S1',
         LENS_ANIM_DURATION_S: 0.75,
         DIAL_A_HUE_TARGET_MODE: 'absolute',
@@ -103,6 +105,7 @@ export const RESISTIVE_SHUTDOWN_PARAMS = {
     STAGE_2: {
         BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistOrange',
         BUTTON_FLASH_GLOW_COLOR: 'oklch(0.75 0.16 50)',
+        BUTTON_TINT_CLASS: 'is-flashing-tint-orange',
         TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S2',
         LENS_ANIM_DURATION_S: 0.75,
         DIAL_A_HUE_TARGET_MODE: 'absolute',
@@ -114,6 +117,7 @@ export const RESISTIVE_SHUTDOWN_PARAMS = {
     STAGE_3: {
         BUTTON_FLASH_PROFILE_NAME: 'buttonFlickerResistRedThenSolid',
         BUTTON_FLASH_GLOW_COLOR: 'oklch(0.65 0.22 25)',
+        BUTTON_TINT_CLASS: 'is-flashing-tint-red',
         TERMINAL_MESSAGE_KEY: 'RESIST_SHUTDOWN_S3',
         LENS_ANIM_DURATION_S: 1.0,
         DIAL_A_HUE_TARGET_MODE: 'absolute',

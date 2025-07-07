@@ -7,11 +7,13 @@ import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // IMPORT appState directly
 import { clamp } from './utils.js';
 import { RESISTIVE_SHUTDOWN_PARAMS, DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG, HUE_ASSIGNMENT_ROW_HUES } from './config/index.js';
+import { ButtonStates } from './buttonManager.js';
 
 class ResistiveShutdownController {
     constructor() {
         this.buttonManager = null;
         this.audioManager = null;
+        this.isTransitioning = false; // Flag to prevent rapid clicks
         this.debug = true;
     }
 
@@ -27,6 +29,11 @@ class ResistiveShutdownController {
      * This method is called from the main.js event listener when the power off button is clicked.
      */
     handlePowerOffClick() {
+        // Guard against interaction while an animation is playing
+        if (this.isTransitioning) {
+            return;
+        }
+        
         // First, handle the click if the button is already fully locked down.
         if (appState.getIsMainPowerOffButtonDisabled()) {
             // if (this.debug) console.log(`[RSC] MAIN PWR OFF is disabled. Playing final 'powerDown' sound.`);
@@ -58,15 +65,21 @@ class ResistiveShutdownController {
         // if (this.debug) console.log(`[RSC] Stage changed to ${newStage}`);
 
         if (newStage === 0) {
+            // This handles the reset flow.
             if (appState.getIsMainPowerOffButtonDisabled()) {
                 appState.setIsMainPowerOffButtonDisabled(false);
             }
             return;
         }
+        
+        this.isTransitioning = true;
 
         const stageKey = `STAGE_${newStage}`;
         const stageParams = RESISTIVE_SHUTDOWN_PARAMS[stageKey];
-        if (!stageParams) return;
+        if (!stageParams) {
+            this.isTransitioning = false;
+            return;
+        }
 
         if (stageParams.TERMINAL_MESSAGE_KEY) {
             appState.emit('requestTerminalMessage', {
@@ -75,26 +88,33 @@ class ResistiveShutdownController {
             });
         }
 
+        let flickerPromise = Promise.resolve();
+
         // Apply button flash effect
         if (stageParams.BUTTON_FLASH_PROFILE_NAME) {
-            let targetState = newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE
-                ? 'is-permanently-disabled'
-                : 'is-energized is-selected';
+            const targetState = newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE
+                ? ButtonStates.PERMANENTLY_DISABLED
+                : ButtonStates.ENERGIZED_UNSELECTED;
 
-            this.buttonManager.playFlickerToState(this.buttonManager.mainPowerOffButtonInstance.element, targetState, {
+            const flickerResult = this.buttonManager.playFlickerToState(this.buttonManager.mainPowerOffButtonInstance.element, targetState, {
                 profileName: stageParams.BUTTON_FLASH_PROFILE_NAME,
                 tempGlowColor: stageParams.BUTTON_FLASH_GLOW_COLOR,
-                tempTintColorClass: stageParams.BUTTON_TINT_CLASS, // Added tint class
-                isButtonSelectedOverride: true // The off button is visually "selected" in this state
+                tempTintColorClass: stageParams.BUTTON_TINT_CLASS,
+                isButtonSelectedOverride: true // The off button is visually "selected" during this sequence
             });
+            flickerPromise = flickerResult.completionPromise;
         }
 
         this._updateLensAndDialTargets(stageParams);
         this._updateHueAssignmentButtons(stageParams);
 
-        if (newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
-            appState.setIsMainPowerOffButtonDisabled(true);
-        }
+        // Wait for the flicker to complete before allowing further interaction.
+        flickerPromise.then(() => {
+            if (newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
+                appState.setIsMainPowerOffButtonDisabled(true);
+            }
+            this.isTransitioning = false;
+        });
     }
 
     _updateLensAndDialTargets(stageParams) {
@@ -127,10 +147,6 @@ class ResistiveShutdownController {
             rotation: dialBRotation,
             targetRotation: dialBRotation,
         });
-
-        // if (this.debug) {
-        //     console.log(`[RSC _updateLensAndDialTargets] Synced state. New Lens Power: ${targetPower.toFixed(3)}. New Dial B Hue: ${dialBHue.toFixed(2)}`);
-        // }
     }
 
     _updateHueAssignmentButtons(stageParams) {

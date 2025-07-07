@@ -139,6 +139,11 @@ export class ButtonManager extends EventEmitter {
             return;
         }
 
+        if (buttonInstance.isPermanentlyDisabled()) {
+            appState.emit('buttonInteracted', { button: buttonInstance });
+            return;
+        }
+        
         if (groupId === 'system-power' && value === 'off') {
             buttonInstance.setPressedVisuals(true); 
             appState.emit('buttonInteracted', { button: buttonInstance }); 
@@ -272,19 +277,6 @@ export class ButtonManager extends EventEmitter {
             this.setGroupSelected('system-power', 'on');
             return;
         }
-
-        const stageKey = `STAGE_${newStage}`;
-        const stageParams = RESISTIVE_SHUTDOWN_PARAMS[stageKey];
-        if (!stageParams || !stageParams.BUTTON_FLASH_PROFILE_NAME) return;
-
-        let targetState = newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE
-            ? ButtonStates.PERMANENTLY_DISABLED
-            : ButtonStates.ENERGIZED_UNSELECTED;
-
-        this.playFlickerToState(this.mainPowerOffButtonInstance.element, targetState, {
-            profileName: stageParams.BUTTON_FLASH_PROFILE_NAME,
-            tempGlowColor: stageParams.BUTTON_FLASH_GLOW_COLOR,
-        });
     }
 
     handleMainPowerOffButtonDisabledChange({ isDisabled }) {
