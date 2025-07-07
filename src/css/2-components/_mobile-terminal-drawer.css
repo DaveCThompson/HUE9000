@@ -47,7 +47,8 @@
     overflow: hidden;
     display: flex;
     flex-direction: column; /* Stack terminal and buttons vertically */
-    padding: var(--space-2xl) var(--space-lg) 0 var(--space-lg);
+    /* FIX: Restore bottom padding to provide space at the bottom of the screen */
+    padding: var(--space-xl) var(--space-xl) var(--space-xl) var(--space-xl);
   }
 
   /* MODIFIED: The LCD container now grows to fill the space above the buttons */
@@ -71,20 +72,29 @@
   /* MODIFIED: These styles now apply to the button container, which is a flex-child */
   .mobile-terminal-actions-flex-container {
     flex-shrink: 0; /* Prevent this section from shrinking */
-    border-top: 1px solid oklch(var(--panel-section-border-l) var(--panel-section-border-c) var(--panel-section-border-h) / 0.3);
-    padding: var(--space-xl); /* Outer padding for the button area */
+    padding: 0; /* Keep this at 0 to allow children to span edge-to-edge */
     display: flex;
     gap: 0;
-    justify-content: space-between;
-    margin-top: var(--space-lg); /* Add some space between terminal and buttons */
+    margin-top: var(--space-xl);
   }
   
+  /* MODIFICATION: Keep this rule but remove the generic padding property */
   .mobile-terminal-actions-flex-container .scan-button-block {
     flex: 1 1 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-xl);
-    padding: var(--space-xl);
+    /* The generic `padding` property is removed from here */
+  }
+
+  /* NEW: Add specific padding rules to achieve the seamless join */
+  .mobile-terminal-actions-flex-container .joined-block-pair__item--left {
+      /* Padding: Top, Right, Bottom, Left */
+      padding: var(--space-xl) 0 var(--space-xl) var(--space-xl);
+  }
+  .mobile-terminal-actions-flex-container .joined-block-pair__item--right {
+      /* Padding: Top, Right, Bottom, Left */
+      padding: var(--space-xl) var(--space-xl) var(--space-xl) 0;
   }
 
   .mobile-terminal-actions-flex-container .button-unit {
