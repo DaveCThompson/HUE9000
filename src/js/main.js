@@ -15,6 +15,7 @@ import { serviceLocator } from './serviceLocator.js';
 import { desktopPhaseConfigs } from './startupMachine.js';
 import { runPreloader } from './preloader.js';
 import { debounce } from './utils.js';
+import { getMessage } from './terminalMessages.js';
 import { HUE_ASSIGNMENT_ROW_HUES, TERMINAL_INTERACTION_DEBOUNCE_MS, MOBILE_BREAKPOINT } from './config/index.js';
 
 // Always-on Manager Classes
@@ -35,6 +36,7 @@ import disruptionManagerInstance from './DisruptionManager.js';
 import { MobileColorSlider } from "./MobileColorSlider.js";
 import { hapticFeedbackManager } from "./hapticFeedbackManager.js";
 import { createMobileInteraction } from "./mobileInteraction.js";
+import { ScanOrchestrator } from "./ScanOrchestrator.js";
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -170,7 +172,7 @@ function setupEventListeners() {
         if (groupId === 'system-power') {
             if (value === 'off') resistiveShutdownController.handlePowerOffClick();
             else if (value === 'on' && appState.getResistiveShutdownStage() > 0) appState.setResistiveShutdownStage(0);
-        } 
+        }
         else if (groupId === 'light') {
             let stateTextForTerminal = 'OFF';
             if (button.isSelected()) {
@@ -192,11 +194,11 @@ function setupEventListeners() {
                 if (!anySelected) appState.setTheme('dim');
                 audioManager.play('buttonPress', true);
             }
-            
+
             appState.emit('requestTerminalMessage', {
                 type: 'interaction', source: 'aux_light', coalesce: true, coalesceId: 'aux_light', data: { state: stateTextForTerminal }
             });
-        } 
+        }
         else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
             audioManager.play('buttonPress', true);
             const hue = HUE_ASSIGNMENT_ROW_HUES[parseInt(value, 10)];
@@ -206,18 +208,30 @@ function setupEventListeners() {
             appState.emit('requestTerminalMessage', {
                 type: 'interaction', source: 'hue_assign', coalesce: true, coalesceId: `hue_assign_${groupId}`, data: { target: groupId.toUpperCase(), hue: hue }
             });
-        } 
+        }
         else if (button.config.type === 'action') {
             audioManager.play('buttonPress', true);
-            if (ariaLabel === 'Think') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });
-            else if (ariaLabel === 'Build') appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE', interrupt: true });
-            else if (ariaLabel === 'Craft') appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN3_SCAN' });
-            else if (ariaLabel === 'Lead') appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN4_SCAN' });
+            const actionLabel = button.getElement().getAttribute('aria-label');
+
+            switch (actionLabel) {
+                case 'Think':
+                    appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });
+                    break;
+                case 'Build':
+                    appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE', interrupt: true });
+                    break;
+                case 'Craft':
+                    appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN3_SCAN', interrupt: true });
+                    break;
+                case 'Lead':
+                    appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN4_SCAN', interrupt: true });
+                    break;
+            }
         }
     });
 
     document.body.addEventListener('click', (event) => {
-        const buttonElement = event.target.closest('.button-unit:not(#preloader-engage-btn)'); 
+        const buttonElement = event.target.closest('.button-unit:not(#preloader-engage-btn)');
         const buttonManager = serviceLocator.get('buttonManager', true); // Use safe get
         if (buttonElement && buttonManager) {
              buttonManager.handleInteraction(buttonElement);
@@ -245,7 +259,7 @@ function setupMobileEventListeners() {
         onClick: () => appState.setIsAudioMuted(!appState.getIsAudioMuted()),
         hapticType: 'toggleOn' // Use a slightly different haptic for toggles
     });
-    
+
     createMobileInteraction(mobileInfoBtn, {
         onClick: () => sidePanelManager.toggle(),
         hapticType: 'toggleOn'
@@ -332,9 +346,9 @@ async function initializeApp() {
     const startupSequenceManager = new StartupSequenceManager();
     const moodMatrixManager = new MoodMatrixManager();
     const intensityDisplayManager = new IntensityDisplayManager();
-    
+
     // Register always-on services
-    serviceLocator.register('hapticFeedbackManager', hapticFeedbackManager); // Corrected registration order
+    serviceLocator.register('hapticFeedbackManager', hapticFeedbackManager);
     serviceLocator.register('themeManager', themeManager);
     serviceLocator.register('lcdUpdater', lcdUpdater);
     serviceLocator.register('dynamicStyleManager', dynamicStyleManager);
@@ -350,7 +364,6 @@ async function initializeApp() {
     // --- Conditional Desktop-Only Managers ---
     if (!isMobile) {
         console.log('[Main INIT] Initializing Desktop-only managers...');
-        // Use dynamic import() for code splitting and performance.
         const { default: terminalManagerInstance } = await import('./terminalManager.js');
         const { SidePanelManager } = await import('./sidePanelManager.js');
         const { ButtonManager } = await import('./buttonManager.js');
@@ -358,42 +371,43 @@ async function initializeApp() {
 
         const sidePanelManager = new SidePanelManager();
         const buttonManager = new ButtonManager();
-        
+
         serviceLocator.register('terminalManager', terminalManagerInstance);
         serviceLocator.register('sidePanelManager', sidePanelManager);
         serviceLocator.register('buttonManager', buttonManager);
         serviceLocator.register('resistiveShutdownController', resistiveShutdownControllerInstance);
 
-        // Initialize them after registering
         terminalManagerInstance.init();
         sidePanelManager.init();
         buttonManager.init();
         resistiveShutdownControllerInstance.init();
-        
-        // Create and discover buttons only on desktop
+
         createGridButtons(buttonManager, domManager);
         buttonManager.discoverButtons(domManager.allButtons);
     } else {
-        // On mobile, we still need the SidePanelManager and TerminalManager
+        // On mobile, we still need TerminalManager and SidePanelManager
         const { default: terminalManagerInstance } = await import('./terminalManager.js');
         const { SidePanelManager } = await import('./sidePanelManager.js');
-        const { MobileTerminalManager } = await import('./MobileTerminalManager.js'); // NEW
+        const { MobileTerminalManager } = await import('./MobileTerminalManager.js');
 
         const sidePanelManager = new SidePanelManager();
         const mobileTerminalManager = new MobileTerminalManager();
-        
+
         serviceLocator.register('terminalManager', terminalManagerInstance);
         serviceLocator.register('sidePanelManager', sidePanelManager);
         serviceLocator.register('mobileTerminalManager', mobileTerminalManager);
 
-        // Initialize mobile-specific managers after all dependencies are registered
         terminalManagerInstance.init();
         sidePanelManager.init();
-        mobileTerminalManager.init(); 
+        mobileTerminalManager.init();
     }
 
+    // --- Instantiate dependent managers AFTER dependencies are registered ---
+    const scanOrchestrator = new ScanOrchestrator();
+    serviceLocator.register('scanOrchestrator', scanOrchestrator);
+
     // --- Initialize remaining managers and setup ---
-    appState.setAppStatus('loading'); 
+    appState.setAppStatus('loading');
     audioManager.postInitSubscribe();
     startupSequenceManager.init();
     phaseRunner.init();
@@ -402,13 +416,13 @@ async function initializeApp() {
     });
 
     setupEventListeners();
-    
+
     // Instantiate MusicController and register it so it can be reset.
     const musicController = new MusicController(audioManager, appState, config);
     serviceLocator.register('musicController', musicController);
 
     // PRD v2.2: The startup sequence should play automatically.
-    startupSequenceManager.start(false); 
+    startupSequenceManager.start(false);
     console.log('[Main INIT] HUE 9000 Initialization Complete.');
 
     // PRD v2.2: Add event listeners for new mobile overlay controls.

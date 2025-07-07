@@ -75,6 +75,20 @@ class ResistiveShutdownController {
             });
         }
 
+        // Apply button flash effect
+        if (stageParams.BUTTON_FLASH_PROFILE_NAME) {
+            let targetState = newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE
+                ? 'is-permanently-disabled'
+                : 'is-energized is-selected';
+
+            this.buttonManager.playFlickerToState(this.buttonManager.mainPowerOffButtonInstance.element, targetState, {
+                profileName: stageParams.BUTTON_FLASH_PROFILE_NAME,
+                tempGlowColor: stageParams.BUTTON_FLASH_GLOW_COLOR,
+                tempTintColorClass: stageParams.BUTTON_TINT_CLASS, // Added tint class
+                isButtonSelectedOverride: true // The off button is visually "selected" in this state
+            });
+        }
+
         this._updateLensAndDialTargets(stageParams);
         this._updateHueAssignmentButtons(stageParams);
 
@@ -127,6 +141,7 @@ class ResistiveShutdownController {
         let smallestDiff = 360;
 
         HUE_ASSIGNMENT_ROW_HUES.forEach((hue, index) => {
+            if (hue === null) return; // Skip colorless
             const diff = Math.abs(hue - targetHue);
             if (diff < smallestDiff) {
                 smallestDiff = diff;

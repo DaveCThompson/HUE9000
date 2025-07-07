@@ -60,11 +60,13 @@ export class MobileColorSlider {
 
         this._recalculateDimensions();
         this.#updateTrackGradient();
-        this.#updateThumbFromState();
-
+        
         // Use pointerdown on the container for unified click/drag handling
         this.#container.addEventListener('pointerdown', this.#onDragStart);
         appState.subscribe('targetColorChanged', this.#onExternalStateChange);
+
+        // FIX: Ensure thumb is correctly positioned on load
+        this.#updateThumbFromState();
     }
 
     /**
@@ -86,7 +88,7 @@ export class MobileColorSlider {
      */
     #getOklchColorString = (hue) => {
         // Use a neutral grey for the colorless state (HUES[0] is null)
-        if (hue === this.#CONFIG.HUES[0]) {
+        if (hue === this.#CONFIG.HUES[0] || hue === null) {
             return `oklch(${this.#CONFIG.COLOR_LUMINANCE} 0 0)`;
         }
         return `oklch(${this.#CONFIG.COLOR_LUMINANCE} ${this.#CONFIG.COLOR_CHROMA} ${hue})`;

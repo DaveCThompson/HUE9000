@@ -1,0 +1,164 @@
+/* src/css/2-components/_scan-sequence.css */
+/* Styles for the V2 scan sequence and its renderers. */
+@layer components {
+    .is-scan-active {
+        /* Prevents text selection during the interactive scan sequence */
+        user-select: none;
+    }
+
+    .scan-sequence-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-lg);
+        width: 100%;
+        padding: var(--space-md) 0;
+        transform-origin: top center;
+    }
+
+    .scan-main-title-container,
+    .scan-progress-container,
+    .scan-target-container {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        font-size: 0.9em;
+        font-weight: 500;
+    }
+
+    .scan-spinner {
+        font-size: 1.2em;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.3s ease-out;
+    }
+
+    @keyframes scan-spinner-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .scan-spinner.main-processing {
+        animation: scan-spinner-spin 1.5s linear infinite;
+    }
+
+    .scan-main-title,
+    .scan-progress-label,
+    .scan-progress-value,
+    .scan-target-label,
+    .scan-target-name,
+    .scan-sub-job-title,
+    .scan-progressive-text,
+    .scan-conclusion {
+        /* Inherit the chromatic aberration effect from the terminal */
+        text-shadow: inherit;
+    }
+
+    .scan-target-name {
+        font-weight: 600;
+        transition: color 0.3s ease-out;
+    }
+
+    .scan-sub-jobs-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-lg);
+        margin-top: var(--space-lg);
+        padding-left: var(--space-lg);
+        position: relative;
+    }
+
+    .scan-job-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+
+    .scan-sub-job {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        font-size: 0.9em;
+        transition: opacity 0.3s ease-out, color 0.3s ease-out;
+    }
+
+    .scan-sub-job.is-queued {
+        color: oklch(from currentColor l c h / 0.4);
+    }
+
+    .scan-sub-job.is-active .scan-spinner {
+        animation: scan-spinner-spin 1s linear infinite;
+    }
+
+    .scan-sub-job.is-active .scan-sub-job-title {
+        font-weight: 600;
+    }
+
+    .scan-sub-job.is-complete {
+        color: inherit;
+    }
+
+    .scan-sub-job.is-complete .scan-spinner {
+        animation: none;
+        color: inherit;
+    }
+
+    .scan-conclusion {
+        margin-top: var(--space-xl);
+        font-weight: 600;
+        color: oklch(var(--terminal-text-color-success-l) var(--terminal-text-color-success-c) var(--terminal-text-color-success-h));
+    }
+
+    .scan-progressive-line-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-xs);
+        padding-left: calc(1.2em + var(--space-md));
+    }
+
+    .scan-progressive-text {
+        font-size: 0.85em;
+        font-family: 'IBM Plex Mono', monospace;
+        white-space: nowrap;
+    }
+
+    .scan-progressive-bar-wrapper {
+        width: 100%;
+        height: 0.375rem; /* 6px */
+        background-color: oklch(20% 0 0 / 0.3);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .scan-progressive-bar-fill {
+        width: 0%;
+        height: 100%;
+        border-radius: 2px;
+    }
+
+    /* --- "Type Window" Renderer Specific Styles --- */
+    .type-window-container {
+        position: relative;
+        padding-top: var(--space-xs);
+        padding-bottom: var(--space-xs);
+    }
+
+    .type-window-pulse {
+        --_pulse-hue: var(--dynamic-lcd-hue); /* Fallback */
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: 2px;
+        background: linear-gradient(90deg,
+            transparent 0%,
+            oklch(0.8 0.1 var(--_pulse-hue) / 0.2) 50%,
+            transparent 100%
+        );
+        background-size: 200% 100%;
+        animation: scan-type-window-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes scan-type-window-pulse {
+        from { background-position: 100% 0; }
+        to   { background-position: -100% 0; }
+    }
+}

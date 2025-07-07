@@ -8,8 +8,8 @@ export const scanSequences = {
     subJobs: [
       {
         title: "Expert-Level Craft",
+        renderer: 'barFill',
         hue: HUE_ASSIGNMENT_ROW_HUES[8], // Green
-        timings: { introDelayMs: 200, outroDelayMs: 300 },
         progressiveLines: [
             { text: "UX ARCHITECTURE", duration: 1.2 },
             { text: "HEURISTIC ANALYSIS", duration: 1.5 },
@@ -18,17 +18,18 @@ export const scanSequences = {
       },
       {
         title: "Innovation Matrix",
+        renderer: 'typeWindow',
         hue: HUE_ASSIGNMENT_ROW_HUES[4], // Blue
-        timings: { introDelayMs: 200, outroDelayMs: 300 },
         progressiveLines: [
-            { text: "PATENT SUBMISSION ANALYSIS", duration: 1.8 },
-            { text: "R&D IMPACT ASSESSMENT", duration: 1.4 }
+            { text: "ANALYZING PATENT SUBMISSIONS...", duration: 1.2 },
+            { text: "CROSS-REFERENCING R&D IMPACT...", duration: 1.4 },
+            { text: "INNOVATION COEFFICIENT: 92.7%", duration: 1.0 }
         ]
       },
       {
         title: "Design Leadership",
+        renderer: 'barFill',
         hue: HUE_ASSIGNMENT_ROW_HUES[9], // Yellow
-        timings: { introDelayMs: 200, outroDelayMs: 300 },
         progressiveLines: [
             { text: "MENTORSHIP PROTOCOLS", duration: 1.1 },
             { text: "KNOWLEDGE TRANSFER EFFICIENCY", duration: 1.6 }
@@ -36,11 +37,12 @@ export const scanSequences = {
       },
       {
         title: "Technical Proficiency",
+        renderer: 'typeWindow',
         hue: HUE_ASSIGNMENT_ROW_HUES[6], // Cyan
-        timings: { introDelayMs: 200, outroDelayMs: 300 },
         progressiveLines: [
-            { text: "B.ENG, DISTINCTION (VERIFIED)", duration: 1.3 },
-            { text: "STATE MANAGEMENT ANALYSIS", duration: 1.7 }
+            { text: "VERIFYING CREDENTIALS: B.ENG...", duration: 1.0 },
+            { text: "ASSESSING STATE MGMT PATTERNS...", duration: 1.5 },
+            { text: "PROFICIENCY: EXPERT (VERIFIED)", duration: 1.2 }
         ]
       }
     ]
@@ -52,8 +54,8 @@ export const scanSequences = {
     subJobs: [
         {
             title: "Team Construction",
+            renderer: 'barFill',
             hue: HUE_ASSIGNMENT_ROW_HUES[10], // Orange
-            timings: { introDelayMs: 200, outroDelayMs: 300 },
             progressiveLines: [
                 { text: "RECRUITMENT PIPELINE ANALYSIS", duration: 1.5 },
                 { text: "TEAM GROWTH METRICS (5 -> 14)", duration: 1.2 }
@@ -61,17 +63,18 @@ export const scanSequences = {
         },
         {
             title: "Talent Development",
+            renderer: 'typeWindow',
             hue: HUE_ASSIGNMENT_ROW_HUES[5], // Sky Blue
-            timings: { introDelayMs: 200, outroDelayMs: 300 },
             progressiveLines: [
-                { text: "MENTORSHIP PROGRAM OUTCOMES", duration: 1.4 },
-                { text: "PERFORMANCE REVIEW ANALYSIS", duration: 1.9 }
+                { text: "SIMULATING MENTORSHIP OUTCOMES...", duration: 1.4 },
+                { text: "AGGREGATING PERFORMANCE DATA...", duration: 1.9 },
+                { text: "LEADERSHIP POTENTIAL: HIGH", duration: 1.1 }
             ]
         },
         {
             title: "Strategic Alignment",
-            hue: HUE_ASSIGNMENT_ROW_HUES[3], // Purple
-            timings: { introDelayMs: 200, outroDelayMs: 300 },
+            renderer: 'barFill',
+            hue: HUE_ASSIGNMENT_ROW_HUES[3], // Purple -- CORRECTED TYPO
             progressiveLines: [
                 { text: "OKR ACHIEVEMENT AUDIT", duration: 1.6 },
                 { text: "X-FUNCTIONAL COLLABORATION", duration: 1.3 }
@@ -79,11 +82,12 @@ export const scanSequences = {
         },
         {
             title: "Executive Training",
+            renderer: 'typeWindow',
             hue: HUE_ASSIGNMENT_ROW_HUES[2], // Magenta
-            timings: { introDelayMs: 200, outroDelayMs: 300 },
             progressiveLines: [
-                { text: "INSEAD PROGRAM (VERIFIED)", duration: 1.2 },
-                { text: "LEADERSHIP FRAMEWORK INTEGRATION", duration: 2.0 }
+                { text: "INSEAD CERTIFICATION (VERIFIED)", duration: 1.2 },
+                { text: "LEADERSHIP FRAMEWORK ANALYSIS...", duration: 2.0 },
+                { text: "COMMAND READINESS: 98.2%", duration: 1.3 }
             ]
         }
     ]

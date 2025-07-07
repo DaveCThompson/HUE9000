@@ -1,175 +1,119 @@
-import * as appState from './appState.js';
+/**
+ * @module MobileTerminalManager
+ * @description Manages the state and interactions for the mobile terminal drawer.
+ */
 import { serviceLocator } from './serviceLocator.js';
+import * as appState from './appState.js';
 import { createMobileInteraction } from './mobileInteraction.js';
-import { IDLE_LIGHT_DRIFT_PARAMS } from './config/index.js';
 
 export class MobileTerminalManager {
     constructor() {
-        this.dom = {
-            body: document.body,
-            toggleButton: document.getElementById('mobile-terminal-toggle'),
-            drawer: document.getElementById('mobile-terminal-drawer'),
-            mainContent: document.querySelector('.main-content-area'),
-            actionButtons: [],
-            // NEW: Add the close button to the DOM selectors
-            closeButton: document.getElementById('mobile-terminal-close-btn'),
-        };
-        // Dependencies will be injected in init()
-        this.audioManager = null;
-        this.gsap = null;
-        this.hapticManager = null;
-        this.cssIdleDriftClassName = 'css-idle-drifting';
+        this.dom = serviceLocator.get('domElements');
+        this.gsap = serviceLocator.get('gsap');
+        this.audioManager = serviceLocator.get('audioManager');
+
+        this.isOpen = false;
+        this.timeline = this.gsap.timeline({ paused: true });
     }
 
     init() {
-        if (!this.dom.toggleButton || !this.dom.drawer) {
-            console.warn('[MobileTerminalManager] Could not initialize. Required DOM elements not found.');
+        if (!this.dom.mobileTerminalDrawer) {
+            console.log("[MobileTerminalManager] Drawer not found, skipping init.");
             return;
         }
 
-        // Inject dependencies from the service locator
-        this.audioManager = serviceLocator.get('audioManager');
-        this.gsap = serviceLocator.get('gsap');
-        this.hapticManager = serviceLocator.get('hapticFeedbackManager');
-
-        this.dom.actionButtons = Array.from(this.dom.drawer.querySelectorAll('.scan-button-block .button-unit'));
+        this._buildAnimation();
         this._setupEventListeners();
 
-        // Activate idle drift on the action buttons
-        this.dom.actionButtons.forEach(button => {
-            this._activateIdleDrift(button);
-        });
-    }
-
-    _setupEventListeners() {
-        // Toggle button to open/close the drawer
-        createMobileInteraction(this.dom.toggleButton, {
-            onClick: () => this.toggle(),
-            hapticType: 'toggleOn'
-        });
-        
-        // NEW: Event listener for the dedicated close button
-        if (this.dom.closeButton) {
-            createMobileInteraction(this.dom.closeButton, {
-                onClick: () => this.close(),
-                hapticType: 'toggleOff' // Use a different haptic for closing
-            });
-        }
-
-
-        // Action buttons inside the drawer
-        this.dom.actionButtons.forEach(button => {
-            // We use a manual listener here because createMobileInteraction is for single-tap events,
-            // but we need to manage the 'is-pressing' class for visual feedback.
-            button.addEventListener('pointerdown', (e) => {
-                if (e.isPrimary === false) return;
-                this.hapticManager.triggerClick();
-                button.classList.add('is-pressing');
-            });
-            button.addEventListener('pointerup', (e) => {
-                if (e.isPrimary === false) return;
-                button.classList.remove('is-pressing');
-                this._handleActionClick(button.dataset.action || button.getAttribute('aria-label'));
-            });
-            // Ensure pressing class is removed if pointer leaves the button
-            button.addEventListener('pointerleave', () => {
-                 button.classList.remove('is-pressing');
-            });
-        });
-
-        // Listen for state changes to update the notification pulse
+        // Subscribe to appState changes
+        appState.subscribe('mobileTerminalStateChanged', ({ isOpen }) => this.toggle(isOpen));
         appState.subscribe('unreadTerminalMessagesChanged', ({ hasUnread }) => {
-            this.dom.toggleButton.classList.toggle('has-notification', hasUnread);
-        });
-
-        // Listen for state changes to update the ARIA attribute
-        appState.subscribe('mobileTerminalStateChanged', ({ isOpen }) => {
-            this.dom.toggleButton.setAttribute('aria-expanded', isOpen.toString());
-        });
-    }
-
-    /**
-     * Activates the CSS-based idle light drift animation on a button.
-     * This is a lightweight, isolated version of the logic from Button.js.
-     * @param {HTMLElement} buttonElement - The .button-unit element.
-     * @private
-     */
-    _activateIdleDrift(buttonElement) {
-        const lights = Array.from(buttonElement.querySelectorAll('.light'));
-        if (lights.length === 0 || buttonElement.classList.contains(this.cssIdleDriftClassName)) {
-            return;
-        }
-
-        const D_PARAMS = IDLE_LIGHT_DRIFT_PARAMS;
-        const currentOpacity = D_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED;
-        const targetVariation = currentOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
-        const variationProxy = { value: 0 };
-
-        const randomDuration = this.gsap.utils.random(D_PARAMS.PERIOD_MIN, D_PARAMS.PERIOD_MAX);
-        lights.forEach(light => {
-            light.style.setProperty('--light-idle-base-opacity', currentOpacity.toFixed(3));
-            light.style.setProperty('--light-idle-variation', '0');
-            light.style.setProperty('--light-idle-duration', `${randomDuration}s`);
-            light.style.setProperty('--light-idle-delay', '0s');
-        });
-
-        buttonElement.classList.add(this.cssIdleDriftClassName);
-
-        this.gsap.to(variationProxy, {
-            value: targetVariation,
-            duration: 2.0,
-            delay: this.gsap.utils.random(0, 1.5),
-            ease: 'sine.inOut',
-            onUpdate: () => {
-                lights.forEach(light => {
-                    light.style.setProperty('--light-idle-variation', variationProxy.value.toFixed(3));
-                });
+            if (this.dom.mobileTerminalToggle) {
+                this.dom.mobileTerminalToggle.classList.toggle('has-notification', hasUnread);
             }
         });
     }
 
-    _handleActionClick(action) {
-        if (!action) return;
-        const actionLower = action.toLowerCase();
-        this.audioManager.play('buttonPress', true);
-        let messageKey = '';
-        let type = 'block'; // Default type
-        switch (actionLower) {
-            case 'think': messageKey = 'BTN1_MESSAGE'; break;
-            case 'build': messageKey = 'BTN2_MESSAGE'; break;
-            case 'craft': messageKey = 'BTN3_SCAN'; type = 'scan'; break;
-            case 'lead':  messageKey = 'BTN4_SCAN'; type = 'scan'; break;
-            default: return;
-        }
-        appState.emit('requestTerminalMessage', { type, messageKey, interrupt: true });
+    _buildAnimation() {
+        // This timeline now correctly controls the drawer, the main content area, AND the controls overlay
+        this.timeline
+            .fromTo(this.dom.mobileTerminalDrawer,
+                { y: '100%', scale: 0.95, transformOrigin: 'center center' },
+                { y: '0%', scale: 1, duration: 0.6, ease: 'cubic-bezier(0.65, 0, 0.35, 1)' },
+                0 // Start all animations at time 0
+            )
+            .fromTo(document.querySelector('.main-content-area'),
+                { y: '0%', scale: 1, filter: 'blur(0px) brightness(1)', transformOrigin: 'bottom center' },
+                { y: '-100%', scale: 0.9, filter: 'blur(4px) brightness(0.6)', duration: 0.6, ease: 'cubic-bezier(0.65, 0, 0.35, 1)' },
+                0
+            )
+            .fromTo(this.dom.mobileControlsOverlay,
+                { autoAlpha: 1 },
+                { autoAlpha: 0, duration: 0.3 },
+                0
+            );
     }
 
-    toggle() {
-        const isOpen = appState.getIsMobileTerminalOpen();
-        if (isOpen) {
-            this.close();
-        } else {
-            this.open();
+    _setupEventListeners() {
+        // Guard against the element not being found
+        if (this.dom.mobileTerminalToggle) {
+            createMobileInteraction(this.dom.mobileTerminalToggle, {
+                onClick: () => this.toggle()
+            });
+        }
+        if (this.dom.mobileTerminalCloseBtn) {
+            createMobileInteraction(this.dom.mobileTerminalCloseBtn, {
+                onClick: () => this.toggle(false)
+            });
+        }
+
+        const actionButtonsContainer = this.dom.mobileTerminalDrawer.querySelector('.mobile-terminal-actions-flex-container');
+        if (actionButtonsContainer) {
+            actionButtonsContainer.addEventListener('click', (event) => {
+                const button = event.target.closest('.button-unit--action');
+                if (!button) return;
+
+                this.audioManager.play('buttonPress', true);
+                const action = button.dataset.action;
+
+                switch (action) {
+                    case 'think':
+                        appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });
+                        break;
+                    case 'build':
+                        appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE', interrupt: true });
+                        break;
+                    case 'craft':
+                        appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN3_SCAN', interrupt: true });
+                        break;
+                    case 'lead':
+                        appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN4_SCAN', interrupt: true });
+                        break;
+                }
+            });
         }
     }
 
-    open() {
-        if (appState.getIsMobileTerminalOpen()) return;
+    toggle(forceState) {
+        const shouldBeOpen = typeof forceState === 'boolean' ? forceState : !this.isOpen;
 
-        this.dom.body.classList.add('mobile-terminal-is-open');
-        appState.setIsMobileTerminalOpen(true);
+        if (shouldBeOpen === this.isOpen) return;
+        this.isOpen = shouldBeOpen;
 
-        if (appState.getHasUnreadTerminalMessages()) {
-            appState.setHasUnreadTerminalMessages(false);
-        }
-    }
-
-
-
-    close() {
-        if (!appState.getIsMobileTerminalOpen()) return;
+        const mainContent = document.querySelector('.main-content-area');
         
-        this.dom.body.classList.remove('mobile-terminal-is-open');
-        appState.setIsMobileTerminalOpen(false);
+        document.body.classList.toggle('mobile-terminal-is-open', this.isOpen);
+
+        if (this.isOpen) {
+            this.dom.mobileTerminalDrawer.style.display = 'flex';
+            if (mainContent) mainContent.style.pointerEvents = 'none';
+            if (this.dom.mobileControlsOverlay) this.dom.mobileControlsOverlay.style.pointerEvents = 'none';
+            this.timeline.play();
+            appState.setHasUnreadTerminalMessages(false);
+        } else {
+            if (mainContent) mainContent.style.pointerEvents = 'auto';
+            if (this.dom.mobileControlsOverlay) this.dom.mobileControlsOverlay.style.pointerEvents = 'auto';
+            this.timeline.reverse();
+        }
     }
 }

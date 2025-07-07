@@ -23,13 +23,18 @@ export class DOMManager {
         this.dialB = document.getElementById('dial-canvas-container-B');
         this.lcdA = document.getElementById('hue-lcd-A');
         this.lcdB = document.getElementById('hue-lcd-B');
-        // FIX: Target the correct component-level element for the terminal.
         this.terminalContainer = document.querySelector('.terminal-block .actual-lcd-screen-element');
         this.terminalLcdContentElement = document.getElementById('terminal-lcd-content');
         this.colorLensGradient = document.getElementById('color-lens-gradient');
         this.lensSuperGlow = document.getElementById('lens-super-glow');
         this.logoContainer = document.getElementById('logo-container');
         this.hueAssignmentColumns = Array.from(document.querySelectorAll('.hue-assignment-column[data-assignment-target]'));
+
+        // Mobile-specific elements
+        this.mobileControlsOverlay = document.getElementById('mobile-controls-overlay');
+        this.mobileTerminalDrawer = document.getElementById('mobile-terminal-drawer');
+        this.mobileTerminalToggle = document.getElementById('mobile-terminal-toggle');
+        this.mobileTerminalCloseBtn = document.getElementById('mobile-terminal-close-btn');
     }
 
     init() {

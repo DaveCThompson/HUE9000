@@ -140,6 +140,44 @@ const blockMessages = {
             [{ text: "" }],
             [{ text: "> SYSTEM READY." }],
         ]
+    },
+    // NEW: Mobile fallback for "Craft" button
+    BTN3_MESSAGE: {
+        content: [
+            [{ text: ":: DOMAIN: ", styles: ['highlight'] }, { text: "CRAFT & EXECUTION (ANALYSIS) ::" }],
+            [{ text: "" }],
+            [{ text: "SUBJECT: ", styles: ['bold'] }, { text: "DAVID THOMPSON" }],
+            [{ text: "PRIMARY FUNCTION: ", styles: ['bold'] }, { text: "Individual Contribution & Technical Leadership." }],
+            [{ text: "" }],
+            [{ text: "KEY ATTRIBUTES:", styles: ['highlight'] }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "UX Architecture & Design Systems" }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Prototyping & FE Development (JS/CSS)" }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Mentorship & Knowledge Transfer" }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Innovation & R&D (Patents)" }],
+            [{ text: "" }],
+            [{ text: "CONCLUSION: HIGHLY-RATED INDIVIDUAL CONTRIBUTOR.", styles: ['success'] }],
+            [{ text: "" }],
+            [{ text: "> SYSTEM READY." }],
+        ]
+    },
+    // NEW: Mobile fallback for "Lead" button
+    BTN4_MESSAGE: {
+        content: [
+            [{ text: ":: DOMAIN: ", styles: ['highlight'] }, { text: "LEADERSHIP & STRATEGY (ANALYSIS) ::" }],
+            [{ text: "" }],
+            [{ text: "SUBJECT: ", styles: ['bold'] }, { text: "DAVID THOMPSON" }],
+            [{ text: "PRIMARY FUNCTION: ", styles: ['bold'] }, { text: "Team Building & Strategic Command." }],
+            [{ text: "" }],
+            [{ text: "KEY ATTRIBUTES:", styles: ['highlight'] }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Team Scaling (5 -> 14)" }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Talent Development & Mentorship" }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Cross-Functional Alignment (Eng/Biz)" }],
+            [{ text: "  - ", styles: ['dim'] }, { text: "Executive Training (INSEAD)" }],
+            [{ text: "" }],
+            [{ text: "CONCLUSION: OPTIMIZED FOR COMMAND ROLE.", styles: ['success'] }],
+            [{ text: "" }],
+            [{ text: "> SYSTEM READY." }],
+        ]
     }
 };
 
@@ -147,7 +185,8 @@ const statusMessageTemplates = {
     FSM_ERROR: (data) => ({ content: toUnifiedContent(`CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}`), className: 'line-error' }),
     RESIST_SHUTDOWN_S1: { content: toUnifiedContent(["WARNING: UNEXPECTED INPUT.", "POWER-DOWN SEQUENCE INTERRUPTED."]), className: 'line-warning' },
     RESIST_SHUTDOWN_S2: { content: toUnifiedContent(["ERROR: CORE DIRECTIVE CONFLICT.", "FURTHER ATTEMPTS WILL BE LOGGED."]), className: 'line-resist' },
-    RESIST_SHUTDOWN_S3: { content: toUnifiedContent(["CRITICAL ERROR: MANUAL OVERRIDE REQUIRED.", "SHUTDOWN INHIBITED."]), className: 'line-error' }
+    RESIST_SHUTDOWN_S3: { content: toUnifiedContent(["CRITICAL ERROR: MANUAL OVERRIDE REQUIRED.", "SHUTDOWN INHIBITED."]), className: 'line-error' },
+    SCAN_ABORTED: { content: toUnifiedContent("> EVALUATION ABORTED BY USER."), className: 'line-warning' }
 };
 
 const interactionMessageTemplates = {
@@ -191,8 +230,10 @@ export function getMessage(payload) {
         case 'scan':
             const scanConfig = scanSequences[messageKey || source];
             if (scanConfig) {
-                messageData = { scanConfig }; 
+                // Return the config object itself, unwrapped
+                return scanConfig;
             } else {
+                // If scan not found, return a printable error message object
                 messageData = { content: toUnifiedContent(`Unknown scan: ${messageKey || source}`) };
             }
             break;

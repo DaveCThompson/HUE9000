@@ -44,6 +44,8 @@
 @import url('./2-components/_mobile-controls-overlay.css') layer(components);
 @import url('./2-components/_mobile-color-slider.css') layer(components);
 @import url('./2-components/_mobile-terminal-drawer.css') layer(components);
+/* NEW: Import scan sequence styles */
+@import url('./2-components/_scan-sequence.css') layer(components);
 
 
 /* --- 3: Themes Layer --- */

@@ -6,7 +6,6 @@
 import { getMessage } from './terminalMessages.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js';
-import { ScanSequencePlayer } from './ScanSequencePlayer.js';
 import {
     TERMINAL_THINKING_DELAY_MIN_MS,
     TERMINAL_THINKING_DELAY_MAX_MS,
@@ -24,16 +23,16 @@ class TerminalManager {
         this._terminalContainerElement = null;
         this._terminalContentElement = null;
         this._scrollWrapperElement = null;
+        this._scanContainerElement = null; // Container for scan sequences
         this._gsap = null;
 
         this._messageQueue = [];
         this._isProcessing = false;
+        this._isTakeoverActive = false; // Flag to pause message processing
         this._currentLineElement = null;
         this._cursorElement = null;
         this._isFirstLine = true;
         this._currentProcessPromise = null;
-        this._activeScanPlayer = null;
-        this._activeScanObserver = null; // For auto-scrolling
 
         this._commandHandlers = {
             'pause': this._handlePauseCommand.bind(this),
@@ -51,6 +50,60 @@ class TerminalManager {
     reset() {
         this._interruptAndClear();
     }
+
+    // --- Public Command API for ScanOrchestrator ---
+
+    async prepareForTakeover() {
+        this._isTakeoverActive = true;
+        this._interruptCurrentTask();
+        this._setCursorState('thinking');
+
+        // Create a dedicated container for the scan UI
+        if (!this._scanContainerElement) {
+            this._scanContainerElement = document.createElement('div');
+            this._scanContainerElement.className = 'scan-animation-container';
+        }
+        
+        await new Promise(resolve => {
+            const tl = this._gsap.timeline({ onComplete: resolve });
+            tl.to(this._terminalContentElement.children, {
+                autoAlpha: 0.5,
+                duration: 0.1,
+            });
+            tl.call(() => {
+                // Clear content and append the scan container
+                this._terminalContentElement.innerHTML = '';
+                this._terminalContentElement.appendChild(this._scanContainerElement);
+            });
+             tl.set(this._terminalContentElement, { autoAlpha: 1 });
+        });
+
+        return this._scanContainerElement;
+    }
+
+    cleanupAfterScan(wasAborted) {
+        return new Promise(resolve => {
+            if (this._scanContainerElement && this._scanContainerElement.parentNode) {
+                this._gsap.to(this._scanContainerElement, {
+                    autoAlpha: 0,
+                    duration: 0.3,
+                    onComplete: () => {
+                        this._scanContainerElement.innerHTML = '';
+                        resolve();
+                    }
+                });
+            } else {
+                resolve();
+            }
+        });
+    }
+
+    getScanContainer() {
+        return this._scanContainerElement;
+    }
+
+
+    // --- Internal Methods ---
 
     _setupDOM() {
         const dom = serviceLocator.get('domElements');
@@ -75,22 +128,13 @@ class TerminalManager {
     }
 
     _interruptAndClear() {
-        this._interruptCurrentTask(); // Use the task-specific interrupt
+        this._interruptCurrentTask();
         if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
         this._isFirstLine = true;
         this._setCursorState('idle');
     }
 
     _interruptCurrentTask() {
-        if (this._activeScanPlayer) {
-            this._activeScanPlayer.kill();
-            this._activeScanPlayer = null;
-        }
-        if (this._activeScanObserver) {
-            this._activeScanObserver.disconnect();
-            this._activeScanObserver = null;
-        }
-
         if (this._currentProcessPromise) {
             this._currentProcessPromise.abort = true;
             this._currentProcessPromise = null;
@@ -107,11 +151,22 @@ class TerminalManager {
     }
 
     _handleRequestTerminalMessage(payload) {
+        if (this._isTakeoverActive && payload.type !== 'scan') {
+            // Queue non-scan messages if a scan is active
+            this._messageQueue.push({ ...payload, ...getMessage(payload) });
+            return;
+        }
+
         const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
         if (isMobile && !appState.getIsMobileTerminalOpen()) {
             appState.setHasUnreadTerminalMessages(true);
         }
-        
+
+        if (payload.type === 'scan') {
+            this._initiateScan(payload);
+            return;
+        }
+
         const messageData = getMessage(payload);
         const messageObject = { ...payload, ...messageData };
 
@@ -122,8 +177,6 @@ class TerminalManager {
 
         if (messageObject.interrupt) {
             this._interruptAndClear();
-        } else if (messageObject.type === 'scan') {
-            this._interruptCurrentTask();
         }
 
         if (messageObject.coalesce) {
@@ -139,17 +192,44 @@ class TerminalManager {
         }
     }
 
+    async _initiateScan(payload) {
+        if (this._isTakeoverActive) return; // Prevent concurrent scans
+
+        this._isTakeoverActive = true;
+        this._interruptCurrentTask();
+
+        const scanConfig = getMessage(payload);
+        if (!scanConfig || !scanConfig.subJobs) {
+            console.error("Invalid or missing scan configuration for payload:", payload);
+            this._onScanComplete();
+            return;
+        }
+
+        const scanOrchestrator = serviceLocator.get('scanOrchestrator');
+        await scanOrchestrator.startScan(scanConfig, (wasAborted) => this._onScanComplete(wasAborted));
+    }
+
+    _onScanComplete(wasAborted) {
+        this._isTakeoverActive = false;
+        if (wasAborted) {
+            appState.emit('requestTerminalMessage', {
+                type: 'status',
+                source: 'scan',
+                messageKey: 'SCAN_ABORTED',
+                interrupt: true
+            });
+        }
+        this._processQueue();
+    }
+
     async _processQueue() {
-        if (this._isProcessing) return;
+        if (this._isProcessing || this._isTakeoverActive) return;
         this._isProcessing = true;
 
         while (this._messageQueue.length > 0) {
+            if (this._isTakeoverActive) break; // Re-check before processing next item
+            
             const messageObject = this._messageQueue.shift();
-
-            if (messageObject.type === 'scan' && messageObject.scanConfig) {
-                await this._executeScanSequence(messageObject);
-                continue; 
-            }
 
             const processPromise = {};
             this._currentProcessPromise = processPromise;
@@ -178,62 +258,9 @@ class TerminalManager {
 
         this._isProcessing = false;
         this._currentProcessPromise = null;
-        if (this._messageQueue.length === 0) {
+        if (this._messageQueue.length === 0 && !this._isTakeoverActive) {
             this._setCursorState('idle');
         }
-    }
-
-    async _executeScanSequence(messageObject) {
-        const scanContainer = this._initiateScanProcess();
-
-        this._activeScanPlayer = new ScanSequencePlayer(scanContainer, messageObject.scanConfig);
-        try {
-            await this._activeScanPlayer.play();
-        } catch (error) {
-            if (error.message.indexOf('interrupted') === -1) {
-                console.error("Scan sequence failed:", error);
-            }
-            return; 
-        } finally {
-            this._activeScanPlayer = null;
-            if (this._activeScanObserver) {
-                this._activeScanObserver.disconnect();
-                this._activeScanObserver = null;
-            }
-        }
-        // The conclusion message is now solely handled by the ScanSequencePlayer.
-    }
-    
-    _initiateScanProcess() {
-        if (this._cursorElement) this._cursorElement.style.display = 'none';
-
-        const scanAnimationContainer = document.createElement('div');
-        scanAnimationContainer.className = 'scan-animation-container';
-        
-        this._terminalContentElement.appendChild(scanAnimationContainer);
-        
-        // Use a ResizeObserver to auto-scroll as the scan animation expands
-        this._activeScanObserver = new ResizeObserver(() => {
-            this._scrollTerminal(true);
-        });
-        this._activeScanObserver.observe(scanAnimationContainer);
-
-        this._scrollTerminal(true);
-        return scanAnimationContainer;
-    }
-
-    _logSystemMessage(message, type = 'success') {
-        if (!this._terminalContentElement) return;
-        const line = document.createElement('div');
-        line.className = `terminal-line line-${type}`;
-        const prompt = document.createElement('span');
-        prompt.textContent = '> ';
-        const text = document.createElement('span');
-        text.textContent = message;
-        line.append(prompt, text);
-        this._terminalContentElement.appendChild(line);
-        this._limitMaxLines();
-        this._scrollTerminal(true);
     }
 
     _breakTextIntoVisualLines(text) {
@@ -244,11 +271,8 @@ class TerminalManager {
     async _typeMessage(messageObject, promise) {
         if (promise.abort) return;
         if (!messageObject.content) {
-            if (this._cursorElement) this._cursorElement.style.display = '';
             return;
         }
-
-        if (this._cursorElement) this._cursorElement.style.display = '';
 
         if (!this._isFirstLine && messageObject.formatting.spacingBefore > 0) {
             for (let i = 0; i < messageObject.formatting.spacingBefore; i++) {
