@@ -221,6 +221,24 @@ This section details issues addressed during and immediately after the V2.3 refa
 *   **Files Affected:** `src/js/terminalManager.js`.
 *   **Key Learning:** Complex, layered visual effects can sometimes be achieved by orchestrating a "conflict" between two different animation drivers. By having a background GSAP timeline attempt to tween a property while a foreground loop repeatedly sets it to a different value, a dynamic and chaotic effect can be created that is more visually interesting than either animation alone. Awaiting the completion of the background animation is key to ensuring the overall process remains synchronous and predictable.
 
+### C.12. Scan Sequence Deadlock and Subsequent Blank Screen
+*   **Symptom (Iterative):**
+    1.  **Initial Deadlock:** Triggering a scan sequence would lock the UI permanently. The scan animation would not start. Console logs showed the XState actor was created and started, but never transitioned from its `idle` state.
+    2.  **Blank Screen After Fix:** After fixing the deadlock, the scan would complete, but the terminal would become blank. Triggering a second scan would also result in a blank, unresponsive terminal.
+*   **Root Cause Analysis (Iterative):**
+    1.  **Deadlock Cause:** Diagnostic logging revealed that the `snapshot.done` property on the final XState snapshot was `undefined`, not `true`. The `if (snapshot.done)` check in the `ScanOrchestrator`'s subscriber was therefore never met, preventing the `scanComplete` event from being emitted and leaving the `TerminalManager` in a permanent `_isTakeoverActive` state.
+    2.  **Blank Screen Cause:** The `_cleanupScanContainer` function in `TerminalManager` was flawed. It was being called in `concludeScan` and was responsible for two issues:
+        *   It explicitly set `this._scanContainerElement.innerHTML = '';`, which erased the scan's visual output (including the final conclusion message) immediately upon completion.
+        *   It set the container's `autoAlpha` to 0, making it permanently invisible. When a second scan was initiated, it correctly built its UI inside this now-invisible container.
+*   **Solution Implemented (Definitive):**
+    1.  **Deadlock Fix (`ScanOrchestrator.js`):** The completion check in the FSM subscriber was made more robust. Instead of relying solely on `snapshot.done`, it now checks `const isDone = snapshot.done || snapshot.matches('completed') || snapshot.matches('aborted')`. This correctly identifies the final state regardless of the `done` property's value, ensuring the `scanComplete` event is always emitted.
+    2.  **Blank Screen Fix (`TerminalManager.js`):** The architecture was corrected by shifting responsibility.
+        *   The problematic `_cleanupScanContainer` function was removed entirely.
+        *   `concludeScan` is now only responsible for setting `_isTakeoverActive = false` and resuming the message queue. It no longer touches the DOM.
+        *   `_initiateScan` is now responsible for preparing its own environment. It explicitly clears the terminal's content (`this._terminalContentElement.innerHTML = ''`) and creates a fresh, visible (`autoAlpha: 1`) scan container each time it is called. This ensures the previous scan's content is correctly cleared *before* the new one starts, and that the container is always visible.
+*   **Files Affected:** `src/js/scanOrchestrator.js`, `src/js/terminalManager.js`.
+*   **Key Learning:** Do not assume low-level library properties (like XState's `snapshot.done`) will always behave as expected; build in robust checks using higher-level APIs (`snapshot.matches(...)`) as a fallback. Clearly define the responsibilities of functions. A function that *initiates* an action should be responsible for preparing the environment, while a function that *concludes* an action should be responsible for releasing control, not for cleaning up the visual artifacts of the action it just concluded.
+
 ## Section D: XState Refactor & Key Considerations (Post V2.3 - SSR-V1.0)
 
 This section highlights critical aspects and potential pitfalls related to the XState-orchestrated startup sequence, primarily for future maintenance and development.
