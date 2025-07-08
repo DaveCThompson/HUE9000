@@ -78,23 +78,25 @@
     margin-top: var(--space-xl);
   }
   
-  /* MODIFICATION: Keep this rule but remove the generic padding property */
+  /* MODIFICATION: Match desktop flex properties, gap, and add position:relative for labels. */
   .mobile-terminal-actions-flex-container .scan-button-block {
     flex: 1 1 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-xl);
-    /* The generic `padding` property is removed from here */
+    justify-content: center; /* To vertically center buttons */
+    align-items: stretch; /* To match desktop */
+    gap: var(--space-md); /* Vertical gap between buttons */
+    position: relative; /* For positioning of the .block-label-bottom */
   }
 
-  /* NEW: Add specific padding rules to achieve the seamless join */
+  /* FIX: Apply balanced padding. The outer space is handled by the parent, so horizontal padding is set to 0 on the outer edges and var(--space-xl) on the inner edges. */
   .mobile-terminal-actions-flex-container .joined-block-pair__item--left {
       /* Padding: Top, Right, Bottom, Left */
-      padding: var(--space-xl) 0 var(--space-xl) var(--space-xl);
+      padding: var(--space-xl) var(--space-xl) var(--space-xl) var(--space-xl);
   }
   .mobile-terminal-actions-flex-container .joined-block-pair__item--right {
       /* Padding: Top, Right, Bottom, Left */
-      padding: var(--space-xl) var(--space-xl) var(--space-xl) 0;
+      padding: var(--space-xl) var(--space-xl) var(--space-xl) var(--space-xl);
   }
 
   .mobile-terminal-actions-flex-container .button-unit {

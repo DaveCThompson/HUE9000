@@ -263,3 +263,56 @@ export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
     
     return { timeline: tl, completionPromise };
 }
+
+/**
+ * Creates a GSAP timeline for the 9-dot grid spinner animation.
+ * @param {HTMLElement} target - The .dot-grid-spinner container element.
+ * @param {object} gsap - The GSAP instance.
+ * @returns {gsap.core.Timeline} A paused, infinitely repeating GSAP timeline.
+ */
+export function createDotGridSpinnerTimeline(target, gsap) {
+    if (!target || !gsap) return gsap.timeline();
+
+    const dots = Array.from(target.querySelectorAll('.dot'));
+    if (dots.length !== 9) return gsap.timeline();
+
+    const masterTl = gsap.timeline({ paused: true, repeat: -1, repeatDelay: 0.3 });
+
+    // --- Animation Parameters ---
+    const staggerIn = {
+        amount: 0.4,
+        from: "start",
+        ease: 'power2.out'
+    };
+    const staggerOut = {
+        amount: 0.4,
+        from: "end",
+        ease: 'power2.in'
+    };
+    const pauseDuration = 0.5;
+
+    // --- Pattern Definitions (dot indices 0-8) ---
+    const patterns = {
+        spiral: [0, 1, 2, 5, 8, 7, 6, 3, 4],
+        rows: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    };
+    
+    const runPatternCycle = (patternKey) => {
+        const order = patterns[patternKey].map(i => dots[i]);
+        const cycleTl = gsap.timeline();
+        cycleTl.fromTo(order, 
+            { scale: 0, opacity: 0 },
+            { scale: 1, opacity: 1, duration: 0.3, stagger: staggerIn }
+        )
+        .to(order, 
+            { scale: 0, opacity: 0, duration: 0.3, stagger: staggerOut }, 
+            `+=${pauseDuration}`
+        );
+        return cycleTl;
+    };
+
+    masterTl.add(runPatternCycle('spiral'))
+            .add(runPatternCycle('rows'), `+=${pauseDuration * 0.5}`);
+
+    return masterTl;
+}

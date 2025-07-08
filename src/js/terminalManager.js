@@ -54,13 +54,13 @@ class TerminalManager {
     }
 
     async concludeScan(wasAborted) {
-        console.log('%c[TerminalManager] ✅ Event "scanComplete" received! Running concludeScan().', 'color: green; font-weight: bold;', { wasAborted });
+        // console.log('%c[TerminalManager] ✅ Event "scanComplete" received! Running concludeScan().', 'color: green; font-weight: bold;', { wasAborted });
         // FIX: The scan content should persist. We no longer clean it up here.
         // The responsibility for clearing the old scan is now in _initiateScan.
         
-        console.log('%c[TerminalManager] Current _isTakeoverActive state:', 'color: green;', this._isTakeoverActive);
+        // console.log('%c[TerminalManager] Current _isTakeoverActive state:', 'color: green;', this._isTakeoverActive);
         this._isTakeoverActive = false;
-        console.log('%c[TerminalManager] Set _isTakeoverActive to:', 'color: green; font-weight: bold;', this._isTakeoverActive);
+        // console.log('%c[TerminalManager] Set _isTakeoverActive to:', 'color: green; font-weight: bold;', this._isTakeoverActive);
 
         if (wasAborted) {
             appState.emit('requestTerminalMessage', {
@@ -72,7 +72,7 @@ class TerminalManager {
         }
         
         this._processQueue();
-        console.log('%c[TerminalManager] Exited concludeScan() and started queue processing.', 'color: green;');
+        // console.log('%c[TerminalManager] Exited concludeScan() and started queue processing.', 'color: green;');
     }
 
     // REMOVED: The _cleanupScanContainer function was the source of the bug.

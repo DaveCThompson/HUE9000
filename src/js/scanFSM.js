@@ -4,6 +4,9 @@
  */
 import { createMachine, fromPromise, assign } from 'xstate';
 import { rendererRegistry } from './scanRenderers.js'; // MODIFIED: Corrected import path to fix build error
+import { createDotGridSpinnerTimeline } from './animationUtils.js';
+
+const RENDERER_TIMEOUT_MS = 15000; // 15 seconds
 
 /**
  * Creates and in-configures the scan sequence finite state machine.
@@ -27,13 +30,16 @@ export function createScanMachine(config, implementation) {
                 ({ context }) => {
                     const { ui, subJobs, subJobTargets } = context;
                     const jobUI = subJobTargets[index];
-                    // MODIFIED: Check the wrapper for 'is-queued' and reveal it.
+                    
                     if (jobUI.wrapper.classList.contains('is-queued')) {
                         jobUI.wrapper.classList.remove('is-queued');
-                        // MODIFIED: Add 'is-active' to the title element for styling.
                         jobUI.el.classList.add('is-active');
-                        jobUI.spinner.textContent = 'progress_activity';
-                        gsap.set([ui.scanTargetName, jobUI.spinner, jobUI.title], { color: `oklch(0.85 0.20 ${subJobs[index].hue})` });
+
+                        // MODIFIED: Create and play the dot-grid spinner animation
+                        jobUI.spinnerTimeline = createDotGridSpinnerTimeline(jobUI.spinner, gsap);
+                        jobUI.spinnerTimeline.play();
+                        
+                        gsap.set([ui.scanTargetName, jobUI.spinnerContainer, jobUI.title], { color: `oklch(0.85 0.20 ${subJobs[index].hue})` });
                     }
                 }
             ],
@@ -41,7 +47,12 @@ export function createScanMachine(config, implementation) {
                 id: `job-renderer-${index}`,
                 src: fromPromise(({ input }) => {
                     const rendererFunc = rendererRegistry.get(input.job.renderer);
-                    return rendererFunc(input.target, input.job, gsap);
+                    const rendererPromise = rendererFunc(input.target, input.job, gsap);
+                    // ADDED: Timeout wrapper for robustness
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error(`Renderer "${input.job.renderer}" timed out after ${RENDERER_TIMEOUT_MS}ms.`)), RENDERER_TIMEOUT_MS)
+                    );
+                    return Promise.race([rendererPromise, timeoutPromise]);
                 }),
                 input: ({ context }) => ({
                     job: context.subJobs[index],
@@ -54,12 +65,35 @@ export function createScanMachine(config, implementation) {
                         ({ context }) => {
                             const { ui, subJobs, subJobTargets } = context;
                             const jobUI = subJobTargets[index];
-                            // MODIFIED: Check the title element for 'is-active' state.
+                            
                             if (jobUI.el.classList.contains('is-active')) {
                                 jobUI.el.classList.remove('is-active');
                                 jobUI.el.classList.add('is-complete');
-                                jobUI.spinner.textContent = 'check_circle';
-                                gsap.set([jobUI.spinner, jobUI.title], { clearProps: 'color' });
+                                
+                                // MODIFIED: Animate transition from spinner to checkmark
+                                const checkIcon = document.createElement('span');
+                                checkIcon.className = 'material-symbols-outlined';
+                                checkIcon.textContent = 'check_circle';
+                                checkIcon.style.opacity = '0'; // Start hidden for animation
+
+                                const transitionTl = gsap.timeline();
+                                transitionTl.to(jobUI.spinnerContainer, {
+                                    scale: 0.7,
+                                    opacity: 0,
+                                    duration: 0.2,
+                                    ease: 'power2.in',
+                                    onComplete: () => {
+                                        if (jobUI.spinnerTimeline) jobUI.spinnerTimeline.kill();
+                                        jobUI.spinnerContainer.replaceWith(checkIcon);
+                                    }
+                                })
+                                .to(checkIcon, {
+                                    scale: 1,
+                                    opacity: 1,
+                                    duration: 0.4,
+                                    ease: 'back.out(1.7)'
+                                }, ">-0.1")
+                                .set([checkIcon, jobUI.title], { clearProps: 'color' }, "<");
 
                                 const newProgress = Math.round(((index + 1) / subJobs.length) * 100);
                                 gsap.to(ui.progressValue, {

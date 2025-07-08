@@ -9,12 +9,15 @@ import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // ADDED: Import appState for event emitting
 import { createScanMachine } from './scanFsm.js';
 import { rendererRegistry } from './scanRenderers.js';
+// NEW: Import the spinner animation utility
+import { createDotGridSpinnerTimeline } from './animationUtils.js';
 import { fromPromise } from 'xstate';
 
 export class ScanOrchestrator {
     constructor() {
         this.gsap = serviceLocator.get('gsap');
         this.activeScanActor = null;
+        this.activeSpinnerTimeline = null; // To hold the spinner's GSAP timeline
         this._handleEscapeKey = this._handleEscapeKey.bind(this);
     }
 
@@ -26,13 +29,19 @@ export class ScanOrchestrator {
      * @param {HTMLElement} scanContainer - The DOM element to render the scan UI into.
      */
     async startScan(scanConfig, scanContainer) {
-        console.log('%c[DEBUG] Entered ScanOrchestrator.startScan()', 'color: lightblue');
         if (this.activeScanActor) {
             console.warn("ScanOrchestrator: A scan is already in progress. Aborting new request.");
             return;
         }
         if (!scanContainer) {
             console.error("Scan container not provided to ScanOrchestrator.");
+            appState.emit('scanComplete', { wasAborted: true }); // Emit event to unlock UI on error
+            return;
+        }
+        
+        // ADDED: Configuration validation
+        if (!this._validateScanConfig(scanConfig)) {
+            console.error("ScanOrchestrator: Invalid scan configuration provided. Aborting.", scanConfig);
             appState.emit('scanComplete', { wasAborted: true }); // Emit event to unlock UI on error
             return;
         }
@@ -58,20 +67,20 @@ export class ScanOrchestrator {
             
             this.activeScanActor.subscribe(snapshot => {
                 // MODIFIED: More detailed logging to diagnose the deadlock.
-                console.log(`%c[FSM_SUB] Snapshot received. Value:`, 'color: cyan;', snapshot.value);
-                console.log(`%c[FSM_SUB] Is snapshot.done? ->`, 'color: cyan; font-weight: bold;', snapshot.done);
+                // console.log(`%c[FSM_SUB] Snapshot received. Value:`, 'color: cyan;', snapshot.value);
+                // console.log(`%c[FSM_SUB] Is snapshot.done? ->`, 'color: cyan; font-weight: bold;', snapshot.done);
                 // console.log('%c[FSM_SUB] Full snapshot object:', 'color: cyan;', snapshot);
 
                 // ROBUSTNESS FIX: Check for final state using .matches() as a fallback to .done
                 const isDone = snapshot.done || snapshot.matches('completed') || snapshot.matches('aborted') || snapshot.matches('error');
 
                 if (isDone) {
-                    console.log('%c[Orchestrator] ✅ Final state detected. Entering cleanup.', 'color: green; font-weight: bold;');
+                    // console.log('%c[Orchestrator] ✅ Final state detected. Entering cleanup.', 'color: green; font-weight: bold;');
                     const wasAborted = snapshot.matches('aborted');
                     
                     this._cleanup();
                     
-                    console.log(`%c[Orchestrator] Emitting 'scanComplete' event with payload: { wasAborted: ${wasAborted} }`, 'color: orange; font-weight: bold;');
+                    // console.log(`%c[Orchestrator] Emitting 'scanComplete' event with payload: { wasAborted: ${wasAborted} }`, 'color: orange; font-weight: bold;');
                     appState.emit('scanComplete', { wasAborted });
                 }
             });
@@ -87,7 +96,6 @@ export class ScanOrchestrator {
                     subJobTargets: subJobTargets
                 }
             });
-            console.log('%c[DEBUG] Exiting ScanOrchestrator.startScan() after starting actor.', 'color: lightblue');
         } catch (error) {
             console.error('%c[DEBUG] CRITICAL ERROR in ScanOrchestrator.startScan:', 'color: red; font-weight: bold;', error);
             this._cleanup();
@@ -100,6 +108,30 @@ export class ScanOrchestrator {
             this.activeScanActor.send({ type: 'ABORT' });
         }
     }
+    
+    // ADDED: Private method for configuration validation.
+    _validateScanConfig(config) {
+        if (!config) return false;
+        if (typeof config.mainTitle !== 'string' || typeof config.scanTarget !== 'string' || typeof config.conclusionMessage !== 'string') {
+            console.error("[Scan Validator] Missing or invalid top-level properties (mainTitle, scanTarget, conclusionMessage).");
+            return false;
+        }
+        if (!Array.isArray(config.subJobs) || config.subJobs.length === 0) {
+            console.error("[Scan Validator] `subJobs` must be a non-empty array.");
+            return false;
+        }
+        for (const job of config.subJobs) {
+            if (typeof job.title !== 'string' || typeof job.renderer !== 'string' || typeof job.hue !== 'number') {
+                console.error("[Scan Validator] A subJob is missing required properties (title, renderer, hue).", job);
+                return false;
+            }
+            if (!rendererRegistry.get(job.renderer)) {
+                 console.error(`[Scan Validator] Renderer "${job.renderer}" is not registered.`);
+                 return false;
+            }
+        }
+        return true;
+    }
 
     _createUI(container, context) {
         document.body.classList.add('is-scan-active');
@@ -107,7 +139,6 @@ export class ScanOrchestrator {
 
         const elements = {
             container,
-            // NEW: Wrapper for the header elements
             headerGroup: this._createStyledElement('div', 'scan-header-group'),
             mainTitleContainer: this._createStyledElement('div', 'scan-main-title-container'),
             progressContainer: this._createStyledElement('div', 'scan-progress-container'),
@@ -118,9 +149,19 @@ export class ScanOrchestrator {
         elements.a11yLiveRegion.setAttribute('aria-live', 'polite');
         elements.a11yLiveRegion.setAttribute('aria-atomic', 'true');
 
-        const mainSpinner = this._createStyledElement('span', 'material-symbols-outlined scan-spinner main-processing', 'autorenew');
+        // MODIFIED: Create the new nested dot grid spinner structure
+        const mainSpinnerContainer = this._createStyledElement('div', 'scan-spinner');
+        const dotGridWrapper = this._createStyledElement('div', 'dot-grid-wrapper');
+        const dotGrid = this._createStyledElement('div', 'dot-grid-spinner');
+        for (let i = 0; i < 9; i++) {
+            dotGrid.appendChild(this._createStyledElement('div', 'dot'));
+        }
+        dotGridWrapper.appendChild(dotGrid);
+        mainSpinnerContainer.appendChild(dotGridWrapper);
+        elements.mainSpinner = dotGrid; // Store reference to the animatable grid
+
         elements.mainTitle = this._createStyledElement('span', 'scan-main-title', context.mainTitle);
-        elements.mainTitleContainer.append(mainSpinner, elements.mainTitle);
+        elements.mainTitleContainer.append(mainSpinnerContainer, elements.mainTitle);
 
         elements.progressLabel = this._createStyledElement('span', 'scan-progress-label', 'SCANNING SEGMENTS: ');
         elements.progressValue = this._createStyledElement('span', 'scan-progress-value', '0%');
@@ -130,7 +171,6 @@ export class ScanOrchestrator {
         elements.scanTargetName = this._createStyledElement('span', 'scan-target-name', context.scanTarget);
         elements.scanTargetContainer.append(elements.scanTargetLabel, elements.scanTargetName);
 
-        // Append header elements to the new group
         elements.headerGroup.append(
             elements.mainTitleContainer,
             elements.scanTargetContainer,
@@ -139,7 +179,7 @@ export class ScanOrchestrator {
 
         container.append(
             elements.a11yLiveRegion,
-            elements.headerGroup, // Append the group instead of individual elements
+            elements.headerGroup,
             elements.subJobsContainer
         );
 
@@ -147,23 +187,39 @@ export class ScanOrchestrator {
         context.subJobs.forEach(job => {
             const jobWrapper = this._createStyledElement('div', 'scan-job-wrapper is-queued');
             const jobEl = this._createStyledElement('div', 'scan-sub-job');
-            const spinner = this._createStyledElement('span', 'material-symbols-outlined scan-spinner', 'radio_button_unchecked');
+
+            // MODIFIED: Create unified dot-grid spinner for sub-jobs
+            const subSpinnerContainer = this._createStyledElement('div', 'scan-spinner is-sub-job-spinner');
+            const subDotGridWrapper = this._createStyledElement('div', 'dot-grid-wrapper');
+            const subDotGrid = this._createStyledElement('div', 'dot-grid-spinner');
+            for (let i = 0; i < 9; i++) {
+                subDotGrid.appendChild(this._createStyledElement('div', 'dot'));
+            }
+            subDotGridWrapper.appendChild(subDotGrid);
+            subSpinnerContainer.appendChild(subDotGridWrapper);
+
             const title = this._createStyledElement('span', 'scan-sub-job-title', job.title);
-            jobEl.append(spinner, title);
+            jobEl.append(subSpinnerContainer, title);
             jobWrapper.appendChild(jobEl);
             elements.subJobsContainer.appendChild(jobWrapper);
-            subJobTargets.push({ wrapper: jobWrapper, el: jobEl, spinner, title });
+            
+            // MODIFIED: Store references needed for the new animations
+            subJobTargets.push({ 
+                wrapper: jobWrapper, 
+                el: jobEl, 
+                spinnerContainer: subSpinnerContainer,
+                spinner: subDotGrid, 
+                title,
+                spinnerTimeline: null // Placeholder for the GSAP timeline
+            });
         });
         
         return { uiElements: elements, subJobTargets };
     }
     
     _runIntroAnimation({ ui }) {
-        // ADDED: Diagnostic logging and error handling
-        console.log('%c[FSM_ACTOR] >>>> _runIntroAnimation INVOKED', 'color: magenta; font-weight: bold;');
         try {
             return new Promise(resolve => {
-                // MODIFIED: Target the new header group for a smoother animation
                 const headerElements = [
                     ui.headerGroup,
                     ui.subJobsContainer
@@ -176,48 +232,70 @@ export class ScanOrchestrator {
                     delay: 0.1,
                     onComplete: resolve
                 });
+
+                if (ui.mainSpinner) {
+                    this.activeSpinnerTimeline = createDotGridSpinnerTimeline(ui.mainSpinner, this.gsap);
+                    this.activeSpinnerTimeline.play();
+                }
             });
         } catch (e) {
             console.error('%c[FSM_ACTOR] >>>> FATAL: Synchronous error in _runIntroAnimation', 'color: red; font-weight: bold;', e);
-            return Promise.reject(e); // Ensure the actor receives a rejection
+            return Promise.reject(e);
         }
     }
 
     _runOutroAnimation({ ui, conclusionMessage }) {
         return new Promise(resolve => {
-            const mainSpinner = ui.mainTitleContainer.querySelector('.main-processing');
-            if (mainSpinner) {
-                mainSpinner.classList.remove('main-processing');
-                mainSpinner.textContent = 'check_circle';
+            if (this.activeSpinnerTimeline) {
+                this.activeSpinnerTimeline.kill();
+                this.activeSpinnerTimeline = null;
             }
 
-            const tl = this.gsap.timeline();
+            const mainSpinnerContainer = ui.mainTitleContainer.querySelector('.scan-spinner');
+            const checkIcon = this._createStyledElement('span', 'material-symbols-outlined', 'check_circle');
 
-            tl.to([mainSpinner, ui.mainTitle], {
+            // Replace the spinner's container with the new icon
+            if (mainSpinnerContainer && mainSpinnerContainer.parentNode) {
+                mainSpinnerContainer.innerHTML = '';
+                mainSpinnerContainer.appendChild(checkIcon);
+            }
+
+            const tl = this.gsap.timeline({ onComplete: resolve });
+
+            tl.to([mainSpinnerContainer, ui.mainTitle], {
                 color: 'oklch(var(--terminal-text-color-success-l) var(--terminal-text-color-success-c) var(--terminal-text-color-success-h))',
                 duration: 0.3
             }, 0)
             .set(ui.scanTargetName, { clearProps: 'color' }, 0)
             .call(() => {
-                const conclusionEl = this._createStyledElement('div', 'scan-conclusion', conclusionMessage);
+                const conclusionEl = this._createStyledElement('div', 'scan-conclusion', ' '); // Start with space
                 ui.container.appendChild(conclusionEl);
                 this.gsap.from(conclusionEl, { autoAlpha: 0, duration: 0.5 });
+                
+                // MODIFIED: Use TextPlugin for a dynamic conclusion
+                this.gsap.to(conclusionEl, {
+                    duration: conclusionMessage.length * 0.04, // Duration based on text length
+                    text: conclusionMessage,
+                    ease: 'none'
+                });
             }, [], '+=0.2')
-            .to({}, { duration: 2.0 }) // Linger for 2 seconds
-            .call(resolve); // Resolve the promise at the end of the timeline
+            .to({}, { duration: 1.5 }); // Linger after typing is complete
         });
     }
 
     _cleanup() {
-        console.log('%c[DEBUG] Entered ScanOrchestrator._cleanup()', 'color: lightblue');
         document.removeEventListener('keydown', this._handleEscapeKey);
         document.body.classList.remove('is-scan-active');
+        
+        if (this.activeSpinnerTimeline) {
+            this.activeSpinnerTimeline.kill();
+            this.activeSpinnerTimeline = null;
+        }
+
         if (this.activeScanActor) {
-            // Unsubscribe all listeners before stopping to prevent race conditions on the final snapshot
             this.activeScanActor.stop();
         }
         this.activeScanActor = null;
-        console.log('%c[DEBUG] Exited ScanOrchestrator._cleanup()', 'color: lightblue');
     }
 
     _createStyledElement(tag, className, textContent = '') {

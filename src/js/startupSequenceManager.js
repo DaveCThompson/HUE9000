@@ -9,7 +9,8 @@ import { startupMachine, desktopPhaseConfigs } from './startupMachine.js';
 import { mobileStartupPhase } from './startupMobile.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // ENSURE appState is imported
-import { STARTUP_L_REDUCTION_FACTORS, DEFAULT_DIAL_A_HUE, MOBILE_BREAKPOINT, HUE_ASSIGNMENT_ROW_HUES } from './config/index.js';
+import { STARTUP_L_REDUCTION_FACTORS, DEFAULT_DIAL_A_HUE, MOBILE_BREAKPOINT, HUE_ASSIGNMENT_ROW_HUES, LENS_STARTUP_TARGET_POWER, DEFAULT_ASSIGNMENT_SELECTIONS } from './config/index.js';
+import { ButtonStates } from './buttonManager.js';
 
 export class StartupSequenceManager {
   constructor() {
@@ -113,6 +114,80 @@ export class StartupSequenceManager {
         phase: phaseNumber,
         isStepThroughMode: false 
     });
+  }
+
+  /**
+   * NEW: Bypasses the entire startup sequence and sets the app to its final interactive state.
+   * This is a development-only utility.
+   */
+  skipToInteractiveState() {
+    console.warn('%c[DEV] Skipping startup sequence and jumping to interactive state.', 'color: #ff8c00; font-weight: bold;');
+
+    // Use safe gets for managers that might not exist on mobile
+    const dom = serviceLocator.get('domElements');
+    const gsap = serviceLocator.get('gsap');
+    const lcdUpdater = serviceLocator.get('lcdUpdater');
+    const buttonManager = serviceLocator.get('buttonManager', true);
+    const lensManager = serviceLocator.get('lensManager');
+    const dialManager = serviceLocator.get('dialManager');
+    const isMobile = window.matchMedia(MOBILE_BREAKPOINT).matches;
+
+    // 1. Clean up body classes and startup-related styles
+    dom.body.classList.remove('pre-boot', 'is-starting-up', 'post-preload-hiding', 'is-transitioning-from-dim');
+    document.querySelectorAll('.animate-on-dim-exit').forEach(el => el.classList.remove('animate-on-dim-exit'));
+    gsap.set(dom.body, { opacity: 1 });
+    dom.root.style.setProperty('--startup-L-reduction-factor', '0');
+    dom.root.style.setProperty('--startup-opacity-factor', '1');
+    dom.root.style.setProperty('--startup-opacity-factor-boosted', '1');
+
+    // 2. Set final application state (but NOT the 'interactive' status yet)
+    appState.resetAppStateToDefaults(); // Start with a clean slate
+    appState.setTheme('dark'); // Final theme is dark
+    appState.setTrueLensPower(LENS_STARTUP_TARGET_POWER); // Set to default lens power
+
+    // 3. Manually set component states to their final values
+    lensManager.directUpdateLensVisuals(LENS_STARTUP_TARGET_POWER / 100);
+    dialManager.resizeAllCanvases(true); // Force redraw dials with correct theme
+
+    // Set all LCDs to their final 'active' state
+    [dom.terminalContainer, dom.lcdA, dom.lcdB].forEach(lcd => {
+        if (lcd) lcdUpdater.setLcdState(lcd, 'active');
+    });
+
+    // Set default button selections (Desktop-only)
+    if (buttonManager && !isMobile) {
+        buttonManager.getAllButtonInstances().forEach(btn => {
+            btn.setState(ButtonStates.ENERGIZED_UNSELECTED, { forceState: true });
+        });
+        buttonManager.setGroupSelected('system-power', 'on');
+        buttonManager.setGroupSelected('light', 'off'); // Aux light starts off
+        // Set default HUE ASSN selections
+        Object.keys(DEFAULT_ASSIGNMENT_SELECTIONS).forEach(targetKey => {
+            buttonManager.setGroupSelected(targetKey, DEFAULT_ASSIGNMENT_SELECTIONS[targetKey].toString());
+        });
+    }
+
+    // Mobile-specific state overrides
+    if (isMobile) {
+        const colorlessHue = HUE_ASSIGNMENT_ROW_HUES[0];
+        appState.setTargetColorProperties('env', colorlessHue);
+        appState.setTargetColorProperties('logo', colorlessHue);
+        appState.setTargetColorProperties('lcd', colorlessHue);
+        appState.setTargetColorProperties('btn', colorlessHue);
+    }
+    
+    // 4. Send the final terminal message
+    appState.emit('requestTerminalMessage', {
+        // FIX: The type must be 'startup' to find the correct message template.
+        type: 'startup',
+        source: 'DEV_SKIP',
+        messageKey: 'P12_SYSTEM_OPERATIONAL',
+    });
+
+    // 5. FINALLY, set the app status to interactive.
+    // This is the last step, ensuring all managers that react to this change
+    // will see the UI in its correct, final state.
+    appState.setAppStatus('interactive');
   }
 
   _resetVisualsAndState() {

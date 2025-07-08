@@ -154,6 +154,7 @@
 TERMINAL CHROMATIC ABERRATION
 ========================================================================
 */
+/* PROACTIVE FIX: Removed blur from text-shadow for a crisper effect. */
 .terminal-line,
 .scan-main-title,
 .scan-progress-label,
@@ -162,9 +163,9 @@ TERMINAL CHROMATIC ABERRATION
 .scan-target-name,
 .scan-sub-job-title,
 .scan-progressive-text,
-.scan-conclusion {
+.scan-conclusion,
+.scan-spinner {
     text-shadow:
         var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.7),
-        calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.7),
-        0 0 5px oklch(from currentColor l c h / 0.5);
+        calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.7);
 }

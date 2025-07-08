@@ -38,6 +38,9 @@ import { hapticFeedbackManager } from "./hapticFeedbackManager.js";
 import { createMobileInteraction } from "./mobileInteraction.js";
 import { ScanOrchestrator } from "./ScanOrchestrator.js";
 
+// ADD THIS FLAG AT THE TOP OF THE FILE
+const DEV_SKIP_STARTUP = true; // <-- SET TO true TO BYPASS, false FOR NORMAL OPERATION
+
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
 
@@ -213,17 +216,18 @@ function setupEventListeners() {
             audioManager.play('buttonPress', true);
             const actionLabel = button.getElement().getAttribute('aria-label');
             
+            // MODIFIED: Switch all action buttons to use the scan sequence
             switch (actionLabel) {
-                case 'Think':
-                    appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });
+                case 'Scan A':
+                    appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN1_SCAN', interrupt: true });
                     break;
-                case 'Build':
-                    appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE', interrupt: true });
+                case 'Scan B':
+                    appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN2_SCAN', interrupt: true });
                     break;
-                case 'Craft':
+                case 'Eval X':
                     appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN3_SCAN', interrupt: true });
                     break;
-                case 'Lead':
+                case 'Eval Y':
                     appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN4_SCAN', interrupt: true });
                     break;
             }
@@ -422,7 +426,10 @@ async function initializeApp() {
     serviceLocator.register('musicController', musicController);
 
     // PRD v2.2: The startup sequence should play automatically.
-    startupSequenceManager.start(false);
+    // This will be skipped if DEV_SKIP_STARTUP is true.
+    if (!DEV_SKIP_STARTUP) {
+        startupSequenceManager.start(false);
+    }
     console.log('[Main INIT] HUE 9000 Initialization Complete.');
 
     // PRD v2.2: Add event listeners for new mobile overlay controls.
@@ -477,21 +484,42 @@ document.addEventListener('DOMContentLoaded', () => {
     serviceLocator.register('audioManager', audioManager);
     audioManager.init(); 
 
-    // REFACTOR: Populate the preloader DOM object from the new DOMManager instance.
-    const preloaderDomForRun = {
-        body: domManager.body,
-        preloaderRoot: domManager.preloaderRoot,
-        streamFonts: domManager.streamFonts,
-        streamGraphics: domManager.streamGraphics,
-        streamAudio: domManager.streamAudio,
-        overallProgressPercentage: domManager.overallProgressPercentage,
-        overallProgressBar: domManager.overallProgressBar,
-        engageButton: domManager.preloaderEngageBtn, 
-        engageButtonContainer: domManager.engageButtonContainer,
-        criticalErrorMessageElement: domManager.criticalErrorMessageElement
-    };
+    // --- MODIFIED LOGIC FOR DEV SKIP ---
+    if (DEV_SKIP_STARTUP) {
+        console.warn('%c[DEV] Startup flag is ON. Bypassing preloader and sequence.', 'color: #ff8c00; font-weight: bold;');
+        
+        // Manually hide preloader elements
+        document.getElementById('preloader-mask').style.display = 'none';
+        if (domManager.preloaderRoot) {
+            domManager.preloaderRoot.style.display = 'none';
+        }
+        
+        // Initialize the app, then immediately skip to the end state
+        initializeApp().then(() => {
+            // The startup manager is now initialized and can be used
+            const startupManager = serviceLocator.get('startupSequenceManager');
+            startupManager.skipToInteractiveState();
+        }).catch(err => {
+            console.error("DEV SKIP: Initialization failed:", err);
+        });
 
-    runPreloader(preloaderDomForRun, gsap).then(initializeApp).catch(err => {
-        console.error("Initialization failed after preloader:", err);
-    });
+    } else {
+        // --- ORIGINAL LOGIC ---
+        const preloaderDomForRun = {
+            body: domManager.body,
+            preloaderRoot: domManager.preloaderRoot,
+            streamFonts: domManager.streamFonts,
+            streamGraphics: domManager.streamGraphics,
+            streamAudio: domManager.streamAudio,
+            overallProgressPercentage: domManager.overallProgressPercentage,
+            overallProgressBar: domManager.overallProgressBar,
+            engageButton: domManager.preloaderEngageBtn, 
+            engageButtonContainer: domManager.engageButtonContainer,
+            criticalErrorMessageElement: domManager.criticalErrorMessageElement
+        };
+
+        runPreloader(preloaderDomForRun, gsap).then(initializeApp).catch(err => {
+            console.error("Initialization failed after preloader:", err);
+        });
+    }
 });

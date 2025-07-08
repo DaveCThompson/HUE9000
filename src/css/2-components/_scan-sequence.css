@@ -7,9 +7,17 @@
     }
 
     .scan-sequence-container {
+        /* NEW: Define a local, systematic vertical rhythm */
+        --_scan-gap-base: var(--space-md);
+        /* MODIFIED: Reduced header gap for tighter spacing */
+        --_scan-gap-header: calc(var(--_scan-gap-base) * 0.75);
+        /* MODIFIED: Reduced sub-job gap to be much closer to terminal line-height */
+        --_scan-gap-sub-jobs: calc(var(--_scan-gap-base) * 1.0);
+        --_scan-gap-header-to-jobs: calc(var(--_scan-gap-base) * 2);
+
         display: flex;
         flex-direction: column;
-        gap: var(--space-xl); /* Increased gap for better separation */
+        gap: var(--_scan-gap-header-to-jobs); /* Gap between header and jobs list */
         width: 100%;
         padding: var(--space-md) 0;
         transform-origin: top center;
@@ -19,7 +27,7 @@
     .scan-header-group {
         display: flex;
         flex-direction: column;
-        gap: var(--space-md); /* Tighter gap for the header block */
+        gap: var(--_scan-gap-header); /* Use the defined variable */
     }
 
     .scan-main-title-container,
@@ -33,20 +41,77 @@
     }
 
     .scan-spinner {
-        font-size: 1.2em;
+        /* MODIFIED: Reduced size for a more refined look */
+        font-size: 0.75em;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         transition: color 0.3s ease-out;
+        /* MODIFIED: Set explicit size for alignment consistency */
+        width: 1em;
+        height: 1em;
+        line-height: 1;
+        vertical-align: middle;
+        transform: translateY(-0.05em);
+    }
+
+    /* MODIFIED: Add specific sizing for sub-job spinners */
+    .scan-spinner.is-sub-job-spinner {
+        /* The spinner itself will be smaller inside its 1em box */
+        font-size: 0.9em;
+    }
+
+    /* NEW: Reduce size of completion checkmarks to match visual weight of spinners */
+    .scan-sub-job.is-complete .material-symbols-outlined,
+    .scan-main-title-container .scan-spinner .material-symbols-outlined {
+        /* MODIFIED: Further reduced icon size to ~75% */
+        font-size: 0.75em;
     }
 
     @keyframes scan-spinner-spin {
         to { transform: rotate(360deg); }
     }
 
-    .scan-spinner.main-processing {
-        animation: scan-spinner-spin 1.5s linear infinite;
+    /* --- NEW: High-craft spinner fixes --- */
+
+    /* Wrapper for sub-job icons to ensure centered rotation */
+    .spinner-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
     }
+
+    /* Apply animation to the wrapper, not the icon */
+    .scan-sub-job.is-active .spinner-icon-wrapper {
+        animation: scan-spinner-spin 1s linear infinite;
+    }
+
+    /* Wrapper for the main dot grid to apply scaling */
+    .dot-grid-wrapper {
+        /* MODIFIED: Reverted scale to 1.0 as requested */
+        transform: scale(1.0);
+    }
+    
+    .dot-grid-spinner {
+        display: grid;
+        /* Revert to crisp px values, scaling is handled by parent */
+        grid-template-columns: repeat(3, 2px);
+        gap: 2px;
+        transform-origin: center;
+    }
+
+    .dot-grid-spinner .dot {
+        width: 2px;
+        height: 2px;
+        background-color: currentColor; /* Use terminal text color */
+        border-radius: 50%;
+        transform: scale(0); /* Start hidden */
+        opacity: 0;
+    }
+    /* --- End of High-craft spinner fixes --- */
+
 
     .scan-main-title,
     .scan-progress-label,
@@ -68,8 +133,8 @@
     .scan-sub-jobs-container {
         display: flex;
         flex-direction: column;
-        gap: var(--space-lg);
-        margin-top: var(--space-lg);
+        gap: var(--_scan-gap-sub-jobs); /* Use the defined variable */
+        margin-top: 0; /* Let the parent container's gap handle this */
         padding-left: var(--space-lg);
         position: relative;
     }
@@ -78,14 +143,17 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-sm);
-        transition: opacity 0.4s ease, max-height 0.5s ease;
+        /* MODIFIED: Enhanced reveal transition */
+        transition: opacity 0.4s ease, max-height 0.5s ease, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         overflow: hidden;
         max-height: 20rem;
+        transform: translateY(0); /* Final state */
     }
 
     .scan-job-wrapper.is-queued {
         opacity: 0;
         max-height: 0;
+        transform: translateY(15px); /* Initial state */
     }
 
     .scan-sub-job {
@@ -94,10 +162,6 @@
         gap: var(--space-md);
         font-size: 0.9em;
         transition: opacity 0.3s ease-out, color 0.3s ease-out;
-    }
-
-    .scan-sub-job.is-active .scan-spinner {
-        animation: scan-spinner-spin 1s linear infinite;
     }
 
     .scan-sub-job.is-active .scan-sub-job-title {
@@ -120,10 +184,14 @@
     }
 
     .scan-progressive-line-container {
+        /* NEW: Define and use an indent variable for maintainability */
+        --_sub-job-icon-width: 1em; /* Matches .scan-spinner size */
+        --_sub-job-indent: calc(var(--_sub-job-icon-width) + var(--space-md));
+        
         display: flex;
         flex-direction: column;
         gap: var(--space-xs);
-        padding-left: calc(1.2em + var(--space-md));
+        padding-left: var(--_sub-job-indent);
         /* NEW: Set font-size context here for all children */
         font-size: 0.85em;
     }
@@ -134,27 +202,41 @@
         white-space: nowrap;
     }
 
+
+
+    /* MODIFIED: Bar chart now uses a segmented approach */
     .scan-progressive-bar-wrapper {
+        display: flex;
+        gap: 1px;
         width: calc(100% - 2ch);
-        height: 0.125rem;
-        background-color: oklch(20% 0 0 / 0.3);
-        border-radius: 2px;
-        overflow: hidden;
+        height: 0.25rem; /* Thicker for better visibility */
         margin-left: 2ch;
     }
 
-    .scan-progressive-bar-fill {
-        width: 0%;
+    .scan-progressive-bar-segment {
+        flex: 1;
         height: 100%;
-        border-radius: 2px;
-        background-color: oklch(0.85 var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue));
+        border-radius: 1px;
+        background-color: oklch(20% 0 0 / 0.3); /* Off state */
+        transition: background-color 0.1s linear, box-shadow 0.1s linear;
     }
+
+    .scan-progressive-bar-segment.is-filled {
+        background-color: oklch(0.85 var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue));
+        /* ENHANCEMENT: Add subtle glow to filled segments */
+        box-shadow:
+            inset 0 0 2px 0 oklch(from currentColor l c h / 0.5),
+            0 0 2px 0 oklch(from currentColor l c h / 0.2);
+    }
+
 
     /* --- "Type Window" Renderer Specific Styles --- */
     .type-window-container {
         position: relative;
-        padding-top: var(--space-xs);
-        padding-bottom: var(--space-xs);
+        padding: var(--space-sm) var(--space-md);
+        /* ADDED: Darker background to frame the content */
+        background-color: oklch(15% 0 0 / 0.15);
+        border-radius: var(--space-xs);
     }
 
     .type-window-pulse {
@@ -169,7 +251,8 @@
             transparent 100%
         );
         background-size: 200% 100%;
-        animation: scan-type-window-pulse 2s ease-in-out infinite;
+        /* MODIFIED: Faster pulse animation */
+        animation: scan-type-window-pulse 1s ease-in-out infinite;
     }
 
     @keyframes scan-type-window-pulse {
