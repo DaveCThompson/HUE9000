@@ -125,7 +125,9 @@ export class ScanOrchestrator {
                 console.error("[Scan Validator] A subJob is missing required properties (title, renderer, hue).", job);
                 return false;
             }
-            if (!rendererRegistry.get(job.renderer)) {
+            try {
+                rendererRegistry.get(job.renderer)
+            } catch(e) {
                  console.error(`[Scan Validator] Renderer "${job.renderer}" is not registered.`);
                  return false;
             }
@@ -136,6 +138,8 @@ export class ScanOrchestrator {
     _createUI(container, context) {
         document.body.classList.add('is-scan-active');
         container.innerHTML = ''; // Clear previous content
+        // Add the main container class for styling
+        container.classList.add('scan-sequence-container');
 
         const elements = {
             container,
@@ -185,7 +189,7 @@ export class ScanOrchestrator {
 
         const subJobTargets = [];
         context.subJobs.forEach(job => {
-            const jobWrapper = this._createStyledElement('div', 'scan-job-wrapper is-queued');
+            const jobWrapper = this._createStyledElement('div', 'scan-job-wrapper');
             const jobEl = this._createStyledElement('div', 'scan-sub-job');
 
             // MODIFIED: Create unified dot-grid spinner for sub-jobs
@@ -254,21 +258,24 @@ export class ScanOrchestrator {
             const mainSpinnerContainer = ui.mainTitleContainer.querySelector('.scan-spinner');
             const checkIcon = this._createStyledElement('span', 'material-symbols-outlined', 'check_circle');
 
-            // Replace the spinner's container with the new icon
-            if (mainSpinnerContainer && mainSpinnerContainer.parentNode) {
+            // CRITICAL FIX: Replace the spinner's content, not the container itself.
+            if (mainSpinnerContainer) {
                 mainSpinnerContainer.innerHTML = '';
                 mainSpinnerContainer.appendChild(checkIcon);
+                // Animate the icon's appearance for polish
+                this.gsap.from(checkIcon, { scale: 0, opacity: 0, duration: 0.4, ease: 'back.out(1.7)' });
             }
 
             const tl = this.gsap.timeline({ onComplete: resolve });
 
             tl.to([mainSpinnerContainer, ui.mainTitle], {
-                color: 'oklch(var(--terminal-text-color-success-l) var(--terminal-text-color-success-c) var(--terminal-text-color-success-h))',
+                className: '+=line-success', // Use class for color
                 duration: 0.3
             }, 0)
             .set(ui.scanTargetName, { clearProps: 'color' }, 0)
             .call(() => {
                 const conclusionEl = this._createStyledElement('div', 'scan-conclusion', ' '); // Start with space
+                conclusionEl.classList.add('line-success'); // Use class for color
                 ui.container.appendChild(conclusionEl);
                 this.gsap.from(conclusionEl, { autoAlpha: 0, duration: 0.5 });
                 

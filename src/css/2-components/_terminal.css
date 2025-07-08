@@ -41,16 +41,16 @@
 }
 
 /* Color-coded line styles */
-.terminal-line.line-error {
+.terminal-line.line-error, .line-error {
     color: oklch(var(--terminal-text-color-error-l) var(--terminal-text-color-error-c) var(--terminal-text-color-error-h));
 }
-.terminal-line.line-warning {
+.terminal-line.line-warning, .line-warning {
     color: oklch(var(--terminal-text-color-warning-l) var(--terminal-text-color-warning-c) var(--terminal-text-color-warning-h));
 }
-.terminal-line.line-success {
+.terminal-line.line-success, .line-success {
     color: oklch(var(--terminal-text-color-success-l) var(--terminal-text-color-success-c) var(--terminal-text-color-success-h));
 }
-.terminal-line.line-resist {
+.terminal-line.line-resist, .line-resist {
     color: oklch(var(--terminal-text-color-resist-l) var(--terminal-text-color-resist-c) var(--terminal-text-color-resist-h));
 }
 
@@ -151,10 +151,12 @@
 
 /*
 ========================================================================
-TERMINAL CHROMATIC ABERRATION
+TERMINAL CHROMATIC ABERRATION - UNIFIED RULE
 ========================================================================
 */
-/* PROACTIVE FIX: Removed blur from text-shadow for a crisper effect. */
+/* This single, unified rule applies the CA effect to all relevant text elements
+   across the application. It is driven by the --_ca-current-offset variable
+   animated by DisruptionManager.js. It uses theme variables for colors. */
 .terminal-line,
 .scan-main-title,
 .scan-progress-label,
@@ -164,8 +166,10 @@ TERMINAL CHROMATIC ABERRATION
 .scan-sub-job-title,
 .scan-progressive-text,
 .scan-conclusion,
-.scan-spinner {
+/* Selectors from V2 displays (MoodMatrix, IntensityDisplay) */
+.display-container__row--name,
+.major-block--in-progress {
     text-shadow:
-        var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.7),
-        calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.7);
+        var(--_ca-current-offset, 0px) 0 0 oklch(from var(--terminal-bloom-aberration-color-1) l c h / var(--lcd-chroma-red-opacity)),
+        calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(from var(--terminal-bloom-aberration-color-2) l c h / var(--lcd-chroma-blue-opacity));
 }

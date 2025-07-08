@@ -53,26 +53,16 @@
     min-height: 0;
 }
 
-/* Universal Screen Effects (Sweep ONLY) */
+/* MODIFIED: The overlay is now a simple, transparent container. */
 #sweep-overlay {
     position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 2;
     border-radius: inherit;
-    will-change: background-position;
-    background-image:
-        linear-gradient(to bottom,
-            transparent,
-            transparent calc(50% - 1px),
-            oklch(95% calc(var(--dynamic-lcd-chroma) * 0.5) var(--dynamic-lcd-hue) / var(--lcd-sweep-opacity, 0.045)) calc(50% - 1px),
-            oklch(95% calc(var(--dynamic-lcd-chroma) * 0.5) var(--dynamic-lcd-hue) / var(--lcd-sweep-opacity, 0.045)) calc(50% + 1px),
-            transparent calc(50% + 1px),
-            transparent
-        );
-    background-size: 100% 200%;
-    animation: lcdSweep var(--lcd-sweep-speed, 5s) linear infinite;
-    /* FIX: Make the sweep overlay hidden by default. */
+    /* CRITICAL: This clips the sweep lines to the LCD bounds. */
+    overflow: hidden;
+    /* The overlay itself is made visible by the parent's state */
     visibility: hidden;
     opacity: 0;
     transition: opacity var(--transition-duration-medium) ease, visibility var(--transition-duration-medium) ease;
@@ -85,9 +75,32 @@
     opacity: 1;
 }
 
+/* NEW: The individual sweeping lines */
+#sweep-overlay .sweep-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px; /* A fixed, crisp height */
+    background-image: linear-gradient(to bottom,
+        transparent,
+        transparent calc(50% - 1px),
+        oklch(95% calc(var(--dynamic-lcd-chroma) * 0.5) var(--dynamic-lcd-hue) / var(--lcd-sweep-opacity, 0.045)) calc(50% - 1px),
+        oklch(95% calc(var(--dynamic-lcd-chroma) * 0.5) var(--dynamic-lcd-hue) / var(--lcd-sweep-opacity, 0.045)) calc(50% + 1px),
+        transparent calc(50% + 1px),
+        transparent
+    );
+    will-change: transform;
+    animation: lcdSweep var(--lcd-sweep-speed, 5s) linear infinite;
+}
+
+/* NEW: Delay the second line to create a seamless loop */
+#sweep-overlay .sweep-line:nth-child(2) {
+    animation-delay: calc(var(--lcd-sweep-speed, 5s) / 2);
+}
+
 /* Pause animations when observer fires */
-.lcd-container.effects-paused #sweep-overlay,
-.actual-lcd-screen-element.effects-paused #sweep-overlay {
+.lcd-container.effects-paused #sweep-overlay .sweep-line,
+.actual-lcd-screen-element.effects-paused #sweep-overlay .sweep-line {
     animation-play-state: paused;
 }
 
@@ -254,8 +267,13 @@
     mix-blend-mode: screen;
 }
 
-/* FIX: Reverse sweep direction */
+/* REVISED: The keyframe now animates the transform property for performance. */
 @keyframes lcdSweep {
-    from { background-position-y: 100%; }
-    to { background-position-y: -100%; }
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        /* Use a large vh unit to guarantee it clears the screen on all viewport sizes */
+        transform: translateY(100vh);
+    }
 }

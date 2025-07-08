@@ -124,7 +124,7 @@ export function renderTypeWindow(target, jobConfig, gsap) {
                     duration: lineData.duration * 0.7,
                     text: {
                         value: `> ${lineData.text}`,
-                        scrambleText: { chars: "lowerCase", speed: 0.2 }
+                        scrambleText: { chars: "01", speed: 0.2 }
                     },
                     ease: `steps(${lineData.text.length})`,
                 }, isFirst ? ">" : "+=0.3"); // Add a pause between lines

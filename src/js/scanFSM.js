@@ -3,7 +3,7 @@
  * @description Defines the hierarchical XState machine for managing a scan sequence.
  */
 import { createMachine, fromPromise, assign } from 'xstate';
-import { rendererRegistry } from './scanRenderers.js'; // MODIFIED: Corrected import path to fix build error
+import { rendererRegistry } from './scanRenderers.js';
 import { createDotGridSpinnerTimeline } from './animationUtils.js';
 
 const RENDERER_TIMEOUT_MS = 15000; // 15 seconds
@@ -31,16 +31,14 @@ export function createScanMachine(config, implementation) {
                     const { ui, subJobs, subJobTargets } = context;
                     const jobUI = subJobTargets[index];
                     
-                    if (jobUI.wrapper.classList.contains('is-queued')) {
-                        jobUI.wrapper.classList.remove('is-queued');
-                        jobUI.el.classList.add('is-active');
+                    jobUI.wrapper.classList.remove('is-queued');
+                    jobUI.el.classList.add('is-active');
 
-                        // MODIFIED: Create and play the dot-grid spinner animation
-                        jobUI.spinnerTimeline = createDotGridSpinnerTimeline(jobUI.spinner, gsap);
-                        jobUI.spinnerTimeline.play();
-                        
-                        gsap.set([ui.scanTargetName, jobUI.spinnerContainer, jobUI.title], { color: `oklch(0.85 0.20 ${subJobs[index].hue})` });
-                    }
+                    // MODIFIED: Create and play the dot-grid spinner animation
+                    jobUI.spinnerTimeline = createDotGridSpinnerTimeline(jobUI.spinner, gsap);
+                    jobUI.spinnerTimeline.play();
+                    
+                    gsap.set([ui.scanTargetName, jobUI.spinnerContainer, jobUI.title], { color: `oklch(0.85 0.20 ${subJobs[index].hue})` });
                 }
             ],
             invoke: {
@@ -74,26 +72,27 @@ export function createScanMachine(config, implementation) {
                                 const checkIcon = document.createElement('span');
                                 checkIcon.className = 'material-symbols-outlined';
                                 checkIcon.textContent = 'check_circle';
-                                checkIcon.style.opacity = '0'; // Start hidden for animation
 
                                 const transitionTl = gsap.timeline();
-                                transitionTl.to(jobUI.spinnerContainer, {
-                                    scale: 0.7,
+                                transitionTl.to(jobUI.spinner, { // Animate the dots
+                                    scale: 0,
                                     opacity: 0,
                                     duration: 0.2,
                                     ease: 'power2.in',
                                     onComplete: () => {
                                         if (jobUI.spinnerTimeline) jobUI.spinnerTimeline.kill();
-                                        jobUI.spinnerContainer.replaceWith(checkIcon);
+                                        jobUI.spinner.innerHTML = ''; // Clear dots
+                                        // CRITICAL FIX: Append icon to the persistent spinner container
+                                        jobUI.spinnerContainer.appendChild(checkIcon);
                                     }
                                 })
-                                .to(checkIcon, {
-                                    scale: 1,
-                                    opacity: 1,
+                                .from(checkIcon, { // Animate the icon
+                                    scale: 0,
+                                    opacity: 0,
                                     duration: 0.4,
                                     ease: 'back.out(1.7)'
                                 }, ">-0.1")
-                                .set([checkIcon, jobUI.title], { clearProps: 'color' }, "<");
+                                .set([jobUI.spinnerContainer, jobUI.title], { clearProps: 'color' }, "<");
 
                                 const newProgress = Math.round(((index + 1) / subJobs.length) * 100);
                                 gsap.to(ui.progressValue, {

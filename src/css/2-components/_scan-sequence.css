@@ -36,67 +36,40 @@
         display: flex;
         align-items: center;
         gap: var(--space-md);
-        font-size: 0.9em;
         font-weight: 500;
     }
 
+    /* MODIFIED: The container is now sized, and the icon will inherit this size.
+       This is a more robust way to control the icon's final rendered size. */
     .scan-spinner {
-        /* MODIFIED: Reduced size for a more refined look */
-        font-size: 0.75em;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: color 0.3s ease-out;
-        /* MODIFIED: Set explicit size for alignment consistency */
         width: 1em;
         height: 1em;
         line-height: 1;
         vertical-align: middle;
         transform: translateY(-0.05em);
+        transition: color 0.3s ease-out;
+        /* Set the font-size of the container itself. The icon will inherit this.
+           1em makes it match the surrounding text size. Use a smaller value like
+           0.8em or 0.9em if you want the icon slightly smaller than the text. */
+        font-size: 1em;
     }
 
-    /* MODIFIED: Add specific sizing for sub-job spinners */
-    .scan-spinner.is-sub-job-spinner {
-        /* The spinner itself will be smaller inside its 1em box */
-        font-size: 0.9em;
+    /* MODIFIED: Removed the problematic font-size rule from the icon.
+       The icon will now correctly inherit its size from the .scan-spinner parent. */
+    .scan-spinner .material-symbols-outlined {
+        font-variation-settings: 'FILL' 1;
     }
 
-    /* NEW: Reduce size of completion checkmarks to match visual weight of spinners */
-    .scan-sub-job.is-complete .material-symbols-outlined,
-    .scan-main-title-container .scan-spinner .material-symbols-outlined {
-        /* MODIFIED: Further reduced icon size to ~75% */
-        font-size: 0.75em;
-    }
-
-    @keyframes scan-spinner-spin {
-        to { transform: rotate(360deg); }
-    }
-
-    /* --- NEW: High-craft spinner fixes --- */
-
-    /* Wrapper for sub-job icons to ensure centered rotation */
-    .spinner-icon-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-    }
-
-    /* Apply animation to the wrapper, not the icon */
-    .scan-sub-job.is-active .spinner-icon-wrapper {
-        animation: scan-spinner-spin 1s linear infinite;
-    }
-
-    /* Wrapper for the main dot grid to apply scaling */
+    /* --- NEW: High-craft spinner styles --- */
     .dot-grid-wrapper {
-        /* MODIFIED: Reverted scale to 1.0 as requested */
         transform: scale(1.0);
     }
     
     .dot-grid-spinner {
         display: grid;
-        /* Revert to crisp px values, scaling is handled by parent */
         grid-template-columns: repeat(3, 2px);
         gap: 2px;
         transform-origin: center;
@@ -105,25 +78,12 @@
     .dot-grid-spinner .dot {
         width: 2px;
         height: 2px;
-        background-color: currentColor; /* Use terminal text color */
+        background-color: currentColor;
         border-radius: 50%;
-        transform: scale(0); /* Start hidden */
+        transform: scale(0); /* Start hidden, GSAP will animate */
         opacity: 0;
     }
-    /* --- End of High-craft spinner fixes --- */
-
-
-    .scan-main-title,
-    .scan-progress-label,
-    .scan-progress-value,
-    .scan-target-label,
-    .scan-target-name,
-    .scan-sub-job-title,
-    .scan-progressive-text,
-    .scan-conclusion {
-        /* Inherit the chromatic aberration effect from the terminal */
-        text-shadow: inherit;
-    }
+    /* --- End of High-craft spinner styles --- */
 
     .scan-target-name {
         font-weight: 600;
@@ -134,7 +94,7 @@
         display: flex;
         flex-direction: column;
         gap: var(--_scan-gap-sub-jobs); /* Use the defined variable */
-        margin-top: 0; /* Let the parent container's gap handle this */
+        margin-top: 0;
         padding-left: var(--space-lg);
         position: relative;
     }
@@ -143,24 +103,14 @@
         display: flex;
         flex-direction: column;
         gap: var(--space-sm);
-        /* MODIFIED: Enhanced reveal transition */
-        transition: opacity 0.4s ease, max-height 0.5s ease, transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-        overflow: hidden;
-        max-height: 20rem;
-        transform: translateY(0); /* Final state */
-    }
-
-    .scan-job-wrapper.is-queued {
-        opacity: 0;
-        max-height: 0;
-        transform: translateY(15px); /* Initial state */
+        transition: opacity 0.3s ease;
+        overflow: visible; /* Allow renderers to exceed bounds if needed */
     }
 
     .scan-sub-job {
         display: flex;
         align-items: center;
         gap: var(--space-md);
-        font-size: 0.9em;
         transition: opacity 0.3s ease-out, color 0.3s ease-out;
     }
 
@@ -173,18 +123,16 @@
     }
 
     .scan-sub-job.is-complete .scan-spinner {
-        animation: none;
-        color: inherit;
+        color: oklch(var(--terminal-text-color-success-l) var(--terminal-text-color-success-c) var(--terminal-text-color-success-h));
     }
-
+    
     .scan-conclusion {
         margin-top: var(--space-xl);
         font-weight: 600;
-        color: oklch(var(--terminal-text-color-success-l) var(--terminal-text-color-success-c) var(--terminal-text-color-success-h));
+        /* Color is now applied via .line-success class */
     }
 
     .scan-progressive-line-container {
-        /* NEW: Define and use an indent variable for maintainability */
         --_sub-job-icon-width: 1em; /* Matches .scan-spinner size */
         --_sub-job-indent: calc(var(--_sub-job-icon-width) + var(--space-md));
         
@@ -192,24 +140,19 @@
         flex-direction: column;
         gap: var(--space-xs);
         padding-left: var(--_sub-job-indent);
-        /* NEW: Set font-size context here for all children */
         font-size: 0.85em;
     }
 
     .scan-progressive-text {
-        /* REMOVED: font-size is now on the parent container */
         font-family: 'IBM Plex Mono', monospace;
         white-space: nowrap;
     }
 
-
-
-    /* MODIFIED: Bar chart now uses a segmented approach */
     .scan-progressive-bar-wrapper {
         display: flex;
         gap: 1px;
         width: calc(100% - 2ch);
-        height: 0.25rem; /* Thicker for better visibility */
+        height: 0.25rem;
         margin-left: 2ch;
     }
 
@@ -223,18 +166,15 @@
 
     .scan-progressive-bar-segment.is-filled {
         background-color: oklch(0.85 var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue));
-        /* ENHANCEMENT: Add subtle glow to filled segments */
         box-shadow:
             inset 0 0 2px 0 oklch(from currentColor l c h / 0.5),
             0 0 2px 0 oklch(from currentColor l c h / 0.2);
     }
 
-
     /* --- "Type Window" Renderer Specific Styles --- */
     .type-window-container {
         position: relative;
         padding: var(--space-sm) var(--space-md);
-        /* ADDED: Darker background to frame the content */
         background-color: oklch(15% 0 0 / 0.15);
         border-radius: var(--space-xs);
     }
@@ -251,7 +191,6 @@
             transparent 100%
         );
         background-size: 200% 100%;
-        /* MODIFIED: Faster pulse animation */
         animation: scan-type-window-pulse 1s ease-in-out infinite;
     }
 

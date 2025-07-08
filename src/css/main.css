@@ -25,6 +25,7 @@
 @import url('./1-base/_dim-to-theme-transition.css') layer(base);
 
 /* --- 2: Components Layer --- */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0..1,0') layer(components);
 @import url('./2-components/_preloader.css') layer(components);
 @import url('./2-components/_side-panels.css') layer(components);
 @import url('./2-components/_panel-bezel.css') layer(components);
