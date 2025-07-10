@@ -166,6 +166,10 @@ TERMINAL CHROMATIC ABERRATION - UNIFIED RULE
 .scan-sub-job-title,
 .scan-progressive-text,
 .scan-conclusion,
+/* MODIFIED: Replaced the previous selector with a more robust, universal one
+   that targets ALL icons within the scan sequence container. This ensures the
+   main checkmark and sub-job checkmarks all receive the CA effect. */
+.scan-sequence-container .material-symbols-outlined,
 /* Selectors from V2 displays (MoodMatrix, IntensityDisplay) */
 .display-container__row--name,
 .major-block--in-progress {

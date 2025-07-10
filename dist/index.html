@@ -17,13 +17,12 @@
 
     <!-- Google Fonts API CSS (display=swap is good for fallback) -->
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0..1,0" />
 
     <!-- ACCESSIBILITY: Polyfill for :focus-visible pseudo-class -->
     <script src="https://unpkg.com/focus-visible@5.2.0/dist/focus-visible.js" defer></script>
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-BHZXs-q1.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-B8UCGq3h.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-BTzPrYCK.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-BuO6cJ12.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -145,21 +144,24 @@
                             </div>
                             <!-- Overlays are siblings to lcd-container so they don't scroll -->
                             <div class="disruption-overlay"></div>
-                            <div id="sweep-overlay" class="overlay"></div>
+                            <div id="sweep-overlay" class="overlay">
+                                <div class="sweep-line"></div>
+                                <div class="sweep-line"></div>
+                            </div>
                          </div>
                          <div class="block-label-bottom block-label-bottom--descriptor">TERMINAL</div>
                       </div>
                   </div>
                  <div class="panel-section lower-section">
                      <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--left" data-group-id="skill-scan-group">
-                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Think"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">THINK</div></div>
-                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Build"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BUILD</div></div>
-                         <div class="block-label-bottom block-label-bottom--descriptor">SKILL SCAN</div>
+                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan A"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">SCAN A</div></div>
+                         <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Scan B"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">SCAN B</div></div>
+                         <div class="block-label-bottom block-label-bottom--descriptor">SCAN</div>
                      </div>
                     <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--right" data-group-id="fit-eval-group">
-                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Craft"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">CRAFT</div></div>
-                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Lead"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">LEAD</div></div>
-                   <div class="block-label-bottom block-label-bottom--descriptor">FIT EVAL</div>
+                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Eval X"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">EVAL X</div></div>
+                        <div class="button-unit button-unit--action button-unit--l" role="button" tabindex="0" aria-label="Eval Y"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">EVAL Y</div></div>
+                   <div class="block-label-bottom block-label-bottom--descriptor">EVAL</div>
                    </div>
                  </div>
             </div>
@@ -232,7 +234,10 @@
                         <div class="hue-lcd-display lcd-container" id="hue-lcd-A" aria-live="polite">
                             <div class="lcd-content-wrapper"></div>
                             <div class="disruption-overlay"></div>
-                            <div id="sweep-overlay" class="overlay"></div>
+                            <div id="sweep-overlay" class="overlay">
+                                <div class="sweep-line"></div>
+                                <div class="sweep-line"></div>
+                            </div>
                         </div>
                         <div id="dial-canvas-container-A" class="dial-canvas-container" data-dial-id="A" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="41" aria-labelledby="dial-A-label">
                             <div class="dial-shadow-host"></div>
@@ -243,7 +248,10 @@
                         <div class="hue-lcd-display lcd-container" id="hue-lcd-B" aria-live="polite">
                             <div class="lcd-content-wrapper"></div>
                             <div class="disruption-overlay"></div>
-                            <div id="sweep-overlay" class="overlay"></div>
+                            <div id="sweep-overlay" class="overlay">
+                                <div class="sweep-line"></div>
+                                <div class="sweep-line"></div>
+                            </div>
                         </div>
                         <div id="dial-canvas-container-B" class="dial-canvas-container" data-dial-id="B" role="slider" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="360" aria-valuenow="0" aria-labelledby="dial-B-label">
                             <div class="dial-shadow-host"></div>
@@ -272,13 +280,13 @@
                 <!-- The action buttons container, now inside the same panel-section -->
                 <div class="mobile-terminal-actions-flex-container">
                     <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--left">
-                        <div class="button-unit button-unit--action is-energized" data-action="think" aria-label="Think"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">THINK</div></div>
-                        <div class="button-unit button-unit--action is-energized" data-action="build" aria-label="Build"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">BUILD</div></div>
+                        <div class="button-unit button-unit--action is-energized" data-action="scan-a" aria-label="Scan A"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">SCAN A</div></div>
+                        <div class="button-unit button-unit--action is-energized" data-action="scan-b" aria-label="Scan B"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">SCAN B</div></div>
                         <div class="block-label-bottom block-label-bottom--descriptor">SKILL SCAN</div>
                     </div>
                     <div class="scan-button-block control-block joined-block-pair__item joined-block-pair__item--right">
-                        <div class="button-unit button-unit--action is-energized" data-action="craft" aria-label="Craft"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">CRAFT</div></div>
-                        <div class="button-unit button-unit--action is-energized" data-action="lead" aria-label="Lead"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">LEAD</div></div>
+                        <div class="button-unit button-unit--action is-energized" data-action="eval-x" aria-label="Eval X"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">EVAL X</div></div>
+                        <div class="button-unit button-unit--action is-energized" data-action="eval-y" aria-label="Eval Y"><div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div><div class="button-bg-frame"></div><div class="button-text">EVAL Y</div></div>
                         <div class="block-label-bottom block-label-bottom--descriptor">FIT EVAL</div>
                     </div>
                 </div>

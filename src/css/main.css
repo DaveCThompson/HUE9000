@@ -23,9 +23,12 @@
 @import url('./1-base/_base.css') layer(base);
 @import url('./1-base/_typography.css') layer(base);
 @import url('./1-base/_dim-to-theme-transition.css') layer(base);
+/* MODIFIED: The Google Fonts import is now in the 'base' layer. This gives it the
+   lowest priority, ensuring our component styles in the 'components' layer
+   can easily override its defaults without needing !important. */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0..1,0') layer(base);
 
 /* --- 2: Components Layer --- */
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0..1,0') layer(components);
 @import url('./2-components/_preloader.css') layer(components);
 @import url('./2-components/_side-panels.css') layer(components);
 @import url('./2-components/_panel-bezel.css') layer(components);

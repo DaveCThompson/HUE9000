@@ -39,8 +39,7 @@
         font-weight: 500;
     }
 
-    /* MODIFIED: The container is now sized, and the icon will inherit this size.
-       This is a more robust way to control the icon's final rendered size. */
+    /* The container provides a stable layout box. */
     .scan-spinner {
         display: inline-flex;
         align-items: center;
@@ -48,18 +47,15 @@
         width: 1em;
         height: 1em;
         line-height: 1;
-        vertical-align: middle;
-        transform: translateY(-0.05em);
+        vertical-align: text-bottom;
         transition: color 0.3s ease-out;
-        /* Set the font-size of the container itself. The icon will inherit this.
-           1em makes it match the surrounding text size. Use a smaller value like
-           0.8em or 0.9em if you want the icon slightly smaller than the text. */
-        font-size: 1em;
     }
 
-    /* MODIFIED: Removed the problematic font-size rule from the icon.
-       The icon will now correctly inherit its size from the .scan-spinner parent. */
-    .scan-spinner .material-symbols-outlined {
+    /* DEFINITIVE FIX: Use a single, authoritative selector to style ALL icons
+       (main checkmark and sub-job checkmarks) within the scan sequence container.
+       This ensures they are all sized correctly and rendered as filled. */
+    .scan-sequence-container .material-symbols-outlined {
+        font-size: 1em;
         font-variation-settings: 'FILL' 1;
     }
 
@@ -82,6 +78,10 @@
         border-radius: 50%;
         transform: scale(0); /* Start hidden, GSAP will animate */
         opacity: 0;
+        /* ADDED: Apply the CA effect using box-shadow for non-text elements. */
+        box-shadow:
+            var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.7),
+            calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.7);
     }
     /* --- End of High-craft spinner styles --- */
 
@@ -123,7 +123,7 @@
     }
 
     .scan-sub-job.is-complete .scan-spinner {
-        color: oklch(var(--terminal-text-color-success-l) var(--terminal-text-color-success-c) var(--terminal-text-color-success-h));
+        color: inherit;
     }
     
     .scan-conclusion {

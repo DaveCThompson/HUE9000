@@ -256,7 +256,7 @@ export class ScanOrchestrator {
             }
 
             const mainSpinnerContainer = ui.mainTitleContainer.querySelector('.scan-spinner');
-            const checkIcon = this._createStyledElement('span', 'material-symbols-outlined', 'check_circle');
+            const checkIcon = this._createStyledElement('span', 'material-symbols-outlined', 'check');
 
             // CRITICAL FIX: Replace the spinner's content, not the container itself.
             if (mainSpinnerContainer) {
@@ -268,11 +268,7 @@ export class ScanOrchestrator {
 
             const tl = this.gsap.timeline({ onComplete: resolve });
 
-            tl.to([mainSpinnerContainer, ui.mainTitle], {
-                className: '+=line-success', // Use class for color
-                duration: 0.3
-            }, 0)
-            .set(ui.scanTargetName, { clearProps: 'color' }, 0)
+            tl.set(ui.scanTargetName, { clearProps: 'color' }, 0)
             .call(() => {
                 const conclusionEl = this._createStyledElement('div', 'scan-conclusion', ' '); // Start with space
                 conclusionEl.classList.add('line-success'); // Use class for color

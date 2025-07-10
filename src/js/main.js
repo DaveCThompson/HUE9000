@@ -39,7 +39,7 @@ import { createMobileInteraction } from "./mobileInteraction.js";
 import { ScanOrchestrator } from "./ScanOrchestrator.js";
 
 // ADD THIS FLAG AT THE TOP OF THE FILE
-const DEV_SKIP_STARTUP = true; // <-- SET TO true TO BYPASS, false FOR NORMAL OPERATION
+const DEV_SKIP_STARTUP = false; // <-- SET TO true TO BYPASS, false FOR NORMAL OPERATION
 
 // Register GSAP and its plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);

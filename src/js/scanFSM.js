@@ -71,7 +71,7 @@ export function createScanMachine(config, implementation) {
                                 // MODIFIED: Animate transition from spinner to checkmark
                                 const checkIcon = document.createElement('span');
                                 checkIcon.className = 'material-symbols-outlined';
-                                checkIcon.textContent = 'check_circle';
+                                checkIcon.textContent = 'check';
 
                                 const transitionTl = gsap.timeline();
                                 transitionTl.to(jobUI.spinner, { // Animate the dots

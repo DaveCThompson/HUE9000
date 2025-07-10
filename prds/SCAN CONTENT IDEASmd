@@ -1,0 +1,263 @@
+// HUE 9000 · Scan Sequence · BTN1_SCAN  (rev‑2025‑07‑08)
+export const BTN1_SCAN = {
+  mainTitle: "COGNITIVE & STRATEGIC ANALYSIS",
+  scanTarget: "DAVID THOMPSON",
+  scanSummaryIntro: "INITIATING THINK PROTOCOL 3.7…",
+  impactPulse: [                       // quick‑flash bar rendered after each sub‑job
+    { label: "Revenue Growth Catalyzed", value: "€150 M" },
+    { label: "Time‑to‑Strategy",        value: "‑27 %"   },
+    { label: "Stakeholder Confidence",  value: "A⁺"      }
+  ],
+  subJobs: [
+    {
+      title: "Problem Decomposition",
+      renderer: "barFill",
+      hue: 240,                        // blue
+      progressiveLines: [
+        { text: "UNPACKING AMBIGUOUS REQUIREMENTS", duration: 1.1 },
+        { text: "ISOLATING 5 CORE CONSTRAINT AXES", duration: 1.0 },
+        { text: "SCOPE CLARITY ↑37 %",             duration: 0.9 }
+      ]
+    },
+    {
+      title: "Solution Ideation",
+      renderer: "typeWindow",
+      hue: 145,                        // green
+      progressiveLines: [
+        { text: "SPAWNING 12 CONCEPT VECTOR FAMILIES…", duration: 1.4 },
+        { text: "SELECTING FRONT‑RUNNER VIA PARETO SCAN…", duration: 1.6 },
+        { text: "PREFERRED PATH YIELDS +25 % NPS LIFT",     duration: 1.2 }
+      ]
+    },
+    {
+      title: "Architectural Synthesis",
+      renderer: "barFill",
+      hue: 180,                        // cyan
+      progressiveLines: [
+        { text: "CHOOSING DOMAIN‑DRIVEN SEGREGATES",   duration: 1.3 },
+        { text: "OPTIMISING INTER‑MODULE CONTRACTS",   duration: 1.2 },
+        { text: "SEAM COUNT ↓18",                      duration: 1.0 }
+      ]
+    },
+    {
+      title: "Risk Assessment",
+      renderer: "typeWindow",
+      hue: 30,                         // orange
+      progressiveLines: [
+        { text: "RUNNING FAULT‑TREE SIMULATION…", duration: 1.1 },
+        { text: "CONTINGENCY COVERAGE 96 %",      duration: 1.5 },
+        { text: "RISK INDEX: LOW / NEGLIGIBLE",   duration: 1.1 }
+      ]
+    },
+    {
+      title: "Testimonial Flash",
+      renderer: "testimonialFlash",    // new renderer: fades quotes between spinner frames
+      hue: 60,                         // yellow
+      progressiveLines: [
+        { text: "\"David translates chaos into clarity.\" – VP Product", duration: 2.0 },
+        { text: "\"His strategic maps saved us quarters.\" – CTO",       duration: 2.0 }
+      ]
+    }
+  ],
+  conclusionMessage:
+    "CONCLUSION: SUBJECT OPERATES IN THE 96ᵗʰ PERCENTILE FOR STRATEGIC COGNITION; EXPECT +44 % PROJECT THROUGHPUT WHEN DEPLOYED."
+};
+
+
+// HUE 9000 · Scan Sequence · BTN2_SCAN  (rev‑2025‑07‑08)
+export const BTN2_SCAN = {
+  mainTitle: "EXECUTION & DELIVERY ANALYSIS",
+  scanTarget: "DAVID THOMPSON",
+  scanSummaryIntro: "INITIATING BUILD PROTOCOL 4.2…",
+  impactPulse: [
+    { label: "Release Velocity",       value: "+38 %"  },
+    { label: "Defect Escape Rate",     value: "0.7 %"  },
+    { label: "Cycle‑Time Reduction",   value: "‑35 %"  }
+  ],
+  subJobs: [
+    {
+      title: "Team Architecture",
+      renderer: "barFill",
+      hue: 200,                        // sky‑blue
+      progressiveLines: [
+        { text: "SCALING SQUAD SIZE 5 → 14",      duration: 1.2 },
+        { text: "RETENTION RATE 94 %",            duration: 1.1 },
+        { text: "ENGAGEMENT INDEX A",             duration: 0.9 }
+      ]
+    },
+    {
+      title: "DevOps Pipeline",
+      renderer: "typeWindow",
+      hue: 300,                        // magenta
+      progressiveLines: [
+        { text: "CI/CD LEAD‑TIME ↓60 %",          duration: 1.5 },
+        { text: "DEPLOYMENTS PER WEEK ×5",        duration: 1.6 },
+        { text: "MEAN TIME TO RECOVERY < 30 M",   duration: 1.3 }
+      ]
+    },
+    {
+      title: "Cross‑Functional Alignment",
+      renderer: "barFill",
+      hue: 55,                         // yellow
+      progressiveLines: [
+        { text: "SYNCING ENG‑BIZ OKRs",           duration: 1.4 },
+        { text: "ALIGNMENT COEFFICIENT 0.92",      duration: 1.2 },
+        { text: "INCREMENTAL VALUE FLOW ↑27 %",    duration: 1.0 }
+      ]
+    },
+    {
+      title: "Quality Assurance",
+      renderer: "typeWindow",
+      hue: 15,                         // red‑orange
+      progressiveLines: [
+        { text: "AUTOMATED TEST COVERAGE 88 %",   duration: 1.2 },
+        { text: "DEFECT DENSITY 0.09 /KSLOC",     duration: 1.3 },
+        { text: "CUSTOMER‑FOUND BUGS ↓71 %",      duration: 1.2 }
+      ]
+    },
+    {
+      title: "Deployment Impact",
+      renderer: "testimonialFlash",    // social‑proof inject
+      hue: 115,                        // green
+      progressiveLines: [
+        { text: "\"Launch cut our sales cycle in half.\" – CRO", duration: 2.0 },
+        { text: "\"Outstanding on‑time releases.\" – PMO Director", duration: 2.0 }
+      ]
+    }
+  ],
+  conclusionMessage:
+    "CONCLUSION: SUBJECT OPERATES IN THE 95ᵗʰ PERCENTILE FOR DELIVERY EFFICIENCY; EXPECT +38 % RELEASE THROUGHPUT ON DEPLOYMENT."
+};
+
+
+// HUE 9000 · Scan Sequence · BTN3_SCAN  (rev‑2025‑07‑08)
+export const BTN3_SCAN = {
+  mainTitle: "CRAFTSMANSHIP & INNOVATION ANALYSIS",
+  scanTarget: "DAVID THOMPSON",
+  scanSummaryIntro: "INITIATING CRAFT PROTOCOL 5.1…",
+  impactPulse: [
+    { label: "User Satisfaction",            value: "+24 NPS" },
+    { label: "Design Defect Rate",          value: "0.3 %"   },
+    { label: "Prototype→Product Conversion", value: "42 %"   }
+  ],
+  subJobs: [
+    {
+      title: "Pixel Fidelity Scan",
+      renderer: "barFill",
+      hue: 145,                        // green
+      progressiveLines: [
+        { text: "SAMPLING 120 INTERFACE COMPONENTS", duration: 1.1 },
+        { text: "WCAG CONTRAST COMPLIANCE 98 %",     duration: 1.0 },
+        { text: "PIXEL VARIANCE ±0.2 px",            duration: 0.9 }
+      ]
+    },
+    {
+      title: "System Cohesion Audit",
+      renderer: "typeWindow",
+      hue: 240,                        // blue
+      progressiveLines: [
+        { text: "MAPPING TOKEN CONSISTENCY…",  duration: 1.4 },
+        { text: "VARIABLE REUSE 91 %",         duration: 1.3 },
+        { text: "COMPONENT ADOPTION 87 %",     duration: 1.2 }
+      ]
+    },
+    {
+      title: "Innovation Matrix",
+      renderer: "barFill",
+      hue: 285,                        // purple
+      progressiveLines: [
+        { text: "EVALUATING 14 PROTOTYPE VECTORS",  duration: 1.3 },
+        { text: "NOVELTY SCORE 9.1 /10",            duration: 1.2 },
+        { text: "FEASIBILITY INDEX: HIGH",          duration: 1.0 }
+      ]
+    },
+    {
+      title: "Performance Optimization",
+      renderer: "typeWindow",
+      hue: 180,                        // cyan
+      progressiveLines: [
+        { text: "ANALYSING RENDER PATH PROFILES…", duration: 1.2 },
+        { text: "FRAME‑TIMES < 16 ms",             duration: 1.3 },
+        { text: "BUNDLE SIZE REDUCTION 32 %",       duration: 1.1 }
+      ]
+    },
+    {
+      title: "Testimonial Flash",
+      renderer: "testimonialFlash",
+      hue: 55,                         // yellow
+      progressiveLines: [
+        { text: "\"Design system is our secret weapon.\" – Director UX", duration: 2.0 },
+        { text: "\"He ships pixel perfection at speed.\" – Sr Engineer", duration: 2.0 }
+      ]
+    }
+  ],
+  conclusionMessage:
+    "CONCLUSION: SUBJECT OPERATES IN THE 97ᵗʰ PERCENTILE FOR CRAFT & INNOVATION; EXPECT +24 NPS UPLIFT ON DEPLOYMENT."
+};
+
+
+
+// HUE 9000 · Scan Sequence · BTN4_SCAN  (rev‑2025‑07‑08)
+export const BTN4_SCAN = {
+  mainTitle: "COMMAND‑LEVEL LEADERSHIP ANALYSIS",
+  scanTarget: "DAVID THOMPSON",
+  scanSummaryIntro: "INITIATING LEAD PROTOCOL 6.0…",
+  impactPulse: [
+    { label: "Engagement Score (eNPS)", value: "+34"   },
+    { label: "Decision Velocity",       value: "‑43 %" },
+    { label: "Revenue per Head",        value: "+18 %" }
+  ],
+  subJobs: [
+    {
+      title: "Organizational Design",
+      renderer: "barFill",
+      hue: 30,                         // orange
+      progressiveLines: [
+        { text: "SIMPLIFYING REPORTING LAYERS ‑12",       duration: 1.2 },
+        { text: "ACCOUNTABLE SQUADS FORMED ×9",           duration: 1.1 },
+        { text: "DECISION LATENCY ↓43 %",                 duration: 1.0 }
+      ]
+    },
+    {
+      title: "Talent Development",
+      renderer: "typeWindow",
+      hue: 200,                        // sky‑blue
+      progressiveLines: [
+        { text: "MENTORSHIP HOURS 240 / YR",              duration: 1.4 },
+        { text: "PROMOTION RATE +29 %",                   duration: 1.3 },
+        { text: "BENCH‑STRENGTH INDEX 0.88",              duration: 1.2 }
+      ]
+    },
+    {
+      title: "Strategic Alignment",
+      renderer: "barFill",
+      hue: 285,                        // purple
+      progressiveLines: [
+        { text: "OKR ATTAINMENT 92 %",                    duration: 1.3 },
+        { text: "PIPELINE HEALTH: GREEN",                 duration: 1.1 },
+        { text: "SYNERGY COEFFICIENT 0.91",               duration: 1.0 }
+      ]
+    },
+    {
+      title: "Decision Governance",
+      renderer: "typeWindow",
+      hue: 115,                        // green
+      progressiveLines: [
+        { text: "RACI CLARITY 95 %",                      duration: 1.2 },
+        { text: "ESCALATION TURNAROUND < 8 h",            duration: 1.3 },
+        { text: "SKIPPED‑LEVEL CHECK‑INS MONTHLY",        duration: 1.1 }
+      ]
+    },
+    {
+      title: "Culture Impact",
+      renderer: "testimonialFlash",
+      hue: 55,                         // yellow
+      progressiveLines: [
+        { text: "\"Engagement soared under his lead.\" – HR VP",     duration: 2.0 },
+        { text: "\"Board decks land with clarity.\" – Chairperson",  duration: 2.0 }
+      ]
+    }
+  ],
+  conclusionMessage:
+    "CONCLUSION: SUBJECT OPERATES IN THE 98ᵗʰ PERCENTILE FOR COMMAND‑LEVEL LEADERSHIP; EXPECT +34 eNPS AND ‑43 % DECISION LATENCY ON DEPLOYMENT."
+};
