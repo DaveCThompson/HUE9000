@@ -348,8 +348,7 @@ async function initializeApp() {
     const ambientAnimationManager = new AmbientAnimationManager();
     const phaseRunner = new PhaseRunner();
     const startupSequenceManager = new StartupSequenceManager();
-    const moodMatrixManager = new MoodMatrixManager();
-    const intensityDisplayManager = new IntensityDisplayManager();
+    // MOVED: MoodMatrixManager and IntensityDisplayManager are instantiated later.
 
     // Register always-on services
     serviceLocator.register('hapticFeedbackManager', hapticFeedbackManager);
@@ -361,9 +360,27 @@ async function initializeApp() {
     serviceLocator.register('ambientAnimationManager', ambientAnimationManager);
     serviceLocator.register('phaseRunner', phaseRunner);
     serviceLocator.register('startupSequenceManager', startupSequenceManager);
+    serviceLocator.register('disruptionManager', disruptionManagerInstance);
+
+    // --- PRE-EMPTIVE FIX ---
+    // Set the initial visual state of the LCD containers BEFORE their content managers
+    // are initialized. This prevents the constructors of MoodMatrix and IntensityDisplay
+    // from rendering their internal DOM into a container that momentarily has the
+    // default "active" (bright) styles, thus eliminating the flash.
+    [domManager.lcdA, domManager.lcdB].forEach(lcd => {
+        if (lcd) {
+            lcdUpdater.setLcdState(lcd, 'unlit');
+        }
+    });
+    // --- END FIX ---
+
+    // Now it is safe to initialize the managers that populate these LCDs.
+    const moodMatrixManager = new MoodMatrixManager();
+    const intensityDisplayManager = new IntensityDisplayManager();
+    
+    // Register the moved managers
     serviceLocator.register('moodMatrixManager', moodMatrixManager);
     serviceLocator.register('intensityDisplayManager', intensityDisplayManager);
-    serviceLocator.register('disruptionManager', disruptionManagerInstance);
 
     // --- Conditional Desktop-Only Managers ---
     if (!isMobile) {
