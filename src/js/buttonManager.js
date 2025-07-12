@@ -173,46 +173,36 @@ export class ButtonManager extends EventEmitter {
         }
         appState.emit('buttonInteracted', { button: buttonInstance });
         this.emit('afterButtonTransition', buttonInstance);
-
-        // REMOVED audio playing logic from here to centralize it in main.js
-        // The old logic that played 'auxModeChange' or 'buttonPress' is gone.
     }
 
-    setGroupSelected(groupId, selectedValue) {
+    setGroupSelected(groupId, selectedValue, options = {}) {
         const group = this._buttonGroups.get(groupId);
-        if (!group) return;
-
+        if (!group) return [];
+    
+        // FIX: Remove the conditional logic. Unconditionally set the final state
+        // for ALL buttons in the group. This ensures buttons that should remain
+        // unselected are still updated to the correct visual state (e.g., 'is-energized').
         group.forEach(button => {
             const shouldBeSelected = button.config.value === selectedValue;
-            if (button.isSelected() !== shouldBeSelected) {
-                this.emit('beforeButtonTransition', button);
-                button.setSelected(shouldBeSelected, { skipAnimation: true, forceState: true });
-                button.playStateTransitionEcho();
-                this.emit('afterButtonTransition', button);
-            }
+            const targetState = shouldBeSelected 
+                ? ButtonStates.ENERGIZED_SELECTED 
+                : ButtonStates.ENERGIZED_UNSELECTED;
+            
+            this.setButtonState(button, targetState, { 
+                ...options,
+                force: true // Ensure the state is applied
+            });
         });
+    
+        // The return value is less critical now but can be kept for consistency.
+        return Array.from(group);
     }
 
-    playFlickerToState(buttonElement, targetState, options) {
-        const buttonInstance = this._buttons.get(buttonElement);
-        if (!buttonInstance) return { timeline: null, completionPromise: Promise.resolve() };
-
-        this.emit('beforeButtonTransition', buttonInstance);
-        const { profileName, phaseContext = "UnknownPhase", isButtonSelectedOverride = null, onFlickerComplete, tempGlowColor, tempTintColorClass } = options;
+    _playFlickerToState(buttonInstance, targetState, options) {
+        const { profileName, onFlickerComplete, tempGlowColor, tempTintColorClass, isButtonSelectedOverride, phaseContext } = options;
+        const buttonElement = buttonInstance.getElement();
         
-        const buttonId = buttonInstance.getIdentifier();
-        // console.log(`[BM_PFLICK_ENTRY | ${performance.now().toFixed(2)}ms] For: ${buttonId}, Target: '${targetState}', Profile: '${profileName}', PhaseCtx: ${phaseContext}`);
-
-        // FIX: The initial `setState` call has been removed. `createAdvancedFlicker` is now responsible for
-        // setting the initial visual state of the animation, which prevents the premature `clearProps` call
-        // from interfering with the flicker's own styling.
-
         const impliesSelection = targetState.includes('is-selected');
-        // Update the button's internal `_isSelected` property so `overrideGlowParams` works correctly,
-        // but without triggering a full visual `setState` call.
-        if (buttonInstance.isSelected() !== impliesSelection && !profileName.toLowerCase().includes('resist')) {
-            buttonInstance.setSelected(impliesSelection, { skipAnimation: true, phaseContext: `${phaseContext}_SelectSet` });
-        }
 
         if (tempGlowColor) buttonElement.style.setProperty('--btn-glow-color', tempGlowColor);
         if (tempTintColorClass) buttonElement.classList.add(tempTintColorClass);
@@ -227,7 +217,6 @@ export class ButtonManager extends EventEmitter {
             onTimelineComplete: () => { 
                 buttonInstance._isUndergoingManagedFlicker = false; 
                 buttonElement.classList.remove(ButtonStates.FLICKERING);
-
                 if (tempGlowColor) buttonElement.style.removeProperty('--btn-glow-color');
                 if (tempTintColorClass) buttonElement.classList.remove(tempTintColorClass);
                 
@@ -238,23 +227,65 @@ export class ButtonManager extends EventEmitter {
                     isFlickerCompletion: true 
                 });
                 
-                if (targetState !== ButtonStates.PERMANENTLY_DISABLED) {
-                    const currentPhaseNum = appState.getCurrentStartupPhaseNumber ? appState.getCurrentStartupPhaseNumber() : -1;
-                    const isP7HueButtonDimlyLitFlickerContext = (phaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && 
-                                                 buttonInstance.getGroupId().match(/^(env|lcd|logo|btn)$/));
-
-                    if (!isP7HueButtonDimlyLitFlickerContext) { 
-                        buttonInstance.playStateTransitionEcho();
-                    } else {
-                        // console.log(`[BM P7_VISUALS_ECHO_SKIP | ${performance.now().toFixed(2)}ms] Button: ${buttonInstance.getIdentifier()}. Skipping echo in P7 for DimlyLit flicker.`);
-                    }
-                }
-                this.emit('afterButtonTransition', buttonInstance);
                 if (onFlickerComplete) onFlickerComplete();
             }
         };
         
         return createAdvancedFlicker(buttonElement, profileName, flickerOptions);
+    }
+
+    setButtonState(buttonOrElement, targetState, options = {}) {
+        const buttonInstance = (buttonOrElement instanceof Button) ? buttonOrElement : this.getButtonInstance(buttonOrElement);
+        if (!buttonInstance) {
+            console.warn(`[BM setButtonState] Could not find button instance for:`, buttonOrElement);
+            return { timeline: null, completionPromise: Promise.resolve() };
+        }
+
+        const {
+            skipAnimation = false,
+            skipEcho = false,
+            profileName = 'buttonFlickerFromDimlyLitToFullyLitUnselected',
+            phaseContext = "UnknownPhase",
+            isButtonSelectedOverride = null,
+            onComplete,
+            tempGlowColor,
+            tempTintColorClass
+        } = options;
+
+        this.emit('beforeButtonTransition', buttonInstance);
+        
+        const impliesSelection = targetState.includes('is-selected');
+        // Use the new internal method to set the selection state reliably.
+        buttonInstance._setSelectionStateInternal(impliesSelection);
+
+        const handleCompletion = () => {
+            if (!skipEcho && targetState !== ButtonStates.PERMANENTLY_DISABLED) {
+                const currentPhaseNum = appState.getCurrentStartupPhaseNumber ? appState.getCurrentStartupPhaseNumber() : -1;
+                const isP7HueButtonDimlyLitFlickerContext = (phaseContext.includes('PhaseRunner_P7_buttonFlickerToDimlyLit') && 
+                                             buttonInstance.getGroupId().match(/^(env|lcd|logo|btn)$/));
+                if (!isP7HueButtonDimlyLitFlickerContext) { 
+                    buttonInstance.playStateTransitionEcho();
+                }
+            }
+            this.emit('afterButtonTransition', buttonInstance);
+            if (onComplete) onComplete();
+        };
+
+        if (skipAnimation) {
+            buttonInstance.setState(targetState, { forceState: true, phaseContext: `${phaseContext}_Skipped` });
+            handleCompletion();
+            return { timeline: this.gsap.timeline(), completionPromise: Promise.resolve() };
+        } else {
+            const flickerOptions = {
+                profileName,
+                phaseContext,
+                isButtonSelectedOverride,
+                onFlickerComplete: handleCompletion,
+                tempGlowColor,
+                tempTintColorClass
+            };
+            return this._playFlickerToState(buttonInstance, targetState, flickerOptions);
+        }
     }
 
     setPressedVisuals(buttonElement, isPressed) {

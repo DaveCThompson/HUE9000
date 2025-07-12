@@ -233,33 +233,25 @@ export class PhaseRunner {
     const stagger = anim.stagger || 0;
     elements.forEach((el, index) => {
         if (isButtonFlicker) {
-            // buttonManager is guaranteed to be defined here due to the logic above
+            buttonManager = buttonManager || serviceLocator.get('buttonManager');
             const buttonInstance = buttonManager.getButtonInstance(el);
             if (!buttonInstance) {
-                console.warn(`[PhaseRunner _handleSimpleFlicker | ${performance.now().toFixed(2)}ms] No button instance found for element:`, el, `in phase ${currentPhaseConfig.name}`);
+                console.warn(`[PhaseRunner _handleSimpleFlicker] No button instance found for element:`, el, `in phase ${currentPhaseConfig.name}`);
                 return;
             }
 
-            let effectiveProfile = anim.profile;
-            // ... (profile selection logic, seems okay) ...
-            
             const flickerOptions = {
-              profileName: effectiveProfile,
-              phaseContext: `PhaseRunner_P${currentPhaseConfig.phase}_${effectiveProfile}` 
+              skipAnimation: false,
+              profileName: anim.profile,
+              phaseContext: `PhaseRunner_P${currentPhaseConfig.phase}_${anim.profile}` 
             };
+            
+            const { timeline: flickerTimeline } = buttonManager.setButtonState(buttonInstance, anim.state, flickerOptions);
 
-            const flickerResult = buttonManager.playFlickerToState(el, anim.state, flickerOptions);
-
-            if (flickerResult && flickerResult.timeline) {
-                const childTlDuration = flickerResult.timeline.duration();
-                const buttonId = buttonInstance.getIdentifier();
-                // console.log(`[PhaseRunner_FlickerAdd | ${performance.now().toFixed(2)}ms] Adding flicker timeline for ${buttonId} to master. Child TL Duration: ${childTlDuration.toFixed(3)}s. Position: ${position}+=${index * stagger}`);
-                if (childTlDuration <= 0.01 && (!flickerResult.timeline.getChildren || flickerResult.timeline.getChildren().length === 0)) { // More robust check for empty
-                    //  console.warn(`[PhaseRunner_FlickerAdd_WARN | ${performance.now().toFixed(2)}ms] Child flicker timeline for ${buttonId} is very short or empty!`);
-                }
-                tl.add(flickerResult.timeline, `${position}+=${index * stagger}`);
+            if (flickerTimeline) {
+                tl.add(flickerTimeline, `${position}+=${index * stagger}`);
             } else {
-                console.error(`[PhaseRunner_FlickerAdd_ERROR | ${performance.now().toFixed(2)}ms] No timeline returned from playFlickerToState for ${buttonInstance.getIdentifier()}`);
+                console.error(`[PhaseRunner_FlickerAdd_ERROR] No timeline returned from setButtonState for ${buttonInstance.getIdentifier()}`);
             }
 
         } else { // For non-button flickers

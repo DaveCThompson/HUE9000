@@ -14,18 +14,23 @@ export const phase1Config = {
 
   animations: [
     {
-      // RESTORED: This animation is crucial for making the terminal container itself visible.
       type: 'lcdPowerOn',
       target: 'terminalContainer',
       state: 'dimly-lit',
       profile: 'terminalScreenFlickerToDimlyLit',
-      position: 0
+      position: 0,
+      deps: ['lcdUpdater', 'domElements'],
+      applyFinalState: ([lcdUpdater, dom], animConfig) => {
+        const el = dom[animConfig.target];
+        if (el) lcdUpdater.setLcdState(el, animConfig.state);
+      }
     },
     {
       type: 'audio',
       soundKey: 'terminalBoot',
-      // Sound plays at T=1.075s, timed to synchronize its impact with the terminal's visual appearance.
-      position: 1.075 
+      position: 1.075,
+      deps: [],
+      applyFinalState: () => {} // No-op for transient sound effects
     },
     {
       type: 'tween',
@@ -35,7 +40,12 @@ export const phase1Config = {
         duration: 1.0, // Duration of this specific tween
         ease: 'power1.inOut'
       },
-      position: 0 // Dimming factor animation starts at T=0, concurrently with terminal visual flicker.
+      position: 0,
+      deps: ['proxies', 'domElements'],
+      applyFinalState: ([proxies, dom], animConfig) => {
+        proxies.LReductionProxy.value = animConfig.vars.value;
+        dom.root.style.setProperty('--startup-L-reduction-factor', proxies.LReductionProxy.value.toFixed(3));
+      }
     },
     {
       type: 'tween',
@@ -45,7 +55,11 @@ export const phase1Config = {
         duration: 0.3, // Duration of body fade-in
         ease: 'power1.inOut'
       },
-      position: 0 // Body fade-in starts at T=0, concurrently with terminal visual flicker.
+      position: 0,
+      deps: ['domElements'],
+      applyFinalState: ([dom], animConfig) => {
+        dom.body.style.opacity = animConfig.vars.opacity;
+      }
     },
     {
       type: 'call',
@@ -53,7 +67,8 @@ export const phase1Config = {
         disruptionManager.triggerDisruption();
       },
       deps: ['disruptionManager'],
-      position: 1.2
+      position: 1.2,
+      applyFinalState: () => {} // No-op for transient visual effects
     }
   ]
 };

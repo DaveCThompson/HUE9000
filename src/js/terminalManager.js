@@ -136,6 +136,13 @@ class TerminalManager {
             appState.setHasUnreadTerminalMessages(true);
         }
 
+        // NEW: Handle instant message printing for the skip-startup path
+        if (payload.instant) {
+            const messageData = getMessage(payload);
+            this._printMessageInstantly({ ...payload, ...messageData });
+            return;
+        }
+
         if (payload.type === 'scan') {
             this._initiateScan(payload);
             return;
@@ -164,6 +171,40 @@ class TerminalManager {
         if (!this._isProcessing) {
             this._processQueue();
         }
+    }
+
+    /**
+     * Instantly renders a message to the terminal, bypassing all animations and queues.
+     * Used by the "skip startup" feature to build the terminal history.
+     * @param {object} messageObject - The fully-formed message object.
+     */
+    _printMessageInstantly(messageObject) {
+        if (!this._terminalContentElement || !messageObject.content) return;
+
+        if (!this._isFirstLine && messageObject.formatting.spacingBefore > 0) {
+            for (let i = 0; i < messageObject.formatting.spacingBefore; i++) {
+                this._addNewLineAndPrepareForTyping(true);
+            }
+        }
+
+        messageObject.content.forEach(lineSegments => {
+            this._addNewLineAndPrepareForTyping(false, messageObject.className);
+            if (this._currentLineElement) {
+                lineSegments.forEach(segment => {
+                    const span = document.createElement('span');
+                    if (segment.styles) {
+                        span.classList.add(...segment.styles.map(s => `tm-text--${s}`));
+                    }
+                    span.textContent = segment.text || '';
+                    this._currentLineElement.appendChild(span);
+                });
+            }
+        });
+
+        this._isFirstLine = false;
+        // After instantly printing, ensure the cursor is idle at the end.
+        this._setCursorState('idle');
+        this._scrollTerminal(true);
     }
 
     async _initiateScan(payload) {

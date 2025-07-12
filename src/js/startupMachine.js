@@ -131,15 +131,12 @@ export const startupMachine = createMachine({
     COMPLETE: {
       type: 'final',
       entry: [
-        // Perform all visual cleanup before setting app status to interactive.
+        // REFACTORED: Use a single source of truth for cleanup.
         () => {
-            const dom = serviceLocator.get('domElements');
-            // FIX: Remove the startup-state class from the body.
-            dom.body.classList.remove('is-starting-up');
-            if (dom.body.classList.contains('is-transitioning-from-dim')) {
-                dom.body.classList.remove('is-transitioning-from-dim');
-                document.querySelectorAll('.animate-on-dim-exit').forEach(el => el.classList.remove('animate-on-dim-exit'));
-            }
+          const ssm = serviceLocator.get('startupSequenceManager');
+          if (ssm) {
+            ssm._performSequenceCompletion();
+          }
         },
         // Now that cleanup is done, it is safe to emit the event that
         // triggers the ambient animations.

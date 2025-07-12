@@ -23,26 +23,47 @@ export const phase3Config = {
         duration: 1.0,
         ease: 'power1.inOut'
       },
-      position: 0 
+      position: 0,
+      deps: ['proxies', 'domElements'],
+      applyFinalState: ([proxies, dom], animConfig) => {
+        proxies.LReductionProxy.value = animConfig.vars.value;
+        dom.root.style.setProperty('--startup-L-reduction-factor', proxies.LReductionProxy.value.toFixed(3));
+      }
     },
     {
       type: 'flicker',
       target: 'Main Power On', 
       state: 'is-energized is-selected',
       profile: 'buttonFlickerFromDimlyLitToFullyLitSelectedFast',
-      position: TARGET_EVENT_TIME_P3 - FLICKER_SELECTED_FAST_DURATION_P3
+      position: TARGET_EVENT_TIME_P3 - FLICKER_SELECTED_FAST_DURATION_P3,
+      deps: ['buttonManager'],
+      applyFinalState: ([buttonManager], animConfig) => {
+        const instance = buttonManager.getButtonByAriaLabel(animConfig.target);
+        if(instance) {
+            buttonManager.setButtonState(instance, animConfig.state, { skipAnimation: true, skipEcho: true });
+        }
+      }
     },
     {
       type: 'flicker',
       target: 'Main Power Off', 
       state: 'is-energized',
       profile: 'buttonFlickerFromDimlyLitToFullyLitUnselectedFast',
-      position: TARGET_EVENT_TIME_P3 - FLICKER_UNSELECTED_FAST_DURATION_P3
+      position: TARGET_EVENT_TIME_P3 - FLICKER_UNSELECTED_FAST_DURATION_P3,
+      deps: ['buttonManager'],
+      applyFinalState: ([buttonManager], animConfig) => {
+        const instance = buttonManager.getButtonByAriaLabel(animConfig.target);
+        if(instance) {
+            buttonManager.setButtonState(instance, animConfig.state, { skipAnimation: true, skipEcho: true });
+        }
+      }
     },
     {
       type: 'audio',
       soundKey: 'buttonEnergize', 
-      position: TARGET_EVENT_TIME_P3 
+      position: TARGET_EVENT_TIME_P3,
+      deps: [],
+      applyFinalState: () => {}
     }
   ]
 };

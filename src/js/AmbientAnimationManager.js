@@ -40,8 +40,8 @@ class AmbientAnimationManager {
         appState.subscribe('ambientPulse', ({ progress }) => this._handleAmbientPulse({ progress }));
 
         if (this.buttonManager && typeof this.buttonManager.subscribe === 'function') {
-            this.buttonManager.subscribe('beforeButtonTransition', (button) => this._handleBeforeButtonTransition(button));
-            this.buttonManager.subscribe('afterButtonTransition', (button) => this._handleAfterButtonTransition(button));
+            this.buttonManager.subscribe('beforeButtonTransition', (buttonInstance) => this._handleBeforeButtonTransition(buttonInstance));
+            this.buttonManager.subscribe('afterButtonTransition', (buttonInstance) => this._handleAfterButtonTransition(buttonInstance));
         }
 
         this.resonanceTicker = this.gsap.ticker;
@@ -107,7 +107,8 @@ class AmbientAnimationManager {
     _handleBeforeButtonTransition(buttonInstance) {
         if (!this.isActive) return;
         if (typeof buttonInstance.stopHarmonicResonance === 'function') buttonInstance.stopHarmonicResonance();
-        if (typeof buttonInstance.setCssIdleLightDriftActive === 'function') button.setCssIdleLightDriftActive(false);
+        // FIX: Corrected typo from `button` to `buttonInstance`
+        if (typeof buttonInstance.setCssIdleLightDriftActive === 'function') buttonInstance.setCssIdleLightDriftActive(false);
     }
 
     _handleAfterButtonTransition(buttonInstance) {

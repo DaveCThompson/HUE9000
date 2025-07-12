@@ -96,7 +96,8 @@ class ResistiveShutdownController {
                 ? ButtonStates.PERMANENTLY_DISABLED
                 : ButtonStates.ENERGIZED_UNSELECTED;
 
-            const flickerResult = this.buttonManager.playFlickerToState(this.buttonManager.mainPowerOffButtonInstance.element, targetState, {
+            const flickerResult = this.buttonManager.setButtonState(this.buttonManager.mainPowerOffButtonInstance, targetState, {
+                skipAnimation: false,
                 profileName: stageParams.BUTTON_FLASH_PROFILE_NAME,
                 tempGlowColor: stageParams.BUTTON_FLASH_GLOW_COLOR,
                 tempTintColorClass: stageParams.BUTTON_TINT_CLASS,
@@ -168,7 +169,7 @@ class ResistiveShutdownController {
         if (closestIndex !== -1) {
             ['btn', 'logo', 'lcd', 'env'].forEach(groupId => {
                 appState.setTargetColorProperties(groupId, HUE_ASSIGNMENT_ROW_HUES[closestIndex]);
-                this.buttonManager.setGroupSelected(groupId, closestIndex.toString());
+                this.buttonManager.setGroupSelected(groupId, closestIndex.toString(), { skipAnimation: true });
             });
         }
     }

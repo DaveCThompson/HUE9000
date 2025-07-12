@@ -40,6 +40,17 @@ class Button {
         return this.element.ariaLabel || this.element.id || this.config.value || `UnnamedButton_${this.config.groupId}_${this.config.type}`;
     }
 
+    /**
+     * An internal-only method for programmatically setting the selection state
+     * without triggering the complex visual logic of the public setSelected method.
+     * @param {boolean} selected - The desired selection state.
+     */
+    _setSelectionStateInternal(selected) {
+        if (this._isSelected !== selected) {
+            this._isSelected = selected;
+        }
+    }
+
     setState(newStateClassesStr, options = {}) {
         const { 
             skipAria = false, 
@@ -279,7 +290,6 @@ class Button {
     }
 
     setCssIdleLightDriftActive(isActive) {
-        // Kill any existing tween to prevent conflicts
         if (this.idleDriftEaseInTween) {
             this.idleDriftEaseInTween.kill();
             this.idleDriftEaseInTween = null;
@@ -291,34 +301,29 @@ class Button {
         if (isActive) {
             if (this.element.classList.contains(this.cssIdleDriftClassName)) return;
 
-            // Get the current opacity directly from the element as the source of truth.
-            const currentOpacity = parseFloat(window.getComputedStyle(lights[0]).opacity);
+            // FIX: Use the configured base opacity directly instead of reading from the DOM.
+            // This prevents race conditions during state transitions.
             const D_PARAMS = IDLE_LIGHT_DRIFT_PARAMS;
+            const baseOpacity = D_PARAMS.BASE_LIGHT_OPACITY_UNSELECTED_ENERGIZED;
+            const targetVariation = baseOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
+            const variationProxy = { value: 0 };
 
-            // Calculate target variation, but start at 0.
-            const targetVariation = currentOpacity * D_PARAMS.OPACITY_VARIATION_FACTOR;
-            const variationProxy = { value: 0 }; // Start variation at 0
-
-            // Set the base opacity and animation properties immediately.
             const randomDuration = this.gsap.utils.random(D_PARAMS.PERIOD_MIN, D_PARAMS.PERIOD_MAX);
             lights.forEach(light => {
-                light.style.setProperty('--light-idle-base-opacity', currentOpacity.toFixed(3));
-                light.style.setProperty('--light-idle-variation', '0'); // Start with no variation
+                light.style.setProperty('--light-idle-base-opacity', baseOpacity.toFixed(3));
+                light.style.setProperty('--light-idle-variation', '0');
                 light.style.setProperty('--light-idle-duration', `${randomDuration}s`);
-                light.style.setProperty('--light-idle-delay', '0s'); // CSS delay is not used
+                light.style.setProperty('--light-idle-delay', '0s');
             });
 
-            // Add the class to apply the animation rule.
             this.element.classList.add(this.cssIdleDriftClassName);
 
-            // Use GSAP to smoothly tween the variation from 0 to its target value.
             this.idleDriftEaseInTween = this.gsap.to(variationProxy, {
                 value: targetVariation,
-                duration: 2.0, // Duration of the ease-in effect
-                delay: this.gsap.utils.random(0, 1.5), // *** ADDED RANDOM DELAY TO THE TWEEN START ***
+                duration: 2.0,
+                delay: this.gsap.utils.random(0, 1.5),
                 ease: 'sine.inOut',
                 onUpdate: () => {
-                    // On each frame of the tween, update the CSS variable for all lights.
                     lights.forEach(light => {
                         light.style.setProperty('--light-idle-variation', variationProxy.value.toFixed(3));
                     });
@@ -328,7 +333,6 @@ class Button {
         } else {
             if (!this.element.classList.contains(this.cssIdleDriftClassName)) return;
             this.element.classList.remove(this.cssIdleDriftClassName);
-            // Clean up inline styles set by the animation
             lights.forEach(light => {
                 light.style.removeProperty('--light-idle-base-opacity');
                 light.style.removeProperty('--light-idle-variation');

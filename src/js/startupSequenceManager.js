@@ -92,41 +92,55 @@ export class StartupSequenceManager {
     this.start(false);
   }
 
-  async jumpToPhase(phaseNumber) {
-    if (this.fsmInterpreter) {
-      this.fsmInterpreter.stop();
-    }
-    this._resetVisualsAndState(); 
-    this.fsmInterpreter = interpret(startupMachine);
+  /**
+   * Instantly applies the final state of all startup phases up to a target point.
+   * This is the new engine for the "skip startup" developer feature.
+   * @param {string} targetPhaseName - The name of the target state (e.g., 'COMPLETE').
+   * @param {object} context - Context for initialization, e.g., { isMobile: boolean }.
+   */
+  jumpToState(targetPhaseName, context) {
+    const { isMobile } = context;
 
-    this.fsmInterpreter.subscribe(snapshot => {
-      const currentValueString = JSON.stringify(snapshot.value);
-      if (snapshot.changed || currentValueString !== this.previousFsmSnapshotValue) {
-        this._notifyFsmTransition(snapshot);
-        this.previousFsmSnapshotValue = currentValueString;
+    // Step 1: Reset everything to a known baseline.
+    this._resetVisualsAndState();
+
+    const configsToParse = isMobile ? [mobileStartupPhase] : desktopPhaseConfigs;
+
+    // Step 2: Synchronously build the entire final static state of the UI by
+    // iterating through all phase configurations and applying their final states.
+    configsToParse.forEach(phaseConfig => {
+      if (phaseConfig.terminalMessageKey) {
+        appState.emit('requestTerminalMessage', {
+          type: 'startup',
+          source: phaseConfig.name,
+          messageKey: phaseConfig.terminalMessageKey,
+          instant: true,
+        });
+      }
+
+      if (phaseConfig.animations && Array.isArray(phaseConfig.animations)) {
+        phaseConfig.animations.forEach(animConfig => {
+          if (typeof animConfig.applyFinalState === 'function') {
+            try {
+              const deps = (animConfig.deps || []).map(depName => serviceLocator.get(depName));
+              animConfig.applyFinalState(deps, animConfig);
+            } catch (e) {
+              console.error(`Error applying final state for animation in phase "${phaseConfig.name}":`, { animConfig, error: e });
+            }
+          }
+        });
       }
     });
 
-    this.fsmInterpreter.start();
-    this.fsmInterpreter.send({
-        type: 'JUMP_TO_PHASE',
-        phase: phaseNumber,
-        isStepThroughMode: false 
-    });
+    // Step 3: Perform the final, centralized cleanup.
+    this._performSequenceCompletion();
 
-    // BUG FIX: The FSM jump synchronously fires off multiple async animations,
-    // including button flickers and, critically, the CSS theme transition.
-    // We must wait for the longest of these to complete before starting the
-    // ambient animations to avoid race conditions.
-    const gsap = serviceLocator.get('gsap');
-    await new Promise(resolve => {
-        gsap.delayedCall(THEME_TRANSITION_DURATION + 0.1, resolve);
+    // Step 4: Defer the 'interactive' state change to the next animation frame.
+    // This prevents a race condition where managers (like AmbientAnimationManager)
+    // would react to the state change before the browser had painted the DOM updates from Step 2.
+    requestAnimationFrame(() => {
+        appState.setAppStatus('interactive');
     });
-    
-    const aam = serviceLocator.get('ambientAnimationManager', true);
-    if (aam && typeof aam.start === 'function') {
-        aam.start();
-    }
   }
 
   _resetVisualsAndState() {
@@ -210,19 +224,18 @@ export class StartupSequenceManager {
     }
   }
 
-  _performThemeTransitionCleanup() {
+  /**
+   * Centralized cleanup logic called at the end of any startup sequence (animated or skipped).
+   * This is now the single source of truth for post-startup cleanup.
+   */
+  _performSequenceCompletion() {
     const dom = serviceLocator.get('domElements');
-    dom.body.classList.remove('is-transitioning-from-dim');
-    document.querySelectorAll('.animate-on-dim-exit').forEach(el => el.classList.remove('animate-on-dim-exit'));
+    dom.body.classList.remove('is-starting-up');
     
-    const dialContainers = [dom.dialA, dom.dialB];
-    dialContainers.forEach(container => {
-        if (container) {
-            container.classList.remove('is-active-for-startup');
-        }
-    });
-
-    // if (this.debug) console.log("[SSM] Theme transition cleanup performed.");
+    if (dom.body.classList.contains('is-transitioning-from-dim')) {
+        dom.body.classList.remove('is-transitioning-from-dim');
+        document.querySelectorAll('.animate-on-dim-exit').forEach(el => el.classList.remove('animate-on-dim-exit'));
+    }
   }
 
   _notifyFsmTransition(snapshot) {

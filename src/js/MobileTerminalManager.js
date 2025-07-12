@@ -23,7 +23,7 @@ export class MobileTerminalManager {
         }
 
         this._buildAnimation();
-        this._setupEventListeners();
+        // REMOVED: _setupEventListeners call is now handled by EventBinder.js
 
         // Subscribe to appState changes
         appState.subscribe('mobileTerminalStateChanged', ({ isOpen }) => this.toggle(isOpen));
@@ -52,48 +52,6 @@ export class MobileTerminalManager {
                 { autoAlpha: 0, duration: 0.3 },
                 0
             );
-    }
-
-    _setupEventListeners() {
-        // Guard against the element not being found
-        if (this.dom.mobileTerminalToggle) {
-            createMobileInteraction(this.dom.mobileTerminalToggle, {
-                onClick: () => this.toggle()
-            });
-        }
-        if (this.dom.mobileTerminalCloseBtn) {
-            createMobileInteraction(this.dom.mobileTerminalCloseBtn, {
-                onClick: () => this.toggle(false)
-            });
-        }
-
-        const actionButtonsContainer = this.dom.mobileTerminalDrawer.querySelector('.mobile-terminal-actions-flex-container');
-        if (actionButtonsContainer) {
-            actionButtonsContainer.addEventListener('click', (event) => {
-                const button = event.target.closest('.button-unit--action');
-                if (!button) return;
-
-                this.audioManager.play('buttonPress', true);
-                const action = button.dataset.action;
-
-                // FIX: Corrected the switch cases to match the data-action attributes in the HTML
-                // and to correctly dispatch 'scan' events for all buttons.
-                switch (action) {
-                    case 'scan-a':
-                        appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN1_SCAN', interrupt: true });
-                        break;
-                    case 'scan-b':
-                        appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN2_SCAN', interrupt: true });
-                        break;
-                    case 'eval-x':
-                        appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN3_SCAN', interrupt: true });
-                        break;
-                    case 'eval-y':
-                        appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN4_SCAN', interrupt: true });
-                        break;
-                }
-            });
-        }
     }
 
     toggle(forceState) {

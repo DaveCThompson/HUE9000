@@ -3,6 +3,8 @@
  * @description Declarative configuration for Phase 11 (Engaging Ambient Theme)
  * of the HUE 9000 startup sequence. (Formerly P10)
  */
+import * as appState from './appState.js';
+
 export const phase11Config = {
   phase: 11,
   name: "ENGAGING_AMBIENT_THEME", 
@@ -19,19 +21,24 @@ export const phase11Config = {
         });
       },
       deps: ['lcdUpdater', 'domElements'],
-      position: 0.5
+      position: 0.5,
+      applyFinalState: (deps, animConfig) => animConfig.function(...deps)
     },
     {
       type: 'call',
-      function: (dom, config, appState) => {
+      function: (dom, config) => {
         document.querySelectorAll(config.selectorsForDimExitAnimation).forEach(el => {
           el.classList.add('animate-on-dim-exit');
         });
         dom.body.classList.add('is-transitioning-from-dim');
         appState.setTheme('dark');
       },
-      deps: ['domElements', 'config', 'appState'],
-      position: 0.5
+      deps: ['domElements', 'config'],
+      position: 0.5,
+      applyFinalState: (deps) => {
+          // In skip mode, we just set the theme directly without transition classes.
+          appState.setTheme('dark');
+      }
     },
     {
       type: 'flicker',
@@ -40,12 +47,24 @@ export const phase11Config = {
       state: 'is-energized', 
       profile: 'buttonFlickerFromDimlyLitToFullyLitUnselected', 
       stagger: 0.03, 
-      position: 0.6
+      position: 0.6,
+      deps: ['buttonManager'],
+      applyFinalState: ([buttonManager], animConfig) => {
+        const buttons = buttonManager.getButtonsByGroupIds(animConfig.groups);
+        buttons.forEach(el => {
+            const instance = buttonManager.getButtonInstance(el);
+            if(instance) {
+                buttonManager.setButtonState(instance, animConfig.state, { skipAnimation: true, skipEcho: true });
+            }
+        });
+      }
     },
     {
       type: 'audio',
       soundKey: 'themeEngage', 
-      position: 0.6 
+      position: 0.6,
+      deps: [],
+      applyFinalState: () => {}
     }
   ]
 };

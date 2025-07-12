@@ -14,20 +14,36 @@ export const phase10Config = {
       target: 'Auxiliary Light Low', 
       state: 'is-energized is-selected',
       profile: 'buttonFlickerFromDimlyLitToFullyLitSelected',
-      position: 0.15
+      position: 0.15,
+      deps: ['buttonManager'],
+      applyFinalState: ([buttonManager], animConfig) => {
+        const instance = buttonManager.getButtonByAriaLabel(animConfig.target);
+        if(instance) {
+            buttonManager.setButtonState(instance, animConfig.state, { skipAnimation: true, skipEcho: true });
+        }
+      }
     },
     {
       type: 'flicker',
       target: 'Auxiliary Light High', 
       state: 'is-energized',
       profile: 'buttonFlickerFromDimlyLitToFullyLitUnselected',
-      position: 0.15
+      position: 0.15,
+      deps: ['buttonManager'],
+      applyFinalState: ([buttonManager], animConfig) => {
+        const instance = buttonManager.getButtonByAriaLabel(animConfig.target);
+        if(instance) {
+            buttonManager.setButtonState(instance, animConfig.state, { skipAnimation: true, skipEcho: true });
+        }
+      }
     },
     {
       type: 'audio',
       soundKey: 'buttonEnergize',
       forceRestart: true,
-      position: 0.15
+      position: 0.15,
+      deps: [],
+      applyFinalState: () => {}
     }
   ]
 };

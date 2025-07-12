@@ -17,7 +17,12 @@ export const phase8Config = {
         duration: 1.0,
         ease: 'power1.inOut'
       },
-      position: 0
+      position: 0,
+      deps: ['proxies', 'domElements'],
+      applyFinalState: ([proxies, dom], animConfig) => {
+        proxies.LReductionProxy.value = animConfig.vars.value;
+        dom.root.style.setProperty('--startup-L-reduction-factor', proxies.LReductionProxy.value.toFixed(3));
+      }
     },
     {
       type: 'flicker',
@@ -26,7 +31,14 @@ export const phase8Config = {
       state: 'is-energized',
       profile: 'buttonFlickerFromDimlyLitToFullyLitUnselected',
       stagger: 0.00,
-      position: 0.1
+      position: 0.1,
+      deps: ['buttonManager'],
+      applyFinalState: ([buttonManager], animConfig) => {
+        const buttons = buttonManager.getButtonsByGroupIds(animConfig.groups);
+        buttons.forEach(el => {
+            buttonManager.setButtonState(el, animConfig.state, { skipAnimation: true, skipEcho: true });
+        });
+      }
     },
     {
       type: 'call',
@@ -36,13 +48,20 @@ export const phase8Config = {
         });
       },
       deps: ['buttonManager', 'config'],
-      position: 1.2
+      position: 1.2,
+      applyFinalState: ([buttonManager, config]) => {
+          Object.keys(config.DEFAULT_ASSIGNMENT_SELECTIONS).forEach(targetKey => {
+            buttonManager.setGroupSelected(targetKey, config.DEFAULT_ASSIGNMENT_SELECTIONS[targetKey].toString(), { skipAnimation: true, skipEcho: true });
+        });
+      }
     },
     {
       type: 'audio',
       soundKey: 'buttonEnergize',
       forceRestart: true,
-      position: 0.15
+      position: 0.15,
+      deps: [],
+      applyFinalState: () => {}
     }
   ]
 };
