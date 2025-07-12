@@ -3,6 +3,8 @@
  * @description Declarative configuration for Phase 12 (HUE 9000 Operational)
  * of the HUE 9000 startup sequence. (Formerly P11)
  */
+import { FINAL_BUTTON_STATES } from './config/sequences.js';
+
 export const phase12Config = {
   phase: 12,
   name: "SYSTEM_OPERATIONAL",
@@ -12,8 +14,10 @@ export const phase12Config = {
     {
       type: 'call',
       function: (buttonManager) => {
-        buttonManager.setGroupSelected('system-power', 'on');
-        buttonManager.setGroupSelected('light', 'off');
+        // REFACTORED: Read final states from a declarative config object.
+        Object.entries(FINAL_BUTTON_STATES).forEach(([groupId, value]) => {
+          buttonManager.setGroupSelected(groupId, value);
+        });
         // Hue Assignment defaults are now set in Phase 8.
       },
       deps: ['buttonManager'],

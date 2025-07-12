@@ -11,7 +11,7 @@ import { TextPlugin } from "gsap/TextPlugin";
 import { runPreloader } from './preloader.js';
 import { debounce } from './utils.js';
 import { MOBILE_BREAKPOINT } from './config/index.js';
-import { AppInitializer } from './AppInitializer.js';
+import { AppInitializer } from './appInitializer.js';
 import { serviceLocator } from './serviceLocator.js';
 import { AudioManager } from './AudioManager.js';
 

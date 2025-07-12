@@ -62,6 +62,16 @@ export const selectorsForDimExitAnimation = [
     '.control-group-label', '.block-label-bottom'
 ];
 
+/**
+ * @const {object.<string, string>}
+ * @description Declarative mapping of button group IDs to their final selected
+ * value for the end of the startup sequence.
+ */
+export const FINAL_BUTTON_STATES = {
+    'system-power': 'on',
+    'light': 'off'
+};
+
 
 // --- Resistive Shutdown Configuration ---
 

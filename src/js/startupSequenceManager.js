@@ -9,7 +9,7 @@ import { startupMachine, desktopPhaseConfigs } from './startupMachine.js';
 import { mobileStartupPhase } from './startupMobile.js';
 import { serviceLocator } from './serviceLocator.js';
 import * as appState from './appState.js'; // ENSURE appState is imported
-import { STARTUP_L_REDUCTION_FACTORS, MOBILE_BREAKPOINT, HUE_ASSIGNMENT_ROW_HUES } from './config/index.js';
+import { STARTUP_L_REDUCTION_FACTORS, MOBILE_BREAKPOINT, HUE_ASSIGNMENT_ROW_HUES, THEME_TRANSITION_DURATION } from './config/index.js';
 
 export class StartupSequenceManager {
   constructor() {
@@ -92,7 +92,7 @@ export class StartupSequenceManager {
     this.start(false);
   }
 
-  jumpToPhase(phaseNumber) {
+  async jumpToPhase(phaseNumber) {
     if (this.fsmInterpreter) {
       this.fsmInterpreter.stop();
     }
@@ -113,6 +113,20 @@ export class StartupSequenceManager {
         phase: phaseNumber,
         isStepThroughMode: false 
     });
+
+    // BUG FIX: The FSM jump synchronously fires off multiple async animations,
+    // including button flickers and, critically, the CSS theme transition.
+    // We must wait for the longest of these to complete before starting the
+    // ambient animations to avoid race conditions.
+    const gsap = serviceLocator.get('gsap');
+    await new Promise(resolve => {
+        gsap.delayedCall(THEME_TRANSITION_DURATION + 0.1, resolve);
+    });
+    
+    const aam = serviceLocator.get('ambientAnimationManager', true);
+    if (aam && typeof aam.start === 'function') {
+        aam.start();
+    }
   }
 
   _resetVisualsAndState() {
