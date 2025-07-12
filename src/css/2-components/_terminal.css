@@ -14,24 +14,7 @@
     text-shadow: none;
 }
 
-/* Apply phosphor mask to the non-scrolling parent container */
-.actual-lcd-screen-element::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1; /* Sits below other overlays */
-    pointer-events: none;
-    background-image: repeating-radial-gradient(
-        circle at 1px 1px,
-        var(--terminal-phosphor-mask-color),
-        transparent 2px
-    );
-    background-size: var(--terminal-phosphor-mask-size) var(--terminal-phosphor-mask-size);
-    mix-blend-mode: var(--terminal-phosphor-blend-mode);
-    opacity: var(--startup-opacity-factor);
-    transition: opacity var(--transition-duration-medium) ease;
-    border-radius: inherit;
-}
+/* PHOSPHOR MASK RULE REMOVED FROM THIS FILE AND MOVED TO _lcd.css */
 
 .terminal-line {
     overflow-wrap: break-word; /* Ensure long strings break and wrap */

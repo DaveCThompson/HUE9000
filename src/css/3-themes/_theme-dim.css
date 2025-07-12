@@ -83,9 +83,9 @@ body.theme-dim {
     --lcd-unlit-border-l: 0.10;
     --lcd-unlit-border-a: 0.9;
 
-    --lcd-dimly-lit-grad-start-l: 0.22;
-    --lcd-dimly-lit-grad-end-l: 0.18;
-    --lcd-dimly-lit-text-l: 0.80;
+    --lcd-dimly-lit-grad-start-l: 0.32;
+    --lcd-dimly-lit-grad-end-l: 0.26;
+    --lcd-dimly-lit-text-l: 0.90;
     --lcd-dimly-lit-text-c: 0.005;
     --lcd-dimly-lit-text-h: 240;
     --lcd-dimly-lit-text-a: 1; 

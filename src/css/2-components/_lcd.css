@@ -47,6 +47,27 @@
         opacity var(--transition-duration-medium) ease;
 }
 
+/* NEW: Generic phosphor mask for all LCD types */
+.actual-lcd-screen-element::before,
+.hue-lcd-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1; 
+    pointer-events: none;
+    background-image: repeating-radial-gradient(
+        circle at 1px 1px,
+        var(--terminal-phosphor-mask-color),
+        transparent 2px
+    );
+    background-size: var(--terminal-phosphor-mask-size) var(--terminal-phosphor-mask-size);
+    mix-blend-mode: var(--terminal-phosphor-blend-mode);
+    opacity: var(--startup-opacity-factor);
+    transition: opacity var(--transition-duration-medium) ease;
+    border-radius: inherit;
+}
+
+
 /* FIX: The lcd-container is now a flex child within the new scroll wrapper for the terminal */
 .lcd-scroll-wrapper .lcd-container {
     flex-grow: 1;
