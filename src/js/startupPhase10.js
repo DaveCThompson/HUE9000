@@ -1,47 +1,53 @@
 /**
  * @module startupPhase10
- * @description Declarative configuration for Phase 10 (Activating Auxiliary Lighting: Low Intensity)
- * of the HUE 9000 startup sequence. (Formerly P9)
+ * @description Declarative configuration for Phase 10 (Initializing External Lighting Controls)
+ * of the HUE 9000 startup sequence.
  */
 export const phase10Config = {
   phase: 10,
-  name: "AUX_LIGHTING_LOW",
-  terminalMessageKey: "P10_AUX_LIGHTING_LOW", 
-  duration: 2.5, 
+  name: "EXTERNAL_LIGHTING_CONTROLS",
+  terminalMessageKey: "P10_EXTERNAL_LIGHTING_CONTROLS",
+  duration: 3.5,
   animations: [
     {
-      type: 'flicker',
-      target: 'Auxiliary Light Low', 
-      state: 'is-energized is-selected',
-      profile: 'buttonFlickerFromDimlyLitToFullyLitSelected',
-      position: 0.15,
-      deps: ['buttonManager'],
-      applyFinalState: ([buttonManager], animConfig) => {
-        const instance = buttonManager.getButtonByAriaLabel(animConfig.target);
-        if(instance) {
-            buttonManager.setButtonState(instance, animConfig.state, { skipAnimation: true, skipEcho: true });
-        }
+      type: 'tween',
+      target: 'dimmingFactors',
+      vars: {
+        value: 0.00,
+        duration: 1.0,
+        ease: 'power1.inOut'
+      },
+      position: 0,
+      deps: ['proxies', 'domElements'],
+      applyFinalState: ([proxies, dom], animConfig) => {
+        proxies.LReductionProxy.value = animConfig.vars.value;
+        dom.root.style.setProperty('--startup-L-reduction-factor', proxies.LReductionProxy.value.toFixed(3));
       }
     },
     {
       type: 'flicker',
-      target: 'Auxiliary Light High', 
-      state: 'is-energized',
-      profile: 'buttonFlickerFromDimlyLitToFullyLitUnselected',
-      position: 0.15,
+      target: 'buttonGroup',
+      groups: ['light'], // Aux Light buttons
+      state: 'is-dimly-lit',
+      profile: 'buttonFlickerToDimlyLit',
+      stagger: 0.03,
+      position: 0.01,
       deps: ['buttonManager'],
       applyFinalState: ([buttonManager], animConfig) => {
-        const instance = buttonManager.getButtonByAriaLabel(animConfig.target);
-        if(instance) {
-            buttonManager.setButtonState(instance, animConfig.state, { skipAnimation: true, skipEcho: true });
-        }
+        const buttons = buttonManager.getButtonsByGroupIds(animConfig.groups);
+        buttons.forEach(el => {
+            const instance = buttonManager.getButtonInstance(el);
+            if(instance) {
+                buttonManager.setButtonState(instance, animConfig.state, { skipAnimation: true, skipEcho: true });
+            }
+        });
       }
     },
     {
       type: 'audio',
-      soundKey: 'buttonEnergize',
+      soundKey: 'itemAppear',
       forceRestart: true,
-      position: 0.15,
+      position: 0.80,
       deps: [],
       applyFinalState: () => {}
     }

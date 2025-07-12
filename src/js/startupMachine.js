@@ -22,11 +22,12 @@ import { phase9Config } from './startupPhase9.js';
 import { phase10Config } from './startupPhase10.js';
 import { phase11Config } from './startupPhase11.js';
 import { phase12Config } from './startupPhase12.js';
+import { phase13Config } from './startupPhase13.js';
 
 export const desktopPhaseConfigs = [
   phase0Config, phase1Config, phase2Config, phase3Config, phase4Config,
   phase5Config, phase6Config, phase7Config, phase8Config, phase9Config,
-  phase10Config, phase11Config, phase12Config
+  phase10Config, phase11Config, phase12Config, phase13Config
 ];
 
 // A single, reusable service that runs a phase based on the config passed in its context.

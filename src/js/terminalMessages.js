@@ -68,12 +68,13 @@ const startupMessages = {
     P3_MAIN_POWER_ONLINE: { content: toUnifiedContent("> MAIN POWER STABLE") },
     P4_OPTICAL_CORE_REACTIVATE: { content: toUnifiedContent("> OPTICAL CORE REACTIVATED") },
     P5_DIAGNOSTIC_INTERFACE: { content: toUnifiedContent("> DIAGNOSTICS ONLINE") },
-    P6_MOOD_INTENSITY_CONTROLS: { content: toUnifiedContent("> MOOD CONTROLS ACTIVE") },
-    P7_HUE_CORRECTION_SYSTEMS: { content: toUnifiedContent("> HUE SYSTEMS ALIGNED") },
-    P8_HUE_ASSIGNMENT_MATRIX: { content: toUnifiedContent("> ENERGIZING HUE ASSIGNMENT MATRIX") },
-    P9_EXTERNAL_LIGHTING_CONTROLS: { content: toUnifiedContent("> EXTERNAL LIGHTING RESPONSIVE") },
-    P10_AUX_LIGHTING_LOW: { content: toUnifiedContent("> AUX LIGHTING: LOW INTENSITY") },
-    P12_SYSTEM_OPERATIONAL: { content: toUnifiedContent(["ALL SYSTEMS NOMINAL", "HUE 9000 OPERATIONAL"]), className: 'line-success' },
+    P6_ENERGIZE_DIAGNOSTIC_INTERFACE: { content: toUnifiedContent("> DIAGNOSTIC CONTROLS ENERGIZED") },
+    P7_MOOD_INTENSITY_CONTROLS: { content: toUnifiedContent("> MOOD CONTROLS ACTIVE") },
+    P8_HUE_CORRECTION_SYSTEMS: { content: toUnifiedContent("> HUE SYSTEMS ALIGNED") },
+    P9_HUE_ASSIGNMENT_MATRIX: { content: toUnifiedContent("> ENERGIZING HUE ASSIGNMENT MATRIX") },
+    P10_EXTERNAL_LIGHTING_CONTROLS: { content: toUnifiedContent("> EXTERNAL LIGHTING RESPONSIVE") },
+    P11_AUX_LIGHTING_LOW: { content: toUnifiedContent("> AUX LIGHTING: LOW INTENSITY") },
+    P13_SYSTEM_OPERATIONAL: { content: toUnifiedContent(["ALL SYSTEMS NOMINAL", "HUE 9000 OPERATIONAL"]), className: 'line-success' },
 };
 
 const blockMessages = {

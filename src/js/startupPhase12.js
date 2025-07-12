@@ -1,32 +1,51 @@
 /**
  * @module startupPhase12
- * @description Declarative configuration for Phase 12 (HUE 9000 Operational)
- * of the HUE 9000 startup sequence. (Formerly P11)
+ * @description Declarative configuration for Phase 12 (Engaging Ambient Theme)
+ * of the HUE 9000 startup sequence.
  */
-import { FINAL_BUTTON_STATES } from './config/index.js';
-import { ButtonStates } from './buttonManager.js';
+import * as appState from './appState.js';
 
 export const phase12Config = {
   phase: 12,
-  name: "SYSTEM_OPERATIONAL",
-  terminalMessageKey: "P12_SYSTEM_OPERATIONAL",
-  duration: 0.5,
+  name: "ENGAGING_AMBIENT_THEME", 
+  duration: 1.5,
   animations: [
     {
       type: 'call',
-      function: (buttonManager) => {
-        Object.entries(FINAL_BUTTON_STATES).forEach(([groupId, value]) => {
-          buttonManager.setGroupSelected(groupId, value);
+      function: (lcdUpdater, dom) => {
+        const lcds = [dom.lcdA, dom.lcdB, dom.terminalContainer];
+        lcds.forEach(lcd => {
+          if (lcd) {
+            lcdUpdater.setLcdState(lcd, 'active', { phaseContext: 'P12_ThemeTransition' });
+          }
         });
       },
-      deps: ['buttonManager'],
-      position: 0,
-      applyFinalState: ([buttonManager]) => {
-        Object.entries(FINAL_BUTTON_STATES).forEach(([groupId, value]) => {
-            // Use the public API to set the final selected state for the group.
-            buttonManager.setGroupSelected(groupId, value, { skipAnimation: true, skipEcho: true });
+      deps: ['lcdUpdater', 'domElements'],
+      position: 0.5,
+      applyFinalState: (deps, animConfig) => animConfig.function(...deps)
+    },
+    {
+      type: 'call',
+      function: (dom, config) => {
+        document.querySelectorAll(config.selectorsForDimExitAnimation).forEach(el => {
+          el.classList.add('animate-on-dim-exit');
         });
+        dom.body.classList.add('is-transitioning-from-dim');
+        appState.setTheme('dark');
+      },
+      deps: ['domElements', 'config'],
+      position: 0.5,
+      applyFinalState: (deps) => {
+          // In skip mode, we just set the theme directly without transition classes.
+          appState.setTheme('dark');
       }
+    },
+    {
+      type: 'audio',
+      soundKey: 'themeEngage', 
+      position: 0.6,
+      deps: [],
+      applyFinalState: () => {}
     }
   ]
 };
