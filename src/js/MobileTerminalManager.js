@@ -76,17 +76,19 @@ export class MobileTerminalManager {
                 this.audioManager.play('buttonPress', true);
                 const action = button.dataset.action;
 
+                // FIX: Corrected the switch cases to match the data-action attributes in the HTML
+                // and to correctly dispatch 'scan' events for all buttons.
                 switch (action) {
-                    case 'think':
-                        appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN1_MESSAGE', interrupt: true });
+                    case 'scan-a':
+                        appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN1_SCAN', interrupt: true });
                         break;
-                    case 'build':
-                        appState.emit('requestTerminalMessage', { type: 'block', messageKey: 'BTN2_MESSAGE', interrupt: true });
+                    case 'scan-b':
+                        appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN2_SCAN', interrupt: true });
                         break;
-                    case 'craft':
+                    case 'eval-x':
                         appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN3_SCAN', interrupt: true });
                         break;
-                    case 'lead':
+                    case 'eval-y':
                         appState.emit('requestTerminalMessage', { type: 'scan', messageKey: 'BTN4_SCAN', interrupt: true });
                         break;
                 }
