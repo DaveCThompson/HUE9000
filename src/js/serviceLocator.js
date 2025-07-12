@@ -22,13 +22,17 @@ export const serviceLocator = {
   /**
    * Retrieves a registered service by name.
    * @param {string} name - The name of the service to retrieve.
-   * @returns {object} The requested service instance.
-   * @throws {Error} If the service is not found.
+   * @param {boolean} [safe=false] - If true, returns null instead of throwing an error if the service is not found.
+   * @returns {object|null} The requested service instance or null.
+   * @throws {Error} If the service is not found and 'safe' is false.
    */
-  get(name) {
+  get(name, safe = false) {
     if (!services.has(name)) {
+      if (safe) {
+        return null;
+      }
       // This is a critical error, as it indicates a missing dependency or an issue in the initialization order.
-      throw new Error(`[ServiceLocator] Service "${name}" not found. Ensure it was registered in main.js before being accessed.`);
+      throw new Error(`[ServiceLocator] Service "${name}" not found. Ensure it was registered before being accessed.`);
     }
     return services.get(name);
   }

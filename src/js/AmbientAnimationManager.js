@@ -26,15 +26,8 @@ class AmbientAnimationManager {
     init() {
         this.gsap = serviceLocator.get('gsap');
 
-        // CORRECTED: Safely attempt to get the buttonManager.
-        // This will succeed on desktop and fail gracefully on mobile.
-        try {
-            this.buttonManager = serviceLocator.get('buttonManager');
-        } catch (e) {
-            // This is an expected and safe failure on mobile.
-            this.buttonManager = null;
-            if (this.debug) console.log('[AAM INIT] ButtonManager not found, running in mobile/no-button mode.');
-        }
+        // Use safe get for buttonManager as it's optional (desktop-only)
+        this.buttonManager = serviceLocator.get('buttonManager', true);
 
         if (!HARMONIC_RESONANCE_PARAMS) {
             console.error('[AAM INIT] HARMONIC_RESONANCE_PARAMS not found in config. Disabling.');
@@ -46,15 +39,9 @@ class AmbientAnimationManager {
         appState.subscribe('appStatusChanged', (status) => this._handleAppStatusChange(status));
         appState.subscribe('ambientPulse', ({ progress }) => this._handleAmbientPulse({ progress }));
 
-        // GUARD: Only subscribe to buttonManager events if the manager exists.
         if (this.buttonManager && typeof this.buttonManager.subscribe === 'function') {
             this.buttonManager.subscribe('beforeButtonTransition', (button) => this._handleBeforeButtonTransition(button));
             this.buttonManager.subscribe('afterButtonTransition', (button) => this._handleAfterButtonTransition(button));
-        } else if (this.debug && !this.buttonManager) {
-            // This is expected on mobile, not an error.
-            // console.log('[AAM INIT] ButtonManager not available for event subscription.');
-        } else if (this.buttonManager) {
-            console.error('[AAM INIT] ButtonManager available but not an event emitter.');
         }
 
         this.resonanceTicker = this.gsap.ticker;
@@ -89,19 +76,16 @@ class AmbientAnimationManager {
         this.isActive = (newStatus === 'interactive');
 
         if (this.isActive && !previouslyActive) {
-            this.gsap.delayedCall(0, () => {
-                if (!this.isActive) return;
+            // FIX: Removed the delayedCall. The reaction to becoming interactive should be
+            // immediate to ensure animations are applied to the now-settled state.
+            if (this.enableHarmonicResonance) this.resonanceTicker.add(this._updateResonance);
 
-                if (this.enableHarmonicResonance) this.resonanceTicker.add(this._updateResonance);
-
-                // GUARD: Only apply effects to buttons if the manager exists.
-                if (this.buttonManager) {
-                    const buttons = this.buttonManager.getAllButtonInstances();
-                    for (const button of buttons) {
-                        this._applyAmbientAnimation(button);
-                    }
+            if (this.buttonManager) {
+                const buttons = this.buttonManager.getAllButtonInstances();
+                for (const button of buttons) {
+                    this._applyAmbientAnimation(button);
                 }
-            });
+            }
 
         } else if (!this.isActive && previouslyActive) {
             if (this.enableHarmonicResonance) {
@@ -110,7 +94,6 @@ class AmbientAnimationManager {
                 rootStyle.removeProperty('--harmonic-resonance-glow-opacity');
                 rootStyle.removeProperty('--harmonic-resonance-glow-scale');
             }
-            // GUARD: Only remove effects from buttons if the manager exists.
             if (this.buttonManager) {
                 const buttons = this.buttonManager.getAllButtonInstances();
                 for (const button of buttons) {
@@ -122,14 +105,12 @@ class AmbientAnimationManager {
     }
 
     _handleBeforeButtonTransition(buttonInstance) {
-        // This method is only called if buttonManager exists, so no extra guard is needed here.
         if (!this.isActive) return;
         if (typeof buttonInstance.stopHarmonicResonance === 'function') buttonInstance.stopHarmonicResonance();
-        if (typeof buttonInstance.setCssIdleLightDriftActive === 'function') buttonInstance.setCssIdleLightDriftActive(false);
+        if (typeof buttonInstance.setCssIdleLightDriftActive === 'function') button.setCssIdleLightDriftActive(false);
     }
 
     _handleAfterButtonTransition(buttonInstance) {
-        // This method is only called if buttonManager exists, so no extra guard is needed here.
         if (!this.isActive) return;
         
         const buttonId = buttonInstance.getIdentifier();
@@ -141,7 +122,6 @@ class AmbientAnimationManager {
     }
 
     _applyAmbientAnimation(buttonInstance) {
-        // This method is only called from guarded locations, so it's safe.
         if (!this.isActive) return;
         
         if (typeof buttonInstance.stopHarmonicResonance !== 'function' || typeof buttonInstance.setCssIdleLightDriftActive !== 'function') {
@@ -159,12 +139,10 @@ class AmbientAnimationManager {
 
         const isP7HueButton = buttonId.includes('Assign') && appState.getCurrentStartupPhaseNumber() === 7;
         if (isP7HueButton) {
-            // console.log(`[AAM_APPLY_EFFECT P7_VISUALS] Button: ${buttonId}. Active: ${this.isActive}, Selected: ${isSelected}, Energized: ${isEnergized}, Classes: ${Array.from(currentClasses).join(' ')}. AppTime: ${performance.now().toFixed(2)}`);
             if (isEnergized && this.isActive) {
                 //  console.warn(`[AAM_APPLY_EFFECT P7_VISUALS_WARN] Button: ${buttonId}. AAM IS APPLYING EFFECT (Resonance/Drift) during P7. This might be UNINTENDED.`);
             }
         }
-
 
         if (isEnergized) {
             if (isSelected) {
@@ -174,9 +152,6 @@ class AmbientAnimationManager {
             } else {
                 buttonInstance.setCssIdleLightDriftActive(true);
             }
-        } else {
-            // Non-P7 related log, for general AAM debugging if needed
-            // if (this.debug && this.isActive) console.log(`[AAM _applyAmbientAnimation - ${buttonId}] Not energized, no AAM effect applied.`);
         }
     }
 

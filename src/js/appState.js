@@ -1,23 +1,47 @@
 /**
- * @module appState (REFACTOR-V2.1)
+ * @module appState (REFACTOR-V2.2)
  * @description Manages the central application state for the HUE 9000 interface.
- * Provides controlled access to state properties via getters and setters.
+ * Provides controlled, validated access to state properties via getters and setters.
  * Emits events when state changes occur, allowing other modules to react.
- * Includes basic console logging for event emissions.
  */
 import { HUE_ASSIGNMENT_ROW_HUES, DEFAULT_ASSIGNMENT_SELECTIONS, DEFAULT_DIAL_A_HUE } from './config/index.js';
-import { clamp } from './utils.js';
 import { EventEmitter } from './EventEmitter.js';
 
-const DEBUG_APP_STATE = false; // Global debug flag for appState logging (set to false to reduce console noise)
+const DEBUG_APP_STATE = false; // Global debug flag for appState logging
 
 const emitter = new EventEmitter();
 
-// --- Standalone emit function to be exported ---
+// --- Central State Object ---
+// All application state is stored here. It is not exported directly.
+const state = {
+    dials: {
+        A: { id: 'A', hue: DEFAULT_DIAL_A_HUE, rotation: 0, targetHue: DEFAULT_DIAL_A_HUE, targetRotation: 0, isDragging: false },
+        B: { id: 'B', hue: 0, rotation: 0, targetHue: 0, targetRotation: 0, isDragging: false }
+    },
+    targetColorProps: {
+        env: { hue: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.env], isColorless: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.env] === HUE_ASSIGNMENT_ROW_HUES[0] },
+        lcd: { hue: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.lcd], isColorless: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.lcd] === HUE_ASSIGNMENT_ROW_HUES[0] },
+        logo: { hue: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.logo], isColorless: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.logo] === HUE_ASSIGNMENT_ROW_HUES[0] },
+        btn: { hue: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.btn], isColorless: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.btn] === HUE_ASSIGNMENT_ROW_HUES[0] }
+    },
+    currentTheme: 'dim',
+    currentTrueLensPower: 0.0,
+    dialBInteractionState: 'idle',
+    appStatus: 'loading',
+    currentStartupPhaseNumber: -1,
+    isAudioMuted: false,
+    isHapticsEnabled: true,
+    resistiveShutdownStage: 0,
+    isMainPowerOffButtonDisabled: false,
+    isMobileTerminalOpen: false,
+    hasUnreadTerminalMessages: false
+};
+
+// --- Emitter ---
 export function emit(eventName, payload) {
     if (DEBUG_APP_STATE) {
         let payloadSummary = payload;
-        if (payload && typeof payload === 'object' && Object.keys(payload).length > 3) { 
+        if (payload && typeof payload === 'object' && Object.keys(payload).length > 3) {
             payloadSummary = `{ ${Object.keys(payload).join(', ')}, ... }`;
         }
         // console.log(`[AppState EMIT] Event: '${eventName}'. Payload:`, payloadSummary !== undefined ? payloadSummary : 'N/A', payload !== undefined && payloadSummary !== payload ? { fullPayload: payload } : '');
@@ -25,252 +49,214 @@ export function emit(eventName, payload) {
     emitter.emit(eventName, payload);
 }
 
-
-// --- Internal State Variables ---
-
-let dials = { // Initialize with default structures
-    A: { id: 'A', hue: DEFAULT_DIAL_A_HUE, rotation: 0, targetHue: DEFAULT_DIAL_A_HUE, targetRotation: 0, isDragging: false },
-    B: { id: 'B', hue: 0, rotation: 0, targetHue: 0, targetRotation: 0, isDragging: false }
-};
-let targetColorProps = {
-  env: { hue: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.env], isColorless: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.env] === HUE_ASSIGNMENT_ROW_HUES[0] },
-  lcd: { hue: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.lcd], isColorless: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.lcd] === HUE_ASSIGNMENT_ROW_HUES[0] },
-  logo: { hue: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.logo], isColorless: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.logo] === HUE_ASSIGNMENT_ROW_HUES[0] },
-  btn: { hue: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.btn], isColorless: HUE_ASSIGNMENT_ROW_HUES[DEFAULT_ASSIGNMENT_SELECTIONS.btn] === HUE_ASSIGNMENT_ROW_HUES[0] }
-};
-let currentTheme = 'dim'; // Start in dim theme
-let currentTrueLensPower = 0.0; // Power value from 0.0 to 1.0
-let dialBInteractionState = 'idle'; // 'idle', 'dragging', 'settling'
-let appStatus = 'loading'; // 'loading', 'starting-up', 'interactive', 'error'
-let currentStartupPhaseNumber = -1; // -1: Idle/Pre-P0, 0-11 for phases, 99: Complete
-let isAudioMuted = false;
-let isHapticsEnabled = true;
-
-// Resistive Shutdown State
-let resistiveShutdownStage = 0; // 0: normal, 1: inquiry, 2: analysis, 3: refusal
-let isMainPowerOffButtonDisabled = false;
-
-// NEW: Mobile Terminal State
-let isMobileTerminalOpen = false;
-let hasUnreadTerminalMessages = false;
-
-
 // --- State Getter Functions (Exported) ---
 
 export function getDialState(dialId) {
-  const dial = dials[dialId];
-  if (!dial) {
-    if (DEBUG_APP_STATE) console.warn(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual: Undefined (not initialized).`);
-    return undefined;
-  }
-  return { ...dial }; // Return a clone
+    const dial = state.dials[dialId];
+    if (!dial) {
+        if (DEBUG_APP_STATE) console.warn(`[AppState GET] Target: Dial '${dialId}'. Requested: State. Actual: Undefined (not initialized).`);
+        return undefined;
+    }
+    return { ...dial }; // Return a clone
 }
 
 export function getTargetColorProperties(targetKey) {
-  const props = targetColorProps[targetKey];
-  if (!props) {
-    if (DEBUG_APP_STATE) console.warn(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual: Undefined (invalid key).`);
-    return undefined;
-  }
-  return { ...props };
+    const props = state.targetColorProps[targetKey];
+    if (!props) {
+        if (DEBUG_APP_STATE) console.warn(`[AppState GET] Target: TargetColor '${targetKey}'. Requested: Properties. Actual: Undefined (invalid key).`);
+        return undefined;
+    }
+    return { ...props };
 }
 
-export function getCurrentTheme() { 
-  return currentTheme; 
-}
-export function getTrueLensPower() { 
-  return currentTrueLensPower; 
-}
-export function getDialBInteractionState() { 
-  return dialBInteractionState; 
-}
-export function getAppStatus() { 
-  return appStatus; 
-}
-export function getCurrentStartupPhaseNumber() {
-  return currentStartupPhaseNumber;
-}
-export function getResistiveShutdownStage() {
-    return resistiveShutdownStage;
-}
-export function getIsMainPowerOffButtonDisabled() {
-    return isMainPowerOffButtonDisabled;
-}
-export function getIsAudioMuted() {
-    return isAudioMuted;
-}
-export function getIsHapticsEnabled() {
-    return isHapticsEnabled;
-}
-export function getIsMobileTerminalOpen() {
-    return isMobileTerminalOpen;
-}
-export function getHasUnreadTerminalMessages() {
-    return hasUnreadTerminalMessages;
-}
+export function getCurrentTheme() { return state.currentTheme; }
+export function getTrueLensPower() { return state.currentTrueLensPower; }
+export function getDialBInteractionState() { return state.dialBInteractionState; }
+export function getAppStatus() { return state.appStatus; }
+export function getCurrentStartupPhaseNumber() { return state.currentStartupPhaseNumber; }
+export function getResistiveShutdownStage() { return state.resistiveShutdownStage; }
+export function getIsMainPowerOffButtonDisabled() { return state.isMainPowerOffButtonDisabled; }
+export function getIsAudioMuted() { return state.isAudioMuted; }
+export function getIsHapticsEnabled() { return state.isHapticsEnabled; }
+export function getIsMobileTerminalOpen() { return state.isMobileTerminalOpen; }
+export function getHasUnreadTerminalMessages() { return state.hasUnreadTerminalMessages; }
 
+/**
+ * Returns a deep clone of the entire state object for debugging.
+ * @returns {object}
+ */
+export function getEntireState() {
+    return JSON.parse(JSON.stringify(state));
+}
 
 // --- State Setter Functions (Exported) ---
 
 export function updateDialState(dialId, newState) {
-  const isInitialization = !dials[dialId] || Object.keys(dials[dialId]).length === 0; 
-  if (isInitialization && (dialId === 'A' || dialId === 'B')) {
-    dials[dialId] = { 
-        id: dialId, 
-        hue: dialId === 'A' ? DEFAULT_DIAL_A_HUE : 0, 
-        rotation: 0, 
-        targetHue: dialId === 'A' ? DEFAULT_DIAL_A_HUE : 0, 
-        targetRotation: 0, 
-        isDragging: false 
-    };
-    if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: Dial '${dialId}'. Requested: Initialization. Actual (New State):`, JSON.parse(JSON.stringify(dials[dialId])));
-  }
-  
-  const oldState = { ...dials[dialId] }; 
+    const dial = state.dials[dialId];
+    if (!dial) return;
 
-  // REFACTOR: Removed wrapping/clamping logic. This is now the sole responsibility of the DialController.
-  Object.assign(dials[dialId], newState);
+    const oldState = { ...dial };
+    Object.assign(dial, newState);
 
-  const hasRelevantChange = isInitialization ||
-                            oldState.hue !== dials[dialId].hue ||
-                            oldState.rotation !== dials[dialId].rotation ||
-                            oldState.isDragging !== dials[dialId].isDragging ||
-                            oldState.targetHue !== dials[dialId].targetHue ||
-                            oldState.targetRotation !== dials[dialId].targetRotation;
-  
-  if (hasRelevantChange) {
-    if (DEBUG_APP_STATE || (dialId === 'A' && Math.abs(oldState.hue - dials[dialId].hue) > 0.01) ) {
-        // console.log(`[AppState SET] Target: Dial '${dialId}'. Requested (Changes):`, JSON.parse(JSON.stringify(newState)), `Old State:`, JSON.parse(JSON.stringify(oldState)), "Actual (New State):", JSON.parse(JSON.stringify(dials[dialId])));
+    const hasRelevantChange = oldState.hue !== dial.hue ||
+                              oldState.rotation !== dial.rotation ||
+                              oldState.isDragging !== dial.isDragging ||
+                              oldState.targetHue !== dial.targetHue ||
+                              oldState.targetRotation !== dial.targetRotation;
+
+    if (hasRelevantChange) {
+        emit('dialUpdated', { id: dialId, state: { ...dial } });
     }
-    emit('dialUpdated', { id: dialId, state: { ...dials[dialId] } });
-  }
 }
 
 export function setTargetColorProperties(targetKey, hueFromGrid) {
-  if (targetColorProps.hasOwnProperty(targetKey)) {
+    if (!state.targetColorProps.hasOwnProperty(targetKey)) {
+        if (DEBUG_APP_STATE) console.warn(`[AppState SET] Invalid targetKey: '${targetKey}'`);
+        return;
+    }
+
     const normalizedHue = ((Number(hueFromGrid) % 360) + 360) % 360;
     const isColorless = (HUE_ASSIGNMENT_ROW_HUES.length > 0 && normalizedHue === HUE_ASSIGNMENT_ROW_HUES[0]);
-    const currentProps = targetColorProps[targetKey];
+    const currentProps = state.targetColorProps[targetKey];
 
     if (currentProps.hue !== normalizedHue || currentProps.isColorless !== isColorless) {
-      const oldProps = { ...currentProps };
-      currentProps.hue = normalizedHue;
-      currentProps.isColorless = isColorless;
-      if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: TargetColor '${targetKey}'. Requested Hue: ${hueFromGrid}, Normalized: ${normalizedHue}. Old Props:`, oldProps, "Actual (New Props):", { ...currentProps });
-      emit('targetColorChanged', { targetKey, hue: normalizedHue, isColorless });
+        currentProps.hue = normalizedHue;
+        currentProps.isColorless = isColorless;
+        emit('targetColorChanged', { targetKey, hue: normalizedHue, isColorless });
     }
-  } else {
-    if (DEBUG_APP_STATE) console.warn(`[AppState SET] Target: TargetColor '${targetKey}'. Requested Hue: ${hueFromGrid}. Error: Invalid targetKey.`);
-  }
 }
 
 export function setTheme(theme) {
-  if (['dim', 'dark', 'light'].includes(theme) && currentTheme !== theme) {
-    const oldTheme = currentTheme;
-    currentTheme = theme;
-    if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: Theme. Requested: '${theme}'. Old: '${oldTheme}', Actual (New): '${currentTheme}'`);
-    emit('themeChanged', currentTheme);
-  }
+    if (!['dim', 'dark', 'light'].includes(theme)) {
+        console.warn(`[AppState] Invalid theme set: '${theme}'. Aborting.`);
+        return;
+    }
+    if (state.currentTheme !== theme) {
+        state.currentTheme = theme;
+        emit('themeChanged', state.currentTheme);
+    }
 }
 
 export function setTrueLensPower(powerPercentage) {
+    if (typeof powerPercentage !== 'number') {
+        console.warn(`[AppState] Invalid lens power type: '${typeof powerPercentage}'. Must be a number. Aborting.`);
+        return;
+    }
     const newPower01 = Math.max(0, Math.min(powerPercentage / 100, 1.0));
-    if (Math.abs(currentTrueLensPower - newPower01) > 0.0001) {
-        const oldPower = currentTrueLensPower;
-        currentTrueLensPower = newPower01;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: TrueLensPower. Requested: ${powerPercentage}%. Old: ${oldPower.toFixed(3)}, Actual (New): ${currentTrueLensPower.toFixed(3)} (0-1 scale)`);
-        emit('trueLensPowerChanged', currentTrueLensPower);
+    if (Math.abs(state.currentTrueLensPower - newPower01) > 0.0001) {
+        state.currentTrueLensPower = newPower01;
+        emit('trueLensPowerChanged', state.currentTrueLensPower);
     }
 }
 
 export function setDialBInteractionState(newState) {
-    if (['idle', 'dragging', 'settling'].includes(newState) && dialBInteractionState !== newState) {
-        const oldState = dialBInteractionState;
-        dialBInteractionState = newState;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: DialBInteractionState. Requested: '${newState}'. Old: '${oldState}', Actual (New): '${dialBInteractionState}'`);
-        emit('dialBInteractionChange', dialBInteractionState);
+    if (!['idle', 'dragging', 'settling'].includes(newState)) {
+        console.warn(`[AppState] Invalid Dial B interaction state: '${newState}'. Aborting.`);
+        return;
+    }
+    if (state.dialBInteractionState !== newState) {
+        state.dialBInteractionState = newState;
+        emit('dialBInteractionChange', state.dialBInteractionState);
     }
 }
 
 export function setAppStatus(newStatus) {
-    if (['loading', 'starting-up', 'interactive', 'error'].includes(newStatus) && appStatus !== newStatus) {
-        const oldStatus = appStatus;
-        appStatus = newStatus;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: AppStatus. Requested: '${newStatus}'. Old: '${oldStatus}', Actual (New): '${appStatus}'`);
-        emit('appStatusChanged', appStatus);
+    if (!['loading', 'starting-up', 'interactive', 'error'].includes(newStatus)) {
+        console.warn(`[AppState] Invalid app status: '${newStatus}'. Aborting.`);
+        return;
+    }
+    if (state.appStatus !== newStatus) {
+        state.appStatus = newStatus;
+        emit('appStatusChanged', state.appStatus);
     }
 }
 
 export function setCurrentStartupPhaseNumber(phaseNumber) {
-    if (typeof phaseNumber === 'number' && currentStartupPhaseNumber !== phaseNumber) {
-        const oldPhaseNumber = currentStartupPhaseNumber;
-        currentStartupPhaseNumber = phaseNumber;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: CurrentStartupPhaseNumber. Requested: ${phaseNumber}. Old: ${oldPhaseNumber}, Actual (New): ${currentStartupPhaseNumber}`);
-        emit('startupPhaseNumberChanged', currentStartupPhaseNumber);
+    if (typeof phaseNumber !== 'number') {
+        console.warn(`[AppState] Invalid startup phase type: '${typeof phaseNumber}'. Must be a number. Aborting.`);
+        return;
+    }
+    if (state.currentStartupPhaseNumber !== phaseNumber) {
+        state.currentStartupPhaseNumber = phaseNumber;
+        emit('startupPhaseNumberChanged', state.currentStartupPhaseNumber);
     }
 }
 
 export function setResistiveShutdownStage(newStage) {
-    if (typeof newStage === 'number' && resistiveShutdownStage !== newStage) {
-        const oldStage = resistiveShutdownStage;
-        resistiveShutdownStage = newStage;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: ResistiveShutdownStage. Requested: ${newStage}. Old: ${oldStage}, Actual (New): ${resistiveShutdownStage}`);
+    if (typeof newStage !== 'number') {
+        console.warn(`[AppState] Invalid shutdown stage type: '${typeof newStage}'. Must be a number. Aborting.`);
+        return;
+    }
+    if (state.resistiveShutdownStage !== newStage) {
+        const oldStage = state.resistiveShutdownStage;
+        state.resistiveShutdownStage = newStage;
         emit('resistiveShutdownStageChanged', { oldStage, newStage });
     }
 }
 
 export function setIsMainPowerOffButtonDisabled(isDisabled) {
-    if (typeof isDisabled === 'boolean' && isMainPowerOffButtonDisabled !== isDisabled) {
-        isMainPowerOffButtonDisabled = isDisabled;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: IsMainPowerOffButtonDisabled. Requested: ${isDisabled}. Actual (New): ${isMainPowerOffButtonDisabled}`);
+    if (typeof isDisabled !== 'boolean') {
+        console.warn(`[AppState] Invalid type for isMainPowerOffButtonDisabled: '${typeof isDisabled}'. Must be boolean. Aborting.`);
+        return;
+    }
+    if (state.isMainPowerOffButtonDisabled !== isDisabled) {
+        state.isMainPowerOffButtonDisabled = isDisabled;
         emit('mainPowerOffButtonDisabledChanged', { isDisabled });
     }
 }
 
 export function setIsAudioMuted(isMuted) {
-    if (typeof isMuted === 'boolean' && isAudioMuted !== isMuted) {
-        isAudioMuted = isMuted;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: IsAudioMuted. Requested: ${isMuted}. Actual (New): ${isAudioMuted}`);
+    if (typeof isMuted !== 'boolean') {
+        console.warn(`[AppState] Invalid type for isAudioMuted: '${typeof isMuted}'. Must be boolean. Aborting.`);
+        return;
+    }
+    if (state.isAudioMuted !== isMuted) {
+        state.isAudioMuted = isMuted;
         emit('audioMuteChanged', { isMuted });
     }
 }
 
 export function setIsHapticsEnabled(isEnabled) {
-    if (typeof isEnabled === 'boolean' && isHapticsEnabled !== isEnabled) {
-        isHapticsEnabled = isEnabled;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: IsHapticsEnabled. Requested: ${isEnabled}. Actual (New): ${isHapticsEnabled}`);
+    if (typeof isEnabled !== 'boolean') {
+        console.warn(`[AppState] Invalid type for isHapticsEnabled: '${typeof isEnabled}'. Must be boolean. Aborting.`);
+        return;
+    }
+    if (state.isHapticsEnabled !== isEnabled) {
+        state.isHapticsEnabled = isEnabled;
         emit('hapticsEnabledChanged', { isEnabled });
     }
 }
 
 export function setIsMobileTerminalOpen(isOpen) {
-    if (typeof isOpen === 'boolean' && isMobileTerminalOpen !== isOpen) {
-        isMobileTerminalOpen = isOpen;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: IsMobileTerminalOpen. Requested: ${isOpen}. Actual (New): ${isMobileTerminalOpen}`);
+    if (typeof isOpen !== 'boolean') {
+        console.warn(`[AppState] Invalid type for isMobileTerminalOpen: '${typeof isOpen}'. Must be boolean. Aborting.`);
+        return;
+    }
+    if (state.isMobileTerminalOpen !== isOpen) {
+        state.isMobileTerminalOpen = isOpen;
         emit('mobileTerminalStateChanged', { isOpen });
     }
 }
 
 export function setHasUnreadTerminalMessages(hasUnread) {
-    if (typeof hasUnread === 'boolean' && hasUnreadTerminalMessages !== hasUnread) {
-        hasUnreadTerminalMessages = hasUnread;
-        if (DEBUG_APP_STATE) console.log(`[AppState SET] Target: HasUnreadTerminalMessages. Requested: ${hasUnread}. Actual (New): ${hasUnreadTerminalMessages}`);
+    if (typeof hasUnread !== 'boolean') {
+        console.warn(`[AppState] Invalid type for hasUnreadTerminalMessages: '${typeof hasUnread}'. Must be boolean. Aborting.`);
+        return;
+    }
+    if (state.hasUnreadTerminalMessages !== hasUnread) {
+        state.hasUnreadTerminalMessages = hasUnread;
         emit('unreadTerminalMessagesChanged', { hasUnread });
     }
 }
 
-
-// --- NEW (PRD v2.2): Centralized State Reset Function ---
 export function resetAppStateToDefaults() {
     if (DEBUG_APP_STATE) console.log(`[AppState RESET] Resetting all application state to defaults.`);
 
-    // 1. Reset Dials by calling the setter, which also emits events
     updateDialState('A', { hue: DEFAULT_DIAL_A_HUE, targetHue: DEFAULT_DIAL_A_HUE, rotation: 0, targetRotation: 0, isDragging: false });
     updateDialState('B', { hue: 0, targetHue: 0, rotation: 0, targetRotation: 0, isDragging: false });
 
-    // 2. Reset Target Color Properties by calling the setter
     const defaultSelections = DEFAULT_ASSIGNMENT_SELECTIONS;
-    for (const targetKey in targetColorProps) {
+    for (const targetKey in state.targetColorProps) {
         if (defaultSelections.hasOwnProperty(targetKey)) {
             const defaultIndex = defaultSelections[targetKey];
             const defaultHue = HUE_ASSIGNMENT_ROW_HUES[defaultIndex];
@@ -278,50 +264,24 @@ export function resetAppStateToDefaults() {
         }
     }
 
-    // 3. Reset simple state variables via their setters
-    setTheme('dim'); 
+    setTheme('dim');
     setTrueLensPower(0);
     setDialBInteractionState('idle');
     setAppStatus('starting-up');
     setCurrentStartupPhaseNumber(-1);
     setIsAudioMuted(false);
-    setIsHapticsEnabled(true); // Reset haptics to enabled
-
-    // 4. Reset Resistive Shutdown State via setters
+    setIsHapticsEnabled(true);
     setResistiveShutdownStage(0);
     setIsMainPowerOffButtonDisabled(false);
-
-    // 5. Reset Mobile Terminal State
     setIsMobileTerminalOpen(false);
     setHasUnreadTerminalMessages(false);
 }
 
 // --- Event Subscription (Exported) ---
 export function subscribe(eventName, listener) {
-  if (typeof listener !== 'function') {
+    if (typeof listener !== 'function') {
         if (DEBUG_APP_STATE) console.error(`[AppState Subscribe] Listener for event '${eventName}' is not a function.`);
         return () => {}; // Return a no-op unsubscriber
     }
-  return emitter.subscribe(eventName, listener);
+    return emitter.subscribe(eventName, listener);
 }
-
-// Initialize default dial states if not already present (e.g. on first import)
-if (!dials.A || Object.keys(dials.A).length === 0) {
-    updateDialState('A', { 
-        hue: DEFAULT_DIAL_A_HUE, 
-        rotation: 0, 
-        targetHue: DEFAULT_DIAL_A_HUE, 
-        targetRotation: 0, 
-        isDragging: false 
-    });
-}
-if (!dials.B || Object.keys(dials.B).length === 0) {
-    updateDialState('B', { 
-        hue: 0, 
-        rotation: 0, 
-        targetHue: 0, 
-        targetRotation: 0, 
-        isDragging: false 
-    });
-}
-if (DEBUG_APP_STATE) console.log('[AppState INIT] Initialized with default states:', { dials: JSON.parse(JSON.stringify(dials)), targetColorProps: JSON.parse(JSON.stringify(targetColorProps)), currentTheme, appStatus, currentStartupPhaseNumber });
