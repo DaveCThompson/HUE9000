@@ -324,11 +324,11 @@ body.pre-boot #datastream-preloader {
     box-shadow: inset 0 0 0.1875rem 1px var(--btn-pressed-innershadow-color); /* Add inset shadow */
 }
 #datastream-preloader .button-unit.is-energized:not(:disabled):hover:active::after {
-    transform: scale(1.1); /* Pulse the glow */
+    transform: scale(1.025); /* Pulse the glow */
     opacity: calc(var(--btn-selected-glow-base-opacity, 0.8) * 1.15);
 }
 #datastream-preloader .button-unit.is-energized:not(:disabled):active .light {
-    transform: scale(1.2); /* Pulse the lights */
+    transform: scale(1.05); /* Pulse the lights */
 }
 
 
