@@ -1,6 +1,12 @@
-# Development Plan A: System Integrity & User Feedback Loop
+Understood. The plan has been updated to incorporate the feedback regarding the watchdog timer and cleanup responsibilities. The PRD now reflects a more robust and maintainable architecture.
 
-**Status:** Proposed
+Here is the revised `RF-1.md`.
+
+---
+
+# Development Plan A: System Integrity & User Feedback Loop (REVISED)
+
+**Status:** **Approved**
 **Author:** AI Principal Engineer
 **Date:** October 26, 2023
 
@@ -17,7 +23,7 @@ The primary user-driven interaction in the HUE 9000 interface is the "Scan" sequ
 | ID | Requirement | Value & Rationale |
 | :-- | :--- | :--- |
 | **TERM-1** | **Ensure Scan Re-entrancy** | **Critical.** A core feature that can only be used once per page load is fundamentally broken. This fixes the state management bug that prevents subsequent scans from initializing and running correctly. |
-| **TERM-2** | **Introduce FSM Timeout Recovery** | **High.** The scan's Finite State Machine (FSM) can deadlock if an internal promise never resolves, freezing the terminal. A 30-second "watchdog" timer will gracefully abort a stuck scan and return control to the user, ensuring application resilience. |
+| **TERM-2** | **Implement FSM-Native Timeout Recovery** | **High.** The scan's Finite State Machine (FSM) can deadlock if an internal promise never resolves. A **15-second, FSM-native timeout** will gracefully abort a stuck scan and return control to the user, ensuring application resilience without requiring long waits. |
 | **TERM-3** | **Standardize Scan Termination Feedback** | **Medium.** The conclusion of a scan is abrupt. This will implement clear, styled messages for success, user-initiated aborts, and system errors, improving the clarity of the user feedback loop. |
 | **TERM-4** | **Implement Lightweight Aural Cues** | **Medium.** To improve usability for non-visual users, the system will announce key scan state changes (e.g., "Evaluation started," "Conclusion: ...") via a screen-reader-accessible live region. |
 
@@ -25,26 +31,31 @@ The primary user-driven interaction in the HUE 9000 interface is the "Scan" sequ
 
 ### **2. Architectural Approach**
 
-The root cause of the scan failures is a tight coupling and confused ownership between the `TerminalManager` and the `ScanOrchestrator`. The `TerminalManager` currently attempts to manage the lifecycle of the scan UI, which is not its core responsibility. This plan decouples these modules and clarifies their roles.
+The root cause of the scan failures is a tight coupling and confused ownership between the `TerminalManager` and the `ScanOrchestrator`. This plan decouples these modules and clarifies their roles, with the `ScanOrchestrator` taking full ownership of the scan lifecycle.
 
 #### **1. Decoupled Scan Lifecycle Management**
 
 *   **`TerminalManager`'s Role:** Its *sole* responsibility is managing the terminal text buffer and message queue. When it receives a 'scan' request, its only actions will be to:
-    1.  Pause its own message queue.
+    1.  Pause its own message queue processing.
     2.  Clear its display content.
     3.  Provide a single, empty container element (`.scan-animation-container`) to the orchestrator.
-    4.  Start the "watchdog" timeout (see below).
+    4.  Listen for the global `scanComplete` event to resume its queue.
 
-*   **`ScanOrchestrator`'s Role:** It will now *own the entire scan lifecycle* within the container provided by the terminal. It is responsible for creating, managing, and cleaning up all of its own UI elements.
+*   **`ScanOrchestrator`'s Role:** It will now **own the entire scan lifecycle**, including UI creation and teardown.
+    1.  It will receive the container element from the `TerminalManager`.
+    2.  It will build, manage, and animate all of its own UI within that container.
+    3.  It will implement a **centralized `_cleanup()` method** responsible for stopping the FSM, killing all related GSAP animations, and removing its UI from the DOM.
+    4.  The `_cleanup()` method will be called reliably whenever the FSM reaches *any* final state (completed, aborted, or error).
 
-*   **`appState` as an Event Bus:** The modules will communicate via the central `appState` event bus. When the `ScanOrchestrator`'s FSM finishes (success, abort, or error), it will emit a global `scanComplete` event. The `TerminalManager` will listen for this event to resume its own message queue. This eliminates direct dependencies.
+*   **`appState` as an Event Bus:** The modules will communicate via the central `appState` event bus. When the `ScanOrchestrator`'s FSM finishes, it will emit a global `scanComplete` event. This eliminates direct dependencies and ensures a clean handoff back to the `TerminalManager`.
 
-#### **2. FSM Resilience via External Watchdog**
+#### **2. FSM Resilience via Native Timeouts**
 
-The `TerminalManager`, as the *initiator* of the scan, will implement the timeout.
-1.  Upon initiating a scan, it will start a 30-second `setTimeout`.
-2.  Upon receiving the `scanComplete` event, it will clear this timeout.
-3.  If the timeout fires, it means the FSM is stuck. The `TerminalManager` will then force a cleanup, destroy the scan UI, and display a "System Recovery" message before resuming its queue.
+The previous "external watchdog" approach is replaced with a more robust, FSM-native solution.
+1.  The `scanFSM.js` machine definition will include a built-in timeout using XState's `after` transition feature.
+2.  If the main `running` state is active for more than **15 seconds** without transitioning, the `after` event will automatically fire.
+3.  This event will transition the FSM to an `error` state.
+4.  This `error` state is a final state, which will trigger the `ScanOrchestrator`'s `_cleanup()` routine and the emission of the `scanComplete` event, reliably returning control to the user.
 
 #### **3. Abstracted Accessibility Layer**
 
@@ -57,10 +68,10 @@ The `ScanOrchestrator` will create and manage a visually hidden `div` with `aria
 #### **Modified Files (4)**
 
 *   `src/js/terminalManager.js` (Major)
-    *   Will be refactored to implement the decoupled lifecycle, watchdog timer, and event-based communication.
+    *   Will be refactored to implement the simplified, decoupled lifecycle. Watchdog logic will be removed.
 *   `src/js/scanOrchestrator.js` (Medium)
-    *   Will be updated to manage its UI cleanup and the ARIA live region.
+    *   Will be updated to implement the `_cleanup()` method and manage its full UI lifecycle.
 *   `src/js/scanFSM.js` (Minor)
-    *   Final states will be adjusted to provide clear status (aborted, error, completed) for the feedback loop.
+    *   Will be updated to include the `after` transition for the 15-second timeout. Final states will be adjusted for clear status reporting.
 *   `src/js/terminalMessages.js` (Minor)
     *   New message strings for abort/error states will be added.

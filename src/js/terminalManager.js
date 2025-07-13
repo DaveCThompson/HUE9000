@@ -45,40 +45,39 @@ class TerminalManager {
         this._gsap = serviceLocator.get('gsap');
         this._setupDOM();
         appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
-        // ADDED: Subscribe to the global scan completion event.
-        appState.subscribe('scanComplete', ({ wasAborted }) => this.concludeScan(wasAborted));
+        appState.subscribe('scanComplete', (payload) => this.concludeScan(payload));
     }
 
     reset() {
         this._interruptAndClear();
     }
 
-    async concludeScan(wasAborted) {
-        // console.log('%c[TerminalManager] ✅ Event "scanComplete" received! Running concludeScan().', 'color: green; font-weight: bold;', { wasAborted });
-        // FIX: The scan content should persist. We no longer clean it up here.
-        // The responsibility for clearing the old scan is now in _initiateScan.
-        
-        // console.log('%c[TerminalManager] Current _isTakeoverActive state:', 'color: green;', this._isTakeoverActive);
+    async concludeScan({ status }) {
         this._isTakeoverActive = false;
-        // console.log('%c[TerminalManager] Set _isTakeoverActive to:', 'color: green; font-weight: bold;', this._isTakeoverActive);
 
-        if (wasAborted) {
+        // On successful completion, we want the scan results to remain.
+        // The terminal is cleared only when a *new* scan is initiated.
+        // For aborts or errors, we clear the screen and show a message.
+        if (status === 'aborted') {
             appState.emit('requestTerminalMessage', {
                 type: 'status',
                 source: 'scan',
                 messageKey: 'SCAN_ABORTED',
                 interrupt: true
             });
+        } else if (status === 'error') {
+            appState.emit('requestTerminalMessage', {
+                type: 'status',
+                source: 'scan',
+                messageKey: 'FSM_ERROR',
+                data: { content: 'Evaluation failed due to a system timeout or internal error.' },
+                interrupt: true
+            });
+        } else {
+            // For 'completed', just resume the message queue if anything is pending.
+            this._processQueue();
         }
-        
-        this._processQueue();
-        // console.log('%c[TerminalManager] Exited concludeScan() and started queue processing.', 'color: green;');
     }
-
-    // REMOVED: The _cleanupScanContainer function was the source of the bug.
-    // Its logic is no longer needed as _initiateScan now handles preparation.
-
-    // --- Internal Methods ---
 
     _setupDOM() {
         const dom = serviceLocator.get('domElements');
@@ -126,7 +125,7 @@ class TerminalManager {
     }
 
     _handleRequestTerminalMessage(payload) {
-        if (this._isTakeoverActive && payload.type !== 'scan') {
+        if (this._isTakeoverActive && payload.type !== 'scan' && !payload.interrupt) {
             this._messageQueue.push({ ...payload, ...getMessage(payload) });
             return;
         }
@@ -136,7 +135,6 @@ class TerminalManager {
             appState.setHasUnreadTerminalMessages(true);
         }
 
-        // NEW: Handle instant message printing for the skip-startup path
         if (payload.instant) {
             const messageData = getMessage(payload);
             this._printMessageInstantly({ ...payload, ...messageData });
@@ -173,11 +171,6 @@ class TerminalManager {
         }
     }
 
-    /**
-     * Instantly renders a message to the terminal, bypassing all animations and queues.
-     * Used by the "skip startup" feature to build the terminal history.
-     * @param {object} messageObject - The fully-formed message object.
-     */
     _printMessageInstantly(messageObject) {
         if (!this._terminalContentElement || !messageObject.content) return;
 
@@ -202,7 +195,6 @@ class TerminalManager {
         });
 
         this._isFirstLine = false;
-        // After instantly printing, ensure the cursor is idle at the end.
         this._setCursorState('idle');
         this._scrollTerminal(true);
     }
@@ -217,12 +209,10 @@ class TerminalManager {
         const scanConfig = getMessage(payload);
         if (!scanConfig || !scanConfig.subJobs) {
             console.error("Invalid or missing scan configuration for payload:", payload);
-            await this.concludeScan(true); // Still clean up on config error
+            await this.concludeScan({ status: 'error' });
             return;
         }
         
-        // FIX: Re-architected preparation logic for robustness.
-        // Always clear the terminal and create a fresh scan container for each run.
         if (this._terminalContentElement) {
             this._terminalContentElement.innerHTML = '';
         }
@@ -230,16 +220,11 @@ class TerminalManager {
         this._scanContainerElement = document.createElement('div');
         this._scanContainerElement.className = 'scan-animation-container';
         
-        // Ensure the container is visible. This fixes the bug where a second
-        // scan would be invisible.
-        this._gsap.set(this._scanContainerElement, { autoAlpha: 1 });
-
         if (this._terminalContentElement) {
             this._terminalContentElement.appendChild(this._scanContainerElement);
         }
         
         const scanOrchestrator = serviceLocator.get('scanOrchestrator');
-        // Fire-and-forget. Cleanup is handled by the 'scanComplete' event listener.
         scanOrchestrator.startScan(scanConfig, this._scanContainerElement);
     }
 

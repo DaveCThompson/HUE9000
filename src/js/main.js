@@ -16,7 +16,7 @@ import { serviceLocator } from './serviceLocator.js';
 import { AudioManager } from './AudioManager.js';
 
 // SET TO true TO BYPASS PRELOADER AND STARTUP SEQUENCE FOR FASTER DEVELOPMENT
-const DEV_SKIP_STARTUP = false;
+const DEV_SKIP_STARTUP = true;
 
 // Register GSAP plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const appInitializer = new AppInitializer();
 
-    // FIX: AudioManager must be instantiated and registered BEFORE the preloader,
+    // AudioManager must be instantiated and registered BEFORE the preloader,
     // as the preloader depends on it to track audio asset loading.
     const audioManager = new AudioManager();
     serviceLocator.register('audioManager', audioManager);
@@ -72,9 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (DEV_SKIP_STARTUP) {
         // Manually hide preloader elements and run the initializer in "skip" mode.
-        document.getElementById('preloader-mask').style.display = 'none';
         const preloaderRoot = document.getElementById('datastream-preloader');
         if (preloaderRoot) preloaderRoot.style.display = 'none';
+        
+        // FIX: Remove the pre-boot class to make the app visible BEFORE
+        // initializing components that rely on DOM dimensions.
+        document.body.classList.remove('pre-boot');
         
         appInitializer.run(true).catch(err => {
             console.error("DEV SKIP: Initialization failed:", err);

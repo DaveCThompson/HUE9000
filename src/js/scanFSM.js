@@ -6,7 +6,8 @@ import { createMachine, fromPromise, assign } from 'xstate';
 import { rendererRegistry } from './scanRenderers.js';
 import { createDotGridSpinnerTimeline } from './animationUtils.js';
 
-const RENDERER_TIMEOUT_MS = 15000; // 15 seconds
+const RENDERER_TIMEOUT_MS = 15000; // 15 seconds for a single sub-job
+const FSM_OVERALL_TIMEOUT_MS = 60000; // 60 seconds for the entire sequence
 
 /**
  * Creates and in-configures the scan sequence finite state machine.
@@ -34,7 +35,6 @@ export function createScanMachine(config, implementation) {
                     jobUI.wrapper.classList.remove('is-queued');
                     jobUI.el.classList.add('is-active');
 
-                    // MODIFIED: Create and play the dot-grid spinner animation
                     jobUI.spinnerTimeline = createDotGridSpinnerTimeline(jobUI.spinner, gsap);
                     jobUI.spinnerTimeline.play();
                     
@@ -68,25 +68,28 @@ export function createScanMachine(config, implementation) {
                                 jobUI.el.classList.remove('is-active');
                                 jobUI.el.classList.add('is-complete');
                                 
-                                // MODIFIED: Animate transition from spinner to checkmark
                                 const checkIcon = document.createElement('span');
                                 checkIcon.className = 'material-symbols-outlined';
                                 checkIcon.textContent = 'check';
 
                                 const transitionTl = gsap.timeline();
-                                transitionTl.to(jobUI.spinner, { // Animate the dots
+                                transitionTl.to(jobUI.spinner, {
                                     scale: 0,
                                     opacity: 0,
                                     duration: 0.2,
                                     ease: 'power2.in',
                                     onComplete: () => {
-                                        if (jobUI.spinnerTimeline) jobUI.spinnerTimeline.kill();
-                                        jobUI.spinner.innerHTML = ''; // Clear dots
-                                        // CRITICAL FIX: Append icon to the persistent spinner container
-                                        jobUI.spinnerContainer.appendChild(checkIcon);
+                                        if (jobUI.spinnerTimeline) {
+                                            jobUI.spinnerTimeline.kill();
+                                            jobUI.spinnerTimeline = null;
+                                        }
+                                        if (jobUI.spinnerContainer) {
+                                            jobUI.spinnerContainer.innerHTML = '';
+                                            jobUI.spinnerContainer.appendChild(checkIcon);
+                                        }
                                     }
                                 })
-                                .from(checkIcon, { // Animate the icon
+                                .from(checkIcon, {
                                     scale: 0,
                                     opacity: 0,
                                     duration: 0.4,
@@ -148,7 +151,11 @@ export function createScanMachine(config, implementation) {
             running: {
                 initial: 'job_0',
                 states: jobStates,
-                on: { ABORT: 'aborted' }
+                on: { ABORT: 'aborted' },
+                // FIX: Increased FSM-native watchdog timer to be more generous
+                after: {
+                    [FSM_OVERALL_TIMEOUT_MS]: { target: 'error', actions: 'logError' }
+                }
             },
             outro: {
                 invoke: {

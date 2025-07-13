@@ -35,14 +35,13 @@ export class ScanOrchestrator {
         }
         if (!scanContainer) {
             console.error("Scan container not provided to ScanOrchestrator.");
-            appState.emit('scanComplete', { wasAborted: true }); // Emit event to unlock UI on error
+            appState.emit('scanComplete', { status: 'error' });
             return;
         }
         
-        // ADDED: Configuration validation
         if (!this._validateScanConfig(scanConfig)) {
             console.error("ScanOrchestrator: Invalid scan configuration provided. Aborting.", scanConfig);
-            appState.emit('scanComplete', { wasAborted: true }); // Emit event to unlock UI on error
+            appState.emit('scanComplete', { status: 'error' });
             return;
         }
         
@@ -65,23 +64,23 @@ export class ScanOrchestrator {
             const scanMachine = createScanMachine(scanConfig, machineImplementation);
             this.activeScanActor = createActor(scanMachine);
             
+            // DEFINITIVE FIX: The subscription logic is now simpler and more robust.
+            // It relies on a combination of `snapshot.done` and `snapshot.matches()` to
+            // guarantee detection of the final state, preventing the deadlock.
             this.activeScanActor.subscribe(snapshot => {
-                // MODIFIED: More detailed logging to diagnose the deadlock.
-                // console.log(`%c[FSM_SUB] Snapshot received. Value:`, 'color: cyan;', snapshot.value);
-                // console.log(`%c[FSM_SUB] Is snapshot.done? ->`, 'color: cyan; font-weight: bold;', snapshot.done);
-                // console.log('%c[FSM_SUB] Full snapshot object:', 'color: cyan;', snapshot);
-
-                // ROBUSTNESS FIX: Check for final state using .matches() as a fallback to .done
                 const isDone = snapshot.done || snapshot.matches('completed') || snapshot.matches('aborted') || snapshot.matches('error');
 
                 if (isDone) {
-                    // console.log('%c[Orchestrator] ✅ Final state detected. Entering cleanup.', 'color: green; font-weight: bold;');
-                    const wasAborted = snapshot.matches('aborted');
+                    // Prevent the handler from running more than once if multiple "done"
+                    // snapshots are emitted, which can happen in complex state transitions.
+                    if (!this.activeScanActor) return;
+                    
+                    let status = 'completed';
+                    if (snapshot.matches('aborted')) status = 'aborted';
+                    if (snapshot.matches('error')) status = 'error';
                     
                     this._cleanup();
-                    
-                    // console.log(`%c[Orchestrator] Emitting 'scanComplete' event with payload: { wasAborted: ${wasAborted} }`, 'color: orange; font-weight: bold;');
-                    appState.emit('scanComplete', { wasAborted });
+                    appState.emit('scanComplete', { status });
                 }
             });
 
@@ -97,9 +96,9 @@ export class ScanOrchestrator {
                 }
             });
         } catch (error) {
-            console.error('%c[DEBUG] CRITICAL ERROR in ScanOrchestrator.startScan:', 'color: red; font-weight: bold;', error);
+            console.error('CRITICAL ERROR in ScanOrchestrator.startScan:', error);
             this._cleanup();
-            appState.emit('scanComplete', { wasAborted: true }); // Ensure UI unlocks on any failure
+            appState.emit('scanComplete', { status: 'error' }); // Ensure UI unlocks on any failure
         }
     }
 
@@ -109,7 +108,6 @@ export class ScanOrchestrator {
         }
     }
     
-    // ADDED: Private method for configuration validation.
     _validateScanConfig(config) {
         if (!config) return false;
         if (typeof config.mainTitle !== 'string' || typeof config.scanTarget !== 'string' || typeof config.conclusionMessage !== 'string') {
@@ -138,7 +136,6 @@ export class ScanOrchestrator {
     _createUI(container, context) {
         document.body.classList.add('is-scan-active');
         container.innerHTML = ''; // Clear previous content
-        // Add the main container class for styling
         container.classList.add('scan-sequence-container');
 
         const elements = {
@@ -153,7 +150,6 @@ export class ScanOrchestrator {
         elements.a11yLiveRegion.setAttribute('aria-live', 'polite');
         elements.a11yLiveRegion.setAttribute('aria-atomic', 'true');
 
-        // MODIFIED: Create the new nested dot grid spinner structure
         const mainSpinnerContainer = this._createStyledElement('div', 'scan-spinner');
         const dotGridWrapper = this._createStyledElement('div', 'dot-grid-wrapper');
         const dotGrid = this._createStyledElement('div', 'dot-grid-spinner');
@@ -162,7 +158,7 @@ export class ScanOrchestrator {
         }
         dotGridWrapper.appendChild(dotGrid);
         mainSpinnerContainer.appendChild(dotGridWrapper);
-        elements.mainSpinner = dotGrid; // Store reference to the animatable grid
+        elements.mainSpinner = dotGrid;
 
         elements.mainTitle = this._createStyledElement('span', 'scan-main-title', context.mainTitle);
         elements.mainTitleContainer.append(mainSpinnerContainer, elements.mainTitle);
@@ -192,7 +188,6 @@ export class ScanOrchestrator {
             const jobWrapper = this._createStyledElement('div', 'scan-job-wrapper');
             const jobEl = this._createStyledElement('div', 'scan-sub-job');
 
-            // MODIFIED: Create unified dot-grid spinner for sub-jobs
             const subSpinnerContainer = this._createStyledElement('div', 'scan-spinner is-sub-job-spinner');
             const subDotGridWrapper = this._createStyledElement('div', 'dot-grid-wrapper');
             const subDotGrid = this._createStyledElement('div', 'dot-grid-spinner');
@@ -207,14 +202,13 @@ export class ScanOrchestrator {
             jobWrapper.appendChild(jobEl);
             elements.subJobsContainer.appendChild(jobWrapper);
             
-            // MODIFIED: Store references needed for the new animations
             subJobTargets.push({ 
                 wrapper: jobWrapper, 
                 el: jobEl, 
                 spinnerContainer: subSpinnerContainer,
                 spinner: subDotGrid, 
                 title,
-                spinnerTimeline: null // Placeholder for the GSAP timeline
+                spinnerTimeline: null
             });
         });
         
@@ -243,12 +237,13 @@ export class ScanOrchestrator {
                 }
             });
         } catch (e) {
-            console.error('%c[FSM_ACTOR] >>>> FATAL: Synchronous error in _runIntroAnimation', 'color: red; font-weight: bold;', e);
+            console.error('FATAL: Synchronous error in _runIntroAnimation', e);
             return Promise.reject(e);
         }
     }
 
     _runOutroAnimation({ ui, conclusionMessage }) {
+        this._updateA11yRegion(`Conclusion: ${conclusionMessage}`);
         return new Promise(resolve => {
             if (this.activeSpinnerTimeline) {
                 this.activeSpinnerTimeline.kill();
@@ -258,11 +253,9 @@ export class ScanOrchestrator {
             const mainSpinnerContainer = ui.mainTitleContainer.querySelector('.scan-spinner');
             const checkIcon = this._createStyledElement('span', 'material-symbols-outlined', 'check');
 
-            // CRITICAL FIX: Replace the spinner's content, not the container itself.
             if (mainSpinnerContainer) {
                 mainSpinnerContainer.innerHTML = '';
                 mainSpinnerContainer.appendChild(checkIcon);
-                // Animate the icon's appearance for polish
                 this.gsap.from(checkIcon, { scale: 0, opacity: 0, duration: 0.4, ease: 'back.out(1.7)' });
             }
 
@@ -270,19 +263,18 @@ export class ScanOrchestrator {
 
             tl.set(ui.scanTargetName, { clearProps: 'color' }, 0)
             .call(() => {
-                const conclusionEl = this._createStyledElement('div', 'scan-conclusion', ' '); // Start with space
-                conclusionEl.classList.add('line-success'); // Use class for color
+                const conclusionEl = this._createStyledElement('div', 'scan-conclusion', ' ');
+                conclusionEl.classList.add('line-success');
                 ui.container.appendChild(conclusionEl);
                 this.gsap.from(conclusionEl, { autoAlpha: 0, duration: 0.5 });
                 
-                // MODIFIED: Use TextPlugin for a dynamic conclusion
                 this.gsap.to(conclusionEl, {
-                    duration: conclusionMessage.length * 0.04, // Duration based on text length
+                    duration: conclusionMessage.length * 0.04,
                     text: conclusionMessage,
                     ease: 'none'
                 });
             }, [], '+=0.2')
-            .to({}, { duration: 1.5 }); // Linger after typing is complete
+            .to({}, { duration: 1.5 });
         });
     }
 
@@ -294,8 +286,10 @@ export class ScanOrchestrator {
             this.activeSpinnerTimeline.kill();
             this.activeSpinnerTimeline = null;
         }
-
+        
         if (this.activeScanActor) {
+            // The FSM is responsible for cleaning up its own child animations.
+            // We just need to stop the actor itself.
             this.activeScanActor.stop();
         }
         this.activeScanActor = null;
