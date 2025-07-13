@@ -21,8 +21,8 @@
     <!-- ACCESSIBILITY: Polyfill for :focus-visible pseudo-class -->
     <script src="https://unpkg.com/focus-visible@5.2.0/dist/focus-visible.js" defer></script>
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-CUzryfc0.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-BuO6cJ12.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-vcyaKy77.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-DJtwOWrP.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -31,6 +31,14 @@
 
     <div id="datastream-preloader" class="panel-bezel preloader-main-bezel">
         <div class="panel-section preloader-content-section">
+            <div class="preloader-overall-progress">
+                <span class="preloader-progress-label">SYSTEM CHECK: </span>
+                <span class="preloader-progress-value" id="overall-progress-percentage">0%</span>
+            </div>
+            <div class="preloader-progress-bar-container" id="overall-progress-bar">
+                <!-- Segments will be populated by preloader.js -->
+            </div>
+
             <div class="preloader-stream-columns">
                 <div class="preloader-data-stream control-block is-inactive" id="stream-fonts">
                     <div class="preloader-stream-header">SYS_FONTS</div>
@@ -49,18 +57,10 @@
                 </div>
             </div>
 
-            <div class="preloader-overall-progress">
-                <span class="preloader-progress-label">SYSTEM CHECK: </span>
-                <span class="preloader-progress-value" id="overall-progress-percentage">0%</span>
-            </div>
-            <div class="preloader-progress-bar-container">
-                <div class="preloader-progress-bar-fill" id="overall-progress-bar"></div>
-            </div>
-
             <div class="preloader-engage-container" id="engage-button-container">
                 <!-- Corrected Button Structure -->
                 <button id="preloader-engage-btn" class="button-unit button-unit--l" disabled>
-                    <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div></div>
+                    <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div></div>
                     <div class="button-bg-frame"></div>
                     <div class="button-text">[ ESTABLISH LINK ]</div>
                 </button>
