@@ -236,6 +236,39 @@ export class AppInitializer {
             });
         });
 
+        // Keep this object in the closure to maintain state
+        const lastDialDraggingState = { A: false, B: false };
+
+        appState.subscribe('dialUpdated', ({ id, state }) => {
+            // We only care about the moment the user *stops* dragging.
+            if (lastDialDraggingState[id] === true && state.isDragging === false) {
+                
+                if (id === 'A') {
+                    // Mood Dial drag ended
+                    appState.emit('requestTerminalMessage', {
+                        type: 'interaction',
+                        source: 'mood_change',
+                        coalesce: true,
+                        coalesceId: 'mood_dial_interaction',
+                        data: { hue: state.hue }
+                    });
+                } else if (id === 'B') {
+                    // Intensity Dial drag ended
+                    const powerPercentage = (state.hue / 359.999) * 100;
+                    appState.emit('requestTerminalMessage', {
+                        type: 'interaction',
+                        source: 'intensity_change',
+                        coalesce: true,
+                        coalesceId: 'intensity_dial_interaction',
+                        data: { power: powerPercentage }
+                    });
+                }
+            }
+            
+            // Update the state for the next event
+            lastDialDraggingState[id] = state.isDragging;
+        });
+
         appState.subscribe('buttonInteracted', ({ button }) => {
             const resistiveShutdownController = serviceLocator.get('resistiveShutdownController', true);
             // This check now handles both null and mobile scenarios gracefully
