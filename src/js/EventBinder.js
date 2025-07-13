@@ -118,7 +118,8 @@ export class EventBinder {
             onClick: () => appState.setIsAudioMuted(!appState.getIsAudioMuted())
         });
         createMobileInteraction(document.getElementById('mobile-light-btn'), {
-            onClick: () => appState.emit('lightModeInteraction')
+            // MODIFIED: Emit a new, specific event for the mobile toggle behavior.
+            onClick: () => appState.emit('mobileLightToggleRequested')
         });
         createMobileInteraction(document.getElementById('mobile-terminal-toggle'), {
             onClick: () => mobileTerminalManager.toggle()

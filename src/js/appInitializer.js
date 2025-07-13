@@ -201,6 +201,30 @@ export class AppInitializer {
             if (mobileMuteBtn) mobileMuteBtn.querySelector('.material-symbols-outlined').textContent = isMuted ? 'volume_off' : 'volume_up';
         });
 
+        // NEW: Handler for the specific mobile light toggle action.
+        appState.subscribe('mobileLightToggleRequested', () => {
+            const currentTheme = appState.getCurrentTheme();
+            // This toggle should only ever switch between 'light' and 'dark'.
+            const nextTheme = (currentTheme === 'light') ? 'dark' : 'light';
+            const stateText = (nextTheme === 'light') ? 'HIGH' : 'LOW';
+            const soundToPlay = (nextTheme === 'light') ? 'auxModeHigh' : 'auxModeLow';
+
+            appState.setTheme(nextTheme);
+            const soundId = this.audioManager.play(soundToPlay, true);
+            
+            if (soundToPlay === 'auxModeLow' && soundId !== null) {
+                setTimeout(() => this.audioManager.fadeOut('auxModeLow', 1.5, soundId), 1000);
+            }
+
+            appState.emit('requestTerminalMessage', {
+                type: 'interaction',
+                source: 'aux_light',
+                coalesce: true,
+                coalesceId: 'aux_light',
+                data: { state: stateText }
+            });
+        });
+
         appState.subscribe('buttonInteracted', ({ button }) => {
             const resistiveShutdownController = serviceLocator.get('resistiveShutdownController', true);
             // This check now handles both null and mobile scenarios gracefully
@@ -216,22 +240,31 @@ export class AppInitializer {
                     else if (value === 'on' && appState.getResistiveShutdownStage() > 0) appState.setResistiveShutdownStage(0);
                 }
             } else if (groupId === 'light') {
+                // REVERTED & MODIFIED: Desktop logic is now direct setting, not cycling.
                 let stateTextForTerminal = 'OFF';
+                let soundToPlay = 'buttonPress';
+                let soundId = null;
+
                 if (button.isSelected()) {
                     if (ariaLabel.includes('Low')) {
                         appState.setTheme('dark');
-                        const soundId = this.audioManager.play('auxModeLow', true);
-                        if (soundId !== null) setTimeout(() => this.audioManager.fadeOut('auxModeLow', 1.5, soundId), 1000);
+                        soundToPlay = 'auxModeLow';
                         stateTextForTerminal = 'LOW';
                     } else if (ariaLabel.includes('High')) {
                         appState.setTheme('light');
-                        this.audioManager.play('auxModeHigh', true);
+                        soundToPlay = 'auxModeHigh';
                         stateTextForTerminal = 'HIGH';
                     }
                 } else {
+                    // This block executes if a button was just turned off, meaning both are now off.
                     appState.setTheme('dim');
-                    this.audioManager.play('buttonPress', true);
                 }
+                
+                soundId = this.audioManager.play(soundToPlay, true);
+                if (soundToPlay === 'auxModeLow' && soundId !== null) {
+                    setTimeout(() => this.audioManager.fadeOut('auxModeLow', 1.5, soundId), 1000);
+                }
+
                 appState.emit('requestTerminalMessage', { type: 'interaction', source: 'aux_light', coalesce: true, coalesceId: 'aux_light', data: { state: stateTextForTerminal } });
             } else if (['env', 'lcd', 'logo', 'btn'].includes(groupId)) {
                 this.audioManager.play('buttonPress', true);
