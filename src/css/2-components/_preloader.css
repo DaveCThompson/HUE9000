@@ -1,27 +1,11 @@
 /* src/css/2-components/_preloader.css */
-/* REFACTORED V6.2: Moved animation driver to parent body for robust hue rotation. */
 
 /* --- Property Definition (Enables Animation) --- */
 @property --preloader-dynamic-hue {
   syntax: '<angle>';
-  inherits: true; /* Must be true for child elements to inherit the animated value */
+  inherits: true;
   initial-value: 0deg;
 }
-
-/* --- Preloader Mask (Hides main UI) --- */
-#preloader-mask {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    background-color: oklch(var(--body-bg-bottom-l) 0 0);
-    opacity: 0;
-    pointer-events: none;
-    /* FIX: Removed transition to prevent main UI from flashing on load. The mask should appear instantly. */
-}
-body.preloader-active #preloader-mask {
-    opacity: 1;
-}
-
 
 /* --- Hue Cycle Animation --- */
 @keyframes preloader-hue-rotate {
@@ -32,28 +16,44 @@ body.preloader-active #preloader-mask {
 /* --- Animation Driver on Parent Element --- */
 body.preloader-active {
     --preloader-dynamic-hue: 0deg;
-    --preloader-base-chroma: 0.06; /* A subtle chroma value */
+    --preloader-base-chroma: 0.06;
+    --preloader-dimmed-l: 0.5;
+    --preloader-text-color: oklch(var(--preloader-dimmed-l) var(--preloader-base-chroma) var(--preloader-dynamic-hue));
     animation: preloader-hue-rotate 10s linear infinite;
 }
 
 
-/* --- Preloader Root Container --- */
+/* --- Preloader Root Container (FULL-SCREEN MASK) --- */
 #datastream-preloader {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h) / var(--theme-text-primary-a));
-    font-family: var(--preloader-display-font, 'IBM Plex Mono', monospace);
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    inset: 0;
     z-index: 10001;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
     opacity: 0;
     box-sizing: border-box;
     transition: opacity var(--transition-duration-slow) ease-out;
-    /* Animation properties are now on the body tag */
 }
+
+/* --- FOUC FIX --- */
+body.pre-boot #datastream-preloader {
+    opacity: 1;
+}
+
+/* Inner wrapper for the actual content layout */
+.preloader-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 60rem;
+    padding: var(--space-3xl);
+    box-sizing: border-box;
+}
+
 #datastream-preloader.is-visible {
     opacity: 1;
 }
@@ -63,88 +63,75 @@ body.preloader-active {
     transition: opacity var(--transition-duration-slow) ease-in;
 }
 
-/* --- Preloader Panel & Section Styling (Mimics main app) --- */
-.preloader-main-bezel {
+/* --- Preloader Logo --- */
+#datastream-preloader #logo-container {
+    height: 6rem;
+    align-self: center;
     width: 100%;
-    max-width: 60rem; /* 960px -> rem */
-    padding: var(--bezel-thickness);
-    border-radius: var(--radius-panel-tight);
-    box-sizing: border-box;
-    box-shadow: var(--panel-shadow-inner), var(--panel-shadow-outer);
-    background-image:
-        linear-gradient(oklch(100% 0 0 / 0.08), oklch(100% 0 0 / 0.08)),
-        linear-gradient(180deg,
-            oklch(var(--panel-bezel-grad-1-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 0%,
-            oklch(var(--panel-bezel-grad-2-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 4.68%,
-            oklch(var(--panel-bezel-grad-3-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 9.13%,
-            oklch(var(--panel-bezel-grad-4-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 18.27%,
-            oklch(var(--panel-bezel-grad-5-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 27.69%,
-            oklch(var(--panel-bezel-grad-6-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 39.42%,
-            oklch(var(--panel-bezel-grad-7-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 65%,
-            oklch(var(--panel-bezel-grad-8-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 85.58%,
-            oklch(var(--panel-bezel-grad-9-l) var(--panel-bezel-grad-c) var(--panel-bezel-grad-h)) 100%
-        );
+    max-width: 32rem;
+    opacity: 1;
+    position: relative;
+    overflow: hidden;
 }
 
-.preloader-content-section {
-    padding: var(--space-2xl);
-    border-radius: var(--radius-panel-tight);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2xl);
-    box-sizing: border-box;
-    width: 100%;
-    background-color: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
-    background-image: url('../../assets/textures/noise.svg');
-    background-size: 9.375rem 9.375rem; /* 150px -> rem */
-    background-blend-mode: multiply;
-    box-shadow: var(--panel-section-shadow-inner);
+#datastream-preloader #logo-container path {
+    fill: none;
+    stroke: var(--preloader-text-color);
+    stroke-width: 2;
+    stroke-opacity: 1;
+    stroke-dasharray: 9999;
+    stroke-dashoffset: 9999;
+    transition: stroke 0.3s ease;
 }
 
+
+/* --- Data Streams --- */
 .preloader-stream-columns {
     display: grid;
-    gap: var(--space-lg);
-    grid-template-columns: repeat(auto-fit, minmax(17.5rem, 1fr)); /* 280px -> rem */
+    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(17.5rem, 1fr));
     box-sizing: border-box;
+    margin-top: 8rem;
 }
 
-/* DEFINITIVE FIX: Convert to flexbox and set fixed height for stability */
 .preloader-data-stream.control-block {
     display: flex;
     flex-direction: column;
-    gap: var(--space-md);
     padding: var(--space-xl);
     border-radius: var(--control-section-radius);
     box-sizing: border-box;
-    /* UPDATED: Inject cycling hue into border */
-    border: var(--control-section-border-width) solid oklch(var(--panel-section-border-l) calc(var(--preloader-base-chroma) * 0.5) var(--preloader-dynamic-hue) / var(--panel-section-border-a));
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
-    height: 12.5rem; /* 200px -> rem. CRITICAL: Stabilizes the layout */
+    border: var(--control-section-border-width) solid var(--preloader-text-color);
+    transition: box-shadow 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
+    height: 12.5rem;
 }
 
-/* State: Inactive / Active */
 .preloader-data-stream.is-inactive { opacity: 0.65; }
 .preloader-data-stream.is-active { opacity: 1; }
+.preloader-data-stream.is-verified {
+    border-color: var(--preloader-text-color);
+}
+.preloader-data-stream.is-error {
+    border-color: oklch(0.75 0.22 25);
+}
+
 
 .preloader-stream-header {
-    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.85em;
     font-weight: 500;
     text-transform: uppercase;
     text-align: center;
     padding-bottom: var(--space-sm);
-    /* UPDATED: Inject cycling hue into border and text */
-    border-bottom: 1px dashed oklch(0.85 calc(var(--preloader-base-chroma) * 0.7) var(--preloader-dynamic-hue) / 0.25);
+    border-bottom: 1px dashed var(--preloader-text-color);
+    color: var(--preloader-text-color);
+    margin-bottom: var(--space-md);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     box-sizing: border-box;
-    color: oklch(0.85 var(--preloader-base-chroma) var(--preloader-dynamic-hue));
     transition: color 0.3s ease, border-color 0.3s ease;
-    flex-shrink: 0; /* Prevent header from shrinking */
+    flex-shrink: 0;
 }
 
-/* DEFINITIVE FIX: Make content area flexible */
 .preloader-stream-output {
     padding: var(--space-sm);
     display: flex;
@@ -153,96 +140,100 @@ body.preloader-active {
     overflow: hidden;
     box-sizing: border-box;
     border-radius: var(--radius-panel-tight);
-    background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
-    border: 1px solid oklch(var(--lcd-unlit-border-l) var(--lcd-unlit-border-c) var(--lcd-unlit-border-h) / var(--lcd-unlit-border-a));
+    background-color: oklch(from var(--preloader-text-color) calc(l * 0.2) c h);
+    border: 1px solid oklch(var(--lcd-unlit-border-l) 0 0 / var(--lcd-unlit-border-a));
     box-shadow: var(--lcd-unlit-shadow);
-    flex-grow: 1; /* Allow this element to fill available space */
+    flex-grow: 1;
 }
 .preloader-stream-output-text {
-    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.75em;
     line-height: 1.35;
-    overflow-wrap: break-word; /* Better than break-all */
+    overflow-wrap: break-word;
     white-space: pre-wrap;
     width: 100%;
-    /* height: 100%; */ /* REMOVED: This prevented vertical centering */
-    overflow: hidden; /* CHANGED: This clips overflow and prevents scrollbars */
+    overflow: hidden;
     box-sizing: border-box;
-    /* UPDATED: Inject cycling hue into text */
-    color: oklch(var(--lcd-dimly-lit-text-l) var(--preloader-base-chroma) var(--preloader-dynamic-hue) / var(--lcd-dimly-lit-text-a));
-    text-shadow: 0 0 0.1875rem oklch(from oklch(var(--lcd-dimly-lit-text-l) var(--preloader-base-chroma) var(--preloader-dynamic-hue)) l c h / 0.2); /* 3px -> rem */
+    color: var(--preloader-text-color);
+    text-shadow: 0 0 0.1875rem oklch(from var(--preloader-text-color) l c h / 0.2);
     transition: color 0.3s ease;
 }
-.preloader-data-stream.is-verified .preloader-stream-output-text,
+.preloader-data-stream.is-verified .preloader-stream-output-text {
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.8em;
+    color: var(--preloader-text-color);
+}
 .preloader-data-stream.is-error .preloader-stream-output-text {
     text-align: center;
     font-weight: 500;
     font-size: 0.8em;
-    /* CRITICAL FIX: The properties causing truncation are now removed. */
+    color: oklch(0.75 0.22 25);
 }
 
+
 .preloader-stream-status {
-    font-family: 'IBM Plex Mono', monospace;
     font-size: 0.75em;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     box-sizing: border-box;
-    /* UPDATED: Inject cycling hue into status text */
-    color: oklch(0.65 var(--preloader-base-chroma) var(--preloader-dynamic-hue));
+    color: oklch(calc(var(--preloader-dimmed-l) - 0.1) var(--preloader-base-chroma) var(--preloader-dynamic-hue));
     transition: color 0.3s ease;
-    flex-shrink: 0; /* Prevent status from shrinking */
-    min-height: 1.2em; /* CRITICAL: Prevents vertical collapse when content is cleared */
+    flex-shrink: 0;
+    min-height: 1.2em; 
 }
-.preloader-data-stream.is-verified .preloader-stream-status,
 .preloader-data-stream.is-error .preloader-stream-status {
+    color: oklch(0.75 0.22 25);
     font-weight: 500;
 }
 
+
 /* --- Overall Progress --- */
 .preloader-overall-progress {
-    font-family: 'IBM Plex Mono', monospace;
     font-size: 1.0em;
     text-align: center;
     box-sizing: border-box;
-}
-/* UPDATED: Progress text now uses dynamic hue */
-.preloader-progress-label,
-.preloader-progress-value {
-    color: oklch(var(--lcd-active-text-l) calc(var(--preloader-base-chroma) * 1.2) var(--preloader-dynamic-hue));
-    text-shadow: 0 0 0.1875rem oklch(from currentColor l c h / 0.5); /* 3px -> rem */
+    margin-top: 0.5rem;
+    color: var(--preloader-text-color);
     transition: color 0.2s linear;
 }
+.preloader-progress-label,
 .preloader-progress-value {
-    font-weight: 600; /* Bolder for emphasis */
+    text-shadow: 0 0 0.1875rem oklch(from currentColor l c h / 0.5);
+}
+.preloader-progress-value {
+    font-weight: 600;
 }
 
-/* UPDATED: Taller, segmented progress bar */
 .preloader-progress-bar-container {
-    height: var(--space-2xl); /* Increased height */
+    height: 0.5rem;
     padding: var(--space-xs);
     border-radius: var(--radius-panel-tight);
     box-sizing: border-box;
-    background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
-    border: 1px solid oklch(var(--lcd-unlit-border-l) var(--lcd-unlit-border-c) var(--lcd-unlit-border-h) / var(--lcd-unlit-border-a));
+    background-color: oklch(var(--lcd-unlit-bg-l) 0 0 / var(--lcd-unlit-bg-a));
+    border: 1px solid oklch(var(--lcd-unlit-border-l) 0 0 / var(--lcd-unlit-border-a));
     display: flex;
     gap: 2px;
+    margin-top: 0.5rem;
 }
 .preloader-bar-segment {
     flex: 1;
     height: 100%;
     border-radius: var(--space-xxs);
-    background-color: oklch(20% 0 0 / 0.3); /* Off state */
+    background-color: oklch(20% 0 0 / 0.3);
     transition: background-color 0.1s linear, box-shadow 0.1s linear;
 }
 .preloader-bar-segment.is-filled {
-    background-color: oklch(var(--lcd-active-text-l) calc(var(--preloader-base-chroma) * 1.2) var(--preloader-dynamic-hue) / var(--lcd-active-text-a));
+    background-color: var(--preloader-text-color);
     box-shadow: inset 0 0 2px 0 oklch(from currentColor l c h / 0.5);
 }
 
 
-/* --- Engage Button Area --- */
+/* --- Engage Button & Footer --- */
+.preloader-footer {
+    display: contents;
+}
 .preloader-engage-container {
     display: flex;
     justify-content: center;
@@ -251,193 +242,117 @@ body.preloader-active {
     transform: translateY(var(--space-md));
     transition: opacity var(--transition-duration-medium) ease-out, transform var(--transition-duration-medium) ease-out;
     box-sizing: border-box;
+    margin-top: 4rem;
 }
 .preloader-engage-container.is-visible {
     opacity: 1;
     transform: translateY(0);
 }
 
-/* --- Button Styling --- */
-/* UPDATED: Button now spans full width */
+
+/* --- THE DEFINITIVE BUTTON HOVER/ACTIVE FIX --- */
 #datastream-preloader .button-unit {
     width: 100%;
     opacity: 1;
+    position: relative; /* Required for pseudo-elements */
+    overflow: visible; /* Required for ::after glow */
+    color: oklch(calc(var(--preloader-dimmed-l) + 0.3) 0 0);
+    border-color: var(--preloader-text-color);
+    transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+#datastream-preloader .button-unit::before {
+    background-color: oklch(from var(--preloader-text-color) calc(l * 0.3) c h / 0.8);
+    transition: background-color 0.2s ease;
 }
 #datastream-preloader .button-unit .button-text {
     font-weight: 600;
     text-transform: uppercase;
+    text-shadow: 0 0 4px black;
+}
+#datastream-preloader .button-unit .light {
+    background-color: var(--preloader-text-color);
+    transition: background-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
+/* 1. The High-Quality Glow Layer (::after) */
+#datastream-preloader .button-unit::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    z-index: -1;
+    background-color: oklch(var(--btn-energized-selected-glow-l) var(--preloader-base-chroma) var(--preloader-dynamic-hue));
+    filter: blur(var(--btn-selected-glow-base-size, 10px));
+    opacity: 0;
+    transform: scale(0.8);
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    will-change: transform, opacity;
+}
+
+/* 2. Energized State (Idle) */
 #datastream-preloader .button-unit.is-energized {
-    border-color: oklch(var(--btn-energized-unselected-border-l) calc(var(--preloader-base-chroma) * 0.8) var(--preloader-dynamic-hue) / var(--btn-energized-unselected-border-a));
-    color: oklch(var(--btn-energized-selected-text-l) 0 0 / var(--btn-energized-selected-text-a));
-    text-shadow: var(--btn-energized-unselected-shadow);
-    --btn-glow-color: oklch(var(--btn-energized-unselected-glow-hover-l) var(--preloader-base-chroma) var(--preloader-dynamic-hue) / var(--btn-glow-opacity));
-    box-shadow: 0 0 var(--btn-unselected-glow-base-size) var(--btn-glow-spread) var(--btn-glow-color);
+    color: oklch(calc(var(--preloader-dimmed-l) * 0.4) 0 0);
+    box-shadow: 0 0 0.5rem 0.125rem oklch(from var(--preloader-text-color) l c h / 0.3);
 }
 #datastream-preloader .button-unit.is-energized::before {
-    background-color: oklch(var(--btn-energized-unselected-bg-l) calc(var(--preloader-base-chroma) * 0.8) var(--preloader-dynamic-hue) / var(--btn-energized-unselected-bg-a));
-}
-#datastream-preloader .button-unit.is-energized .light {
-    background-color: oklch(var(--btn-energized-unselected-light-l) var(--preloader-base-chroma) var(--preloader-dynamic-hue));
-    opacity: var(--btn-energized-unselected-light-a);
+    background-color: oklch(from var(--preloader-text-color) calc(l + 0.3) c h / 0.9);
 }
 
-/* --- HOVER/ACTIVE STATES: Make hover match the '.is-selected' state --- */
+/* 3. Hover State (This is the key effect) */
 #datastream-preloader .button-unit.is-energized:not(:disabled):hover {
-    border-color: oklch(var(--btn-energized-selected-border-l) calc(var(--preloader-base-chroma) * 0.8) var(--preloader-dynamic-hue) / var(--btn-energized-selected-border-a));
-    color: oklch(var(--btn-energized-selected-text-l) 0 0 / var(--btn-energized-selected-text-a));
-    box-shadow: none; /* Use ::after glow instead */
+    box-shadow: none; /* Turn off the simple glow */
 }
 #datastream-preloader .button-unit.is-energized:not(:disabled):hover::before {
-    background-color: oklch(var(--btn-energized-selected-bg-l) calc(var(--preloader-base-chroma) * 0.8) var(--preloader-dynamic-hue) / var(--btn-energized-selected-bg-a));
-}
-#datastream-preloader .button-unit.is-energized:not(:disabled):hover .light {
-    background-color: oklch(var(--btn-energized-selected-light-l) var(--preloader-base-chroma) var(--preloader-dynamic-hue));
-    opacity: var(--btn-energized-selected-light-a);
-    transform: none; /* Reset transform from default hover */
+    /* Slightly brighten the button face on hover */
+    background-color: oklch(from var(--preloader-text-color) calc(l + 0.35) c h / 0.95);
 }
 #datastream-preloader .button-unit.is-energized:not(:disabled):hover::after {
-    --btn-energized-selected-glow-c: var(--preloader-base-chroma);
-    --btn-energized-selected-glow-h: var(--preloader-dynamic-hue);
-    opacity: var(--btn-selected-glow-base-opacity, 0.8);
+    opacity: var(--btn-selected-glow-base-opacity, 0.8); /* Turn on the high-quality glow */
     transform: scale(1);
 }
+#datastream-preloader .button-unit.is-energized:not(:disabled):hover .light {
+    opacity: 1; /* Brighten the inner lights */
+    transform: scale(1.1);
+}
 
-/* Active (press) state */
+/* 4. Active (Press) State */
 #datastream-preloader .button-unit.is-energized:not(:disabled):active {
     transform: var(--button-unit-pressed-transform);
-    box-shadow: inset 0 0 0.1875rem 1px var(--btn-pressed-innershadow-color); /* 3px -> rem */
+    box-shadow: inset 0 0 0.1875rem 1px var(--btn-pressed-innershadow-color); /* Add inset shadow */
 }
-#datastream-preloader .button-unit.is-energized:not(:disabled):hover:active::after {
-    transform: scale(1.1);
-    opacity: calc(var(--btn-selected-glow-base-opacity) * 1.15);
+#datastream-preloader .button-unit.is-energized:not(:disabled):active::after {
+    transform: scale(1.1); /* Pulse the glow */
+    opacity: calc(var(--btn-selected-glow-base-opacity, 0.8) * 1.15);
 }
-
-/* Disabled state */
-#datastream-preloader .button-unit:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
+#datastream-preloader .button-unit.is-energized:not(:disabled):active .light {
+    transform: scale(1.2); /* Pulse the lights */
 }
 
 
-/* --- State-Specific Visual Changes for Streams (FIXED: Monochromatic) --- */
-.preloader-data-stream.is-verified {
-    /* UPDATED: Use hue for success state */
-    --status-color: oklch(0.95 calc(var(--preloader-base-chroma) * 1.8) var(--preloader-dynamic-hue));
-    border-color: oklch(from var(--status-color) l c h / 0.5);
-    box-shadow: 0 0 0.5rem 0 oklch(from var(--status-color) l c h / 0.25); /* 8px -> rem */
+/* --- Copyright, Error, Mobile Styles (Unchanged) --- */
+#preloader-copyright {
+    position: fixed; bottom: var(--space-lg); left: 0; right: 0;
+    text-align: center; font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85em; color: var(--preloader-text-color);
+    opacity: 0.7; transition: color 0.3s ease;
+    pointer-events: none; user-select: none;
 }
-.preloader-data-stream.is-verified .preloader-stream-header,
-.preloader-data-stream.is-verified .preloader-stream-status,
-.preloader-data-stream.is-verified .preloader-stream-output-text {
-    color: var(--status-color);
-}
-.preloader-data-stream.is-verified .preloader-stream-header {
-    border-bottom-color: oklch(from var(--status-color) l c h / 0.4);
-}
-
-.preloader-data-stream.is-error {
-    /* Keep error color static and distinct for UX clarity */
-    --status-color: oklch(0.75 0.18 25);
-    border-color: oklch(from var(--status-color) l c h / 0.6);
-    box-shadow: 0 0 0.5rem 0 oklch(from var(--status-color) l c h / 0.3); /* 8px -> rem */
-}
-.preloader-data-stream.is-error .preloader-stream-header,
-.preloader-data-stream.is-error .preloader-stream-status,
-.preloader-data-stream.is-error .preloader-stream-output-text {
-    color: var(--status-color);
-}
-.preloader-data-stream.is-error .preloader-stream-header {
-    border-bottom-color: oklch(from var(--status-color) l c h / 0.4);
-}
-
 #critical-error-message {
-    display: none;
-    color: oklch(0.75 0.18 25);
-    text-align: center;
-    margin-top: 1rem;
-    font-weight: bold;
-    opacity: 0;
+    display: none; color: oklch(0.75 0.18 25);
+    text-align: center; margin-top: 1rem;
+    font-weight: bold; opacity: 0;
     transition: opacity 0.3s ease;
 }
-
-/* -------------------------------------------------------------------------- */
-/* --- REBUILT & REFINED: Mobile Portrait 'No-Thrash' Responsive Styles --- */
-/* -------------------------------------------------------------------------- */
-@media (max-width: 48rem) and (orientation: portrait) { /* 768px -> rem */
-    .preloader-main-bezel {
-        max-width: 95vw;
-        max-height: 98vh;
-        display: flex; /* Ensure bezel fills its child content section */
-    }
-
-    /* 1. Make the content section a master flex column that fills the bezel */
-    .preloader-content-section {
-        padding: var(--space-lg);
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        width: 100%;
-        gap: var(--space-xl); /* Use consistent gap for spacing */
-    }
-
-    /* 2. Make the stream columns a fixed-size block at the top */
-    .preloader-stream-columns {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-md); /* Add clear spacing BETWEEN blocks */
-        flex-shrink: 0; /* Prevent this block from shrinking */
-    }
-
-    /* 3. Refine the stream blocks to be internally stable flex columns */
-    .preloader-data-stream.control-block {
-        height: 7.5rem; /* 120px -> rem. Keep fixed height for stability */
-        padding: var(--space-md);
-        gap: var(--space-sm);
-        /* Redundant flex properties from desktop are fine */
-    }
-
-    .preloader-stream-header,
-    .preloader-stream-status {
-        font-size: 0.7em;
-        padding-bottom: var(--space-xs);
-        /* flex-shrink: 0 is already set on desktop */
-    }
-
-    .preloader-stream-output-text {
-        font-size: 0.7em;
-    }
-
-    /* 4. Group the progress elements together as a fixed-size block */
-    .preloader-overall-progress {
-        font-size: 0.9em;
-        flex-shrink: 0;
-        /* Removed margin-top, parent gap now handles spacing */
-    }
-
-    .preloader-progress-bar-container {
-        flex-shrink: 0;
-    }
-
-    /* 5. Push the engage button to the bottom using `margin-top: auto` */
-    .preloader-engage-container {
-        margin-top: auto; /* THIS IS THE KEY CHANGE */
-        padding-bottom: var(--space-sm);
-        transform: none; /* No need for transform animations on mobile */
-        flex-shrink: 0;
-        /* Removed padding-top, parent gap now handles spacing */
-    }
-
-    #datastream-preloader .button-unit {
-        width: 100%; /* Make button fill width for better touch target */
-        min-width: unset;
-    }
+@media (max-width: 48rem) and (orientation: portrait) {
+    .preloader-content-wrapper { height: var(--visual-viewport-height, 100vh); padding: var(--space-2xl); justify-content: flex-start; gap: var(--space-3xl); }
+    .preloader-stream-columns, .preloader-progress-bar-container, .preloader-overall-progress, .preloader-engage-container { margin-top: 0; }
+    .preloader-stream-columns { display: flex; flex-direction: column; gap: var(--space-md); flex-shrink: 0; }
+    .preloader-data-stream.control-block { height: 7.5rem; padding: var(--space-md); }
+    .preloader-footer { display: flex; flex-direction: column; align-items: center; gap: var(--space-xl); margin-top: auto; padding-top: var(--space-4xl); flex-shrink: 0; width: 100%; }
+    .preloader-engage-container { padding-bottom: 0; transform: none; width: 100%; }
+    #datastream-preloader .button-unit { width: 100%; min-width: unset; }
+    #critical-error-message { margin-top: 0; }
 }
-
-/* NEW: Mobile-specific rule to hide extra lights on preloader button */
 @media (max-width: 48rem) {
-    #preloader-engage-btn .light:nth-child(n+4) {
-        display: none;
-    }
+    #preloader-engage-btn .light:nth-child(n+4) { display: none; }
 }

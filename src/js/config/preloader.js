@@ -3,6 +3,8 @@
  * @description Configuration constants for the application preloader.
  */
 
+// MODIFIED: Import assets directly. Vite will provide the correct URLs.
+import preloaderLogoSrc from '../../assets/svgs/preloader-logo.svg';
 import logoSvgSrc from '../../assets/svgs/logo.svg';
 import dialSvgSrc from '../../assets/svgs/dial.svg';
 import grillTextureSrc from '../../assets/textures/metal-grill.png';
@@ -27,11 +29,11 @@ export const PRELOADER_ASSETS = {
         name: 'SYS_FONTS',
         type: 'fontsDocumentReady', 
         timeout: 7000, 
-        loadingStatusWord: '[ANALYZING...]',
+        loadingStatusWord: '[VALIDATING...]',
         successMessage: '[SYS_FONTS: CACHE VALIDATED ✓]',
         timeoutMessage: '[SYS_FONTS: CACHE TIMEOUT X]',
         errorMessage: '[SYS_FONTS: LOAD FAILURE X]',
-        streamOutputSuccess: 'VALIDATED',
+        streamOutputSuccess: 'VALIDATED ✓',
         streamOutputError: 'ERROR',
     },
     graphics: {
@@ -39,6 +41,7 @@ export const PRELOADER_ASSETS = {
         name: 'GFX_PIPELINE',
         type: 'fetch', 
         assets: [ 
+            // FIX: Use the imported asset URLs.
             { id: 'logoSvg', name: 'logo.svg', url: logoSvgSrc, type: 'fetch' }, 
             { id: 'dialSvg', name: 'dial.svg', url: dialSvgSrc, type: 'fetch' }, 
             { id: 'grillTexture', name: 'metal-grill.png', url: grillTextureSrc, type: 'fetchImage' } 
@@ -46,7 +49,7 @@ export const PRELOADER_ASSETS = {
         loadingStatusWord: '[INITIALIZING...]',
         successMessage: '[GFX_PIPELINE: CORE ASSETS LOADED ✓]',
         errorMessage: '[GFX_PIPELINE: ASSET LOAD FAILURE X]', 
-        streamOutputSuccess: 'LOADED',
+        streamOutputSuccess: 'INITIALIZED ✓',
         streamOutputError: 'CORRUPTED',
     },
     audio: { 
@@ -59,10 +62,13 @@ export const PRELOADER_ASSETS = {
         loadingStatusWord: '[SYNCHRONIZING...]',
         successMessage: '[AUDIO_IO_BUFFER: SYNC CONFIRMED ✓]',
         errorMessage: '[AUDIO_IO_BUFFER: SYNC FAILED X]',
-        streamOutputSuccess: 'CONFIRMED',
+        streamOutputSuccess: 'SYNCHRONIZED ✓',
         streamOutputError: 'DESYNC',
     }
 };
+
+// NEW: Export the preloader logo source separately for easy access in preloader.js
+export const PRELOADER_LOGO_SRC = preloaderLogoSrc;
 
 /**
  * @typedef {object} PreloaderConfig

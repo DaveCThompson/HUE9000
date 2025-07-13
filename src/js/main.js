@@ -55,6 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initVisualViewportWatcher();
     setupResizeListener();
 
+    // NEW: Set dynamic copyright year
+    const copyrightEl = document.getElementById('preloader-copyright');
+    if (copyrightEl) {
+        const currentYear = new Date().getFullYear();
+        copyrightEl.textContent = `© ${currentYear} Dave Thompson Design`;
+    }
+
     const appInitializer = new AppInitializer();
 
     // FIX: AudioManager must be instantiated and registered BEFORE the preloader,

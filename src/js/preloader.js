@@ -3,12 +3,12 @@
  * @description Handles the "Preloader V2 Enhanced" sequence.
  */
 import { serviceLocator } from './serviceLocator.js';
-import { PRELOADER_ASSETS, PRELOADER_CONFIG } from './config/index.js';
+import { PRELOADER_ASSETS, PRELOADER_CONFIG, PRELOADER_LOGO_SRC } from './config/index.js';
 
-// Helper function to fetch assets (text-based like SVG, or image)
+// ... (fetchAsset, animatePreloaderLogo, loadAndAnimatePreloaderLogo functions are unchanged and correct) ...
 async function fetchAsset(assetConfig) {
     try {
-        const response = await fetch(assetConfig.url); // Vite provides correct URL via import
+        const response = await fetch(assetConfig.url);
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status} for ${assetConfig.name}`);
         }
@@ -25,15 +25,52 @@ async function fetchAsset(assetConfig) {
                 img.src = URL.createObjectURL(blob);
             });
         }
-        // For SVGs (type: 'fetch'), we expect text content
         const textContent = await response.text(); 
-        if (!textContent.trim().startsWith('<svg')) { // Basic validation for SVGs
+        if (!textContent.trim().startsWith('<svg')) {
             // console.warn(`Fetched content for ${assetConfig.name} does not look like an SVG.`);
         }
         return assetConfig.name; 
     } catch (error) {
         console.error(`Failed to load asset ${assetConfig.name}:`, error);
         throw error; 
+    }
+}
+
+function animatePreloaderLogo(gsap) {
+    const logoPaths = document.querySelectorAll('#datastream-preloader #logo-container path');
+    if (!logoPaths || logoPaths.length === 0) {
+        console.warn('Preloader logo paths not found for animation.');
+        return;
+    }
+    logoPaths.forEach(path => {
+        const length = path.getTotalLength();
+        path.style.strokeDasharray = length;
+        path.style.strokeDashoffset = length;
+    });
+    const tl = gsap.timeline({
+        delay: PRELOADER_CONFIG.preloaderInitialFadeInDurationMs / 1000
+    });
+    tl.to(logoPaths, {
+        strokeDashoffset: 0,
+        duration: 2.0,
+        ease: 'power1.inOut',
+        stagger: 0.15
+    });
+}
+
+async function loadAndAnimatePreloaderLogo(logoContainer, gsap) {
+    try {
+        const response = await fetch(PRELOADER_LOGO_SRC);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch preloader logo: ${response.statusText}`);
+        }
+        const svgText = await response.text();
+        if (logoContainer) {
+            logoContainer.innerHTML = svgText;
+            animatePreloaderLogo(gsap);
+        }
+    } catch (error) {
+        console.error("Could not load or animate preloader logo:", error);
     }
 }
 
@@ -60,7 +97,7 @@ export function runPreloader(preloaderDomElements, gsap) {
     const progressBarContainer = overallProgressBar;
     const segments = [];
     if (progressBarContainer) {
-        progressBarContainer.innerHTML = ''; // Clear existing content
+        progressBarContainer.innerHTML = '';
         for (let i = 0; i < NUM_SEGMENTS; i++) {
             const segment = document.createElement('div');
             segment.className = 'preloader-bar-segment';
@@ -71,12 +108,15 @@ export function runPreloader(preloaderDomElements, gsap) {
     
     body.classList.add('preloader-active');
     
+    // THE FIX: Remove the pre-boot class. The preloader is already visible via CSS.
+    // The GSAP fade-in is removed as it's no longer needed and was part of the problem.
     body.classList.remove('pre-boot');
-    gsap.to(preloaderRoot, { opacity: 1, duration: PRELOADER_CONFIG.preloaderInitialFadeInDurationMs / 1000, onComplete: () => {
-        preloaderRoot.classList.add('is-visible');
-    }});
+    preloaderRoot.classList.add('is-visible');
+    const logoContainer = preloaderRoot.querySelector('#logo-container');
+    loadAndAnimatePreloaderLogo(logoContainer, gsap);
 
     return new Promise(async (resolveMainPreloaderPromise) => {
+        // ... (rest of the function is unchanged and correct) ...
         let successfulStreams = 0;
         const totalStreams = 3; 
         const streamIntervals = {};
@@ -104,7 +144,7 @@ export function runPreloader(preloaderDomElements, gsap) {
             const lines = Math.floor(length / (PRELOADER_CONFIG.streamTextLength / 5)); 
             for (let i = 0; i < lines; i++) {
                 if (result.length < 2) continue;
-                const insertPos = Math.floor(Math.random() * (result.length -1));
+                const insertPos = Math.floor(Math.random() * (result.length - 1));
                 result = result.slice(0, insertPos) + '\n' + result.slice(insertPos);
             }
             return result.slice(0, length);
@@ -117,7 +157,7 @@ export function runPreloader(preloaderDomElements, gsap) {
             if (isActive) {
                 streamEl.classList.remove('is-inactive');
                 streamEl.classList.add('is-active');
-                if (statusEl) statusEl.textContent = assetConf.loadingStatusWord;
+                if (statusEl) statusEl.textContent = '';
                 streamIntervals[streamId] = setInterval(() => {
                     if (contentEl) contentEl.textContent = generateRandomChars(PRELOADER_CONFIG.streamTextLength);
                 }, PRELOADER_CONFIG.streamCharScrollIntervalMs);
@@ -126,12 +166,12 @@ export function runPreloader(preloaderDomElements, gsap) {
                 if (isSuccess) {
                     streamEl.classList.add('is-verified');
                     if (contentEl) contentEl.textContent = assetConf.streamOutputSuccess;
-                    if (statusEl) statusEl.textContent = ''; // Clear status on success
+                    if (statusEl) statusEl.textContent = '';
                 } else {
                     streamEl.classList.remove('is-active', 'is-inactive');
                     streamEl.classList.add('is-error');
                     if (contentEl) contentEl.textContent = assetConf.streamOutputError;
-                    if (statusEl) statusEl.textContent = message; // Show error message
+                    if (statusEl) statusEl.textContent = message;
                 }
             }
         };
@@ -149,18 +189,14 @@ export function runPreloader(preloaderDomElements, gsap) {
                     engageButton.disabled = false;
                     engageButton.classList.add('is-energized');
                     engageButtonContainer.classList.add('is-visible');
-
-                    // --- UPDATED: Activate SYNCHRONIZED idle light drift ---
                     engageButton.classList.add('css-idle-drifting');
                     const lights = engageButton.querySelectorAll('.light');
                     lights.forEach((light) => {
                         light.style.setProperty('--light-idle-base-opacity', '0.45');
                         light.style.setProperty('--light-idle-variation', '0.2');
-                        light.style.setProperty('--light-idle-duration', '2.5s'); // Use a fixed duration for all
-                        light.style.setProperty('--light-idle-delay', '0s');      // Use zero delay for all
+                        light.style.setProperty('--light-idle-duration', '2.5s');
+                        light.style.setProperty('--light-idle-delay', '0s');
                     });
-                    // --- END OF UPDATE ---
-
                  }, PRELOADER_CONFIG.engageButtonAppearDelayMs);
             }
         };
@@ -258,7 +294,7 @@ export function runPreloader(preloaderDomElements, gsap) {
             checkCompletion();
         };
         
-        updateUiFromProxy(); // Set initial 0% state
+        updateUiFromProxy();
         
         const streamsToLoad = [
             { id: 'fonts', config: PRELOADER_ASSETS.fonts },

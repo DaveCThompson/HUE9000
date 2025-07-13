@@ -3,7 +3,8 @@
 
 /* --- Pre-Boot Styling for LCDs to prevent FOUC --- */
 /* FIX: More aggressive hiding for the terminal to prevent FOUC. */
-body.pre-boot .actual-lcd-screen-element {
+body.pre-boot .actual-lcd-screen-element,
+body.pre-boot .terminal-block { /* ADDED: Target the entire block */
     opacity: 0 !important;
     visibility: hidden !important;
 }

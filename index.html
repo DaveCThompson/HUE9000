@@ -25,49 +25,57 @@
 </head>
 <body class="theme-dim pre-boot">
 
-    <!-- Preloader Mask (Hides main UI during preloading) -->
-    <div id="preloader-mask"></div>
-
-    <div id="datastream-preloader" class="panel-bezel preloader-main-bezel">
-        <div class="panel-section preloader-content-section">
-            <div class="preloader-overall-progress">
-                <span class="preloader-progress-label">SYSTEM CHECK: </span>
-                <span class="preloader-progress-value" id="overall-progress-percentage">0%</span>
-            </div>
-            <div class="preloader-progress-bar-container" id="overall-progress-bar">
-                <!-- Segments will be populated by preloader.js -->
+    <div id="datastream-preloader">
+        <div class="preloader-content-wrapper">
+            <div id="logo-container" aria-label="HUE 9000 Brand Logo">
+                <!-- This container will be populated by preloader.js -->
             </div>
 
             <div class="preloader-stream-columns">
                 <div class="preloader-data-stream control-block is-inactive" id="stream-fonts">
-                    <div class="preloader-stream-header">SYS_FONTS</div>
+                    <div class="preloader-stream-header">DATA_IO</div>
                     <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
-                    <div class="preloader-stream-status">[INITIATING...]</div>
+                    <!-- MODIFIED: Removed initial status text -->
+                    <div class="preloader-stream-status"></div>
                 </div>
                 <div class="preloader-data-stream control-block is-inactive" id="stream-graphics">
                     <div class="preloader-stream-header">GFX_PIPELINE</div>
                     <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
-                    <div class="preloader-stream-status">[AWAITING_KEY...]</div>
+                    <!-- MODIFIED: Removed initial status text -->
+                    <div class="preloader-stream-status"></div>
                 </div>
                 <div class="preloader-data-stream control-block is-inactive" id="stream-audio">
-                    <div class="preloader-stream-header">AUDIO_IO_BUFFER</div>
+                    <div class="preloader-stream-header">AUDIO_BUFFER</div>
                     <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
-                    <div class="preloader-stream-status">[STANDBY...]</div>
+                    <!-- MODIFIED: Removed initial status text -->
+                    <div class="preloader-stream-status"></div>
                 </div>
             </div>
 
-            <div class="preloader-engage-container" id="engage-button-container">
-                <!-- Corrected Button Structure -->
-                <button id="preloader-engage-btn" class="button-unit button-unit--l" disabled>
-                    <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div></div>
-                    <div class="button-bg-frame"></div>
-                    <div class="button-text">[ ESTABLISH LINK ]</div>
-                </button>
+            <div class="preloader-progress-bar-container" id="overall-progress-bar">
+                <!-- Segments will be populated by preloader.js -->
             </div>
-             <div class="preloader-critical-error-message" id="critical-error-message" style="display: none;">
-                CRITICAL SYSTEM ERROR. CANNOT PROCEED.
+
+            <div class="preloader-overall-progress">
+                <span class="preloader-progress-label">LOADING: </span>
+                <span class="preloader-progress-value" id="overall-progress-percentage">0%</span>
+            </div>
+
+            <div class="preloader-footer">
+                <div class="preloader-engage-container" id="engage-button-container">
+                    <button id="preloader-engage-btn" class="button-unit button-unit--l" disabled>
+                        <div class="light-container" aria-hidden="true"><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div></div>
+                        <div class="button-bg-frame"></div>
+                        <div class="button-text">[ ESTABLISH LINK ]</div>
+                    </button>
+                </div>
+                 <div class="preloader-critical-error-message" id="critical-error-message" style="display: none;">
+                    CRITICAL SYSTEM ERROR. CANNOT PROCEED.
+                </div>
+                <!-- MOVED: Copyright is now outside the content wrapper for positioning -->
             </div>
         </div>
+        <div id="preloader-copyright"></div>
     </div>
     
     <!-- PRD v2.2: New Mobile Controls Overlay -->
