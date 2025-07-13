@@ -3,7 +3,7 @@
  * @description Declarative configuration for Phase 12 (Engaging Ambient Theme)
  * of the HUE 9000 startup sequence.
  */
-import * as appState from './appState.js';
+import { appState } from './state/index.js';
 
 export const phase12Config = {
   phase: 12,

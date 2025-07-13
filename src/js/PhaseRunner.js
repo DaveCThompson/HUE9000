@@ -4,7 +4,7 @@
  * It parses a phase config, builds a GSAP timeline dynamically, and returns a promise.
  */
 import { serviceLocator } from './serviceLocator.js';
-import * as appStateModule from './appState.js'; 
+import { appState } from './state/index.js';
 import { MIN_PHASE_DURATION_FOR_STEPPING } from './config/index.js';
 
 export class PhaseRunner {
@@ -65,7 +65,7 @@ export class PhaseRunner {
             // console.log(`[${phaseIdForRunLog} | ${performance.now().toFixed(2)}ms] PhaseRunner: Scheduling terminalMessageKey '${phaseConfig.terminalMessageKey}' at GSAP_pos 0.`);
             masterTl.call(() => {
                 // console.log(`[${phaseIdForRunLog} | ${performance.now().toFixed(2)}ms] PhaseRunner: EXECUTING emit requestTerminalMessage for '${phaseConfig.terminalMessageKey}' (Master TL time: ${masterTl.time().toFixed(3)}s)`);
-                appStateModule.emit('requestTerminalMessage', { 
+                appState.emit('requestTerminalMessage', { 
                     type: 'startup',
                     source: phaseConfig.name,
                     messageKey: phaseConfig.terminalMessageKey,
@@ -133,7 +133,7 @@ export class PhaseRunner {
                 return currentPhaseConfig; 
             }
             if (depName === 'appState') {
-                return appStateModule; 
+                return appState; 
             }
             try {
                 // Special case for 'config' dependency to pass the whole resolved config object

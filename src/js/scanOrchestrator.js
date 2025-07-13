@@ -6,7 +6,7 @@
  */
 import { createActor } from 'xstate';
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js'; // ADDED: Import appState for event emitting
+import { appState } from './state/index.js';
 import { createScanMachine } from './scanFsm.js';
 import { rendererRegistry } from './scanRenderers.js';
 // NEW: Import the spinner animation utility

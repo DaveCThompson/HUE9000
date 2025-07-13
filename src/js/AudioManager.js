@@ -7,7 +7,7 @@ import { Howl, Howler } from 'howler';
 import { serviceLocator } from './serviceLocator.js';
 import { EventEmitter } from './EventEmitter.js'; // Simple event emitter
 import { AUDIO_CONFIG } from './config/index.js';
-import * as appState from './appState.js'; // IMPORT appState
+import { appState } from './state/index.js';
 
 export class AudioManager extends EventEmitter {
     constructor() {

@@ -1,10 +1,10 @@
 /**
  * @module resistiveShutdownController
  * @description Orchestrates the resistive shutdown sequence by reacting to appState changes.
- * (Project Decouple Refactor)
+ * This module is now purely reactive to state changes managed by ActionHandler.
  */
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js'; // IMPORT appState directly
+import { appState } from './state/index.js';
 import { clamp } from './utils.js';
 import { RESISTIVE_SHUTDOWN_PARAMS, DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG, HUE_ASSIGNMENT_ROW_HUES } from './config/index.js';
 import { ButtonStates } from './buttonManager.js';
@@ -13,8 +13,7 @@ class ResistiveShutdownController {
     constructor() {
         this.buttonManager = null;
         this.audioManager = null;
-        this.isTransitioning = false; // Flag to prevent rapid clicks
-        this.debug = true;
+        this.isTransitioning = false;
     }
 
     init() {
@@ -22,50 +21,14 @@ class ResistiveShutdownController {
         this.audioManager = serviceLocator.get('audioManager');
 
         appState.subscribe('resistiveShutdownStageChanged', (payload) => this.handleStageChange(payload));
-        // if (this.debug) console.log('[RSC INIT]');
     }
 
-    /**
-     * This method is called from the main.js event listener when the power off button is clicked.
-     */
-    handlePowerOffClick() {
-        // Guard against interaction while an animation is playing
-        if (this.isTransitioning) {
-            return;
-        }
-        
-        // First, handle the click if the button is already fully locked down.
-        if (appState.getIsMainPowerOffButtonDisabled()) {
-            // if (this.debug) console.log(`[RSC] MAIN PWR OFF is disabled. Playing final 'powerDown' sound.`);
-            this.audioManager.play('powerDown', true);
-            return; // Stop further execution.
-        }
-
-        // If not disabled, proceed with the stage-advancement logic.
-        const currentStage = appState.getResistiveShutdownStage();
-
-        // Play the sound corresponding to the stage we are *currently in* before advancing.
-        if (currentStage === 0) {
-            this.audioManager.play('powerOff1', true, 0.33);
-        } else if (currentStage === 1) {
-            this.audioManager.play('powerOff2', true, 0.66);
-        } else if (currentStage === 2) {
-            this.audioManager.play('powerOff3', true, 1.00);
-        }
-        
-        // Advance the stage if not at the max stage yet.
-        if (currentStage < RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
-            const newStage = currentStage + 1;
-            // if (this.debug) console.log(`[RSC] Advancing resistive shutdown to stage ${newStage}.`);
-            appState.setResistiveShutdownStage(newStage);
-        }
-    }
+    // REMOVED: handlePowerOffClick() has been removed. Its logic (advancing state, playing sound)
+    // is now centralized in ActionHandler.js. This class is now purely for orchestrating
+    // the visual response to a state change.
 
     handleStageChange({ newStage }) {
-        // if (this.debug) console.log(`[RSC] Stage changed to ${newStage}`);
-
         if (newStage === 0) {
-            // This handles the reset flow.
             if (appState.getIsMainPowerOffButtonDisabled()) {
                 appState.setIsMainPowerOffButtonDisabled(false);
             }
@@ -90,7 +53,6 @@ class ResistiveShutdownController {
 
         let flickerPromise = Promise.resolve();
 
-        // Apply button flash effect
         if (stageParams.BUTTON_FLASH_PROFILE_NAME) {
             const targetState = newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE
                 ? ButtonStates.PERMANENTLY_DISABLED
@@ -101,7 +63,7 @@ class ResistiveShutdownController {
                 profileName: stageParams.BUTTON_FLASH_PROFILE_NAME,
                 tempGlowColor: stageParams.BUTTON_FLASH_GLOW_COLOR,
                 tempTintColorClass: stageParams.BUTTON_TINT_CLASS,
-                isButtonSelectedOverride: true // The off button is visually "selected" during this sequence
+                isButtonSelectedOverride: true
             });
             flickerPromise = flickerResult.completionPromise;
         }
@@ -109,7 +71,6 @@ class ResistiveShutdownController {
         this._updateLensAndDialTargets(stageParams);
         this._updateHueAssignmentButtons(stageParams);
 
-        // Wait for the flicker to complete before allowing further interaction.
         flickerPromise.then(() => {
             if (newStage === RESISTIVE_SHUTDOWN_PARAMS.MAX_STAGE) {
                 appState.setIsMainPowerOffButtonDisabled(true);
@@ -127,13 +88,11 @@ class ResistiveShutdownController {
         if (stageParams.DIAL_A_HUE_TARGET_MODE === 'absolute') {
             targetHue = stageParams.DIAL_A_HUE_VALUE;
         }
-
         if (stageParams.DIAL_B_POWER_TARGET_MODE === 'increase_absolute_0_1') {
             targetPower += stageParams.DIAL_B_POWER_VALUE;
         } else if (stageParams.DIAL_B_POWER_TARGET_MODE === 'absolute_100') {
             targetPower = 1.0;
         }
-
         targetPower = clamp(targetPower, 0, 1);
 
         appState.updateDialState('A', { hue: targetHue, targetHue: targetHue });
@@ -141,31 +100,25 @@ class ResistiveShutdownController {
 
         const dialBHue = targetPower * 359.999;
         const dialBRotation = dialBHue * (DIAL_B_VISUAL_ROTATION_PER_HUE_DEGREE_CONFIG || 1);
-
         appState.updateDialState('B', {
-            hue: dialBHue,
-            targetHue: dialBHue,
-            rotation: dialBRotation,
-            targetRotation: dialBRotation,
+            hue: dialBHue, targetHue: dialBHue,
+            rotation: dialBRotation, targetRotation: dialBRotation,
         });
     }
 
     _updateHueAssignmentButtons(stageParams) {
         if (!stageParams.HUE_ASSIGN_TARGET_HUE) return;
-
         const targetHue = stageParams.HUE_ASSIGN_TARGET_HUE;
         let closestIndex = -1;
         let smallestDiff = 360;
-
         HUE_ASSIGNMENT_ROW_HUES.forEach((hue, index) => {
-            if (hue === null) return; // Skip colorless
+            if (hue === null) return;
             const diff = Math.abs(hue - targetHue);
             if (diff < smallestDiff) {
                 smallestDiff = diff;
                 closestIndex = index;
             }
         });
-
         if (closestIndex !== -1) {
             ['btn', 'logo', 'lcd', 'env'].forEach(groupId => {
                 appState.setTargetColorProperties(groupId, HUE_ASSIGNMENT_ROW_HUES[closestIndex]);

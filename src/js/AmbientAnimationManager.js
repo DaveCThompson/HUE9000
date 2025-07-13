@@ -5,7 +5,7 @@
  * Works in conjunction with ButtonManager and appState.
  */
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js'; // IMPORT appState directly
+import { appState } from './state/index.js';
 import { HARMONIC_RESONANCE_PARAMS } from './config/index.js';
 
 class AmbientAnimationManager {

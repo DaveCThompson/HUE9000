@@ -3,7 +3,7 @@
  * @description Manages the UI and interactions for the left side info panel. (REFACTORED for v2.2)
  */
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js';
+import { appState } from './state/index.js'
 
 export class SidePanelManager {
     constructor() {

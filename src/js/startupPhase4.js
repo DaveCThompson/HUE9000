@@ -4,7 +4,7 @@
  * of the HUE 9000 startup sequence.
  */
 import { LENS_STARTUP_TARGET_POWER } from './config/index.js';
-import * as appState from './appState.js';
+import { appState } from './state/index.js'
 
 export const phase4Config = {
   phase: 4,

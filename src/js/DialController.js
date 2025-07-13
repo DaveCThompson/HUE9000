@@ -4,24 +4,22 @@
  * and user interaction. It dynamically recalculates and updates SVG ridge attributes
  * on each frame to create a 3D perspective rotation effect.
  */
-import { throttle } from './utils.js';
+import { appState, actions } from './state/index.js';
 import { PIXELS_PER_DEGREE_ROTATION, PIXELS_PER_DEGREE_HUE } from './config/index.js';
 
 export class DialController {
     /**
      * @param {HTMLElement} containerElement - The main div container for the dial.
      * @param {string} dialId - 'A' or 'B'.
-     * @param {object} appStateModule - The imported appState module.
      * @param {object} gsapInstance - The GSAP instance.
      * @param {object} audioManagerInstance - The AudioManager instance.
      * @param {object} hapticManagerInstance - The HapticFeedbackManager instance.
      */
-    constructor(containerElement, dialId, appStateModule, gsapInstance, audioManagerInstance, hapticManagerInstance) {
+    constructor(containerElement, dialId, gsapInstance, audioManagerInstance, hapticManagerInstance) {
         // Dependencies
-        this.appState = appStateModule; // Use passed-in appState
-        this.gsap = gsapInstance; // Use passed-in GSAP
-        this.audioManager = audioManagerInstance; // Use passed-in AudioManager
-        this.hapticManager = hapticManagerInstance; // Use passed-in HapticManager
+        this.gsap = gsapInstance;
+        this.audioManager = audioManagerInstance;
+        this.hapticManager = hapticManagerInstance;
 
         // Element & State
         this.containerElement = containerElement;
@@ -32,58 +30,48 @@ export class DialController {
             console.error(`[DialController ${this.dialId}] Critical SVG elements not found.`);
             return;
         }
-
-        // FIX: Force the SVG's viewBox to stretch and fill the container,
-        // ignoring its original aspect ratio. This is key for non-square rendering.
         this.svg.setAttribute('preserveAspectRatio', 'none');
 
-        this.config = { // Local config for dial appearance/behavior
+        this.config = {
             NUM_RIDGES: 66, 
             RIDGE_WIDTH_FACTOR: 1.6,
-            PIXELS_PER_DEGREE_ROTATION: PIXELS_PER_DEGREE_ROTATION, // From named import
-            PIXELS_PER_DEGREE_HUE: PIXELS_PER_DEGREE_HUE,         // From named import
+            PIXELS_PER_DEGREE_ROTATION: PIXELS_PER_DEGREE_ROTATION,
+            PIXELS_PER_DEGREE_HUE: PIXELS_PER_DEGREE_HUE,
             SHADOW_OFFSET_MULTIPLIER: 8,
         };
 
-        // Local component state for smooth dragging
         this.isDragging = false;
-        this.rotation = this.appState.getDialState(this.dialId).rotation || 0;
-        this.hue = this.appState.getDialState(this.dialId).hue || 0;
+        this.rotation = appState.getDialState(this.dialId).rotation || 0;
+        this.hue = appState.getDialState(this.dialId).hue || 0;
         this.targetRotation = this.rotation;
         this.currentPointerX = 0;
         
         this.gsapTween = null;
         this.ridgeElements = [];
-        this.lightAngleRad = 0; // Light from top
+        this.lightAngleRad = 0;
         this.unsubscribers = [];
         this.themeVars = {};
-        this.debug = false;
         
-        // Bound method for the GSAP ticker
         this.updateLoop = this._updateLoop.bind(this);
 
         this._createRidges();
         this._addDragListeners();
         this._subscribeToAppStateEvents();
-        this.forceRedraw(); // Initial draw
+        this.forceRedraw();
     }
 
     _subscribeToAppStateEvents() {
-        const dialUpdateUnsub = this.appState.subscribe('dialUpdated', payload => {
+        const dialUpdateUnsub = appState.subscribe('dialUpdated', payload => {
             if (payload && payload.id === this.dialId && !this.isDragging) {
                 if (this.gsapTween) this.gsapTween.kill();
-                
                 const targetState = payload.state;
-                const isProgrammaticUpdate = this.appState.getResistiveShutdownStage() > 0;
-
-                // FIX: Bypass animation for programmatic updates to prevent state conflicts.
+                const isProgrammaticUpdate = appState.getResistiveShutdownStage() > 0;
                 if (isProgrammaticUpdate) {
                     this.rotation = targetState.rotation;
                     this.hue = targetState.hue;
                     this.targetRotation = targetState.rotation;
-                    this._draw(); // Snap directly to the new state
+                    this._draw();
                 } else {
-                    // Animate for other non-drag updates (e.g., settling after a flick)
                     this.targetRotation = targetState.rotation;
                     this.gsapTween = this.gsap.to(this, {
                         rotation: targetState.rotation,
@@ -97,17 +85,11 @@ export class DialController {
         });
         this.unsubscribers.push(dialUpdateUnsub);
 
-        const themeChangeUnsub = this.appState.subscribe('themeChanged', newTheme => {
-            // if (this.debug) console.log(`[DialController ${this.dialId}] Detected themeChanged to '${newTheme}'. Forcing redraw.`);
-            requestAnimationFrame(() => this.forceRedraw());
-        });
+        const themeChangeUnsub = appState.subscribe('themeChanged', () => requestAnimationFrame(() => this.forceRedraw()));
         this.unsubscribers.push(themeChangeUnsub);
 
-        const envColorUnsub = this.appState.subscribe('targetColorChanged', payload => {
-            if (payload.targetKey === 'env') {
-                // if (this.debug) console.log(`[DialController ${this.dialId}] Detected ENV color change. Forcing redraw.`);
-                this.forceRedraw();
-            }
+        const envColorUnsub = appState.subscribe('targetColorChanged', payload => {
+            if (payload.targetKey === 'env') this.forceRedraw();
         });
         this.unsubscribers.push(envColorUnsub);
     }
@@ -131,7 +113,6 @@ export class DialController {
         this.boundInteractionMove = this._handleInteractionMove.bind(this);
         this.boundInteractionEnd = this._handleInteractionEnd.bind(this);
         this.boundOnResize = this.forceRedraw.bind(this);
-
         this.containerElement.addEventListener('mousedown', this.boundInteractionStart);
         this.containerElement.addEventListener('touchstart', this.boundInteractionStart, { passive: false });
         window.addEventListener('mousemove', this.boundInteractionMove);
@@ -143,61 +124,41 @@ export class DialController {
     }
 
     _handleInteractionStart(event) {
-        if (this.appState.getAppStatus() !== 'interactive') return;
+        if (appState.getAppStatus() !== 'interactive') return;
         event.preventDefault();
         this.isDragging = true;
         this.containerElement.classList.add('is-dragging');
-        
         if (this.gsapTween) this.gsapTween.kill();
-
-        // Sync with appState before starting drag to prevent jumps
-        const currentState = this.appState.getDialState(this.dialId);
+        const currentState = appState.getDialState(this.dialId);
         this.rotation = currentState.rotation;
         this.hue = currentState.hue;
         this.targetRotation = this.rotation;
-        
         this.currentPointerX = event.touches ? event.touches[0].clientX : event.clientX;
-
-        this.appState.updateDialState(this.dialId, { isDragging: true });
-        if (this.dialId === 'B') {
-            this.appState.setDialBInteractionState('dragging');
-        }
-        
+        appState.updateDialState(this.dialId, { isDragging: true });
+        if (this.dialId === 'B') appState.setDialBInteractionState('dragging');
         if (this.audioManager) this.audioManager.play('dialLoop');
         if (this.hapticManager) this.hapticManager.triggerClick();
-        
-        // Start broadcasting state on every animation frame
         this.gsap.ticker.add(this.updateLoop);
     }
 
     _handleInteractionMove(event) {
         if (!this.isDragging) return;
         event.preventDefault();
-
         const newPointerX = event.touches ? event.touches[0].clientX : event.clientX;
         const deltaX = newPointerX - this.currentPointerX;
         this.currentPointerX = newPointerX;
-
         const rotationDelta = deltaX / this.config.PIXELS_PER_DEGREE_ROTATION;
         const hueDelta = deltaX / this.config.PIXELS_PER_DEGREE_HUE;
-        
         this.rotation += rotationDelta;
         this.targetRotation = this.rotation;
-        
-        // REFACTOR: Component-specific logic for wrapping/clamping is now co-located here.
         let newHue = this.hue + hueDelta;
         if (this.dialId === 'A') {
-            // Dial A is a hue wheel, so it should wrap around.
             newHue = ((newHue % 360) + 360) % 360;
-        } else { // Assumes Dial B
-            // Dial B is a linear intensity control. Its value should be clamped.
+        } else {
             newHue = this.gsap.utils.clamp(0, 359.999, newHue);
         }
         this.hue = newHue;
-
         if (this.hapticManager) this.hapticManager.triggerSliderScrub();
-
-        // Only update the local SVG visual instantly. State is broadcast by the ticker.
         this._draw();
     }
 
@@ -205,77 +166,54 @@ export class DialController {
         if (!this.isDragging) return;
         this.isDragging = false;
         this.containerElement.classList.remove('is-dragging');
-
         if (this.audioManager) this.audioManager.stop('dialLoop');
         if (this.hapticManager) this.hapticManager.triggerToggleOff();
-
-        // Stop broadcasting state on every frame
         this.gsap.ticker.remove(this.updateLoop);
-
-        // Send one final, definitive state update
         this._updateAppState();
 
+        appState.dispatch(actions.dialInteractionComplete(this.dialId, this.hue));
+
         if (this.dialId === 'B') {
-            this.appState.setDialBInteractionState('settling');
+            appState.setDialBInteractionState('settling');
             this.gsap.delayedCall(0.2, () => {
-                // Only set to idle if we haven't started a new drag in the meantime
-                if (!this.isDragging) {
-                    this.appState.setDialBInteractionState('idle');
-                }
+                if (!this.isDragging) appState.setDialBInteractionState('idle');
             });
         }
     }
     
-    /**
-     * This method is called by the GSAP ticker during a drag.
-     */
-    _updateLoop() {
-        this._updateAppState();
-    }
+    _updateLoop() { this._updateAppState(); }
 
     _updateAppState() {
-        this.appState.updateDialState(this.dialId, {
+        appState.updateDialState(this.dialId, {
             isDragging: this.isDragging,
             rotation: this.rotation,
             targetRotation: this.targetRotation,
             hue: this.hue,
             targetHue: this.hue,
         });
-
         if (this.dialId === 'B') {
-            this.appState.setTrueLensPower((this.hue / 359.999) * 100);
+            appState.setTrueLensPower((this.hue / 359.999) * 100);
         }
     }
 
     forceRedraw() {
-        // if (this.debug) console.log(`[DialController ${this.dialId}] forceRedraw() called.`);
-        if (!this.svg) return; // Guard if SVG not found
-
-        // FIX: The rendering logic MUST use the SVG's internal viewBox coordinate system,
-        // not the element's pixel dimensions. We hard-code the known viewBox width as the basis for all calculations.
+        if (!this.svg) return;
         this.svgWidth = 200;
-
         this._updateAndCacheThemeStyles();
         this._draw();
     }
 
     _updateAndCacheThemeStyles() {
         const style = getComputedStyle(this.containerElement);
-        // JS will now read the base dynamic values directly
         const dynamicEnvHue = parseFloat(style.getPropertyValue('--dynamic-env-hue'));
         const dynamicEnvChroma = parseFloat(style.getPropertyValue('--dynamic-env-chroma'));
-        
-        // And the theme-specific multiplier
         const multiplier = parseFloat(style.getPropertyValue('--dial-ridge-chroma-multiplier'));
-
-        // Calculate final chroma in JS, with fallbacks
         const finalChroma = (isNaN(dynamicEnvChroma) || isNaN(multiplier)) ? 0 : dynamicEnvChroma * multiplier;
         const finalHue = isNaN(dynamicEnvHue) ? 0 : dynamicEnvHue;
-
         this.themeVars = {
             ridgeL: parseFloat(style.getPropertyValue('--dial-ridge-l')) || 0,
             ridgeC: finalChroma,
-            ridgeH: finalHue, // Use the calculated final hue
+            ridgeH: finalHue,
             ridgeHighlightL: parseFloat(style.getPropertyValue('--dial-ridge-highlight-l')) || 0,
             highlightExponent: parseFloat(style.getPropertyValue('--dial-highlight-exponent')) || 10,
         };
@@ -283,17 +221,13 @@ export class DialController {
     
     _draw() {
         if (!this.svgWidth || this.ridgeElements.length === 0 || isNaN(this.themeVars.ridgeL) || !this.ridgesGroup) return;
-
         const rotationRadians = this.rotation * (Math.PI / 180);
         const angleStep = (2 * Math.PI) / this.config.NUM_RIDGES;
         const radius = this.svgWidth / 2;
         const baseRidgeWidth = (this.svgWidth / this.config.NUM_RIDGES) * this.config.RIDGE_WIDTH_FACTOR;
-        
         const shadowOffsetY = Math.sin(rotationRadians) * this.config.SHADOW_OFFSET_MULTIPLIER;
         this.containerElement.style.setProperty('--dial-shadow-offset-y', `${shadowOffsetY}px`);
-
         const ridgesToDraw = [];
-
         for (let i = 0; i < this.config.NUM_RIDGES; i++) {
             const ridgeAngle = i * angleStep + rotationRadians;
             const cosAngle = Math.cos(ridgeAngle);
@@ -309,13 +243,9 @@ export class DialController {
                 this.ridgeElements[i].style.display = 'none';
             }
         }
-        
         ridgesToDraw.sort((a, b) => a.zIndex - b.zIndex);
-
-        // PERFORMANCE FIX: Detach the group, manipulate, then re-attach to batch DOM updates.
         const parent = this.ridgesGroup.parentNode;
         parent.removeChild(this.ridgesGroup);
-
         ridgesToDraw.forEach(ridge => {
             ridge.element.setAttribute('x', ridge.x.toFixed(2));
             ridge.element.setAttribute('width', ridge.width.toFixed(2));
@@ -324,7 +254,6 @@ export class DialController {
             ridge.element.setAttribute('fill', ridgeColor);
             this.ridgesGroup.appendChild(ridge.element);
         });
-
         parent.appendChild(this.ridgesGroup);
     }
 
@@ -332,7 +261,6 @@ export class DialController {
         this.unsubscribers.forEach(unsub => unsub());
         this.unsubscribers = [];
         if (this.gsapTween) this.gsapTween.kill();
-        
         this.containerElement.removeEventListener('mousedown', this.boundInteractionStart);
         this.containerElement.removeEventListener('touchstart', this.boundInteractionStart);
         window.removeEventListener('mousemove', this.boundInteractionMove);

@@ -4,7 +4,7 @@
  */
 import { selectorsForDimExitAnimation, LENS_STARTUP_TARGET_POWER } from './config/index.js';
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js';
+import { appState } from './state/index.js'
 
 export const mobileStartupPhase = {
   phase: 0,

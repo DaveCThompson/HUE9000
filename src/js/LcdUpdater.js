@@ -5,7 +5,7 @@
  * Replaces the LCD-handling portion of the old uiUpdater.js.
  */
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js'; // IMPORT appState directly
+import { appState } from './state/index.js';
 import { createAdvancedFlicker } from './animationUtils.js';
 
 const MANAGED_LCD_CLASSES = ['lcd--unlit', 'lcd--dimly-lit'];

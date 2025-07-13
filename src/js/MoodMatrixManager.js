@@ -1,9 +1,9 @@
 /**
  * @module MoodMatrixManager
- * @description Replaces the old moodMatrixDisplayManager, bridging appState and the new MoodMatrix component.
+ * @description Bridges appState and the new MoodMatrix component.
  */
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js'; // IMPORT appState directly
+import { appState } from './state/index.js';
 import { MoodMatrix } from './MoodMatrix.js';
 import { MOOD_MATRIX_DEFINITIONS, V2_DISPLAY_PARAMS } from './config/index.js';
 
@@ -20,17 +20,13 @@ export class MoodMatrixManager {
     init() {
         this.dom = serviceLocator.get('domElements');
         this.gsap = serviceLocator.get('gsap');
-
         this.moodLcdContent = this.dom.lcdA.querySelector('.lcd-content-wrapper');
-
         const displayConfig = {
             moods: MOOD_MATRIX_DEFINITIONS.map(mood => mood.toUpperCase()),
             majorBlocks: V2_DISPLAY_PARAMS.MOOD_MAJOR_BLOCKS,
             fineDots: V2_DISPLAY_PARAMS.MOOD_FINE_DOTS,
         };
-
         this.moodMatrix = new MoodMatrix(this.moodLcdContent, displayConfig, this.gsap);
-
         appState.subscribe('dialUpdated', ({ id, state }) => {
             if (id === 'A') {
                 if (state.isDragging !== this.lastIsDragging) {
@@ -41,7 +37,6 @@ export class MoodMatrixManager {
                 this.handleDialUpdate(state.hue);
             }
         });
-
         this.handleDialUpdate(appState.getDialState('A').hue);
     }
 
@@ -51,10 +46,8 @@ export class MoodMatrixManager {
 
     handleInteractionChange(isInteracting, currentHue) {
         const idleDelay = V2_DISPLAY_PARAMS.RESONANCE_IDLE_DELAY_MS;
-        
         clearTimeout(this.resonanceTimer);
         this.dom.lcdA.classList.remove('is-resonating');
-
         if (isInteracting) {
             this.moodMatrix.startContinuousScramble(currentHue);
         } else {

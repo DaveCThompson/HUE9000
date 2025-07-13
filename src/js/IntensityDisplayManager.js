@@ -3,7 +3,7 @@
  * @description Acts as the bridge between appState and the IntensityDisplay component.
  */
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js'; // IMPORT appState directly
+import { appState } from './state/index.js';
 import { IntensityDisplay } from './IntensityDisplay.js';
 import { V2_DISPLAY_PARAMS } from './config/index.js';
 
@@ -15,28 +15,19 @@ export class IntensityDisplayManager {
     }
 
     init() {
-        // console.log('[IntensityDisplayManager] init() called.');
-
         this.dom = serviceLocator.get('domElements');
-
         const displayConfig = {
             bars: V2_DISPLAY_PARAMS.INTENSITY_BARS,
             dots: V2_DISPLAY_PARAMS.INTENSITY_DOTS,
         };
-
         this.intensityDisplay = new IntensityDisplay(this.dom.lcdB.querySelector('.lcd-content-wrapper'), displayConfig);
-        
         appState.subscribe('dialUpdated', ({ id, state }) => {
-            if (id === 'B') {
-                this.handleDialUpdate(state.hue);
-            }
+            if (id === 'B') this.handleDialUpdate(state.hue);
         });
-
         appState.subscribe('dialBInteractionChange', (interactionState) => {
             const isInteracting = (interactionState === 'dragging' || interactionState === 'settling');
             this.handleInteractionChange(isInteracting);
         });
-
         this.handleDialUpdate(appState.getDialState('B').hue);
     }
 
@@ -46,18 +37,13 @@ export class IntensityDisplayManager {
     }
 
     handleInteractionChange(isInteracting) {
-        // console.log(`[IntensityDisplayManager] handleInteractionChange() called. isInteracting: ${isInteracting}`);
-
         const idleDelay = V2_DISPLAY_PARAMS.RESONANCE_IDLE_DELAY_MS;
-        
         clearTimeout(this.resonanceTimer);
         this.dom.lcdB.classList.remove('is-resonating');
-
         if (!isInteracting) {
             this.resonanceTimer = setTimeout(() => {
                 const dialState = appState.getDialState('B');
                 if (dialState && dialState.hue > 0) {
-                    // console.log('[IntensityDisplayManager] Starting resonance for Dial B.');
                     this.dom.lcdB.classList.add('is-resonating');
                 }
             }, idleDelay);

@@ -8,7 +8,7 @@ import { interpret } from 'xstate';
 import { startupMachine, desktopPhaseConfigs } from './startupMachine.js';
 import { mobileStartupPhase } from './startupMobile.js';
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js'; // ENSURE appState is imported
+import { appState } from './state/index.js'
 import { STARTUP_L_REDUCTION_FACTORS, MOBILE_BREAKPOINT, HUE_ASSIGNMENT_ROW_HUES, THEME_TRANSITION_DURATION } from './config/index.js';
 
 export class StartupSequenceManager {
@@ -184,7 +184,7 @@ export class StartupSequenceManager {
     if (isMobile) {
         // On mobile, the color slider controls env, logo, and lcd.
         // We want it to start at the "colorless" position.
-        const colorlessHue = HUE_ASSIGNMENT_ROW_HUES[0]; // This is `null` in the config
+        const colorlessHue = HUE_ASSIGNMENT_ROW_HUES[0];
         appState.setTargetColorProperties('env', colorlessHue);
         appState.setTargetColorProperties('logo', colorlessHue);
         appState.setTargetColorProperties('lcd', colorlessHue);

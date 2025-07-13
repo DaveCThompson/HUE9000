@@ -3,7 +3,7 @@
  * @description Manages the state and interactions for the mobile terminal drawer.
  */
 import { serviceLocator } from './serviceLocator.js';
-import * as appState from './appState.js';
+import { appState } from './state/index.js';
 import { createMobileInteraction } from './mobileInteraction.js';
 
 export class MobileTerminalManager {

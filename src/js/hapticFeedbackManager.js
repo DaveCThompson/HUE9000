@@ -3,7 +3,7 @@
  * @description Manages haptic feedback for UI interactions on supported devices.
  * Respects a global appState setting for user preference.
  */
-import * as appState from './appState.js';
+import { appState } from './state/index.js';
 
 class HapticFeedbackManager {
     constructor() {
