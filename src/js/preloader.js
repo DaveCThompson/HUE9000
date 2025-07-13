@@ -108,9 +108,7 @@ export function runPreloader(preloaderDomElements, gsap) {
     
     body.classList.add('preloader-active');
     
-    // THE FIX: Remove the pre-boot class. The preloader is already visible via CSS.
-    // The GSAP fade-in is removed as it's no longer needed and was part of the problem.
-    body.classList.remove('pre-boot');
+    // The .pre-boot class on <body> handles initial hiding. We only make the preloader visible.
     preloaderRoot.classList.add('is-visible');
     const logoContainer = preloaderRoot.querySelector('#logo-container');
     loadAndAnimatePreloaderLogo(logoContainer, gsap);
@@ -330,7 +328,8 @@ export function runPreloader(preloaderDomElements, gsap) {
                 duration: PRELOADER_CONFIG.preloaderFadeOutDurationMs / 1000,
                 onComplete: () => {
                     preloaderRoot.style.display = 'none';
-                    body.classList.add('post-preload-hiding');
+                    // CORRECT HANDOFF: Reveal the main app only after preloader is gone.
+                    body.classList.remove('pre-boot');
                     body.classList.remove('preloader-active');
                     resolveMainPreloaderPromise();
                 }

@@ -9,6 +9,17 @@ body.pre-boot .terminal-block { /* ADDED: Target the entire block */
     visibility: hidden !important;
 }
 
+/* CORRECTED FOUC FIX: Specifically hide all main application containers during pre-boot, leaving the preloader visible. */
+body.pre-boot .app-wrapper,
+body.pre-boot #mobile-controls-overlay,
+body.pre-boot .side-panel,
+body.pre-boot .compact-view-wrapper,
+body.pre-boot #lens-super-glow {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+
 /* FIX: Add dedicated rules to hide the terminal during the entire startup sequence AND
    during the "bridge" state between preloader and main app init. */
 body.is-starting-up .actual-lcd-screen-element,

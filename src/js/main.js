@@ -16,7 +16,7 @@ import { serviceLocator } from './serviceLocator.js';
 import { AudioManager } from './AudioManager.js';
 
 // SET TO true TO BYPASS PRELOADER AND STARTUP SEQUENCE FOR FASTER DEVELOPMENT
-const DEV_SKIP_STARTUP = true;
+const DEV_SKIP_STARTUP = false;
 
 // Register GSAP plugins
 gsap.registerPlugin(Draggable, InertiaPlugin, TextPlugin);

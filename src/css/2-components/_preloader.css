@@ -39,6 +39,7 @@ body.preloader-active {
 }
 
 /* --- FOUC FIX --- */
+/* This makes the preloader visible immediately if the body has the .pre-boot class, overriding the default opacity: 0 */
 body.pre-boot #datastream-preloader {
     opacity: 1;
 }
