@@ -30,6 +30,14 @@
 
     <div id="datastream-preloader" class="panel-bezel preloader-main-bezel">
         <div class="panel-section preloader-content-section">
+            <div class="preloader-overall-progress">
+                <span class="preloader-progress-label">SYSTEM CHECK: </span>
+                <span class="preloader-progress-value" id="overall-progress-percentage">0%</span>
+            </div>
+            <div class="preloader-progress-bar-container" id="overall-progress-bar">
+                <!-- Segments will be populated by preloader.js -->
+            </div>
+
             <div class="preloader-stream-columns">
                 <div class="preloader-data-stream control-block is-inactive" id="stream-fonts">
                     <div class="preloader-stream-header">SYS_FONTS</div>
@@ -46,14 +54,6 @@
                     <div class="preloader-stream-output"><div class="preloader-stream-output-text"></div></div>
                     <div class="preloader-stream-status">[STANDBY...]</div>
                 </div>
-            </div>
-
-            <div class="preloader-overall-progress">
-                <span class="preloader-progress-label">SYSTEM CHECK: </span>
-                <span class="preloader-progress-value" id="overall-progress-percentage">0%</span>
-            </div>
-            <div class="preloader-progress-bar-container">
-                <div class="preloader-progress-bar-fill" id="overall-progress-bar"></div>
             </div>
 
             <div class="preloader-engage-container" id="engage-button-container">

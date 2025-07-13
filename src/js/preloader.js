@@ -55,7 +55,20 @@ export function runPreloader(preloaderDomElements, gsap) {
 
     const audioManager = serviceLocator.get('audioManager');
     
-    // Add the isolation class
+    // --- Segmented Progress Bar Setup ---
+    const NUM_SEGMENTS = 40;
+    const progressBarContainer = overallProgressBar;
+    const segments = [];
+    if (progressBarContainer) {
+        progressBarContainer.innerHTML = ''; // Clear existing content
+        for (let i = 0; i < NUM_SEGMENTS; i++) {
+            const segment = document.createElement('div');
+            segment.className = 'preloader-bar-segment';
+            progressBarContainer.appendChild(segment);
+            segments.push(segment);
+        }
+    }
+    
     body.classList.add('preloader-active');
     
     body.classList.remove('pre-boot');
@@ -68,6 +81,19 @@ export function runPreloader(preloaderDomElements, gsap) {
         const totalStreams = 3; 
         const streamIntervals = {};
         let criticalErrorOccurred = false;
+        
+        const progressProxy = { value: 0 };
+        let activeTween = null;
+
+        const updateUiFromProxy = () => {
+            const currentPercentage = Math.floor(progressProxy.value);
+            overallProgressPercentage.textContent = `${currentPercentage}%`;
+
+            const segmentsToFill = Math.round((progressProxy.value / 100) * NUM_SEGMENTS);
+            segments.forEach((segment, index) => {
+                segment.classList.toggle('is-filled', index < segmentsToFill);
+            });
+        };
 
         const generateRandomChars = (length) => {
             const chars = PRELOADER_CONFIG.randomCharSet;
@@ -91,31 +117,26 @@ export function runPreloader(preloaderDomElements, gsap) {
             if (isActive) {
                 streamEl.classList.remove('is-inactive');
                 streamEl.classList.add('is-active');
-                if (statusEl) statusEl.textContent = assetConf.initialStatus;
+                if (statusEl) statusEl.textContent = assetConf.loadingStatusWord;
                 streamIntervals[streamId] = setInterval(() => {
                     if (contentEl) contentEl.textContent = generateRandomChars(PRELOADER_CONFIG.streamTextLength);
                 }, PRELOADER_CONFIG.streamCharScrollIntervalMs);
             } else {
                 clearInterval(streamIntervals[streamId]);
                 if (isSuccess) {
-                    // On success, keep .is-active for hue animation, add .is-verified for styling
                     streamEl.classList.add('is-verified');
                     if (contentEl) contentEl.textContent = assetConf.streamOutputSuccess;
+                    if (statusEl) statusEl.textContent = ''; // Clear status on success
                 } else {
-                    // On error, remove .is-active and add .is-error
                     streamEl.classList.remove('is-active', 'is-inactive');
                     streamEl.classList.add('is-error');
                     if (contentEl) contentEl.textContent = assetConf.streamOutputError;
+                    if (statusEl) statusEl.textContent = message; // Show error message
                 }
-                if (statusEl) statusEl.textContent = message;
             }
         };
         
-        const updateOverallProgress = () => {
-            const percentage = Math.round((successfulStreams / totalStreams) * 100);
-            overallProgressPercentage.textContent = `${percentage}%`;
-            overallProgressBar.style.width = `${percentage}%`;
-
+        const checkCompletion = () => {
             if (criticalErrorOccurred) {
                 engageButton.disabled = true;
                 engageButtonContainer.classList.remove('is-visible');
@@ -132,16 +153,26 @@ export function runPreloader(preloaderDomElements, gsap) {
             }
         };
 
-        const loadStream = async (streamId, assetConfig, delay, baseDuration) => {
+        const loadStream = async (streamId, assetConfig, streamIndex, delay, baseDuration) => {
             const streamEl = preloaderDomElements[`stream${streamId.charAt(0).toUpperCase() + streamId.slice(1)}`];
             if (!streamEl) {
                 console.error(`Preloader DOM element for stream "${streamId}" not found.`);
                 criticalErrorOccurred = true;
-                updateOverallProgress();
+                checkCompletion();
                 return;
             }
             await new Promise(res => setTimeout(res, delay));
             updateStreamVisuals(streamEl, streamId, assetConfig, true);
+            
+            const targetProgress = ((streamIndex + 1) / totalStreams) * 100;
+            
+            if (activeTween) activeTween.kill();
+            activeTween = gsap.to(progressProxy, {
+                value: targetProgress,
+                duration: baseDuration / 1000,
+                ease: 'power1.out',
+                onUpdate: updateUiFromProxy,
+            });
 
             let loadPromise;
             const startTime = Date.now();
@@ -207,28 +238,36 @@ export function runPreloader(preloaderDomElements, gsap) {
                 successfulStreams++;
                 updateStreamVisuals(streamEl, streamId, assetConfig, false, true, successMsg);
             } catch (error) {
+                if (activeTween) activeTween.kill();
                 console.error(`Error loading stream ${streamId}:`, error.message || error);
                 criticalErrorOccurred = true; 
-                updateStreamVisuals(streamEl, streamId, assetConfig, false, false, error.message || assetConfig.errorMessage || '[LOAD_ERROR]');
+                updateStreamVisuals(streamEl, streamId, assetConfig, false, false, error.message || assetConfig.errorMessage);
             }
-            updateOverallProgress();
+            checkCompletion();
         };
         
-        updateOverallProgress();
-
-        loadStream('fonts', PRELOADER_ASSETS.fonts, PRELOADER_CONFIG.staggerDelayMs.fonts, PRELOADER_CONFIG.baseDurationMs.fonts);
-        loadStream('graphics', PRELOADER_ASSETS.graphics, PRELOADER_CONFIG.staggerDelayMs.graphics, PRELOADER_CONFIG.baseDurationMs.graphics);
+        updateUiFromProxy(); // Set initial 0% state
         
-        if (audioManager && audioManager.isReady()) {
-            loadStream('audio', PRELOADER_ASSETS.audio, PRELOADER_CONFIG.staggerDelayMs.audio, PRELOADER_CONFIG.baseDurationMs.audio);
-        } else {
-            console.error("AudioManager not ready during preloader init, cannot load audio stream.");
-            criticalErrorOccurred = true;
-            if(streamAudio) {
-                updateStreamVisuals(streamAudio, 'audio', PRELOADER_ASSETS.audio, false, false, PRELOADER_ASSETS.audio.errorMessage);
+        const streamsToLoad = [
+            { id: 'fonts', config: PRELOADER_ASSETS.fonts },
+            { id: 'graphics', config: PRELOADER_ASSETS.graphics },
+            { id: 'audio', config: PRELOADER_ASSETS.audio }
+        ];
+
+        streamsToLoad.forEach((stream, index) => {
+            const { id, config } = stream;
+            if (id === 'audio' && (!audioManager || !audioManager.isReady())) {
+                console.error("AudioManager not ready during preloader init, cannot load audio stream.");
+                if (activeTween) activeTween.kill();
+                criticalErrorOccurred = true;
+                if (streamAudio) {
+                    updateStreamVisuals(streamAudio, 'audio', config, false, false, config.errorMessage);
+                }
+                checkCompletion();
+            } else {
+                loadStream(id, config, index, PRELOADER_CONFIG.staggerDelayMs[id], PRELOADER_CONFIG.baseDurationMs[id]);
             }
-            updateOverallProgress();
-        }
+        });
 
         engageButton.addEventListener('click', () => {
             if (engageButton.disabled || criticalErrorOccurred) return;
@@ -243,7 +282,6 @@ export function runPreloader(preloaderDomElements, gsap) {
                 duration: PRELOADER_CONFIG.preloaderFadeOutDurationMs / 1000,
                 onComplete: () => {
                     preloaderRoot.style.display = 'none';
-                    // FIX: Add the "bridge" class to hide the terminal before handing off to main.js
                     body.classList.add('post-preload-hiding');
                     body.classList.remove('preloader-active');
                     resolveMainPreloaderPromise();

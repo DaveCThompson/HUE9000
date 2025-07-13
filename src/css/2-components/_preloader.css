@@ -193,6 +193,7 @@ body.preloader-active {
     color: oklch(0.65 var(--preloader-base-chroma) var(--preloader-dynamic-hue));
     transition: color 0.3s ease;
     flex-shrink: 0; /* Prevent status from shrinking */
+    min-height: 1.2em; /* CRITICAL: Prevents vertical collapse when content is cleared */
 }
 .preloader-data-stream.is-verified .preloader-stream-status,
 .preloader-data-stream.is-error .preloader-stream-status {
@@ -207,35 +208,41 @@ body.preloader-active {
     margin-top: var(--space-lg);
     box-sizing: border-box;
 }
-/* DEFINITIVE FIX: Forceful legibility for progress text */
+/* UPDATED: Progress text now uses dynamic hue */
 .preloader-progress-label,
 .preloader-progress-value {
-    color: oklch(1 0 0); /* Max brightness white */
-    text-shadow:
-        0 0 0.1875rem oklch(1 0 0 / 0.7), /* 3px -> rem */
-        0 0 0.625rem oklch(1 0 0 / 0.35); /* 10px -> rem */
+    color: oklch(var(--lcd-active-text-l) calc(var(--preloader-base-chroma) * 1.2) var(--preloader-dynamic-hue));
+    text-shadow: 0 0 0.1875rem oklch(from currentColor l c h / 0.5); /* 3px -> rem */
+    transition: color 0.2s linear;
 }
 .preloader-progress-value {
     font-weight: 600; /* Bolder for emphasis */
 }
 
+/* UPDATED: Taller, segmented progress bar */
 .preloader-progress-bar-container {
-    height: var(--space-lg);
+    height: var(--space-2xl); /* Increased height */
     padding: var(--space-xs);
     margin-top: var(--space-sm);
     border-radius: var(--radius-panel-tight);
     box-sizing: border-box;
     background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
     border: 1px solid oklch(var(--lcd-unlit-border-l) var(--lcd-unlit-border-c) var(--lcd-unlit-border-h) / var(--lcd-unlit-border-a));
+    display: flex;
+    gap: 2px;
 }
-.preloader-progress-bar-fill {
+.preloader-bar-segment {
+    flex: 1;
     height: 100%;
-    width: 0%;
     border-radius: var(--space-xxs);
-    transition: width var(--transition-duration-medium) ease-out, background-color 0.2s linear;
-    /* UPDATED: Inject cycling hue into progress bar */
-    background-color: oklch(var(--lcd-active-text-l) calc(var(--preloader-base-chroma) * 1.2) var(--preloader-dynamic-hue) / var(--lcd-active-text-a));
+    background-color: oklch(20% 0 0 / 0.3); /* Off state */
+    transition: background-color 0.1s linear, box-shadow 0.1s linear;
 }
+.preloader-bar-segment.is-filled {
+    background-color: oklch(var(--lcd-active-text-l) calc(var(--preloader-base-chroma) * 1.2) var(--preloader-dynamic-hue) / var(--lcd-active-text-a));
+    box-shadow: inset 0 0 2px 0 oklch(from currentColor l c h / 0.5);
+}
+
 
 /* --- Engage Button Area --- */
 .preloader-engage-container {
@@ -254,8 +261,9 @@ body.preloader-active {
 }
 
 /* --- Button Styling --- */
+/* UPDATED: Button now spans full width */
 #datastream-preloader .button-unit {
-    min-width: 13.75rem; /* 220px -> rem */
+    width: 100%;
     opacity: 1;
 }
 #datastream-preloader .button-unit .button-text {

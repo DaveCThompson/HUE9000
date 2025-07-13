@@ -14,8 +14,8 @@ import grillTextureSrc from '../../assets/textures/metal-grill.png';
  * @property {string} type - The loading strategy ('fontsDocumentReady', 'fetch', 'audioManager').
  * @property {number} [timeout] - Timeout in ms for font loading.
  * @property {object[]} [assets] - Array of individual assets to load.
- * @property {string} initialStatus - The initial status message to display.
- * @property {string} successMessage - The final success message for the status line.
+ * @property {string} loadingStatusWord - The simplified status word during loading.
+ * @property {string} successMessage - The final success message for promise resolution (not for UI).
  * @property {string} timeoutMessage - The message to display on timeout.
  * @property {string} errorMessage - The message to display on error.
  * @property {string} streamOutputSuccess - The single word to display in the main output area on success.
@@ -27,7 +27,7 @@ export const PRELOADER_ASSETS = {
         name: 'SYS_FONTS',
         type: 'fontsDocumentReady', 
         timeout: 7000, 
-        initialStatus: '[ANALYZING FONT CACHE...]',
+        loadingStatusWord: '[ANALYZING...]',
         successMessage: '[SYS_FONTS: CACHE VALIDATED ✓]',
         timeoutMessage: '[SYS_FONTS: CACHE TIMEOUT X]',
         errorMessage: '[SYS_FONTS: LOAD FAILURE X]',
@@ -43,7 +43,7 @@ export const PRELOADER_ASSETS = {
             { id: 'dialSvg', name: 'dial.svg', url: dialSvgSrc, type: 'fetch' }, 
             { id: 'grillTexture', name: 'metal-grill.png', url: grillTextureSrc, type: 'fetchImage' } 
         ],
-        initialStatus: '[INITIALIZING GFX SUBSYSTEM...]',
+        loadingStatusWord: '[INITIALIZING...]',
         successMessage: '[GFX_PIPELINE: CORE ASSETS LOADED ✓]',
         errorMessage: '[GFX_PIPELINE: ASSET LOAD FAILURE X]', 
         streamOutputSuccess: 'LOADED',
@@ -56,7 +56,7 @@ export const PRELOADER_ASSETS = {
         assets: [ 
             { id: 'buttonPressSfx', keyInAudioManager: 'buttonPress', name: 'button-press.mp3' },
         ],
-        initialStatus: '[ESTABLISHING AUDIO SYNC...]',
+        loadingStatusWord: '[SYNCHRONIZING...]',
         successMessage: '[AUDIO_IO_BUFFER: SYNC CONFIRMED ✓]',
         errorMessage: '[AUDIO_IO_BUFFER: SYNC FAILED X]',
         streamOutputSuccess: 'CONFIRMED',
