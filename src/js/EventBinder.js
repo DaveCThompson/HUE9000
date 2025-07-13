@@ -40,6 +40,7 @@ export class EventBinder {
     _bindMobileControls() {
         this._bindMobileOverlayButtons();
         this._bindMobileTerminal();
+        this._bindSidePanelControls();
     }
 
     /**

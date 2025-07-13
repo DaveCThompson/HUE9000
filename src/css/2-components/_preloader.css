@@ -103,6 +103,7 @@ body.pre-boot #datastream-preloader {
     border: var(--control-section-border-width) solid var(--preloader-text-color);
     transition: box-shadow 0.3s ease, opacity 0.3s ease, border-color 0.3s ease;
     height: 12.5rem;
+    gap: var(--space-md);
 }
 
 .preloader-data-stream.is-inactive { opacity: 0.65; }
@@ -123,7 +124,7 @@ body.pre-boot #datastream-preloader {
     padding-bottom: var(--space-sm);
     border-bottom: 1px dashed var(--preloader-text-color);
     color: var(--preloader-text-color);
-    margin-bottom: var(--space-md);
+    margin-bottom: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -348,6 +349,10 @@ body.pre-boot #datastream-preloader {
 }
 
 @media (max-width: 48rem) and (orientation: portrait) {
+    #datastream-preloader #logo-container {
+        height: 4rem;
+        max-width: 21.33rem;
+    }
     /* Center the content block and use margins for spacing */
     .preloader-content-wrapper { 
         height: var(--visual-viewport-height, 100vh); 
@@ -366,7 +371,7 @@ body.pre-boot #datastream-preloader {
         margin-top: 8rem; /* Large space after logo */
         display: flex; 
         flex-direction: column; 
-        gap: var(--space-md); 
+        gap: var(--space-lg); /* WAS: var(--space-md). Increased for better rhythm. */
         flex-shrink: 0; 
     }
 

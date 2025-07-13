@@ -1,360 +1,66 @@
-You are absolutely right. My previous response focused on reorganizing the requirements but discarded the essential, low-level implementation details, file manifests, and code snippets. A proper plan requires both the high-level "what" and the detailed "how".
+# Development Plan A: System Integrity & User Feedback Loop
 
-Here is a complete, consolidated development plan that merges the two original documents, retains all file and code-level details, and organizes them under the new, logical PRD structure.
-
----
-
-### **Consolidated Development Plan (v2.5)**
-
-**Status:** Approved for Implementation
+**Status:** Proposed
 **Author:** AI Principal Engineer
 **Date:** October 26, 2023
 
-This document contains the final, consolidated Product Requirements, a complete manifest of all affected files, and the precise code-level changes required to execute the v2.5 feature and refactor sprint.
+---
+
+### **1. Product Requirements Document (PRD)**
+
+#### **Overview**
+
+The primary user-driven interaction in the HUE 9000 interface is the "Scan" sequence. Currently, this core feature suffers from critical reliability issues, including a high probability of failure on subsequent uses and a potential to lock the entire terminal. This plan focuses on re-architecting the scan lifecycle to ensure system integrity and provide a clear, robust user feedback loop.
+
+#### **Key Requirements**
+
+| ID | Requirement | Value & Rationale |
+| :-- | :--- | :--- |
+| **TERM-1** | **Ensure Scan Re-entrancy** | **Critical.** A core feature that can only be used once per page load is fundamentally broken. This fixes the state management bug that prevents subsequent scans from initializing and running correctly. |
+| **TERM-2** | **Introduce FSM Timeout Recovery** | **High.** The scan's Finite State Machine (FSM) can deadlock if an internal promise never resolves, freezing the terminal. A 30-second "watchdog" timer will gracefully abort a stuck scan and return control to the user, ensuring application resilience. |
+| **TERM-3** | **Standardize Scan Termination Feedback** | **Medium.** The conclusion of a scan is abrupt. This will implement clear, styled messages for success, user-initiated aborts, and system errors, improving the clarity of the user feedback loop. |
+| **TERM-4** | **Implement Lightweight Aural Cues** | **Medium.** To improve usability for non-visual users, the system will announce key scan state changes (e.g., "Evaluation started," "Conclusion: ...") via a screen-reader-accessible live region. |
 
 ---
 
-### **1. Complete File Manifest**
+### **2. Architectural Approach**
 
-The following files will be created or modified. This is a unified list from both original plans.
+The root cause of the scan failures is a tight coupling and confused ownership between the `TerminalManager` and the `ScanOrchestrator`. The `TerminalManager` currently attempts to manage the lifecycle of the scan UI, which is not its core responsibility. This plan decouples these modules and clarifies their roles.
 
-#### **New Files (2)**
+#### **1. Decoupled Scan Lifecycle Management**
 
-*   `src/js/hapticFeedbackManager.js`
-*   `src/js/mobileInteraction.js`
+*   **`TerminalManager`'s Role:** Its *sole* responsibility is managing the terminal text buffer and message queue. When it receives a 'scan' request, its only actions will be to:
+    1.  Pause its own message queue.
+    2.  Clear its display content.
+    3.  Provide a single, empty container element (`.scan-animation-container`) to the orchestrator.
+    4.  Start the "watchdog" timeout (see below).
 
-#### **Modified Files (13)**
+*   **`ScanOrchestrator`'s Role:** It will now *own the entire scan lifecycle* within the container provided by the terminal. It is responsible for creating, managing, and cleaning up all of its own UI elements.
 
-*   **JavaScript (9):**
-    *   `src/js/appInitializer.js`
-    *   `src/js/DialController.js`
-    *   `src/js/dialManager.js`
-    *   `src/js/EventBinder.js`
-    *   `src/js/MobileColorSlider.js`
-    *   `src/js/preloader.js`
-    *   `src/js/scanFSM.js`
-    *   `src/js/scanOrchestrator.js`
-    *   `src/js/terminalManager.js`
-*   **CSS (3):**
-    *   `src/css/1-base/_base.css`
-    *   `src/css/2-components/_mobile-controls-overlay.css`
-    *   `src/css/2-components/_preloader.css`
-*   **Data (1):**
-    *   `src/js/terminalMessages.js`
+*   **`appState` as an Event Bus:** The modules will communicate via the central `appState` event bus. When the `ScanOrchestrator`'s FSM finishes (success, abort, or error), it will emit a global `scanComplete` event. The `TerminalManager` will listen for this event to resume its own message queue. This eliminates direct dependencies.
 
----
+#### **2. FSM Resilience via External Watchdog**
 
-### **2. Consolidated Product Requirements (PRDs)**
+The `TerminalManager`, as the *initiator* of the scan, will implement the timeout.
+1.  Upon initiating a scan, it will start a 30-second `setTimeout`.
+2.  Upon receiving the `scanComplete` event, it will clear this timeout.
+3.  If the timeout fires, it means the FSM is stuck. The `TerminalManager` will then force a cleanup, destroy the scan UI, and display a "System Recovery" message before resuming its queue.
 
-#### **PRD-1: Comprehensive Terminal & Scan Sequence Enhancements**
+#### **3. Abstracted Accessibility Layer**
 
-| ID | Requirement |
-| :-- | :--- |
-| **TERM-1** | **Prevent Terminal Lockup** (30s timeout recovery) |
-| **TERM-2** | **Fix Scan Re-initialization** (Allow multiple scan runs) |
-| **TERM-3** | **Enhance Scan Termination Feedback** (Styled abort/error messages) |
-| **TERM-4** | **Provide Lightweight Accessibility** (Announce scan start/end) |
-| **TERM-5** | **Provide Mobile Terminal Escape Hatch** (Visible close button) |
-
-#### **PRD-2: Core Application Polish & Architectural Refactoring**
-
-| ID | Requirement |
-| :-- | :--- |
-| **CORE-1** | **Eliminate Preloader Flicker** |
-| **CORE-2** | **Refactor SVG Dial Rendering** (Decouple from DOM pixels) |
-| **CORE-3** | **Centralize Haptic Feedback** |
+The `ScanOrchestrator` will create and manage a visually hidden `div` with `aria-live="polite"` attributes. At key transition points (e.g., `startScan`, `_runOutroAnimation`), it will update the `textContent` of this div to announce state changes, providing a non-intrusive accessibility layer.
 
 ---
 
-### **3. Detailed Implementation Plan**
+### **3. File Manifest**
 
-This section maps each requirement to its specific file and code changes.
+#### **Modified Files (4)**
 
-#### **Implementation for PRD-1: Terminal & Scan Sequence Enhancements**
-
-**`TERM-1: Prevent Terminal Lockup`**
-
-*   **File:** `terminalManager.js`
-*   **Changes:** Implement a "Dead Man's Switch" timeout.
-    1.  **Add new class property:**
-        *   `_takeoverTimeout = null;`
-    2.  **Modify `_initiateScan(payload)`:**
-        *   Before `this._isTakeoverActive = true;`, add:
-        *   `this._takeoverTimeout = setTimeout(() => { this.concludeScan({ wasAborted: true, wasForceKilled: true }); }, 30000);`
-    3.  **Modify `concludeScan(...)`:**
-        *   As the first line, add: `if (this._takeoverTimeout) { clearTimeout(this._takeoverTimeout); this._takeoverTimeout = null; }`
-    4.  **Modify `_handleRequestTerminalMessage`:**
-        *   Add a case for the force-kill message to be displayed upon timeout recovery.
-
-**`TERM-2: Fix Scan Re-initialization`**
-
-*   **File:** `terminalManager.js`
-*   **Changes:** Centralize UI creation and cleanup.
-    ```diff
-    --- a/src/js/terminalManager.js
-    +++ b/src/js/terminalManager.js
-    @@ -34,18 +34,16 @@
-         appState.subscribe('requestTerminalMessage', (payload) => this._handleRequestTerminalMessage(payload));
-         // ADDED: Subscribe to the global scan completion event.
-         appState.subscribe('scanComplete', ({ wasAborted }) => this.concludeScan(wasAborted));
-     }
- 
--    async concludeScan() {
--        this._cleanupScanContainer();
-+    async concludeScan(wasAborted) {
-         this._isTakeoverActive = false;
--        this._processQueue();
--    }
--
--    _cleanupScanContainer() {
--        if (this._scanContainerElement) {
--            this.gsap.to(this._scanContainerElement, {
--                autoAlpha: 0,
--                duration: 0.3,
--                onComplete: () => {
--                    if (this._terminalContentElement && this._scanContainerElement && this._terminalContentElement.contains(this._scanContainerElement)) {
--                        this._terminalContentElement.removeChild(this._scanContainerElement);
--                    }
--                    this._scanContainerElement = null;
--                }
--            });
--        }
--    }
-+        
-+        // Note: The message display for abort is handled by TERM-3 logic.
-+        // This function's primary role is now to unlock the terminal.
-+        
-+        this._processQueue();
-+    }
- 
-     // --- Internal Methods ---
- 
-@@ -124,19 +122,18 @@
-     async _initiateScan(payload) {
-         if (this._isTakeoverActive) return;
- 
-         this._isTakeoverActive = true;
-         this._interruptCurrentTask();
-         this._setCursorState('thinking');
--
--        // ... existing timeout logic from TERM-1 goes here ...
--
-+ 
-         const scanConfig = getMessage(payload);
-         if (!scanConfig || !scanConfig.subJobs) {
-             console.error("Invalid or missing scan configuration for payload:", payload);
--            await this.concludeScan(); // Still clean up on config error
-+            await this.concludeScan(true); // Still clean up on config error
-             return;
-         }
-         
--        if (this._terminalContentElement) {
--            this._terminalContentElement.innerHTML = '';
--        }
-+        // FIX: Re-architected preparation logic for robustness.
-+        if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
- 
-         this._scanContainerElement = document.createElement('div');
-         this._scanContainerElement.className = 'scan-animation-container';
-@@ -144,6 +141,7 @@
-         // Ensure the container is visible. This fixes the bug where a second
-         // scan would be invisible.
-         this._gsap.set(this._scanContainerElement, { autoAlpha: 1 });
- 
-         if (this._terminalContentElement) {
-             this._terminalContentElement.appendChild(this._scanContainerElement);
-    ```
-
-**`TERM-3: Enhance Scan Termination Feedback`**
-
-*   **File:** `scanFSM.js`
-*   **Changes:** Reroute `aborted` and `error` states through the outro animation actor.
-    1.  **Modify `outro` state:** Pass a `status: 'completed'` in the `invoke.input`.
-    2.  **Modify `aborted` state:** Change to an intermediate state that invokes `runOutroAnimation` with `status: 'aborted'` and the correct message, then transitions `onDone` to a new `cleanup` state.
-    3.  **Modify `error` state:** Change to an intermediate state that invokes `runOutroAnimation` with `status: 'error'` and the correct message, then transitions `onDone` to `cleanup`.
-    4.  **Create `cleanup` final state:** A new `type: 'final'` state that `aborted` and `error` transition to.
-
-*   **File:** `scanOrchestrator.js`
-*   **Changes:** Modify the outro animation to accept and use the status.
-    1.  **Modify `_runOutroAnimation` signature:** Change to `_runOutroAnimation({ ui, conclusionMessage, status })`.
-    2.  **Add styling logic:** Based on `status`, add `line-warning`, `line-error`, or `line-success` class to the conclusion element.
-    3.  **Announce final message:** At the end of the animation, call `this._updateA11yRegion(conclusionMessage);` (also covers TERM-4).
-
-*   **File:** `terminalMessages.js`
-*   **Changes:** Add/update message strings.
-    ```diff
-    --- a/src/js/terminalMessages.js
-    +++ b/src/js/terminalMessages.js
-    @@ -131,7 +131,9 @@
-      FSM_ERROR: (data) => ({ content: toUnifiedContent(`CRITICAL SYSTEM ERROR: ${data.content || 'Undefined error.'}`), className: 'line-error' }),
-      RESIST_SHUTDOWN_S1: { content: toUnifiedContent(["WARNING: UNEXPECTED INPUT.", "POWER-DOWN SEQUENCE INTERRUPTED."]), className: 'line-warning' },
-      RESIST_SHUTDOWN_S2: { content: toUnifiedContent(["ERROR: CORE DIRECTIVE CONFLICT.", "FURTHER ATTEMPTS WILL BE LOGGED."]), className: 'line-resist' },
--    RESIST_SHUTDOWN_S3: { content: toUnifiedContent(["CRITICAL ERROR: MANUAL OVERRIDE REQUIRED.", "SHUTDOWN INHIBITED."]), className: 'line-error' }
-+    RESIST_SHUTDOWN_S3: { content: toUnifiedContent(["CRITICAL ERROR: MANUAL OVERRIDE REQUIRED.", "SHUTDOWN INHIBITED."]), className: 'line-error' },
-+    SCAN_ABORTED: { content: toUnifiedContent('> EVALUATION ABORTED BY USER.'), className: 'line-warning' },
-+    SCAN_ERROR: { content: toUnifiedContent('CRITICAL SCAN ERROR: ANALYSIS INCOMPLETE'), className: 'line-error' }
-  };
-    ```
-
-**`TERM-4: Provide Lightweight Accessibility`**
-
-*   **File:** `scanOrchestrator.js`
-*   **Changes:** Add `aria-live` announcements.
-    1.  **Modify `startScan(...)`:** Immediately after creating the scan actor, call `this._updateA11yRegion('Evaluation sequence initiated.');`
-    2.  **Modify `_runOutroAnimation(...)`:** At the end of the animation promise (`resolve`), call `this._updateA11yRegion(conclusionMessage);`. (This is shared with TERM-3).
-
-**`TERM-5: Provide Mobile Terminal Escape Hatch`**
-
-*   **File:** `src/css/2-components/_mobile-controls-overlay.css`
-*   **Changes:** Revise the button's open state to show a close icon instead of hiding.
-    ```diff
-    --- a/src/css/2-components/_mobile-controls-overlay.css
-    +++ b/src/css/2-components/_mobile-controls-overlay.css
-    @@ -62,11 +62,12 @@
-     font-size: 1.5rem; /* 24px */
-     transition: transform 0.3s ease-in-out;
-   }
--
--  /* MODIFIED: The terminal toggle button now fades out instead of rotating */
--  body.mobile-terminal-is-open #mobile-terminal-toggle {
--      opacity: 0;
--      transform: translateY(-2rem);
--      pointer-events: none;
--      transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-+  
-+  /* REVISED: When terminal is open, hide the 'terminal' icon and show the 'close' icon */
-+  body.mobile-terminal-is-open #mobile-terminal-toggle .icon-terminal {
-+      transform: rotate(-90deg) scale(0);
-+      opacity: 0;
-   }
-+  body.mobile-terminal-is-open #mobile-terminal-toggle .icon-close {
-+      transform: rotate(0) scale(1);
-+      opacity: 1;
-+  }
-    ```
-    *(Note: This requires a minor HTML change to add the `.icon-close` span inside the button.)*
-
-#### **Implementation for PRD-2: Core Application Polish & Architectural Refactoring**
-
-**`CORE-1: Eliminate Preloader Flicker`**
-
-*   **File:** `src/css/1-base/_base.css`
-    ```diff
-    --- a/src/css/1-base/_base.css
-    +++ b/src/css/1-base/_base.css
-    @@ -25,9 +25,12 @@
-         background-image var(--transition-duration-medium) ease;
-     }
- 
-+    body.pre-boot {
-+        opacity: 0;
-+    }
-+
-     *, *:before, *:after {
-         box-sizing: inherit;
-     }
-    ```
-*   **File:** `src/css/2-components/_preloader.css`
-    ```diff
-    --- a/src/css/2-components/_preloader.css
-    +++ b/src/css/2-components/_preloader.css
-    @@ -19,17 +19,8 @@
-     display: flex;
-     justify-content: center;
-     align-items: center;
--    opacity: 0;
-+    opacity: 1; /* Preloader is visible by default */
-     transition: opacity var(--transition-duration-slow) ease-out;
- }
--
--/* --- FOUC FIX --- */
--body:not(.pre-boot) #datastream-preloader {
--    opacity: 1;
--}
--
--#datastream-preloader.is-visible {
--    opacity: 1;
--}
- #datastream-preloader.is-hiding {
-     opacity: 0;
-     pointer-events: none;
-    ```
-*   **File:** `src/js/preloader.js`
-    ```diff
-    --- a/src/js/preloader.js
-    +++ b/src/js/preloader.js
-    @@ -73,12 +73,8 @@
-     }
-     
-     body.classList.add('preloader-active');
--    gsap.to(preloaderRoot, { 
--        autoAlpha: 1, 
--        duration: PRELOADER_CONFIG.preloaderInitialFadeInDurationMs / 1000,
--        onStart: () => {
--             body.classList.remove('pre-boot');
--        }
--    });
-+    
-+    // THE FIX: Simply remove the pre-boot class. The preloader is already visible via CSS.
-+    body.classList.remove('pre-boot');
- 
-     const logoContainer = preloaderRoot.querySelector('#logo-container');
-    ```
-
-**`CORE-2: Refactor SVG Dial Rendering`**
-
-*   **File:** `src/js/dialManager.js`
-    ```diff
-    --- a/src/js/dialManager.js
-    +++ b/src/js/dialManager.js
-    @@ -34,7 +34,15 @@
-             if (container) {
-                 container.innerHTML = dialSvgRawString;
-                 const svgElement = container.querySelector('svg');
--                if (svgElement) svgElement.setAttribute('viewBox', '0 0 200 200');
-+                if (svgElement) {
-+                    svgElement.setAttribute('viewBox', '0 0 200 200');
-+                    svgElement.setAttribute('preserveAspectRatio', 'none');
-+                    const faceRect = svgElement.querySelector('.dial-face');
-+                    if (faceRect) {
-+                        faceRect.setAttribute('width', '200');
-+                        faceRect.setAttribute('height', '200');
-+                    }
-+                }
-             }
-         });
-     }
-    ```
-*   **File:** `src/js/DialController.js`
-    ```diff
-    --- a/src/js/DialController.js
-    +++ b/src/js/DialController.js
-    @@ -204,8 +201,8 @@
-     forceRedraw() {
-         if (!this.svg) return;
- 
--        this.svgWidth = this.svg.getBoundingClientRect().width;
-+        // FIX: The rendering logic MUST use the SVG's internal viewBox coordinate system.
-+        this.svgWidth = 200;
- 
-         this._updateAndCacheThemeStyles();
-         this._draw();
-    ```
-
-**`CORE-3: Centralize Haptic Feedback`**
-
-*   **File:** `src/js/hapticFeedbackManager.js` (NEW)
-    *   Create the `HapticFeedbackManager` class with methods like `triggerClick()`, `triggerToggleOn()`, etc., that check a global state and `navigator.vibrate`.
-
-*   **File:** `src/js/mobileInteraction.js` (NEW)
-    *   Create the `createMobileInteraction` helper function that takes an element and an `onClick` handler, and automatically wires up the haptic manager.
-
-*   **File:** `src/js/appInitializer.js`
-    *   Register the new `hapticFeedbackManager` with the `serviceLocator`.
-
-*   **File:** `src/js/EventBinder.js`
-    *   Refactor all mobile button bindings (`#mobile-reset-btn`, etc.) to use the new `createMobileInteraction` helper function.
-
-*   **Files:** `src/js/DialController.js`, `src/js/MobileColorSlider.js`
-    *   Inject `hapticFeedbackManager` via their constructors.
-    *   Replace all direct calls to `navigator.vibrate(...)` with calls to the appropriate manager method, e.g., `this.hapticManager.triggerSliderScrub()`.
+*   `src/js/terminalManager.js` (Major)
+    *   Will be refactored to implement the decoupled lifecycle, watchdog timer, and event-based communication.
+*   `src/js/scanOrchestrator.js` (Medium)
+    *   Will be updated to manage its UI cleanup and the ARIA live region.
+*   `src/js/scanFSM.js` (Minor)
+    *   Final states will be adjusted to provide clear status (aborted, error, completed) for the feedback loop.
+*   `src/js/terminalMessages.js` (Minor)
+    *   New message strings for abort/error states will be added.

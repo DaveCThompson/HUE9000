@@ -209,6 +209,17 @@ export class AppInitializer {
             const stateText = (nextTheme === 'light') ? 'HIGH' : 'LOW';
             const soundToPlay = (nextTheme === 'light') ? 'auxModeHigh' : 'auxModeLow';
 
+            // --- ADDED: Icon toggle logic ---
+            const mobileLightBtn = document.getElementById('mobile-light-btn');
+            if (mobileLightBtn) {
+                const icon = mobileLightBtn.querySelector('.material-symbols-outlined');
+                if (icon) {
+                    // Use font-variation-settings to toggle the fill state. 'FILL' 1 is filled, 0 is outline.
+                    icon.style.fontVariationSettings = (nextTheme === 'light') ? "'FILL' 1" : "'FILL' 0";
+                }
+            }
+            // --- END: Icon toggle logic ---
+
             appState.setTheme(nextTheme);
             const soundId = this.audioManager.play(soundToPlay, true);
             
