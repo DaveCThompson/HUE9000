@@ -97,14 +97,17 @@ export function runPreloader(preloaderDomElements, gsap) {
                 }, PRELOADER_CONFIG.streamCharScrollIntervalMs);
             } else {
                 clearInterval(streamIntervals[streamId]);
-                streamEl.classList.remove('is-active', 'is-inactive');
-                streamEl.classList.add(isSuccess ? 'is-verified' : 'is-error');
-                if(contentEl) {
-                    // Use shortened success message from config
-                    const successText = isSuccess ? PRELOADER_ASSETS[streamId].streamOutputSuccess : assetConf.streamOutputError;
-                    contentEl.textContent = successText;
+                if (isSuccess) {
+                    // On success, keep .is-active for hue animation, add .is-verified for styling
+                    streamEl.classList.add('is-verified');
+                    if (contentEl) contentEl.textContent = assetConf.streamOutputSuccess;
+                } else {
+                    // On error, remove .is-active and add .is-error
+                    streamEl.classList.remove('is-active', 'is-inactive');
+                    streamEl.classList.add('is-error');
+                    if (contentEl) contentEl.textContent = assetConf.streamOutputError;
                 }
-                if(statusEl) statusEl.textContent = message;
+                if (statusEl) statusEl.textContent = message;
             }
         };
         
@@ -211,11 +214,6 @@ export function runPreloader(preloaderDomElements, gsap) {
             updateOverallProgress();
         };
         
-        // Shorten the success messages in the config object before starting
-        PRELOADER_ASSETS.fonts.streamOutputSuccess = '[SYS_FONTS: CACHE VALIDATED ✓]';
-        PRELOADER_ASSETS.graphics.streamOutputSuccess = '[GFX_PIPELINE: ASSETS LOADED ✓]';
-        PRELOADER_ASSETS.audio.streamOutputSuccess = '[AUDIO_IO: SYNC CONFIRMED ✓]';
-
         updateOverallProgress();
 
         loadStream('fonts', PRELOADER_ASSETS.fonts, PRELOADER_CONFIG.staggerDelayMs.fonts, PRELOADER_CONFIG.baseDurationMs.fonts);

@@ -15,11 +15,11 @@ import grillTextureSrc from '../../assets/textures/metal-grill.png';
  * @property {number} [timeout] - Timeout in ms for font loading.
  * @property {object[]} [assets] - Array of individual assets to load.
  * @property {string} initialStatus - The initial status message to display.
- * @property {string} successMessage - The final success message.
+ * @property {string} successMessage - The final success message for the status line.
  * @property {string} timeoutMessage - The message to display on timeout.
  * @property {string} errorMessage - The message to display on error.
- * @property {string} streamOutputSuccess - The text to display in the stream on success.
- * @property {string} streamOutputError - The text to display in the stream on error.
+ * @property {string} streamOutputSuccess - The single word to display in the main output area on success.
+ * @property {string} streamOutputError - The text to display in the main output area on error.
  */
 export const PRELOADER_ASSETS = {
     fonts: { 
@@ -31,8 +31,8 @@ export const PRELOADER_ASSETS = {
         successMessage: '[SYS_FONTS: CACHE VALIDATED ✓]',
         timeoutMessage: '[SYS_FONTS: CACHE TIMEOUT X]',
         errorMessage: '[SYS_FONTS: LOAD FAILURE X]',
-        streamOutputSuccess: 'SYSTEM FONT INTEGRITY: CONFIRMED',
-        streamOutputError: 'ERROR: UNABLE TO VERIFY SYSTEM FONTS',
+        streamOutputSuccess: 'VALIDATED',
+        streamOutputError: 'ERROR',
     },
     graphics: {
         id: 'coreGraphics',
@@ -46,9 +46,8 @@ export const PRELOADER_ASSETS = {
         initialStatus: '[INITIALIZING GFX SUBSYSTEM...]',
         successMessage: '[GFX_PIPELINE: CORE ASSETS LOADED ✓]',
         errorMessage: '[GFX_PIPELINE: ASSET LOAD FAILURE X]', 
-        streamOutputSuccess: 'GRAPHICS PACKET SIGNATURE: VALID',
-        streamOutputError: 'ERROR: GRAPHICS DATA CORRUPTION DETECTED',
-        individualAssetStatusTemplate: (name, status) => `LOAD GFX MODULE: ${name}... ${status}`
+        streamOutputSuccess: 'LOADED',
+        streamOutputError: 'CORRUPTED',
     },
     audio: { 
         id: 'coreAudio',
@@ -60,9 +59,8 @@ export const PRELOADER_ASSETS = {
         initialStatus: '[ESTABLISHING AUDIO SYNC...]',
         successMessage: '[AUDIO_IO_BUFFER: SYNC CONFIRMED ✓]',
         errorMessage: '[AUDIO_IO_BUFFER: SYNC FAILED X]',
-        streamOutputSuccess: 'AUDIO STREAM INTEGRITY: OPTIMAL',
-        streamOutputError: 'ERROR: AUDIO DESYNCHRONIZATION',
-        individualAssetStatusTemplate: (name, status) => `SYNC AUDIO CH: ${name}... ${status}`
+        streamOutputSuccess: 'CONFIRMED',
+        streamOutputError: 'DESYNC',
     }
 };
 
