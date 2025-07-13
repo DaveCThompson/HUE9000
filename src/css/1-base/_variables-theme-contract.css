@@ -39,9 +39,6 @@
 
     --panel-shadow-outer-lowlight-color: oklch(0% 0 0 / 0.25);
     --panel-shadow-outer-highlight-color: oklch(100% 0 0 / 0.03);
-    --panel-shadow-inner-chamfer-top-color: oklch(100% 0 0 / 0.35);
-    --panel-shadow-inner-chamfer-bottom-color: oklch(0% 0 0 / 0.35);
-    --panel-shadow-inner-depth-color: oklch(0% 0 0 / 0.2);
     --panel-shadow-outer:
         0 0.1875rem 0.3125rem var(--panel-shadow-outer-lowlight-color),
         0 -1px 1px var(--panel-shadow-outer-highlight-color);
@@ -291,6 +288,9 @@
     /* Theme-specific scaling factors for terminal glow */
     --theme-terminal-glow-opacity-factor: 1.0;
     --theme-terminal-glow-size-factor: 1.0;
+
+    /* --- Component: Mobile UI --- */
+    --mobile-control-button-icon-color: oklch(0.8 var(--dynamic-env-chroma) var(--dynamic-env-hue));
 
     /* Terminal Message Colors */
     --terminal-text-color-default: inherit; /* Inherits from standard LCD text color */

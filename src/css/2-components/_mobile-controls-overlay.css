@@ -46,9 +46,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    color: oklch(0.8 0.01 240);
+    color: var(--mobile-control-button-icon-color);
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease-out, border-color 0.3s ease;
+    transition: background-color 0.2s ease, transform 0.1s ease-out, border-color 0.3s ease, color 0.2s ease;
     outline: none; /* Remove default outline on general focus */
     position: relative;
   }
