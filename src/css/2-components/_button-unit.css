@@ -273,11 +273,13 @@
     box-shadow: inset 0 0 0.1875rem 1px var(--btn-pressed-innershadow-color); /* 3px -> rem. Keep the physical press effect */
 }
 .button-unit.is-energized.is-selected.is-pressing::after {
-    transform: scale(1.1);
-    opacity: calc(var(--btn-selected-glow-base-opacity) * 1.15);
+    /* REFINED: Use a more subtle scale to avoid clipping */
+    transform: scale(1.03);
+    opacity: calc(var(--btn-selected-glow-base-opacity) * 1.25);
 }
 .button-unit.is-energized.is-selected.is-pressing .light {
     opacity: calc(var(--btn-energized-selected-light-a) * 1.2);
+    /* REFINED: Add scale to inner lights for more tactile feedback */
     transform: scale(1.05);
 }
 

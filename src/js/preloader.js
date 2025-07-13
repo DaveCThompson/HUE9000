@@ -149,6 +149,18 @@ export function runPreloader(preloaderDomElements, gsap) {
                     engageButton.disabled = false;
                     engageButton.classList.add('is-energized');
                     engageButtonContainer.classList.add('is-visible');
+
+                    // --- UPDATED: Activate SYNCHRONIZED idle light drift ---
+                    engageButton.classList.add('css-idle-drifting');
+                    const lights = engageButton.querySelectorAll('.light');
+                    lights.forEach((light) => {
+                        light.style.setProperty('--light-idle-base-opacity', '0.45');
+                        light.style.setProperty('--light-idle-variation', '0.2');
+                        light.style.setProperty('--light-idle-duration', '2.5s'); // Use a fixed duration for all
+                        light.style.setProperty('--light-idle-delay', '0s');      // Use zero delay for all
+                    });
+                    // --- END OF UPDATE ---
+
                  }, PRELOADER_CONFIG.engageButtonAppearDelayMs);
             }
         };

@@ -205,7 +205,6 @@ body.preloader-active {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 1.0em;
     text-align: center;
-    margin-top: var(--space-lg);
     box-sizing: border-box;
 }
 /* UPDATED: Progress text now uses dynamic hue */
@@ -223,7 +222,6 @@ body.preloader-active {
 .preloader-progress-bar-container {
     height: var(--space-2xl); /* Increased height */
     padding: var(--space-xs);
-    margin-top: var(--space-sm);
     border-radius: var(--radius-panel-tight);
     box-sizing: border-box;
     background-color: oklch(var(--lcd-unlit-bg-l) var(--lcd-unlit-bg-c) var(--lcd-unlit-bg-h) / var(--lcd-unlit-bg-a));
@@ -249,7 +247,6 @@ body.preloader-active {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: var(--space-xl);
     opacity: 0;
     transform: translateY(var(--space-md));
     transition: opacity var(--transition-duration-medium) ease-out, transform var(--transition-duration-medium) ease-out;
@@ -382,7 +379,7 @@ body.preloader-active {
         flex-direction: column;
         height: 100%;
         width: 100%;
-        gap: 0; /* Let children manage their own margins/gaps */
+        gap: var(--space-xl); /* Use consistent gap for spacing */
     }
 
     /* 2. Make the stream columns a fixed-size block at the top */
@@ -414,9 +411,9 @@ body.preloader-active {
 
     /* 4. Group the progress elements together as a fixed-size block */
     .preloader-overall-progress {
-        margin-top: var(--space-xl); /* Space above the progress bar */
         font-size: 0.9em;
         flex-shrink: 0;
+        /* Removed margin-top, parent gap now handles spacing */
     }
 
     .preloader-progress-bar-container {
@@ -426,14 +423,21 @@ body.preloader-active {
     /* 5. Push the engage button to the bottom using `margin-top: auto` */
     .preloader-engage-container {
         margin-top: auto; /* THIS IS THE KEY CHANGE */
-        padding-top: var(--space-lg); /* Add breathing room above the button */
         padding-bottom: var(--space-sm);
         transform: none; /* No need for transform animations on mobile */
         flex-shrink: 0;
+        /* Removed padding-top, parent gap now handles spacing */
     }
 
     #datastream-preloader .button-unit {
         width: 100%; /* Make button fill width for better touch target */
         min-width: unset;
+    }
+}
+
+/* NEW: Mobile-specific rule to hide extra lights on preloader button */
+@media (max-width: 48rem) {
+    #preloader-engage-btn .light:nth-child(n+4) {
+        display: none;
     }
 }
