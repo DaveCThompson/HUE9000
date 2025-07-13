@@ -22,13 +22,10 @@ export class DynamicStyleManager {
   init() {
     this.dom = serviceLocator.get('domElements');
 
-    // if (this.debug) console.log('[DynamicStyleManager INIT]');
-
     appState.subscribe('targetColorChanged', (payload) => this.handleTargetColorChange(payload));
     appState.subscribe('dialUpdated', (payload) => this.handleDialAUpdateForUIAccent(payload));
 
     this.injectLogoSVG();
-    this.applyInitialDynamicCSSVars();
   }
 
   /**
@@ -47,33 +44,44 @@ export class DynamicStyleManager {
 
     this.root.style.setProperty(`--dynamic-${targetKey}-hue`, normalizedHue.toFixed(1));
     this.root.style.setProperty(`--dynamic-${targetKey}-chroma`, chromaToSet.toFixed(4));
-
-    // if (this.debug) console.log(`[DynamicStyleManager] Set CSS vars for '${targetKey}': Hue=${normalizedHue.toFixed(1)}, Chroma=${chromaToSet.toFixed(4)}`);
   }
 
   /**
-   * Injects the logo SVG into its container.
+   * Injects the logo SVG into all designated containers.
    * Uses Vite's ?raw import to get SVG as a string.
    */
   injectLogoSVG() {
-    const logoContainer = this.dom.logoContainer;
-    if (!logoContainer) {
-      console.error("[DynamicStyleManager] logoContainer element not found for SVG injection.");
+    // FIX: Select ALL logo containers, both desktop and mobile.
+    const logoContainers = document.querySelectorAll('#logo-container, #mobile-logo-container');
+    
+    if (logoContainers.length === 0) {
+      console.warn("[DynamicStyleManager] No logo containers found for injection.");
       return;
     }
-    if (logoContainer.querySelector('svg.logo-svg')) {
-      // if (this.debug) console.log('[DynamicStyleManager] Logo SVG already injected.');
-      return; 
+    
+    if (typeof logoSvgUrl !== 'string' || !logoSvgUrl.trim().startsWith('<svg')) {
+        console.error('[DynamicStyleManager] CRITICAL FAILURE: `logoSvgUrl` is not a valid SVG string. Check import or build config.');
+        logoContainers.forEach(container => {
+            container.innerHTML = `<div style="border:1px dashed grey;display:flex;align-items:center;justify-content:center;color:grey;font-size:0.8em;text-align:center;width:100%;height:100%;">Logo Asset Error</div>`;
+        });
+        return;
     }
+    
+    logoContainers.forEach(container => {
+        if (container.querySelector('svg.logo-svg')) {
+            return; // Already injected, skip.
+        }
+        
+        container.innerHTML = logoSvgUrl;
+        const svgElement = container.querySelector('svg');
 
-    if (typeof logoSvgUrl === 'string' && logoSvgUrl.trim().startsWith('<svg')) {
-        logoContainer.innerHTML = logoSvgUrl;
-        // if (this.debug) console.log('[DynamicStyleManager] SVG logo injected via ?raw import.');
-        this.applyInitialDynamicCSSVars(); // Re-apply vars to the new SVG
-    } else {
-        console.error('[DynamicStyleManager] Error: logoSvgUrl is not a valid SVG string.', logoSvgUrl);
-        logoContainer.innerHTML = `<p style="color: #ccc; font-size: 0.8em;">Logo Load Error</p>`;
-    }
+        if (svgElement) {
+            svgElement.setAttribute('width', '100%');
+            svgElement.setAttribute('height', '100%');
+        }
+    });
+    
+    this.applyInitialDynamicCSSVars();
   }
 
   /**

@@ -1,7 +1,7 @@
-/* src/css/components/_logo.css */
 /* Styles for the HUE 9000 Logo. Uses theme variables. */
 
-#logo-container {
+/* FIX: Use a grouped selector to target both desktop and mobile containers */
+#logo-container, #mobile-logo-container {
    width: auto;
    height: auto;
    margin: var(--space-xl) var(--space-xl) var(--space-3xl) var(--space-xl);
@@ -15,27 +15,35 @@
    opacity: var(--logo-opacity, 1); /* Default to 1 if var is not set */
    transition: opacity var(--transition-duration-medium) ease;
 }
+/* Mobile-specific override for margin */
+#mobile-logo-container {
+    margin: 0;
+}
 
-#logo-container svg {
+
+#logo-container svg, #mobile-logo-container svg {
    width: 100%;
    height: auto;
    display: block;
 }
 
 /* Overall SVG background - gets the DYNAMIC color */
-#logo-container svg.logo-svg .logo-dynamic-bg {
+#logo-container svg.logo-svg .logo-dynamic-bg,
+#mobile-logo-container svg.logo-svg .logo-dynamic-bg {
     fill: oklch(var(--logo-dynamic-fill-l) var(--dynamic-logo-chroma) var(--dynamic-logo-hue));
     transition: fill var(--transition-duration-medium) ease, stroke var(--transition-duration-medium) ease;
 }
 
 /* Rectangle behind "HUE" - matches panel background */
-#logo-container svg.logo-svg .logo-panel-bg-rect {
+#logo-container svg.logo-svg .logo-panel-bg-rect,
+#mobile-logo-container svg.logo-svg .logo-panel-bg-rect {
     /* L value is modified by --startup-L-reduction-factor. Alpha is from theme. */
     fill: oklch(calc(var(--panel-section-bg-l) * (1 - var(--startup-L-reduction-factor, 0))) var(--panel-section-bg-c) var(--panel-section-bg-h) / var(--panel-section-bg-a));
     transition: fill var(--transition-duration-medium) ease;
 }
 
 /* "HUE" letters and "9000" (if paths) - fixed white */
-#logo-container svg.logo-svg .logo-fixed-white-text {
+#logo-container svg.logo-svg .logo-fixed-white-text,
+#mobile-logo-container svg.logo-svg .logo-fixed-white-text {
     fill: oklch(1 0 0); /* OKLCH for white: L=1 (or 100%), C=0, H=any */
 }
