@@ -206,8 +206,8 @@ body.left-panel-expanded .compact-view-wrapper {
 
 /* FIX: Make headings brighter */
 .panel-tab-content h3 {
-    margin-top: var(--space-3xl);
-    margin-bottom: var(--space-lg);
+    margin-top: var(--space-4xl);
+    margin-bottom: var(--space-xl);
     color: oklch(var(--theme-text-primary-l) var(--theme-text-primary-c) var(--theme-text-primary-h));
 }
 
@@ -251,9 +251,8 @@ body.left-panel-expanded .compact-view-wrapper {
     height: auto;
     display: block;
     border-radius: var(--space-xs);
-    box-shadow: 0 0.25rem 1rem oklch(0% 0 0 / 0.35);
-    /* FIX: Update bottom margin to 2rem */
-    margin: var(--space-lg) auto 6rem auto;
+    box-shadow: 0 0.25rem 1rem oklch(0% 0 0 / 0.35);    
+    margin: var(--space-xl) auto var(--space-xl) auto;
     opacity: 0;
     transform: scale(0.95) translateY(1rem);
     transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1),

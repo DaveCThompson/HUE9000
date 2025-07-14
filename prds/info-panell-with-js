@@ -1,0 +1,157 @@
+Understood. The previous approach was flawed because it attempted to fix symptoms without a clear, holistic plan based on the original, well-defined scope. We will now produce that plan.
+
+This document outlines the complete Product Requirements and Design Specification for the Info Panel refactor. It is self-contained, assumes a stable underlying system for the purpose of planning, and includes a comprehensive list of all involved files to ensure full context.
+
+---
+
+### **Project: Info Panel Content Decoupling & Refactor**
+
+#### **1. Product Requirements Document (PRD)**
+
+**1.1. Overview**
+This project will refactor the side info panel by decoupling its static HTML content from `index.html` and dynamically injecting it using JavaScript. This is an architectural improvement initiative designed to enhance maintainability, improve the developer experience, and align the component with the project's Vite-based build process.
+
+**1.2. Problem Statement**
+Currently, the substantial HTML content for the info panel's tabs resides directly in `index.html`. This approach has several drawbacks:
+*   **Poor Maintainability:** `index.html` is bloated with content, making it difficult to navigate and manage the core application structure.
+*   **Difficult Updates:** Editing panel content requires modifying the main HTML document, a high-risk change that should be reserved for structural updates.
+*   **Build Process Misalignment:** Image paths are hardcoded (`src="./path/to/image.png"`), bypassing Vite's asset handling, which can lead to broken links or prevent optimizations like hashing.
+
+**1.3. Goals & Success Metrics**
+*   **Goal 1:** Decouple all panel tab content from `index.html`.
+    *   **Metric:** The `#about-tab`, `#highlights-tab`, and `#settings-tab` divs in the final `index.html` file are empty.
+*   **Goal 2:** Improve code organization and developer experience.
+    *   **Metric:** Panel content is managed via a clean, standards-based mechanism (HTML `<template>` tags). Image assets are handled through the Vite import system.
+*   **Goal 3:** Maintain full functional and visual parity with the existing implementation.
+    *   **Metric:** Zero regressions. The panel must open/close, switch tabs, lazy-load images, and handle user interactions (haptics toggle) identically to the pre-refactor version.
+
+**1.4. User Experience Requirements**
+*   The info panel shall be visually and functionally identical to the current implementation.
+*   Tab switching shall trigger a smooth content fade-in animation as currently defined in the CSS.
+*   An appropriate UI sound (`uiTabSwitch`) shall play upon changing to a new tab, but not when clicking the already-active tab.
+*   Images within the "Highlights" tab shall lazy-load with a "fade and scale up" animation as they are scrolled into the viewport.
+*   The "Haptic Feedback" toggle in the "Settings" tab must accurately reflect and control the application's haptic state.
+
+**1.5. Technical Requirements**
+*   The `innerHTML` property must **not** be used for injecting the main content blocks.
+*   HTML `<template>` elements within `index.html` must be used as the source for the panel content.
+*   Image `src` attributes must be populated dynamically in JavaScript using paths from a Vite-imported asset manifest (`infoPanelContent.js`).
+*   All event listeners must be bound according to the existing `EventBinder` pattern or handled within the responsible manager (`sidePanelManager`).
+*   No "magic numbers" or untokenized values are permitted in the CSS. Any new values must be added to the design token system (`_variables-structural.css`).
+
+**1.6. Out of Scope**
+*   Adding new features, content, or animations to the info panel.
+*   Refactoring any other part of the application's core initialization or state management system. This plan operates on the assumption that the rest of the system is stable.
+
+---
+
+#### **2. Design & Technical Specification**
+
+**2.1. High-Level Architecture**
+The refactor will use the native HTML **`<template>`** element. This approach is superior to `innerHTML` because the content is parsed by the browser once at page load (but not rendered), making it inert and safe. Cloning this content via JavaScript is highly performant and maintains a clean separation of concerns: HTML structure lives in the `.html` file, and JS logic lives in the `.js` file.
+
+**2.2. Component Interaction Flow**
+1.  **Init:** `AppInitializer` creates and initializes `sidePanelManager`.
+2.  **Content Injection:** `sidePanelManager.init()` reads from the `<template>` elements, populates image sources from the `infoPanelContent.js` asset manifest, and injects the final content into the DOM.
+3.  **Event Binding:** `EventBinder` attaches a single delegated click listener to the tab container.
+4.  **User Interaction:** User clicks a tab.
+5.  **Delegation:** `EventBinder` calls `sidePanelManager.handleTabClick()`.
+6.  **State Change:** `sidePanelManager` updates the `.active` classes on tabs and content panes, and plays a sound via `audioManager`.
+
+**2.3. DOM Structure Changes (`index.html`)**
+The content within `#control-deck` will be refactored as follows:
+
+```html
+<!-- In index.html -->
+<div id="control-deck" class="side-panel left-panel">
+    <div class="expanded-view">
+        <!-- ... panel header ... -->
+        <div class="panel-content">
+            <!-- These containers will now be empty -->
+            <div id="about-tab" class="panel-tab-content active"></div>
+            <div id="highlights-tab" class="panel-tab-content"></div>
+            <div id="settings-tab" class="panel-tab-content"></div>
+        </div>
+    </div>
+    
+    <!-- The content is moved into inert <template> tags -->
+    <template id="about-tab-template">
+        <p>HUE 9000 explores diagetic design...</p>
+    </template>
+    
+    <template id="highlights-tab-template">
+        <h3>The Living Lens</h3>
+        <p>The central lens uses dynamic gradients...</p>
+        <!-- Note the use of data-src-key and the absent src -->
+        <img data-src-key="HAL9000-lens.png" alt="..." class="panel-image">
+        <!-- ... more content ... -->
+    </template>
+    
+    <template id="settings-tab-template">
+        <h3>System Settings</h3>
+        <div class="settings-group">
+            <!-- ... haptics toggle ... -->
+        </div>
+    </template>
+</div>
+```
+
+**2.4. Module-by-Module Implementation Plan**
+*   **`sidePanelManager.js`**
+    *   **`init()`:** Will be updated to call a sequence of new private methods: `_injectContentFromTemplates()`, `_populateImageSources()`, `_initImageObserver()`, and `_syncInitialControlState()`.
+    *   **`_injectContentFromTemplates()`:** Will query for all `<template>` elements inside `#control-deck`, clone their `content`, and append it to the corresponding empty `.panel-tab-content` div.
+    *   **`_populateImageSources()`:** After content is injected, this will query for all `<img>` tags with a `data-src-key` attribute and set their `src` from the imported `panelImagePaths` manifest.
+    *   **`_syncInitialControlState()`:** Will query for the haptics toggle and set its initial `checked` state based on `appState.getIsHapticsEnabled()`.
+    *   **`handleTabClick(event)`:** Will contain the logic to switch tabs, ensuring it checks if the clicked tab is already active to prevent re-playing the audio.
+*   **`EventBinder.js`**
+    *   The complex tab-switching logic will be removed.
+    *   In `_bindSidePanelControls`, it will add a single delegated event listener to the `.panel-tabs` container, which will call `sidePanelManager.handleTabClick(event)`.
+    *   The haptics toggle listener will be added here, and it will correctly `dispatch(actions.setHapticsEnabled(checkedState))`.
+*   **`infoPanelContent.js`**
+    *   This file will be simplified. It will no longer contain HTML strings. It will only import the four panel images and export them in a single `panelImagePaths` object, mapping a key (the filename) to the Vite-processed path.
+*   **`actions.js`**
+    *   A new action type `SET_HAPTICS_ENABLED` and a corresponding action creator `setHapticsEnabled(isEnabled)` will be added.
+*   **`actionHandler.js`**
+    *   A new `case` will be added to `handleAction` for `SET_HAPTICS_ENABLED`. It will call `appState.setIsHapticsEnabled(action.payload.isEnabled)`.
+*   **`_variables-structural.css`**
+    *   A new token, `--space-5xl: 6rem;`, will be added to the spacing scale.
+*   **`_side-panels.css`**
+    *   The `margin` on `.panel-content img.panel-image` will be changed from `6rem` to use the new `var(--space-5xl)` token.
+
+---
+
+#### **3. Potential Issues & Risk Mitigation**
+
+*   **Risk 1: DOM Timing & Initialization Order.**
+    *   **Issue:** The `sidePanelManager` might try to inject content or bind to elements that don't exist yet if it runs too early.
+    *   **Mitigation:** The entire process is kicked off by `AppInitializer`, which runs after the `DOMContentLoaded` event. All DOM queries within the plan are scoped to the `#control-deck` element, which is guaranteed to exist. This risk is low.
+*   **Risk 2: CSS Animation/Transition Failure.**
+    *   **Issue:** Dynamically added content might not trigger the CSS fade-in animations correctly if classes are applied improperly.
+    *   **Mitigation:** The implementation will exactly replicate the existing logic of adding/removing the `.active` class to the `.panel-tab-content` element. The `IntersectionObserver` logic for image animations is already proven and will be re-applied to the newly injected images.
+*   **Risk 3: Unhandled State in Haptics Toggle.**
+    *   **Issue:** The haptics toggle's visual state could become out of sync with the actual application state if another part of the app could change it.
+    *   **Mitigation:** The plan includes `_syncInitialControlState()` to set the correct state on load. Furthermore, a subscription to `appState.hapticsEnabledChanged` could be added in `sidePanelManager` to keep it in sync, though this is not strictly required by the PRD as no other mechanism currently changes this state.
+
+---
+
+#### **4. Comprehensive File List**
+
+**Files to be Modified:**
+1.  `index.html` (To remove static content and add `<template>` tags)
+2.  `src/js/sidePanelManager.js` (To add new injection and handling logic)
+3.  `src/js/EventBinder.js` (To simplify and correctly delegate event handling)
+4.  `src/js/infoPanelContent.js` (To convert into an asset manifest)
+5.  `src/js/state/actions.js` (To add `SET_HAPTICS_ENABLED` action)
+6.  `src/js/state/actionHandler.js` (To handle the new haptics action)
+7.  `src/css/1-base/_variables-structural.css` (To add new spacing token)
+8.  `src/css/components/_side-panels.css` (To use the new token)
+
+**Files for Context (Read-Only):**
+9.  `src/js/appInitializer.js` (To understand when and how managers are initialized)
+10. `src/js/main.js` (The application entry point)
+11. `src/js/serviceLocator.js` (To understand how managers get dependencies)
+12. `src/js/state/appState.js` (To understand the state structure being modified)
+13. `src/js/DOMManager.js` (To see how core DOM elements are cached)
+14. `src/js/AudioManager.js` (Dependency for playing UI sounds)
+15. `src/config/audio.js` (To confirm sound keys like `uiTabSwitch`)
+16. `src/css/main.css` (The CSS import hub)
