@@ -21,8 +21,8 @@
     <!-- ACCESSIBILITY: Polyfill for :focus-visible pseudo-class -->
     <script src="https://unpkg.com/focus-visible@5.2.0/dist/focus-visible.js" defer></script>
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-DMBOcgs1.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-CUrQo8gQ.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-DFM3tym1.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-B7P3xo3H.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -315,22 +315,48 @@
                 <button class="panel-tab-button" data-tab="settings-tab">Settings</button>
             </div>
             <div class="panel-content">
-                <!-- PRD v2.2: New Tab Content -->
+                <!-- ABOUT TAB -->
                 <div id="about-tab" class="panel-tab-content active">
-                    <h3>HUE 9000: An Interactive Study</h3>
-                    <p><strong>Unit Designation:</strong> Heuristically-enhanced Utility Engine 9000.</p>
-                    <p><strong>Primary Directive:</strong> To explore the boundaries of user experience through diegetic interface design, complex state management, and declarative animation systems. The unit assesses and responds to user input, recalibrating its affective state and operational parameters in real-time.</p>
-                    <hr/>
-                    <p>This project is a single-page web application built with vanilla JavaScript, designed to showcase a rich, interactive, and stateful user interface without relying on a major front-end framework.</p>
+                    <p>HUE 9000 explores diagetic design, where the user interface is integral to the narrative itself. The goal was to create a digital experience that feels responsive and emotionally engaging.</p>
+                    <p>The interface is inspired by HAL 9000. Unsettling ambient sounds, slow pacing, high-craft visual design combine to create an immersive experience. </p>
+                    <p>This project demonstrates translating brand identity into memorable, interactive design.</p>
                 </div>
+
+                <!-- HIGHLIGHTS TAB -->
                 <div id="highlights-tab" class="panel-tab-content">
-                    <h3>Technical Highlights</h3>
+                    <p><strong>Inspiration</strong></p>
+                    <p>HUE 9000 pays homage to Stanley Kubrick's <em>2001: A Space Odyssey</em>, capturing the film's design principles in a modern interactive experience.</p>
+                    
+                    <p><strong>The Living Lens</strong><br>The central lens uses dynamic gradients and the OKLCH color model to realistically respond to user input, creating an interactive "living" effect reminiscent of HAL's iconic eye.</p>
+                    <img src="/HUE9000/assets/HAL9000-lens-_uybZGhR.png" alt="Close-up of HAL 9000's iconic red camera lens, reflecting red light." class="panel-image">
+
+                    <p><strong>Atmosphere and Lighting</strong><br>The interface uses dramatic, high-contrast lighting to guide user attention, echoing the film's visual style.</p>
+                    <img src="/HUE9000/assets/dramatic-lighting-B5W6FvIW.png" alt="A hand reaching for a toggle switch, with multiple green glowing buttons and a red light in a dimly lit control panel." class="panel-image">
+
+                    <p><strong>Physicality of Controls</strong><br>Digital controls mimic physical buttons through animation, lighting, and realistic sound, enhancing tactile interaction.</p>
+                    <img src="/HUE9000/assets/backlit-buttons-CG9Qx-5_.png" alt="Close-up of three backlit buttons labeled ENGLISH, DUTCH, and RUSSIAN on a control panel." class="panel-image">
+
+                    <p><strong>Utilitarian Aesthetics</strong><br>Clean, minimalist design emphasizes functionality and realism.</p>
+                    <img src="/HUE9000/assets/minimal-controls-n4YtnfwB.png" alt="Main HUE 9000 interface showing multiple screens, a camera lens, and various controls." class="panel-image">
+
+                    <hr/>
+                    <p><strong>User Experience Details</strong></p>
                     <ul>
-                        <li><strong>State Management:</strong> Centralized, reactive state module (`appState.js`) and a finite state machine (`XState`) for the complex, interruptible startup sequence.</li>
-                        <li><strong>Animation:</strong> High-performance, declarative animations orchestrated by `GSAP` (GreenSock Animation Platform).</li>
-                        <li><strong>Audio:</strong> Robust, cross-browser audio managed by `Howler.js`, including dynamic soundscapes and UI feedback.</li>
-                        <li><strong>Architecture:</strong> A decoupled, modular system using a Service Locator pattern to manage dependencies, enhancing testability and maintainability.</li>
-                        <li><strong>Styling:</strong> Modern CSS with custom properties (variables) for themeing, dynamic visual effects, and a responsive mobile-first design.</li>
+                        <li><strong>Tactile Digital Controls</strong><br>Rotary dials provide realistic visual and kinetic feedback, bridging digital and physical interaction.</li>
+                        <li><strong>Narrative-Driven UI</strong><br>Each UI element supports storytelling, from animations to typography, reinforcing the narrative with every interaction.</li>
+                        <li><strong>Authentic Materiality</strong><br>Custom-rendered textures enhance realism and tactile engagement.</li>
+                        <li><strong>Sonic Identity</strong><br>Audio design enhances immersion with intentional sounds and interactive feedback.</li>
+                        <li><strong>Inclusive & Accessible Design</strong><br>Accessibility is fundamental, with semantic structures, comprehensive keyboard navigation, and clear visual cues ensuring an inclusive experience.</li>
+                    </ul>
+                    <hr/>
+                    <h3>Technical Foundation</h3>
+                    <p>The technical stack prioritizes performance and interaction quality:</p>
+                    <ul>
+                        <li><strong>Core Technology:</strong> Vanilla JavaScript (ES6+)</li>
+                        <li><strong>State Management:</strong> Custom solution with XState for interactive states</li>
+                        <li><strong>Animations:</strong> GSAP for fluid animations</li>
+                        <li><strong>Audio:</strong> Howler.js for robust audio interactions</li>
+                        <li><strong>Visual Engine:</strong> CSS custom properties and OKLCH color space for consistent visuals.</li>
                     </ul>
                 </div>
                 <!-- NEW: Settings Tab -->
