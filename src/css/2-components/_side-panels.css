@@ -63,7 +63,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 20rem; /* Same as left panel min-width */
+    width: 26rem; /* Increased width for desktop */
     height: 100%;
     background-color: oklch(var(--panel-section-bg-l) var(--panel-section-bg-c) var(--panel-section-bg-h) / 0.85);
     backdrop-filter: blur(0.5rem);
@@ -208,6 +208,25 @@
     color: oklch(0.9 0.1 240);
     text-decoration: underline;
 }
+
+/* NEW: Styles for images within the panel content */
+.panel-content img.panel-image {
+    max-width: 100%; /* Ensures image doesn't overflow its container */
+    height: auto; /* Maintains aspect ratio */
+    display: block; /* Centers the image */
+    margin: var(--space-xl) auto; /* Adds vertical spacing and centers horizontally */
+    border-radius: var(--space-xs); /* Applies a slight border-radius for visual coherence */
+    box-shadow: 0 0 0.5rem oklch(0% 0 0 / 0.5); /* Adds a subtle shadow */
+    transition: transform 0.2s ease; /* Smooth transition for hover effect */
+}
+
+/* Optional hover effect for images */
+@media (hover: hover) {
+    .panel-content img.panel-image:hover {
+        transform: scale(1.01); /* Slightly enlarge image on hover */
+    }
+}
+
 
 /* --- NEW: Settings Toggle Styles --- */
 .settings-group {

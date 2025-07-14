@@ -72,6 +72,11 @@ body.pre-boot .actual-lcd-screen-element #terminal-lcd-content {
     align-items: stretch;
 }
 
+/* Left Panel shift when info panel is open */
+.app-wrapper.left-panel-expanded {
+    transform: translateX(var(--info-panel-width)); /* Use CSS variable for consistency */
+}
+
 /* --- Panel Layout Specifics --- */
 
 /* Left Panel */

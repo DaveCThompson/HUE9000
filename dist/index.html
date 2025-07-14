@@ -310,27 +310,69 @@
             </div>
             <!-- PRD v2.2: New Tabs -->
             <div class="panel-tabs">
-                <button class="panel-tab-button active" data-tab="about-tab">About</button>
-                <button class="panel-tab-button" data-tab="highlights-tab">Highlights</button>
+                <button class="panel-tab-button active" data-tab="mission-briefing-tab">Mission Briefing</button>
+                <button class="panel-tab-button" data-tab="design-craft-tab">Design & Craft</button>
                 <button class="panel-tab-button" data-tab="settings-tab">Settings</button>
             </div>
             <div class="panel-content">
-                <!-- PRD v2.2: New Tab Content -->
-                <div id="about-tab" class="panel-tab-content active">
-                    <h3>HUE 9000: An Interactive Study</h3>
-                    <p><strong>Unit Designation:</strong> Heuristically-enhanced Utility Engine 9000.</p>
-                    <p><strong>Primary Directive:</strong> To explore the boundaries of user experience through diegetic interface design, complex state management, and declarative animation systems. The unit assesses and responds to user input, recalibrating its affective state and operational parameters in real-time.</p>
+                <div id="mission-briefing-tab" class="panel-tab-content active">
+                    <h3>Interactive Exploration of Diegetic Design</h3>
+                    <p><strong>HUE 9000</strong> explores diegetic design, where the user interface is integral to the narrative itself. The goal was to create a digital experience that feels responsive and emotionally engaging.</p>
+                    <img src="assets/images/hal-interface-full.jpg" alt="A depiction of the HAL 9000 computer interface from the movie, showing multiple data screens and a central red lens." class="info-panel-image info-panel-image-full-width" />
+                    <p>The interface functions as an artifact from a fictional world, inspired by HAL 9000. Ambient sounds, deliberate pacing, and an unsettling terminal combine to create an immersive experience. This project demonstrates translating brand identity into memorable, interactive design.</p>
                     <hr/>
-                    <p>This project is a single-page web application built with vanilla JavaScript, designed to showcase a rich, interactive, and stateful user interface without relying on a major front-end framework.</p>
-                </div>
-                <div id="highlights-tab" class="panel-tab-content">
-                    <h3>Technical Highlights</h3>
+                    <h4>Project Objectives:</h4>
                     <ul>
-                        <li><strong>State Management:</strong> Centralized, reactive state module (`appState.js`) and a finite state machine (`XState`) for the complex, interruptible startup sequence.</li>
-                        <li><strong>Animation:</strong> High-performance, declarative animations orchestrated by `GSAP` (GreenSock Animation Platform).</li>
-                        <li><strong>Audio:</strong> Robust, cross-browser audio managed by `Howler.js`, including dynamic soundscapes and UI feedback.</li>
-                        <li><strong>Architecture:</strong> A decoupled, modular system using a Service Locator pattern to manage dependencies, enhancing testability and maintainability.</li>
-                        <li><strong>Styling:</strong> Modern CSS with custom properties (variables) for themeing, dynamic visual effects, and a responsive mobile-first design.</li>
+                        <li>Demonstrate storytelling through interface design.</li>
+                        <li>Develop a responsive UI that reacts to user actions.</li>
+                        <li>Highlight interaction design, animation, and auditory feedback.</li>
+                    </ul>
+                </div>
+                <div id="design-craft-tab" class="panel-tab-content">
+                    <h3>Inspiration</h3>
+                    <p><strong>HUE 9000</strong> pays homage to Stanley Kubrick's <em>2001: A Space Odyssey</em>, capturing the film's design principles in a modern interactive experience.</p>
+
+                    <h4>Atmosphere and Lighting</h4>
+                    <p>The interface uses dramatic, high-contrast lighting to guide user attention, echoing the film's visual approach.</p>
+
+                    <h4>Physicality of Controls</h4>
+                    <p>Digital controls mimic physical buttons through animation, lighting, and realistic sound, enhancing tactile interaction.</p>
+                    <img src="assets/images/minimal-controls.png" alt="A close-up of illuminated translucent buttons on a control panel for language selection." class="info-panel-image info-panel-image-half-width info-panel-image-float-right" />
+
+                    <h4>Utilitarian Aesthetics</h4>
+                    <p>Clean, minimalist design emphasizes functionality and realism.</p>
+                    <img src="assets/images/backlit-buttons.png" alt="A close-up of green glowing circular buttons on a dark control panel." class="info-panel-image info-panel-image-half-width info-panel-image-float-left" />
+
+                    <h3>User Experience Details</h3>
+                    <h4>The Living Lens</h4>
+                    <p>The central lens uses dynamic gradients and the <strong>OKLCH</strong> color model to realistically respond to user input, creating an interactive "living" effect.</p>
+                    <img src="assets/images/HAL9000-lens.png" alt="A close-up of a central red glowing lens, part of the HAL 9000 interface." class="info-panel-image info-panel-image-half-width info-panel-image-float-right" />
+
+                    <h4>Tactile Digital Controls</h4>
+                    <p>Rotary dials provide realistic visual and kinetic feedback, bridging digital and physical interaction.</p>
+
+                    <h4>Narrative-Driven UI</h4>
+                    <p>Each UI element supports storytelling, from animations to typography, reinforcing the narrative with every interaction.</p>
+
+                    <h4>Authentic Materiality</h4>
+                    <p>Custom-rendered textures enhance realism and tactile engagement.</p>
+
+                    <h4>Sonic Identity</h4>
+                    <p>Audio design enhances immersion with intentional sounds and interactive feedback.</p>
+
+                    <h4>Inclusive & Accessible Design</h4>
+                    <p>Accessibility is fundamental, with semantic structures, comprehensive keyboard navigation, and clear visual cues ensuring an inclusive experience.</p>
+
+                    <hr/>
+
+                    <h3>Technical Foundation</h3>
+                    <p>The technical stack prioritizes performance and interaction quality:</p>
+                    <ul>
+                        <li><strong>Core Technology:</strong> Vanilla JavaScript (ES6+)</li>
+                        <li><strong>State Management:</strong> Custom solution with <a href="https://xstate.ai/" target="_blank" rel="noopener noreferrer">XState</a> for interactive states</li>
+                        <li><strong>Animations:</strong> <a href="https://gsap.com/" target="_blank" rel="noopener noreferrer">GSAP</a> for fluid animations</li>
+                        <li><strong>Audio:</strong> <a href="https://howlerjs.com/" target="_blank" rel="noopener noreferrer">Howler.js</a> for robust audio interactions</li>
+                        <li><strong>Visual Engine:</strong> CSS custom properties and <strong>OKLCH</strong> color space for consistent visuals.</li>
                     </ul>
                 </div>
                 <!-- NEW: Settings Tab -->
