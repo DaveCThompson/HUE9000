@@ -8,6 +8,7 @@
     --dial-container-fixed-height: 3rem;
     --height-lower-section: 14rem;        /* 224px -> rem */
     --bezel-thickness: var(--space-xl);   /* Thickness of panel bezels (padding/gap) */
+    --info-panel-width: 26rem;            /* Width of the expanded info panel */
 
     --control-section-border-width: 0.25rem; /* 4px -> rem */
     --control-section-radius: 0.5rem;

@@ -22,6 +22,7 @@ import themeEngageSrc from '../../assets/audio/lights-on.mp3';
 import auxModeLowSrc from '../../assets/audio/auxModeLow.mp3';
 import auxModeHighSrc from '../../assets/audio/auxModeHigh.mp3';
 import powerDownSrc from '../../assets/audio/powerDown.mp3';
+import panelToggleSrc from '../../assets/audio/panelToggle.mp3';
 
 /**
  * @typedef {object} SoundConfig
@@ -66,5 +67,6 @@ export const AUDIO_CONFIG = {
     auxModeLow:      { src: auxModeLowSrc, loop: false, volume: 0.7, html5: false },
     auxModeHigh:     { src: auxModeHighSrc, loop: false, volume: 0.7, html5: false },
     powerDown:       { src: powerDownSrc, loop: false, volume: 0.9, html5: false },
+    panelToggle:     { src: panelToggleSrc, loop: false, volume: 0.6, html5: false },
   },
 };

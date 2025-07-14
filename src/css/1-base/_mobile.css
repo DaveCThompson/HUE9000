@@ -99,7 +99,8 @@
   }
 
   /* Hide the desktop panel shift effect on mobile */
-  .app-wrapper.left-panel-expanded {
+  /* FIX: Corrected selector to target .app-wrapper when body has the class */
+  body.left-panel-expanded .app-wrapper {
       transform: none;
   }
 

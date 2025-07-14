@@ -5,8 +5,8 @@
  * state or trigger side effects like terminal messages and sounds.
  */
 import { serviceLocator } from '../serviceLocator.js';
-import * as appState from './appState.js'; // CORRECT: Import from sibling
-import * as actions from './actions.js';   // CORRECT: Import from sibling
+import { appState } from './index.js';
+import * as actions from './actions.js';
 import { HUE_ASSIGNMENT_ROW_HUES, RESISTIVE_SHUTDOWN_PARAMS } from '../config/index.js';
 
 class ActionHandler {
