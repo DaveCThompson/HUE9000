@@ -1,3 +1,4 @@
+Generated markdown
 # HUE 9000 Project Structure (V2.3 - Fully Synced)
 
 This document outlines the file and directory structure for the HUE 9000 project, emphasizing modularity and a clear separation of concerns. This version reflects the "Project Decouple" refactoring, Vite-idiomatic asset migration, and correction of CSS asset pathing.
@@ -21,23 +22,25 @@ HUE9000_Project/
 │   │   │   ├── interaction.js
 │   │   │   ├── lens.js
 │   │   │   ├── preloader.js
+│   │   │   ├── scanSequences.js # NEW: Scan sequence definitions
 │   │   │   ├── sequences.js
 │   │   │   ├── terminal.js
 │   │   │   └── ui.js
 │   │   │
-│   │   ├── AnimationManager.js
-│   │   ├── AppState.js
+│   │   ├── AmbientAnimationManager.js # RENAMED from AnimationManager.js
 │   │   ├── AudioManager.js
+│   │   ├── animationUtils.js   # NEW: Utility functions for animations
+│   │   ├── appInitializer.js   # NEW: Main application bootstrapping logic
 │   │   ├── Button.js
 │   │   ├── buttonManager.js
-│   │   ├── DebugManager.js
 │   │   ├── DialController.js
 │   │   ├── dialManager.js
 │   │   ├── DisruptionManager.js
 │   │   ├── DOMManager.js
 │   │   ├── DynamicStyleManager.js
 │   │   ├── EventEmitter.js
-│   │   ├── HapticFeedbackManager.js
+│   │   ├── EventBinder.js      # NEW: Centralized DOM event binding
+│   │   ├── hapticFeedbackManager.js # RENAMED/RECASED
 │   │   ├── IntensityDisplay.js
 │   │   ├── IntensityDisplayManager.js
 │   │   ├── LcdUpdater.js
@@ -51,12 +54,17 @@ HUE9000_Project/
 │   │   ├── MusicController.js
 │   │   ├── PhaseRunner.js
 │   │   ├── preloader.js
-│   │   ├── ResistiveShutdownController.js
-│   │   ├── ScanSim.js
+│   │   ├── resistiveShutdownController.js # RENAMED/RECASED
+│   │   ├── scanFsm.js          # NEW: XState machine for scan sequences
+│   │   ├── scanOrchestrator.js # NEW: Orchestrates scan lifecycle
 │   │   ├── scanRenderers.js
-│   │   ├── scanSimulator.js
-│   │   ├── ServiceLocator.js
+│   │   ├── serviceLocator.js   # RENAMED/RECASED
 │   │   ├── sidePanelManager.js
+│   │   ├── state/              # NEW: Centralized state management (Command Bus pattern)
+│   │   │   ├── actionHandler.js  # Handles dispatched actions
+│   │   │   ├── actions.js        # Defines all possible actions
+│   │   │   ├── appState.js       # The core state and event emitter
+│   │   │   └── index.js          # Barrel file for state module
 │   │   ├── startupMachine.js   # XState FSM definition for startup
 │   │   ├── startupMobile.js
 │   │   ├── startupPhase0.js
@@ -72,9 +80,10 @@ HUE9000_Project/
 │   │   ├── startupPhase10.js
 │   │   ├── startupPhase11.js
 │   │   ├── startupPhase12.js
+│   │   ├── startupPhase13.js
 │   │   ├── StartupSequenceManager.js
-│   │   ├── TerminalManager.js
-│   │   ├── TerminalMessages.js
+│   │   ├── terminalManager.js  # RENAMED/RECASED
+│   │   ├── terminalMessages.js # RENAMED/RECASED
 │   │   ├── ThemeManager.js
 │   │   └── utils.js
 │   │
@@ -106,7 +115,7 @@ HUE9000_Project/
 │       │   ├── _mobile-terminal-drawer.css
 │       │   ├── _panel-bezel.css
 │       │   ├── _preloader.css
-│       │   ├── _scan-sequence.css
+│       │   ├── _scan-sequence.css  # NEW: Styles for scan sequence UI
 │       │   ├── _side-panels.css
 │       │   └── _terminal.css
 │       │
