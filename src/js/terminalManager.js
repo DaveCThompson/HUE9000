@@ -172,7 +172,8 @@ class TerminalManager {
         }
         if (this._terminalContentElement) this._terminalContentElement.innerHTML = '';
         this._scanContainerElement = document.createElement('div');
-        this._scanContainerElement.className = 'scan-animation-container';
+        // REMOVED: The problematic, un-styled class name is gone.
+        // The orchestrator will add the correct, styled class.
         if (this._terminalContentElement) this._terminalContentElement.appendChild(this._scanContainerElement);
         const scanOrchestrator = serviceLocator.get('scanOrchestrator');
         scanOrchestrator.startScan(scanConfig, this._scanContainerElement);

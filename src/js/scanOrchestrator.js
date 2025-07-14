@@ -9,9 +9,9 @@ import { serviceLocator } from './serviceLocator.js';
 import { appState } from './state/index.js';
 import { createScanMachine } from './scanFsm.js';
 import { rendererRegistry } from './scanRenderers.js';
-// NEW: Import the spinner animation utility
 import { createDotGridSpinnerTimeline } from './animationUtils.js';
 import { fromPromise } from 'xstate';
+import dotSpinnerSvg from '../assets/svgs/dot-spinner.svg?raw';
 
 export class ScanOrchestrator {
     constructor() {
@@ -57,6 +57,88 @@ export class ScanOrchestrator {
                 actions: {
                     logError: ({ context, event }) => {
                         console.error("Scan FSM Error:", event.data, "Context:", context);
+                    },
+                    prepareActiveJob: ({ context }) => {
+                        const index = context.activeJobIndex;
+                        const { ui, subJobs, subJobTargets } = context;
+                        const jobUI = subJobTargets[index];
+                        
+                        jobUI.wrapper.classList.remove('is-queued');
+                        jobUI.el.classList.add('is-active');
+                        
+                        this.gsap.set([ui.scanTargetName, jobUI.spinnerContainer, jobUI.title], { color: `oklch(0.85 0.20 ${subJobs[index].hue})` });
+                        
+                        this.gsap.to(jobUI.wrapper, { autoAlpha: 1, duration: 0.3, ease: 'power2.out' });
+                        this.gsap.set(jobUI.wrapper, { pointerEvents: 'auto' });
+                    },
+                    markJobAsComplete: ({ context }) => {
+                        const index = context.activeJobIndex;
+                        const jobUI = context.subJobTargets[index];
+                        
+                        if (!jobUI.el.classList.contains('is-active')) return;
+
+                        jobUI.el.classList.remove('is-active');
+                        jobUI.el.classList.add('is-complete');
+                        
+                        const checkIcon = this._createStyledElement('span', 'material-symbols-outlined', 'check');
+
+                        if (jobUI.spinnerContainer) {
+                            jobUI.spinnerContainer.innerHTML = '';
+                            jobUI.spinnerContainer.appendChild(checkIcon);
+                        }
+                        
+                        this.gsap.from(checkIcon, {
+                            scale: 0,
+                            opacity: 0,
+                            duration: 0.4,
+                            ease: 'back.out(1.7)'
+                        });
+                        
+                        this.gsap.set([jobUI.spinnerContainer, jobUI.title], { clearProps: 'color' });
+                    },
+                    markJobAsFailed: ({ context }) => {
+                        const index = context.activeJobIndex;
+                        const jobUI = context.subJobTargets[index];
+
+                        if (!jobUI.el.classList.contains('is-active')) return;
+
+                        jobUI.el.classList.remove('is-active');
+                        
+                        const failureIcon = this._createStyledElement('span', 'material-symbols-outlined icon-failure', 'close');
+                        
+                        if (jobUI.spinnerContainer) {
+                            jobUI.spinnerContainer.innerHTML = '';
+                            jobUI.spinnerContainer.appendChild(failureIcon);
+                        }
+
+                        this.gsap.from(failureIcon, {
+                            scale: 0,
+                            opacity: 0,
+                            duration: 0.4,
+                            ease: 'back.out(1.7)'
+                        });
+                    },
+                    updateOverallProgress: ({ context }) => {
+                        const index = context.activeJobIndex;
+                        const { ui, subJobs } = context;
+                        
+                        const newProgress = ((index + 1) / subJobs.length) * 100;
+                        const progressProxy = { value: parseFloat(ui.progressValue.textContent) || 0 }; 
+
+                        this.gsap.to(progressProxy, {
+                            value: newProgress,
+                            duration: 0.5,
+                            ease: 'power2.out',
+                            onUpdate: () => {
+                                ui.progressValue.textContent = `${progressProxy.value.toFixed(1)}%`;
+                            }
+                        });
+                    },
+                    fadeCompletedJobWrapper: ({ context }) => {
+                        const index = context.activeJobIndex;
+                        const jobUI = context.subJobTargets[index];
+                        this.gsap.to(jobUI.wrapper, { autoAlpha: 0.5, duration: 0.3, ease: 'power2.out' });
+                        this.gsap.set(jobUI.wrapper, { pointerEvents: 'none' });
                     }
                 }
             };
@@ -64,15 +146,10 @@ export class ScanOrchestrator {
             const scanMachine = createScanMachine(scanConfig, machineImplementation);
             this.activeScanActor = createActor(scanMachine);
             
-            // DEFINITIVE FIX: The subscription logic is now simpler and more robust.
-            // It relies on a combination of `snapshot.done` and `snapshot.matches()` to
-            // guarantee detection of the final state, preventing the deadlock.
             this.activeScanActor.subscribe(snapshot => {
                 const isDone = snapshot.done || snapshot.matches('completed') || snapshot.matches('aborted') || snapshot.matches('error');
 
                 if (isDone) {
-                    // Prevent the handler from running more than once if multiple "done"
-                    // snapshots are emitted, which can happen in complex state transitions.
                     if (!this.activeScanActor) return;
                     
                     let status = 'completed';
@@ -150,21 +227,21 @@ export class ScanOrchestrator {
         elements.a11yLiveRegion.setAttribute('aria-live', 'polite');
         elements.a11yLiveRegion.setAttribute('aria-atomic', 'true');
 
-        const mainSpinnerContainer = this._createStyledElement('div', 'scan-spinner');
-        const dotGridWrapper = this._createStyledElement('div', 'dot-grid-wrapper');
-        const dotGrid = this._createStyledElement('div', 'dot-grid-spinner');
-        for (let i = 0; i < 9; i++) {
-            dotGrid.appendChild(this._createStyledElement('div', 'dot'));
-        }
-        dotGridWrapper.appendChild(dotGrid);
-        mainSpinnerContainer.appendChild(dotGridWrapper);
-        elements.mainSpinner = dotGrid;
+        // DEFINITIVE FIX: Use a robust two-layer structure.
+        // Outer box is for layout and alignment.
+        const mainSpinnerLayoutBox = this._createStyledElement('div', 'scan-spinner');
+        // Inner box is for the animation target.
+        const mainSpinnerAnimTarget = this._createStyledElement('div', 'dot-grid-spinner');
+        mainSpinnerAnimTarget.innerHTML = dotSpinnerSvg;
+        mainSpinnerLayoutBox.appendChild(mainSpinnerAnimTarget);
+        // The reference for animation is the inner container.
+        elements.mainSpinner = mainSpinnerAnimTarget;
 
         elements.mainTitle = this._createStyledElement('span', 'scan-main-title', context.mainTitle);
-        elements.mainTitleContainer.append(mainSpinnerContainer, elements.mainTitle);
+        elements.mainTitleContainer.append(mainSpinnerLayoutBox, elements.mainTitle);
 
         elements.progressLabel = this._createStyledElement('span', 'scan-progress-label', 'SCANNING SEGMENTS: ');
-        elements.progressValue = this._createStyledElement('span', 'scan-progress-value', '0%');
+        elements.progressValue = this._createStyledElement('span', 'scan-progress-value', '0.0%');
         elements.progressContainer.append(elements.progressLabel, elements.progressValue);
 
         elements.scanTargetLabel = this._createStyledElement('span', 'scan-target-label', 'Scan Target:');
@@ -189,13 +266,6 @@ export class ScanOrchestrator {
             const jobEl = this._createStyledElement('div', 'scan-sub-job');
 
             const subSpinnerContainer = this._createStyledElement('div', 'scan-spinner is-sub-job-spinner');
-            const subDotGridWrapper = this._createStyledElement('div', 'dot-grid-wrapper');
-            const subDotGrid = this._createStyledElement('div', 'dot-grid-spinner');
-            for (let i = 0; i < 9; i++) {
-                subDotGrid.appendChild(this._createStyledElement('div', 'dot'));
-            }
-            subDotGridWrapper.appendChild(subDotGrid);
-            subSpinnerContainer.appendChild(subDotGridWrapper);
 
             const title = this._createStyledElement('span', 'scan-sub-job-title', job.title);
             jobEl.append(subSpinnerContainer, title);
@@ -206,9 +276,7 @@ export class ScanOrchestrator {
                 wrapper: jobWrapper, 
                 el: jobEl, 
                 spinnerContainer: subSpinnerContainer,
-                spinner: subDotGrid, 
                 title,
-                spinnerTimeline: null
             });
         });
         
@@ -261,7 +329,10 @@ export class ScanOrchestrator {
 
             const tl = this.gsap.timeline({ onComplete: resolve });
 
-            tl.set(ui.scanTargetName, { clearProps: 'color' }, 0)
+            tl.to(ui.scanTargetName, { 
+                color: 'oklch(var(--terminal-text-color-success-l) var(--terminal-text-color-success-c) var(--terminal-text-color-success-h))',
+                duration: 0.4 
+            }, 0)
             .call(() => {
                 const conclusionEl = this._createStyledElement('div', 'scan-conclusion', ' ');
                 conclusionEl.classList.add('line-success');
@@ -288,8 +359,6 @@ export class ScanOrchestrator {
         }
         
         if (this.activeScanActor) {
-            // The FSM is responsible for cleaning up its own child animations.
-            // We just need to stop the actor itself.
             this.activeScanActor.stop();
         }
         this.activeScanActor = null;

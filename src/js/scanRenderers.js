@@ -117,12 +117,12 @@ export function renderTypeWindow(target, jobConfig, gsap) {
 
             jobConfig.progressiveLines.forEach((lineData, index) => {
                 const isFirst = index === 0;
-                // REMOVED: Scramble-to-blank transition tween was here.
+                const isLast = index === jobConfig.progressiveLines.length - 1;
                 
                 // Write the actual line
                 timeline.to(textEl, {
                     duration: lineData.duration * 0.7,
-                    text: {
+                    text: isLast ? `> ${lineData.text}` : {
                         value: `> ${lineData.text}`,
                         scrambleText: { chars: "01", speed: 0.2 }
                     },
@@ -131,7 +131,12 @@ export function renderTypeWindow(target, jobConfig, gsap) {
             });
             
             // Add a final pause and fade out the entire container
-            timeline.to(lineContainer, { autoAlpha: 0, duration: 0.3 }, "+=0.5");
+            timeline.to(lineContainer, { 
+                autoAlpha: 0, 
+                duration: 0.3,
+                // MODIFIED: Remove the element from the DOM on completion to prevent blank lines.
+                onComplete: () => lineContainer.remove()
+            }, "+=0.5");
         });
 
         mm.add("(prefers-reduced-motion: reduce)", () => {

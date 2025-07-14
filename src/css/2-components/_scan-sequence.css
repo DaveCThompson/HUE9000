@@ -9,8 +9,8 @@
     .scan-sequence-container {
         /* NEW: Define a local, systematic vertical rhythm */
         --_scan-gap-base: var(--space-md);
-        /* MODIFIED: Reduced header gap for tighter spacing */
-        --_scan-gap-header: calc(var(--_scan-gap-base) * 0.75);
+        /* MODIFIED: Reduced header gap for tighter spacing, per design feedback. */
+        --_scan-gap-header: calc(var(--_scan-gap-base) * 0.5);
         /* MODIFIED: Reduced sub-job gap to be much closer to terminal line-height */
         --_scan-gap-sub-jobs: calc(var(--_scan-gap-base) * 1.0);
         --_scan-gap-header-to-jobs: calc(var(--_scan-gap-base) * 2);
@@ -34,20 +34,21 @@
     .scan-progress-container,
     .scan-target-container {
         display: flex;
-        align-items: center;
+        align-items: center; /* MODIFIED: Changed from baseline for better icon alignment */
         gap: var(--space-md);
         font-weight: 500;
     }
 
     /* The container provides a stable layout box. */
     .scan-spinner {
-        display: inline-flex;
+        display: flex; /* MODIFIED: Changed from inline-flex for simplicity in a flex context */
         align-items: center;
         justify-content: center;
+        flex-shrink: 0; /* NEW: Prevents the icon from shrinking */
         width: 1em;
         height: 1em;
         line-height: 1;
-        vertical-align: text-bottom;
+        /* REMOVED: vertical-align has no effect on a flex item and is confusing. */
         transition: color 0.3s ease-out;
     }
 
@@ -59,31 +60,37 @@
         font-variation-settings: 'FILL' 1;
     }
 
-    /* --- NEW: High-craft spinner styles --- */
-    .dot-grid-wrapper {
-        transform: scale(1.0);
-    }
-    
-    .dot-grid-spinner {
-        display: grid;
-        grid-template-columns: repeat(3, 2px);
-        gap: 2px;
-        transform-origin: center;
+    /* A specific class for the failure icon */
+    .scan-sequence-container .icon-failure {
+        color: oklch(var(--terminal-text-color-error-l) var(--terminal-text-color-error-c) var(--terminal-text-color-error-h));
     }
 
-    .dot-grid-spinner .dot {
-        width: 2px;
-        height: 2px;
-        background-color: currentColor;
-        border-radius: 50%;
-        transform: scale(0); /* Start hidden, GSAP will animate */
-        opacity: 0;
-        /* ADDED: Apply the CA effect using box-shadow for non-text elements. */
-        box-shadow:
-            var(--_ca-current-offset, 0px) 0 0 oklch(80% 0.15 40 / 0.7),
-            calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(80% 0.15 250 / 0.7);
+
+    /* --- DEFINITIVE FIX: Two-layer spinner structure for robust layout --- */
+    .dot-grid-spinner {
+        /* This inner container holds the SVG and fills the outer .scan-spinner */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
     }
-    /* --- End of High-craft spinner styles --- */
+
+    .dot-grid-spinner > svg {
+        /* The SVG fills the inner container */
+        width: 100%;
+        height: 100%;
+        overflow: visible; /* Prevents filter clipping */
+    }
+
+    .dot-grid-spinner > svg .dot {
+        /* Target dots within the SVG */
+        fill: currentColor;
+        /* MODIFIED: Removed transform and transform-origin. GSAP now controls this
+           entirely to prevent conflicts between CSS transforms and SVG transforms. */
+        opacity: 0;
+    }
+    /* --- End of spinner styles --- */
 
     .scan-target-name {
         font-weight: 600;
@@ -102,14 +109,16 @@
     .scan-job-wrapper {
         display: flex;
         flex-direction: column;
-        gap: var(--space-sm);
-        transition: opacity 0.3s ease;
+        /* MODIFIED: Reduced gap to tighten grouping of a job and its sub-content. */
+        gap: var(--space-xs);
+        opacity: 0; 
+        pointer-events: none;
         overflow: visible; /* Allow renderers to exceed bounds if needed */
     }
 
     .scan-sub-job {
         display: flex;
-        align-items: center;
+        align-items: center; /* MODIFIED: Changed from baseline for better icon alignment */
         gap: var(--space-md);
         transition: opacity 0.3s ease-out, color 0.3s ease-out;
     }
@@ -127,7 +136,8 @@
     }
     
     .scan-conclusion {
-        margin-top: var(--space-xl);
+        /* MODIFIED: Reduced top margin significantly to connect it to the sequence. */
+        margin-top: var(--space-lg);
         font-weight: 600;
         /* Color is now applied via .line-success class */
     }
@@ -138,7 +148,8 @@
         
         display: flex;
         flex-direction: column;
-        gap: var(--space-xs);
+        /* MODIFIED: Increased gap to add more space between rendered lines. */
+        gap: var(--space-sm);
         padding-left: var(--_sub-job-indent);
         font-size: 0.85em;
     }

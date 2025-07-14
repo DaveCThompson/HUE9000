@@ -160,3 +160,13 @@ TERMINAL CHROMATIC ABERRATION - UNIFIED RULE
         var(--_ca-current-offset, 0px) 0 0 oklch(from var(--terminal-bloom-aberration-color-1) l c h / var(--lcd-chroma-red-opacity)),
         calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(from var(--terminal-bloom-aberration-color-2) l c h / var(--lcd-chroma-blue-opacity));
 }
+
+/* This is the sibling rule for non-text elements like the SVG spinner dots.
+   It uses `filter: drop-shadow` to achieve the same visual effect, and critically,
+   it uses the exact same variables as the main text-shadow rule above,
+   ensuring perfect visual and logical consistency. */
+.dot-grid-spinner > svg .dot {
+    filter:
+        drop-shadow(var(--_ca-current-offset, 0px) 0 0 oklch(from var(--terminal-bloom-aberration-color-1) l c h / var(--lcd-chroma-red-opacity)))
+        drop-shadow(calc(-1 * var(--_ca-current-offset, 0px)) 0 0 oklch(from var(--terminal-bloom-aberration-color-2) l c h / var(--lcd-chroma-blue-opacity)));
+}

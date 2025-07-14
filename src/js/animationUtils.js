@@ -1,318 +1,94 @@
 /**
  * @module animationUtils
- * @description Provides utility functions for creating complex animations,
- * such as advanced flicker and glow effects.
+ * @description Provides utility functions for creating complex, reusable animations,
+ * decoupling the animation logic from the components that use them.
  */
-import { gsap as globalGsap } from "gsap"; // Import gsap, but we'll prefer injected if available
-import { ADVANCED_FLICKER_PROFILES } from './config/index.js';
+import { serviceLocator } from './serviceLocator.js';
 
 /**
- * Helper function to retrieve a glow parameter.
- * @param {object} glowProfile - The glow sub-object from the main profile.
- * @param {string} paramName - The base name of the parameter (e.g., 'initialOpacity', 'finalSize').
- * @param {any} [defaultValue=0] - Default value if the parameter is not found.
- * @returns {any} The resolved parameter value.
+ * Creates a sophisticated flicker animation timeline for a target element.
+ * @param {HTMLElement} target - The DOM element to apply the flicker to.
+ * @param {object} options - Configuration for the flicker effect.
+ * @param {string} options.profileKey - The key for the flicker profile in the config.
+ * @param {object} options.flickerProfiles - The flicker profiles configuration object.
+ * @param {object} options.proxies - A proxy object for animating CSS variables.
+ * @param {object} options.gsap - The GSAP instance.
+ * @returns {object} A GSAP timeline instance.
  */
-function getGlowParam(glowProfile, paramName, defaultValue = 0) {
-    if (!glowProfile) return defaultValue;
-    const baseValue = glowProfile[paramName];
-
-    if (typeof baseValue === 'object' && baseValue !== null &&
-        glowProfile.hasOwnProperty('isButtonSelected') && 
-        (Object.prototype.hasOwnProperty.call(baseValue, 'selected') || Object.prototype.hasOwnProperty.call(baseValue, 'unselected'))) {
-        return glowProfile.isButtonSelected ? baseValue.selected : baseValue.unselected;
+export function createAdvancedFlicker(target, { profileKey, flickerProfiles, proxies, gsap }) {
+    const profile = flickerProfiles[profileKey];
+    if (!profile) {
+        console.warn(`Flicker profile "${profileKey}" not found.`);
+        return gsap.timeline();
     }
-    return baseValue !== undefined ? baseValue : defaultValue;
-}
-
-
-export function createAdvancedFlicker(targets, profileOrParams, options = {}) {
-    // Prefer options.gsap if provided (from a manager that has the main instance), else use imported globalGsap
-    const gsap = options.gsapInstance || globalGsap; 
-    const profileNameForLog = typeof profileOrParams === 'string' ? profileOrParams : 'CustomProfile';
-    const targetElementsForLog = Array.isArray(targets) ? targets : [targets];
-    const targetIdForLog = targetElementsForLog && targetElementsForLog.length > 0 && targetElementsForLog[0] ? (targetElementsForLog[0].id || targetElementsForLog[0].ariaLabel || (targetElementsForLog[0].className && targetElementsForLog[0].className.split ? targetElementsForLog[0].className.split(' ')[0] : 'unknown') || targetElementsForLog[0].tagName) : 'unknownTarget';
-    
-    // console.log(`[CAF_ENTRY | ${performance.now().toFixed(2)}ms] Flicker requested for: ${targetIdForLog}, Profile: ${profileNameForLog}, GSAP valid: ${!!(gsap && gsap.timeline)}`);
-    if (!profileOrParams || (typeof profileOrParams === 'string' && !ADVANCED_FLICKER_PROFILES[profileOrParams])) {
-        console.error(`[CAF_ERROR | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}' NOT FOUND or invalid! For target: ${targetIdForLog}`);
-    }
-
-    if (!gsap || typeof gsap.timeline !== 'function') {
-        console.error(`[CAF | ${performance.now().toFixed(2)}ms] GSAP instance is not valid! For ${targetIdForLog}`, {optionsGsap: options.gsapInstance, globalGsap});
-        const dummyTimeline = globalGsap.timeline();
-        dummyTimeline.to({}, {duration: 0.001});
-        return { timeline: dummyTimeline, completionPromise: Promise.resolve() };
-    }
-
-    const defaults = {
-        lightTargetSelector: '.light',
-        overrideGlowParams: {},
-        onStart: null,
-        onTimelineComplete: null,
-        onUpdate: null,
-    };
-    const config = { ...defaults, ...options };
-
-    let profile = typeof profileOrParams === 'string'
-        ? { ...ADVANCED_FLICKER_PROFILES[profileOrParams] } 
-        : { ...profileOrParams }; 
-
-    const completionPromise = new Promise(resolve => {
-        config.gsapInternalOnComplete = () => {
-            resolve();
-        };
-    });
-
-    if (!profile || Object.keys(profile).length === 0) {
-        // console.warn(`[CAF | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}' for ${targetIdForLog} not found or empty. Returning empty, resolved flicker.`);
-        const tl = gsap.timeline();
-        tl.eventCallback("onComplete", () => {
-            if (config.onTimelineComplete) config.onTimelineComplete();
-            config.gsapInternalOnComplete();
-        });
-        tl.to({}, { duration: 0.001 }); 
-        // console.log(`[CAF_RETURN_EMPTY_PROFILE | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${tl.duration().toFixed(3)}s.`);
-        return { timeline: tl, completionPromise };
-    }
-
-    profile.glow = { ...(profile.glow || {}) };
-    if (config.overrideGlowParams.hasOwnProperty('isButtonSelected')) {
-        profile.glow.isButtonSelected = config.overrideGlowParams.isButtonSelected;
-    }
-    
-    const elementsToAnimate = Array.isArray(targets) ? targets.filter(t => t) : (targets ? [targets] : []);
-    if (elementsToAnimate.length === 0) {
-        // console.warn(`[CAF | ${performance.now().toFixed(2)}ms] Profile '${profileNameForLog}': No valid target elements. Returning empty, resolved flicker.`);
-        const tl = gsap.timeline();
-        tl.eventCallback("onComplete", () => { if (config.onTimelineComplete) config.onTimelineComplete(); config.gsapInternalOnComplete(); });
-        tl.to({}, { duration: 0.001 });
-        // console.log(`[CAF_RETURN_NO_TARGETS | ${performance.now().toFixed(2)}ms] Flicker for ${targetIdForLog}, Profile: ${profileNameForLog}. Timeline duration: ${tl.duration().toFixed(3)}s.`);
-        return { timeline: tl, completionPromise };
-    }
-
-    // Declare baseTargetsForOpacity here to be accessible in onUpdate
-    let baseTargetsForOpacity = elementsToAnimate;
-    let lightElements = []; 
 
     const tl = gsap.timeline({
-        onStart: () => {
-            // console.log(`[CAF_TL_START | ${performance.now().toFixed(2)}ms] GSAP TL START for '${profileNameForLog}' on '${targetIdForLog}'`);
-            if (config.onStart) config.onStart();
-        },
-        onComplete: () => {
-            // console.log(`[CAF_TL_COMPLETE | ${performance.now().toFixed(2)}ms] GSAP TL COMPLETE for '${profileNameForLog}' on '${targetIdForLog}'. Calling user's onTimelineComplete.`);
-            if (config.onTimelineComplete) config.onTimelineComplete();
-            config.gsapInternalOnComplete();
-        },
-        onUpdate: config.onUpdate
+        defaults: { duration: 0.04, ease: 'none' },
     });
 
-    if (profile.targetProperty === 'button-lights-and-frame') {
-        elementsToAnimate.forEach(el => {
-            const lights = el.querySelectorAll(config.lightTargetSelector);
-            if (lights.length > 0) lightElements.push(...Array.from(lights));
-        });
+    const initialGlow = profile.glowStates.initial || 0;
+    const finalGlow = profile.glowStates.final || 0;
 
-        // FIX: Kill any existing tweens on the targets to prevent interference.
-        if (lightElements.length > 0) {
-            baseTargetsForOpacity = lightElements;
-            gsap.killTweensOf(baseTargetsForOpacity); 
-        }
-        gsap.killTweensOf(elementsToAnimate, "css");
-    } else if (profile.targetProperty === 'text-shadow-opacity-and-blur' || profile.targetProperty === 'element-opacity-and-box-shadow') {
-        baseTargetsForOpacity = elementsToAnimate; 
-        gsap.killTweensOf(baseTargetsForOpacity); 
-    }
-    
-    // FIX: Self-contained initial state setting.
-    // This logic replaces the need for an external `setState` call before the animation.
-    const isTransitioningFromEffectivelyUnlit = (profile.amplitudeStart !== undefined && profile.amplitudeStart <= 0.01) &&
-                                             (!profile.glow || getGlowParam(profile.glow, 'initialOpacity', 0) <= 0.01);
-    
-    if (isTransitioningFromEffectivelyUnlit) {
-        // If starting from an "off" state, ensure everything is visually zeroed out.
-        if (baseTargetsForOpacity.length > 0) {
-            tl.set(baseTargetsForOpacity, { autoAlpha: 0, immediateRender: true });
-        }
-        if (profile.glow && (profile.glow.opacityVar || profile.glow.animatedProperties?.opacity)) {
-            const initialGlowCSS = {};
-            if (profile.glow.opacityVar) initialGlowCSS[profile.glow.opacityVar] = 0;
-            if (profile.glow.animatedProperties?.opacity) initialGlowCSS[profile.glow.animatedProperties.opacity] = 0;
-            if (profile.glow.sizeVar) initialGlowCSS[profile.glow.sizeVar] = '0px';
-            if (profile.glow.animatedProperties?.blur) initialGlowCSS[profile.glow.animatedProperties.blur] = '0px';
-            if (Object.keys(initialGlowCSS).length > 0) {
-                tl.set(elementsToAnimate, { css: initialGlowCSS, immediateRender: true });
-            }
-        }
-    } else { 
-        // If starting from a lit state, set to the defined start values.
-        if (baseTargetsForOpacity.length > 0) {
-            const initialAutoAlpha = profile.amplitudeStart !== undefined ? profile.amplitudeStart : 0;
-            tl.set(baseTargetsForOpacity, { autoAlpha: initialAutoAlpha, immediateRender: true });
-        }
-        if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
-            const initialGlowCSS = {};
-            const initialGlowOpacity = getGlowParam(profile.glow, 'initialOpacity', 0);
-            const initialGlowSize = getGlowParam(profile.glow, 'initialSize', '0px');
+    // Set initial state
+    tl.set(target, { '--flicker-opacity': profile.opacityStates.initial })
+      .set(proxies.glow, { value: initialGlow });
 
-            if (profile.glow.opacityVar) initialGlowCSS[profile.glow.opacityVar] = initialGlowOpacity;
-            if (profile.glow.sizeVar) initialGlowCSS[profile.glow.sizeVar] = typeof initialGlowSize === 'number' ? `${initialGlowSize}px` : initialGlowSize;
-            if (profile.glow.animatedProperties?.opacity) initialGlowCSS[profile.glow.animatedProperties.opacity] = initialGlowOpacity;
-            if (profile.glow.animatedProperties?.blur) initialGlowCSS[profile.glow.animatedProperties.blur] = typeof initialGlowSize === 'number' ? `${initialGlowSize}px` : initialGlowSize;
-            
-            if (Object.keys(initialGlowCSS).length > 0) {
-                tl.set(elementsToAnimate, { css: initialGlowCSS, immediateRender: true });
-            }
-        }
-    }
+    // Build flicker sequence
+    profile.sequence.forEach(step => {
+        const opacity = profile.opacityStates[step.o];
+        const glow = profile.glowStates[step.g];
 
-    let currentTime = 0;
-    let lastOnDuration = 0.01;
+        tl.to(target, { '--flicker-opacity': opacity }, '>')
+          .to(proxies.glow, { value: glow }, '<');
+    });
 
-    for (let i = 0; i < profile.numCycles; i++) {
-        const cycleProgress = profile.numCycles > 1 ? i / (profile.numCycles - 1) : 1;
-        const currentPeriod = profile.periodStart + cycleProgress * (profile.periodEnd - profile.periodStart);
-        const onDuration = Math.max(0.01, currentPeriod * profile.onDurationRatio);
-        const offDuration = Math.max(0.01, currentPeriod * (1 - profile.onDurationRatio));
-        const currentAmplitude = profile.amplitudeStart + cycleProgress * (profile.amplitudeEnd - profile.amplitudeStart);
+    // Animate to final state
+    tl.to(target, { '--flicker-opacity': profile.opacityStates.final, duration: 0.2, ease: 'power2.out' }, '>')
+      .to(proxies.glow, { value: finalGlow, duration: 0.2, ease: 'power2.out' }, '<');
 
-        lastOnDuration = onDuration;
-
-        const currentPeakOpacity = getGlowParam(profile.glow, 'peakOpacity', 1);
-        const currentPeakSize = getGlowParam(profile.glow, 'peakSize', '5px');
-
-        const onState = { autoAlpha: currentAmplitude, duration: onDuration, ease: "power1.inOut" };
-        const onGlowCSS = {};
-        if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
-            const glowOpacityForTween = profile.glow.scaleWithAmplitude ? currentPeakOpacity * currentAmplitude : currentPeakOpacity;
-            if (profile.glow.opacityVar) onGlowCSS[profile.glow.opacityVar] = glowOpacityForTween;
-            if (profile.glow.sizeVar) onGlowCSS[profile.glow.sizeVar] = typeof currentPeakSize === 'number' ? `${currentPeakSize}px` : currentPeakSize;
-            if (profile.glow.animatedProperties) {
-                if (profile.glow.animatedProperties.opacity) onGlowCSS[profile.glow.animatedProperties.opacity] = glowOpacityForTween;
-                if (profile.glow.animatedProperties.blur) onGlowCSS[profile.glow.animatedProperties.blur] = typeof currentPeakSize === 'number' ? `${currentPeakSize}px` : currentPeakSize;
-            }
-        }
-        if (baseTargetsForOpacity.length > 0) tl.to(baseTargetsForOpacity, onState, currentTime);
-        if (Object.keys(onGlowCSS).length > 0) {
-            tl.to(elementsToAnimate, { css: onGlowCSS, duration: onDuration, ease: "power1.inOut" }, currentTime);
-        }
-        
-        currentTime += onDuration;
-
-        if (i < profile.numCycles - 1) {
-            let offStateAmplitude;
-            // If the flicker starts from a lit state, the "off" part should be a dim state, not total blackness.
-            if (profile.amplitudeStart > 0.01) {
-                offStateAmplitude = profile.amplitudeStart * 0.1; // e.g., 0.25 * 0.1 = 0.025. Very dim.
-            } else {
-                offStateAmplitude = 0; 
-            }
-            const offState = { autoAlpha: offStateAmplitude, duration: offDuration, ease: "power1.inOut" };
-
-            const offGlowCSS = {};
-            const baseGlowOpacityOff = getGlowParam(profile.glow, 'initialOpacity', 0);
-            const baseGlowSizeOff = getGlowParam(profile.glow, 'initialSize', '0px');
-
-            if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
-                // Dim the glow proportionally if the "off" state is not total blackness.
-                const offGlowOpacityTarget = offStateAmplitude > 0.01 && profile.amplitudeStart > 0.01 ? baseGlowOpacityOff * (offStateAmplitude / profile.amplitudeStart) : baseGlowOpacityOff;
-
-                if (profile.glow.opacityVar) offGlowCSS[profile.glow.opacityVar] = offGlowOpacityTarget;
-                if (profile.glow.sizeVar) offGlowCSS[profile.glow.sizeVar] = typeof baseGlowSizeOff === 'number' ? `${baseGlowSizeOff}px` : baseGlowSizeOff; 
-                if (profile.glow.animatedProperties) {
-                    if (profile.glow.animatedProperties.opacity) offGlowCSS[profile.glow.animatedProperties.opacity] = offGlowOpacityTarget;
-                    if (profile.glow.animatedProperties.blur) offGlowCSS[profile.glow.animatedProperties.blur] = typeof baseGlowSizeOff === 'number' ? `${baseGlowSizeOff}px` : baseGlowSizeOff;
-                }
-            }
-            if (baseTargetsForOpacity.length > 0) tl.to(baseTargetsForOpacity, offState, currentTime);
-            if (Object.keys(offGlowCSS).length > 0) {
-                tl.to(elementsToAnimate, { css: offGlowCSS, duration: offDuration, ease: "power1.inOut" }, currentTime);
-            }
-            currentTime += offDuration;
-        }
-    }
-
-    // Settle to the final state
-    const finalSettleDuration = Math.max(0.15, profile.periodEnd * 1.5);
-    const finalState = { autoAlpha: profile.amplitudeEnd, duration: finalSettleDuration, ease: "sine.out" };
-    const finalGlowCSS = {};
-    if (profile.glow && (profile.glow.colorVar || profile.glow.animatedProperties)) {
-        const finalGlowOpacityValue = getGlowParam(profile.glow, 'finalOpacity', 0);
-        const finalGlowSizeValue = getGlowParam(profile.glow, 'finalSize', '0px');
-
-        if (profile.glow.opacityVar) finalGlowCSS[profile.glow.opacityVar] = finalGlowOpacityValue;
-        if (profile.glow.sizeVar) finalGlowCSS[profile.glow.sizeVar] = typeof finalGlowSizeValue === 'number' ? `${finalGlowSizeValue}px` : finalGlowSizeValue;
-        if (profile.glow.animatedProperties) {
-            if (profile.glow.animatedProperties.opacity) finalGlowCSS[profile.glow.animatedProperties.opacity] = finalGlowOpacityValue;
-            if (profile.glow.animatedProperties.blur) finalGlowCSS[profile.glow.animatedProperties.blur] = typeof finalGlowSizeValue === 'number' ? `${finalGlowSizeValue}px` : finalGlowSizeValue;
-        }
-    }
-
-    const overlapTime = lastOnDuration * 0.3; // Overlap with the last "on" flicker for a smoother transition
-    if (baseTargetsForOpacity.length > 0) tl.to(baseTargetsForOpacity, finalState, `>-=${overlapTime}`);
-    if (Object.keys(finalGlowCSS).length > 0) {
-        tl.to(elementsToAnimate, { css: finalGlowCSS, duration: finalSettleDuration, ease: "sine.out" }, "<"); // "<" syncs with previous tween
-    }
-
-    // Final safety check for zero-duration timelines
-    if (tl.duration() === 0 && profile.numCycles === 0) { 
-        // console.warn(`[CAF_WARN | ${performance.now().toFixed(2)}ms] Timeline for ${targetIdForLog} had 0 duration with 0 cycles. Adding minimal duration.`);
-        tl.to({}, {duration: 0.001});
-    }
-    
-    return { timeline: tl, completionPromise };
+    return tl;
 }
 
 /**
  * Creates a GSAP timeline for the 9-dot grid spinner animation.
- * @param {HTMLElement} target - The .dot-grid-spinner container element.
+ * @param {HTMLElement} spinnerEl - The container for the spinner's SVG (e.g., .dot-grid-spinner).
  * @param {object} gsap - The GSAP instance.
- * @returns {gsap.core.Timeline} A paused, infinitely repeating GSAP timeline.
+ * @returns {object} A GSAP timeline instance.
  */
-export function createDotGridSpinnerTimeline(target, gsap) {
-    if (!target || !gsap) return gsap.timeline();
+export function createDotGridSpinnerTimeline(spinnerEl, gsap) {
+    // The spinnerEl is the direct container of the SVG.
+    const dots = spinnerEl.querySelectorAll('svg .dot');
 
-    const dots = Array.from(target.querySelectorAll('.dot'));
-    if (dots.length !== 9) return gsap.timeline();
+    // DEFINITIVE FIX: Imperatively set the transform origin on each dot using GSAP.
+    // This overrides the SVG default of `0 0` and ensures scaling happens from
+    // the center of each dot, preventing them from flying in from the top-left.
+    // Using '50% 50%' is the most robust value for SVG elements.
+    gsap.set(dots, { transformOrigin: '50% 50%' });
 
-    const masterTl = gsap.timeline({ paused: true, repeat: -1, repeatDelay: 0.3 });
+    const tl = gsap.timeline({
+        repeat: -1,
+        repeatDelay: 0.5,
+        defaults: { ease: 'power2.inOut', duration: 0.4 }
+    });
 
-    // --- Animation Parameters ---
-    const staggerIn = {
-        amount: 0.4,
-        from: "start",
-        ease: 'power2.out'
-    };
-    const staggerOut = {
-        amount: 0.4,
-        from: "end",
-        ease: 'power2.in'
-    };
-    const pauseDuration = 0.5;
-
-    // --- Pattern Definitions (dot indices 0-8) ---
-    const patterns = {
-        spiral: [0, 1, 2, 5, 8, 7, 6, 3, 4],
-        rows: [0, 1, 2, 3, 4, 5, 6, 7, 8]
-    };
-    
-    const runPatternCycle = (patternKey) => {
-        const order = patterns[patternKey].map(i => dots[i]);
-        const cycleTl = gsap.timeline();
-        cycleTl.fromTo(order, 
-            { scale: 0, opacity: 0 },
-            { scale: 1, opacity: 1, duration: 0.3, stagger: staggerIn }
-        )
-        .to(order, 
-            { scale: 0, opacity: 0, duration: 0.3, stagger: staggerOut }, 
-            `+=${pauseDuration}`
-        );
-        return cycleTl;
+    const stagger = {
+        each: 0.1,
+        from: 'center',
+        grid: 'auto'
     };
 
-    masterTl.add(runPatternCycle('spiral'))
-            .add(runPatternCycle('rows'), `+=${pauseDuration * 0.5}`);
+    tl.fromTo(dots, {
+        scale: 0,
+        opacity: 0
+    }, {
+        scale: 0.5, // MODIFIED: Reduced scale from 1 to 0.75 for a smaller appearance.
+        opacity: 1,
+        stagger
+    }).to(dots, {
+        scale: 0,
+        opacity: 0,
+        stagger
+    }, '+=0.5');
 
-    return masterTl;
+    return tl;
 }

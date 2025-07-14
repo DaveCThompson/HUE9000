@@ -26,27 +26,17 @@ export function createScanMachine(config, implementation) {
         const isLastJob = index === config.subJobs.length - 1;
 
         jobStates[jobStateName] = {
+            // DEFINITIVE FIX: Use `assign` to put the current index into context,
+            // then call the action by name. This is more robust than passing parameters.
             entry: [
-                // Action to update UI for the starting job
-                ({ context }) => {
-                    const { ui, subJobs, subJobTargets } = context;
-                    const jobUI = subJobTargets[index];
-                    
-                    jobUI.wrapper.classList.remove('is-queued');
-                    jobUI.el.classList.add('is-active');
-
-                    jobUI.spinnerTimeline = createDotGridSpinnerTimeline(jobUI.spinner, gsap);
-                    jobUI.spinnerTimeline.play();
-                    
-                    gsap.set([ui.scanTargetName, jobUI.spinnerContainer, jobUI.title], { color: `oklch(0.85 0.20 ${subJobs[index].hue})` });
-                }
+                assign({ activeJobIndex: index }),
+                'prepareActiveJob'
             ],
             invoke: {
                 id: `job-renderer-${index}`,
                 src: fromPromise(({ input }) => {
                     const rendererFunc = rendererRegistry.get(input.job.renderer);
                     const rendererPromise = rendererFunc(input.target, input.job, gsap);
-                    // ADDED: Timeout wrapper for robustness
                     const timeoutPromise = new Promise((_, reject) =>
                         setTimeout(() => reject(new Error(`Renderer "${input.job.renderer}" timed out after ${RENDERER_TIMEOUT_MS}ms.`)), RENDERER_TIMEOUT_MS)
                     );
@@ -59,59 +49,20 @@ export function createScanMachine(config, implementation) {
                 onDone: {
                     target: isLastJob ? '#scan.outro' : `#scan.running.${nextJobStateName}`,
                     actions: [
-                        // Action to update UI for the completed job
-                        ({ context }) => {
-                            const { ui, subJobs, subJobTargets } = context;
-                            const jobUI = subJobTargets[index];
-                            
-                            if (jobUI.el.classList.contains('is-active')) {
-                                jobUI.el.classList.remove('is-active');
-                                jobUI.el.classList.add('is-complete');
-                                
-                                const checkIcon = document.createElement('span');
-                                checkIcon.className = 'material-symbols-outlined';
-                                checkIcon.textContent = 'check';
-
-                                const transitionTl = gsap.timeline();
-                                transitionTl.to(jobUI.spinner, {
-                                    scale: 0,
-                                    opacity: 0,
-                                    duration: 0.2,
-                                    ease: 'power2.in',
-                                    onComplete: () => {
-                                        if (jobUI.spinnerTimeline) {
-                                            jobUI.spinnerTimeline.kill();
-                                            jobUI.spinnerTimeline = null;
-                                        }
-                                        if (jobUI.spinnerContainer) {
-                                            jobUI.spinnerContainer.innerHTML = '';
-                                            jobUI.spinnerContainer.appendChild(checkIcon);
-                                        }
-                                    }
-                                })
-                                .from(checkIcon, {
-                                    scale: 0,
-                                    opacity: 0,
-                                    duration: 0.4,
-                                    ease: 'back.out(1.7)'
-                                }, ">-0.1")
-                                .set([jobUI.spinnerContainer, jobUI.title], { clearProps: 'color' }, "<");
-
-                                const newProgress = Math.round(((index + 1) / subJobs.length) * 100);
-                                gsap.to(ui.progressValue, {
-                                    innerText: newProgress,
-                                    duration: 0.5,
-                                    snap: { innerText: 1 },
-                                    ease: 'power2.out',
-                                    onUpdate: () => { ui.progressValue.textContent += '%'; }
-                                });
-                            }
-                        }
+                        assign({ activeJobIndex: index }),
+                        'markJobAsComplete',
+                        'updateOverallProgress',
+                        'fadeCompletedJobWrapper',
                     ]
                 },
                 onError: {
                     target: '#scan.error',
-                    actions: 'logError'
+                    actions: [
+                        assign({ activeJobIndex: index }),
+                        'markJobAsFailed',
+                        'fadeCompletedJobWrapper',
+                        'logError'
+                    ]
                 }
             }
         };
@@ -125,7 +76,8 @@ export function createScanMachine(config, implementation) {
             ...config,
             error: null,
             ui: null,
-            subJobTargets: []
+            subJobTargets: [],
+            activeJobIndex: null // Add to initial context
         },
         states: {
             idle: {
@@ -152,7 +104,6 @@ export function createScanMachine(config, implementation) {
                 initial: 'job_0',
                 states: jobStates,
                 on: { ABORT: 'aborted' },
-                // FIX: Increased FSM-native watchdog timer to be more generous
                 after: {
                     [FSM_OVERALL_TIMEOUT_MS]: { target: 'error', actions: 'logError' }
                 }
