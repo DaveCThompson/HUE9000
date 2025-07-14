@@ -21,8 +21,8 @@
     <!-- ACCESSIBILITY: Polyfill for :focus-visible pseudo-class -->
     <script src="https://unpkg.com/focus-visible@5.2.0/dist/focus-visible.js" defer></script>
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-DFM3tym1.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-B7P3xo3H.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-CeYmtV4x.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-CuaLq74m.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -301,18 +301,16 @@
     <!-- PRD v2.2: Reworked #control-deck to be an Info Panel -->
     <div id="control-deck" class="side-panel left-panel">
         <div class="expanded-view">
-            <!-- PRD v2.2: New Panel Header with Close Button -->
+            <!-- RESTRUCTURED: Panel Header now contains tabs and close button -->
             <div class="panel-header">
-                <span>About HUE 9000</span>
+                <div class="panel-tabs">
+                    <button class="panel-tab-button active" data-tab="about-tab">About</button>
+                    <button class="panel-tab-button" data-tab="highlights-tab">Highlights</button>
+                    <button class="panel-tab-button" data-tab="settings-tab">Settings</button>
+                </div>
                 <button class="panel-close-button" id="info-panel-close-btn" aria-label="Close Info Panel">
                     <span class="material-symbols-outlined">close</span>
                 </button>
-            </div>
-            <!-- PRD v2.2: New Tabs -->
-            <div class="panel-tabs">
-                <button class="panel-tab-button active" data-tab="about-tab">About</button>
-                <button class="panel-tab-button" data-tab="highlights-tab">Highlights</button>
-                <button class="panel-tab-button" data-tab="settings-tab">Settings</button>
             </div>
             <div class="panel-content">
                 <!-- ABOUT TAB -->
@@ -324,23 +322,27 @@
 
                 <!-- HIGHLIGHTS TAB -->
                 <div id="highlights-tab" class="panel-tab-content">
-                    <p><strong>Inspiration</strong></p>
+                    <h3>Inspiration</h3>
                     <p>HUE 9000 pays homage to Stanley Kubrick's <em>2001: A Space Odyssey</em>, capturing the film's design principles in a modern interactive experience.</p>
                     
-                    <p><strong>The Living Lens</strong><br>The central lens uses dynamic gradients and the OKLCH color model to realistically respond to user input, creating an interactive "living" effect reminiscent of HAL's iconic eye.</p>
+                    <h3>The Living Lens</h3>
+                    <p>The central lens uses dynamic gradients and the OKLCH color model to realistically respond to user input, creating an interactive "living" effect reminiscent of HAL's iconic eye.</p>
                     <img src="/HUE9000/assets/HAL9000-lens-_uybZGhR.png" alt="Close-up of HAL 9000's iconic red camera lens, reflecting red light." class="panel-image">
 
-                    <p><strong>Atmosphere and Lighting</strong><br>The interface uses dramatic, high-contrast lighting to guide user attention, echoing the film's visual style.</p>
+                    <h3>Atmosphere and Lighting</h3>
+                    <p>The interface uses dramatic, high-contrast lighting to guide user attention, echoing the film's visual style.</p>
                     <img src="/HUE9000/assets/dramatic-lighting-B5W6FvIW.png" alt="A hand reaching for a toggle switch, with multiple green glowing buttons and a red light in a dimly lit control panel." class="panel-image">
 
-                    <p><strong>Physicality of Controls</strong><br>Digital controls mimic physical buttons through animation, lighting, and realistic sound, enhancing tactile interaction.</p>
+                    <h3>Physicality of Controls</h3>
+                    <p>Digital controls mimic physical buttons through animation, lighting, and realistic sound, enhancing tactile interaction.</p>
                     <img src="/HUE9000/assets/backlit-buttons-CG9Qx-5_.png" alt="Close-up of three backlit buttons labeled ENGLISH, DUTCH, and RUSSIAN on a control panel." class="panel-image">
 
-                    <p><strong>Utilitarian Aesthetics</strong><br>Clean, minimalist design emphasizes functionality and realism.</p>
+                    <h3>Utilitarian Aesthetics</h3>
+                    <p>Clean, minimalist design emphasizes functionality and realism.</p>
                     <img src="/HUE9000/assets/minimal-controls-n4YtnfwB.png" alt="Main HUE 9000 interface showing multiple screens, a camera lens, and various controls." class="panel-image">
 
                     <hr/>
-                    <p><strong>User Experience Details</strong></p>
+                    <h3>User Experience Details</h3>
                     <ul>
                         <li><strong>Tactile Digital Controls</strong><br>Rotary dials provide realistic visual and kinetic feedback, bridging digital and physical interaction.</li>
                         <li><strong>Narrative-Driven UI</strong><br>Each UI element supports storytelling, from animations to typography, reinforcing the narrative with every interaction.</li>
