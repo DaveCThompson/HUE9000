@@ -1,0 +1,212 @@
+/* src/css/2-components/_scan-sequence.css */
+/* Styles for the V2 scan sequence and its renderers. */
+@layer components {
+    .is-scan-active {
+        /* Prevents text selection during the interactive scan sequence */
+        user-select: none;
+    }
+
+    .scan-sequence-container {
+        /* NEW: Define a local, systematic vertical rhythm */
+        --_scan-gap-base: var(--space-md);
+        /* MODIFIED: Reduced header gap for tighter spacing, per design feedback. */
+        --_scan-gap-header: calc(var(--_scan-gap-base) * 0.5);
+        /* MODIFIED: Reduced sub-job gap to be much closer to terminal line-height */
+        --_scan-gap-sub-jobs: calc(var(--_scan-gap-base) * 1.0);
+        --_scan-gap-header-to-jobs: calc(var(--_scan-gap-base) * 2);
+
+        display: flex;
+        flex-direction: column;
+        gap: var(--_scan-gap-header-to-jobs); /* Gap between header and jobs list */
+        width: 100%;
+        padding: var(--space-md) 0;
+        transform-origin: top center;
+    }
+
+    /* NEW: Styles for the header group wrapper */
+    .scan-header-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--_scan-gap-header); /* Use the defined variable */
+    }
+
+    .scan-main-title-container,
+    .scan-progress-container,
+    .scan-target-container {
+        display: flex;
+        align-items: center; /* MODIFIED: Changed from baseline for better icon alignment */
+        gap: var(--space-md);
+        font-weight: 500;
+    }
+
+    /* The container provides a stable layout box. */
+    .scan-spinner {
+        display: flex; /* MODIFIED: Changed from inline-flex for simplicity in a flex context */
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0; /* NEW: Prevents the icon from shrinking */
+        width: 1em;
+        height: 1em;
+        line-height: 1;
+        /* REMOVED: vertical-align has no effect on a flex item and is confusing. */
+        transition: color 0.3s ease-out;
+    }
+
+    /* DEFINITIVE FIX: Use a single, authoritative selector to style ALL icons
+       (main checkmark and sub-job checkmarks) within the scan sequence container.
+       This ensures they are all sized correctly and rendered as filled. */
+    .scan-sequence-container .material-symbols-outlined {
+        font-size: 1em;
+        font-variation-settings: 'FILL' 1;
+    }
+
+    /* A specific class for the failure icon */
+    .scan-sequence-container .icon-failure {
+        color: oklch(var(--terminal-text-color-error-l) var(--terminal-text-color-error-c) var(--terminal-text-color-error-h));
+    }
+
+
+    /* --- DEFINITIVE FIX: Two-layer spinner structure for robust layout --- */
+    .dot-grid-spinner {
+        /* This inner container holds the SVG and fills the outer .scan-spinner */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .dot-grid-spinner > svg {
+        /* The SVG fills the inner container */
+        width: 100%;
+        height: 100%;
+        overflow: visible; /* Prevents filter clipping */
+    }
+
+    .dot-grid-spinner > svg .dot {
+        /* Target dots within the SVG */
+        fill: currentColor;
+        /* MODIFIED: Removed transform and transform-origin. GSAP now controls this
+           entirely to prevent conflicts between CSS transforms and SVG transforms. */
+        opacity: 0;
+    }
+    /* --- End of spinner styles --- */
+
+    .scan-target-name {
+        font-weight: 600;
+        transition: color 0.3s ease-out;
+    }
+
+    .scan-sub-jobs-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--_scan-gap-sub-jobs); /* Use the defined variable */
+        margin-top: 0;
+        padding-left: var(--space-lg);
+        position: relative;
+    }
+
+    .scan-job-wrapper {
+        display: flex;
+        flex-direction: column;
+        /* MODIFIED: Reduced gap to tighten grouping of a job and its sub-content. */
+        gap: var(--space-xs);
+        opacity: 0; 
+        pointer-events: none;
+        overflow: visible; /* Allow renderers to exceed bounds if needed */
+    }
+
+    .scan-sub-job {
+        display: flex;
+        align-items: center; /* MODIFIED: Changed from baseline for better icon alignment */
+        gap: var(--space-md);
+        transition: opacity 0.3s ease-out, color 0.3s ease-out;
+    }
+
+    .scan-sub-job.is-active .scan-sub-job-title {
+        font-weight: 600;
+    }
+
+    .scan-sub-job.is-complete {
+        color: inherit;
+    }
+
+    .scan-sub-job.is-complete .scan-spinner {
+        color: inherit;
+    }
+    
+    .scan-conclusion {
+        /* MODIFIED: Reduced top margin significantly to connect it to the sequence. */
+        margin-top: var(--space-lg);
+        font-weight: 600;
+        /* Color is now applied via .line-success class */
+    }
+
+    .scan-progressive-line-container {
+        --_sub-job-icon-width: 1em; /* Matches .scan-spinner size */
+        --_sub-job-indent: calc(var(--_sub-job-icon-width) + var(--space-md));
+        
+        display: flex;
+        flex-direction: column;
+        /* MODIFIED: Increased gap to add more space between rendered lines. */
+        gap: var(--space-sm);
+        padding-left: var(--_sub-job-indent);
+        font-size: 0.85em;
+    }
+
+    .scan-progressive-text {
+        font-family: 'IBM Plex Mono', monospace;
+        white-space: nowrap;
+    }
+
+    .scan-progressive-bar-wrapper {
+        display: flex;
+        gap: 1px;
+        width: calc(100% - 2ch);
+        height: 0.25rem;
+        margin-left: 2ch;
+    }
+
+    .scan-progressive-bar-segment {
+        flex: 1;
+        height: 100%;
+        border-radius: 1px;
+        background-color: oklch(20% 0 0 / 0.3); /* Off state */
+        transition: background-color 0.1s linear, box-shadow 0.1s linear;
+    }
+
+    .scan-progressive-bar-segment.is-filled {
+        background-color: oklch(0.85 var(--dynamic-lcd-chroma) var(--dynamic-lcd-hue));
+        box-shadow:
+            inset 0 0 2px 0 oklch(from currentColor l c h / 0.5),
+            0 0 2px 0 oklch(from currentColor l c h / 0.2);
+    }
+
+    /* --- "Type Window" Renderer Specific Styles --- */
+    .type-window-container {
+        position: relative;
+        padding: var(--space-sm) var(--space-md);
+        background-color: oklch(15% 0 0 / 0.15);
+        border-radius: var(--space-xs);
+    }
+
+    .type-window-pulse {
+        --_pulse-hue: var(--dynamic-lcd-hue); /* Fallback */
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: 2px;
+        background: linear-gradient(90deg,
+            transparent 0%,
+            oklch(0.8 0.1 var(--_pulse-hue) / 0.2) 50%,
+            transparent 100%
+        );
+        background-size: 200% 100%;
+        animation: scan-type-window-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes scan-type-window-pulse {
+        from { background-position: 100% 0; }
+        to   { background-position: -100% 0; }
+    }
+}
