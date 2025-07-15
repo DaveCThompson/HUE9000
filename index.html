@@ -21,8 +21,8 @@
     <!-- ACCESSIBILITY: Polyfill for :focus-visible pseudo-class -->
     <script src="https://unpkg.com/focus-visible@5.2.0/dist/focus-visible.js" defer></script>
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-CoKOAIqY.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-BNeXN7U6.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-noWcn6GE.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-CVUHyax2.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -365,20 +365,59 @@
                     <p>I chose lightweight, expressive tools that could deliver on the high-craft visual and interaction design I envisioned. Vanilla JavaScript kept the codebase fast and direct. XState helped organize UI flow and state changes cleanly. GSAP handled complex animations with precision, and Howler.js gave me full control over audio behavior. I leaned heavily on CSS custom properties and the OKLCH color model to manage styling and color transitions with clarity and depth.</p>
                     <p>Every technology was selected to support a responsive, cinematic experience without compromising on performance or accessibility.</p>
                 </div>
-                <!-- NEW: Settings Tab -->
+                <!-- UPDATED: Settings Tab Layout -->
                 <div id="settings-tab" class="panel-tab-content">
-                    <h3>System Settings</h3>
+                    <h3>Visual Settings</h3>
                     <div class="settings-group">
                         <div class="setting-item">
-                            <span class="setting-item__label">Haptic Feedback</span>
-                            <div class="setting-item__control">
-                                <label class="toggle-switch" for="haptics-toggle">
-                                    <input type="checkbox" id="haptics-toggle">
-                                    <span class="slider"></span>
-                                </label>
+                            <div class="setting-item__row">
+                                <label for="idle-drift-toggle" class="setting-item__label">Idle Light Drift</label>
+                                <div class="setting-item__control">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="idle-drift-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
                             </div>
+                            <p class="setting-item__helper-text">Pulsation effect on unselected buttons</p>
                         </div>
-                        <!-- Other settings could go here in the future -->
+                        <div class="setting-item">
+                            <div class="setting-item__row">
+                                <label for="harmonic-resonance-toggle" class="setting-item__label">Harmonic Resonance</label>
+                                <div class="setting-item__control">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="harmonic-resonance-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <p class="setting-item__helper-text">Pulsation effect on selected buttons</p>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-item__row">
+                                <label for="stability-slider" class="setting-item__label">System Stability</label>
+                                <div class="setting-item__control slider-control-wrapper">
+                                    <input type="range" id="stability-slider" class="styled-slider" min="0" max="100" value="75" aria-valuetext="75% Stable">
+                                </div>
+                            </div>
+                            <p class="setting-item__helper-text">Intensity of random visual disruptions</p>
+                        </div>
+                    </div>
+                    <hr/>
+                    <h3>Mobile Settings</h3>
+                    <div class="settings-group">
+                        <div class="setting-item">
+                            <div class="setting-item__row">
+                                <label for="haptics-toggle" class="setting-item__label">Haptic Feedback</label>
+                                <div class="setting-item__control">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="haptics-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <p class="setting-item__helper-text">Use vibration on actions</p>
+                        </div>
                     </div>
                 </div>
             </div>
