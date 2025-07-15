@@ -61,6 +61,7 @@ body.pre-boot .actual-lcd-screen-element #terminal-lcd-content {
     height: 100%;
     padding: var(--space-3xl);
     box-sizing: border-box;
+    transition: transform var(--transition-duration-medium) cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .main-content-area {
@@ -71,6 +72,16 @@ body.pre-boot .actual-lcd-screen-element #terminal-lcd-content {
     height: 90vh;
     align-items: stretch;
 }
+
+/* Left Panel shift when info panel is open (Desktop Only) */
+@media (min-width: 48.0625rem) {
+    /* FIX: Corrected selector to target .app-wrapper when body has the class */
+    body.left-panel-expanded .app-wrapper {
+        transform: translateX(calc(var(--info-panel-width) / 2)) scale(0.95);
+        transform-origin: center;
+    }
+}
+
 
 /* --- Panel Layout Specifics --- */
 

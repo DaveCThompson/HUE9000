@@ -301,37 +301,68 @@
     <!-- PRD v2.2: Reworked #control-deck to be an Info Panel -->
     <div id="control-deck" class="side-panel left-panel">
         <div class="expanded-view">
-            <!-- PRD v2.2: New Panel Header with Close Button -->
+            <!-- RESTRUCTURED: Panel Header now contains tabs and close button -->
             <div class="panel-header">
-                <span>About HUE 9000</span>
+                <div class="panel-tabs">
+                    <button class="panel-tab-button active" data-tab="about-tab">About</button>
+                    <button class="panel-tab-button" data-tab="highlights-tab">Highlights</button>
+                    <button class="panel-tab-button" data-tab="settings-tab">Settings</button>
+                </div>
                 <button class="panel-close-button" id="info-panel-close-btn" aria-label="Close Info Panel">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <!-- PRD v2.2: New Tabs -->
-            <div class="panel-tabs">
-                <button class="panel-tab-button active" data-tab="about-tab">About</button>
-                <button class="panel-tab-button" data-tab="highlights-tab">Highlights</button>
-                <button class="panel-tab-button" data-tab="settings-tab">Settings</button>
-            </div>
             <div class="panel-content">
-                <!-- PRD v2.2: New Tab Content -->
+                <!-- ABOUT TAB -->
                 <div id="about-tab" class="panel-tab-content active">
-                    <h3>HUE 9000: An Interactive Study</h3>
-                    <p><strong>Unit Designation:</strong> Heuristically-enhanced Utility Engine 9000.</p>
-                    <p><strong>Primary Directive:</strong> To explore the boundaries of user experience through diegetic interface design, complex state management, and declarative animation systems. The unit assesses and responds to user input, recalibrating its affective state and operational parameters in real-time.</p>
-                    <hr/>
-                    <p>This project is a single-page web application built with vanilla JavaScript, designed to showcase a rich, interactive, and stateful user interface without relying on a major front-end framework.</p>
+                    <div class="panel-logo" role="img" aria-label="HUE 9000 Project Logo"></div>
+                    <p>I created this project to showcase my design and front-end engineering skills.</p>
+                    <p>My goal was to deliver an emotionally engaging digital experience and demonstrate how brand identity can be translated into memorable, interactive design.</p>
+                    <p>The interface draws inspiration from HAL 9000. As we navigate the current AI revolution, this project serves as a nod to one of the most iconic representations of artificial intelligence from over 50 years ago. It channels the film's visionary aesthetic and pairs unsettling ambient audio, slow pacing, and high-craft visuals to create an immersive, cinematic environment.</p>
+                    <p>I hope you enjoy it as much as I enjoyed making it!</p>
+                    <p>- Dave</p>
+                    <img src="./src/assets/images/signature.png" alt="Creator's signature" class="panel-signature">
                 </div>
+
+                <!-- HIGHLIGHTS TAB -->
                 <div id="highlights-tab" class="panel-tab-content">
-                    <h3>Technical Highlights</h3>
+                    <h3>Inspiration and Highlights</h3>
+                    <p>HUE 9000 pays homage to Stanley Kubrick's <em>2001: A Space Odyssey</em>, capturing the film's design principles in a modern interactive experience.</p>
+                    
+                    <h3>The Iconic Lens</h3>
+                    <img src="./src/assets/images/HAL9000-lens.png" alt="Close-up of HAL 9000's iconic red camera lens, reflecting red light." class="panel-image">
+                    <p>The HAL 9000 lens was a central design focus for this project. To replicate it, I constructed a sophisticated radial gradient by color matching against the film version.</p>
+                    <p>To bring it to life, I created a series of breakpoints at various intensities which can then be interpolated between.</p>
+                    <p>For color modulation, I used the OKLCH color model, which maintains perceptual consistency in chroma and lightness during hue shifts. The inner core retains a subtle color shift like the film's version.</p>
+                   
+                    <h3>Atmosphere and Lighting</h3>
+                    <img src="./src/assets/images/dramatic-lighting.png" alt="A hand reaching for a toggle switch, with multiple green glowing buttons and a red light in a dimly lit control panel." class="panel-image">
+                    <p>High-contrast lighting and shadows guide user focus and reinforce the cinematic mood.  Careful attention was given to the specular highlights on the radial and circular bezels, simulating realistic light reflection as it glides across the curved surface.</p>
+                    <p>Instead of a traditional light/dark mode, I simulated increased ambient lightning, and carefully crafted all surfaces to respond accurately to the lighting changes.</p>
+                   
+                    <h3>Controls</h3>
+                    <img src="./src/assets/images/backlit-buttons.png" alt="Close-up of three backlit buttons labeled ENGLISH, DUTCH, and RUSSIAN on a control panel." class="panel-image">
+                    <p>The movie features retro-futuristic buttons with backlight translucent surface. I carefully designed the buttons to emulate this aesthetic.</p>
+                    <p>Each button includes multiple backlit lights and realistic states: unlit, dimly lit, energized, pressed, and selected. Glow, tint, and lighting effects shift in response to interaction. The lights gently pulse at rest, adding ambient movement. Hover and press states are visually rich but restrained, giving each control a sense of weight and physicality without over-animation.</p>
+                    
+                    <h3>Layout and Typography</h3>
+                    <img src="./src/assets/images/minimal-controls.png" alt="Main HUE 9000 interface showing multiple screens, a camera lens, and various controls." class="panel-image">
+                    <p>The movie uses abbreviated, all-caps lettering to emphasize function over decoration. I carried that typographic style into the interface, creating visual groupings like HUE ASSN, MOOD, and INTENSITY.</p>
+                    <p>Layout, spacing, and border styles are deliberately rigid and minimal. Despite this rigidity, I designed responsive sections with clear constraints to maintain visual balance and geometric layout across different desktop formats.</p>
+                    
+                    <hr/>
+                    <h3>User Experience Details</h3>
                     <ul>
-                        <li><strong>State Management:</strong> Centralized, reactive state module (`appState.js`) and a finite state machine (`XState`) for the complex, interruptible startup sequence.</li>
-                        <li><strong>Animation:</strong> High-performance, declarative animations orchestrated by `GSAP` (GreenSock Animation Platform).</li>
-                        <li><strong>Audio:</strong> Robust, cross-browser audio managed by `Howler.js`, including dynamic soundscapes and UI feedback.</li>
-                        <li><strong>Architecture:</strong> A decoupled, modular system using a Service Locator pattern to manage dependencies, enhancing testability and maintainability.</li>
-                        <li><strong>Styling:</strong> Modern CSS with custom properties (variables) for themeing, dynamic visual effects, and a responsive mobile-first design.</li>
+                        <li><strong>Tactile Digital Controls</strong><br>Rotary dials provide realistic visual and kinetic feedback, bridging digital and physical interaction.</li>
+                        <li><strong>Narrative-Driven UI</strong><br>Each UI element supports storytelling, from animations to typography, reinforcing the narrative with every interaction.</li>
+                        <li><strong>Authentic Materiality</strong><br>Custom-rendered textures enhance realism and tactile engagement.</li>
+                        <li><strong>Sonic Identity</strong><br>Audio design enhances immersion with intentional sounds and interactive feedback.</li>
+                        <li><strong>Inclusive & Accessible Design</strong><br>Accessibility is fundamental, with semantic structures, comprehensive keyboard navigation, and clear visual cues ensuring an inclusive experience.</li>
                     </ul>
+                    <hr/>
+                    <h3>Technical Foundation</h3>
+                    <p>I chose lightweight, expressive tools that could deliver on the high-craft visual and interaction design I envisioned. Vanilla JavaScript kept the codebase fast and direct. XState helped organize UI flow and state changes cleanly. GSAP handled complex animations with precision, and Howler.js gave me full control over audio behavior. I leaned heavily on CSS custom properties and the OKLCH color model to manage styling and color transitions with clarity and depth.</p>
+                    <p>Every technology was selected to support a responsive, cinematic experience without compromising on performance or accessibility.</p>
                 </div>
                 <!-- NEW: Settings Tab -->
                 <div id="settings-tab" class="panel-tab-content">

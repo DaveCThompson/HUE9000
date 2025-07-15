@@ -8,6 +8,7 @@
     --dial-container-fixed-height: 3rem;
     --height-lower-section: 14rem;        /* 224px -> rem */
     --bezel-thickness: var(--space-xl);   /* Thickness of panel bezels (padding/gap) */
+    --info-panel-width: 26rem;            /* Width of the expanded info panel */
 
     --control-section-border-width: 0.25rem; /* 4px -> rem */
     --control-section-radius: 0.5rem;
@@ -75,7 +76,9 @@
     --button-unit-light-responsive-scale-factor: 1.33333333;
     --button-unit-light-responsive-blur-factor: 0.41666667;
 
-    --button-unit-light-opacity-initial-dim-unlit: 0;
+    /* DEFINITIVE FIX: Change the base unlit opacity from 0 to a small, non-zero value. */
+    /* This gives GSAP a visible element to animate from, solving the core animation bug. */
+    --button-unit-light-opacity-initial-dim-unlit: 0.1;
     --button-unit-light-opacity-dim-standby: 0.5;
     --button-unit-light-opacity-dimly-lit: 0.8;
 
