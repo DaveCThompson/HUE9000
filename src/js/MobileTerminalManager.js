@@ -70,10 +70,12 @@ export class MobileTerminalManager {
             if (this.dom.mobileControlsOverlay) this.dom.mobileControlsOverlay.style.pointerEvents = 'none';
             this.timeline.play();
             appState.setHasUnreadTerminalMessages(false);
+            this.audioManager.play('panelToggle', true); // Play sound when opening
         } else {
             if (mainContent) mainContent.style.pointerEvents = 'auto';
             if (this.dom.mobileControlsOverlay) this.dom.mobileControlsOverlay.style.pointerEvents = 'auto';
             this.timeline.reverse();
+            this.audioManager.play('panelToggle', true); // Play sound when closing
         }
     }
 }
