@@ -21,8 +21,8 @@
     <!-- ACCESSIBILITY: Polyfill for :focus-visible pseudo-class -->
     <script src="https://unpkg.com/focus-visible@5.2.0/dist/focus-visible.js" defer></script>
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-DPxWRneY.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-CoEGkJr9.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-BnsGGS-I.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-hnk5DUo5.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -307,6 +307,7 @@
                     <button class="panel-tab-button active" data-tab="about-tab">About</button>
                     <button class="panel-tab-button" data-tab="highlights-tab">Highlights</button>
                     <button class="panel-tab-button" data-tab="settings-tab">Settings</button>
+                    <div class="panel-tab-underline" aria-hidden="true"></div>
                 </div>
                 <button class="panel-close-button" id="info-panel-close-btn" aria-label="Close Info Panel">
                     <span class="material-symbols-outlined">close</span>
@@ -322,7 +323,7 @@
                     <p>The interface draws inspiration from HAL 9000. As we navigate the current AI revolution, this project serves as a nod to one of the most iconic representations of artificial intelligence from over 50 years ago. It channels the film's visionary aesthetic and pairs unsettling ambient audio, slow pacing, and high-craft visuals to create an immersive, cinematic environment.</p>
                     <p>I hope you enjoy it as much as I enjoyed making it!</p>
                     <p>– Dave</p>
-                    <img src="/HUE9000/assets/signature-CJ_FW5WO.png" alt="Creator's signature" class="panel-signature">
+                    <div class="panel-signature" aria-label="Creator's signature"></div>
                 </div>
 
                 <!-- HIGHLIGHTS TAB -->
@@ -358,7 +359,7 @@
                         <li><strong>Narrative-Driven UI</strong><br>Each UI element supports storytelling, from animations to typography, reinforcing the narrative with every interaction.</li>
                         <li><strong>Authentic Materiality</strong><br>Custom-rendered textures enhance realism and tactile engagement.</li>
                         <li><strong>Sonic Identity</strong><br>Audio design enhances immersion with intentional sounds and interactive feedback.</li>
-                        <li><strong>Inclusive & Accessible Design</strong><br>Accessibility is fundamental, with semantic structures, comprehensive keyboard navigation, and clear visual cues ensuring an inclusive experience.</li>
+                        <li><strong>Inclusive & Accessible Design</strong><br>Accessibility is fundamental, with comprehensive keyboard navigation, and clear visual cues ensuring an inclusive experience.</li>
                     </ul>
                     <hr/>
                     <h3>Technical Foundation</h3>
@@ -375,7 +376,10 @@
                                 <div class="setting-item__control">
                                     <label class="toggle-switch">
                                         <input type="checkbox" id="idle-drift-toggle" checked>
-                                        <span class="slider"></span>
+                                        <div class="toggle-switch__layout">
+                                            <div class="toggle-switch__track"></div>
+                                            <div class="toggle-switch__thumb"></div>
+                                        </div>
                                     </label>
                                 </div>
                             </div>
@@ -387,7 +391,10 @@
                                 <div class="setting-item__control">
                                     <label class="toggle-switch">
                                         <input type="checkbox" id="harmonic-resonance-toggle" checked>
-                                        <span class="slider"></span>
+                                        <div class="toggle-switch__layout">
+                                            <div class="toggle-switch__track"></div>
+                                            <div class="toggle-switch__thumb"></div>
+                                        </div>
                                     </label>
                                 </div>
                             </div>
@@ -395,12 +402,16 @@
                         </div>
                         <div class="setting-item">
                             <div class="setting-item__row">
-                                <label for="stability-slider" class="setting-item__label">System Stability</label>
-                                <div class="setting-item__control slider-control-wrapper">
-                                    <input type="range" id="stability-slider" class="styled-slider" min="0" max="100" value="75" aria-valuetext="75% Stable">
-                                </div>
+                                <label class="setting-item__label">System Stability</label>
                             </div>
                             <p class="setting-item__helper-text">Intensity of random visual disruptions</p>
+                            <!-- REWRITTEN & SIMPLIFIED: New Slider v2 Implementation -->
+                            <div id="stability-slider" class="desktop-slider" role="slider" aria-label="System Stability" aria-valuemin="0" aria-valuemax="100" aria-valuenow="66" aria-valuetext="66%">
+                                <div class="desktop-slider__track"></div>
+                                <div id="stability-slider-thumb" class="desktop-slider__thumb">
+                                    <div class="thumb-inner"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <hr/>
@@ -412,7 +423,10 @@
                                 <div class="setting-item__control">
                                     <label class="toggle-switch">
                                         <input type="checkbox" id="haptics-toggle" checked>
-                                        <span class="slider"></span>
+                                        <div class="toggle-switch__layout">
+                                            <div class="toggle-switch__track"></div>
+                                            <div class="toggle-switch__thumb"></div>
+                                        </div>
                                     </label>
                                 </div>
                             </div>
