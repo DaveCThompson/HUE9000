@@ -21,8 +21,8 @@
     <!-- ACCESSIBILITY: Polyfill for :focus-visible pseudo-class -->
     <script src="https://unpkg.com/focus-visible@5.2.0/dist/focus-visible.js" defer></script>
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-ChPZ4_40.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-D97keVji.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-B4802U02.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-hnk5DUo5.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -405,14 +405,12 @@
                                 <label class="setting-item__label">System Stability</label>
                             </div>
                             <p class="setting-item__helper-text">Intensity of random visual disruptions</p>
-                            <div class="setting-item__control-group--horizontal">
-                                <div id="stability-slider" class="desktop-slider" role="slider" aria-label="System Stability" aria-valuemin="0" aria-valuemax="100" aria-valuenow="75" aria-valuetext="75%">
-                                    <div class="desktop-slider__track"></div>
-                                    <div id="stability-slider-thumb" class="desktop-slider__thumb">
-                                        <div class="thumb-inner"></div>
-                                    </div>
+                            <!-- REWRITTEN & SIMPLIFIED: New Slider v2 Implementation -->
+                            <div id="stability-slider" class="desktop-slider" role="slider" aria-label="System Stability" aria-valuemin="0" aria-valuemax="100" aria-valuenow="66" aria-valuetext="66%">
+                                <div class="desktop-slider__track"></div>
+                                <div id="stability-slider-thumb" class="desktop-slider__thumb">
+                                    <div class="thumb-inner"></div>
                                 </div>
-                                <div id="stability-slider-value-display" class="info-panel-slider__value-display">75%</div>
                             </div>
                         </div>
                     </div>
