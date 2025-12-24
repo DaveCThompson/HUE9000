@@ -7,7 +7,7 @@
 import { createActor } from 'xstate';
 import { serviceLocator } from './serviceLocator.js';
 import { appState } from './state/index.js';
-import { createScanMachine } from './scanFsm.js';
+import { createScanMachine } from './scanFSM.js';
 import { rendererRegistry } from './scanRenderers.js';
 // NEW: Import the spinner animation utility
 import { createDotGridSpinnerTimeline } from './animationUtils.js';
