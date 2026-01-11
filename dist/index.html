@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HUE 9000 Interface (REFACTOR-V2.2)</title>
 
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.png">
-    
+
     <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <!-- Main Application Stylesheet (Imports all other CSS partials, including preloader) -->
+    <!-- Main Application Stylesheet (Imports all other CSS partials, including preloader) -->
 
     <!-- Google Fonts API CSS (display=swap is good for fallback) -->
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -21,8 +21,8 @@
     <!-- ACCESSIBILITY: Polyfill for :focus-visible pseudo-class -->
     <script src="https://unpkg.com/focus-visible@5.2.0/dist/focus-visible.js" defer></script>
 
-  <script type="module" crossorigin src="/HUE9000/assets/index-BFRal_Mw.js"></script>
-  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-D6qyWFs2.css">
+  <script type="module" crossorigin src="/HUE9000/assets/index-DbDkhfar.js"></script>
+  <link rel="stylesheet" crossorigin href="/HUE9000/assets/index-C2bzSkCU.css">
 </head>
 <body class="theme-dim pre-boot">
 
@@ -72,7 +72,7 @@
         </div>
         <div id="preloader-copyright"></div>
     </div>
-    
+
     <!-- PRD v2.2: New Mobile Controls Overlay -->
     <div id="mobile-controls-overlay">
         <div class="mobile-controls-group">
@@ -91,12 +91,12 @@
                 <span class="material-symbols-outlined">lightbulb</span>
             </button>
             <!-- DEFINITIVE SLIDER STRUCTURE -->
-            <div class="mobile-slider-container" id="mobile-color-slider-container" 
-                 aria-label="Environment and Logo Color" 
-                 role="slider" 
-                 aria-orientation="vertical" 
-                 aria-valuemin="0" 
-                 aria-valuemax="11" 
+            <div class="mobile-slider-container" id="mobile-color-slider-container"
+                 aria-label="Environment and Logo Color"
+                 role="slider"
+                 aria-orientation="vertical"
+                 aria-valuemin="0"
+                 aria-valuemax="11"
                  aria-valuenow="0"
                  aria-valuetext="Colorless">
                 <div class="mobile-slider-track" id="mobile-slider-track">
@@ -296,7 +296,7 @@
         </div>
 
     </div>
-    <div id="lens-super-glow" aria-hidden="true"></div>
+    <div id="lens-super-glow" aria-hidden="true"></div>
 
     <!-- PRD v2.2: Reworked #control-deck to be an Info Panel -->
     <div id="control-deck" class="side-panel left-panel">
@@ -328,28 +328,28 @@
                 <div id="highlights-tab" class="panel-tab-content">
                     <h3>Inspiration and Highlights</h3>
                     <p>HUE 9000 pays homage to Stanley Kubrick's <em>2001: A Space Odyssey</em>, capturing the film's design principles in a modern interactive experience.</p>
-                    
+
                     <h3>The Iconic Lens</h3>
                     <img src="/HUE9000/assets/HAL9000-lens-_uybZGhR.png" alt="Close-up of HAL 9000's iconic red camera lens, reflecting red light." class="panel-image">
                     <p>The HAL 9000 lens was a central design focus for this project. To replicate it, I constructed a sophisticated radial gradient by color matching against the film version.</p>
                     <p>To bring it to life, I created a series of breakpoints at various intensities which can then be interpolated between.</p>
                     <p>For color modulation, I used the OKLCH color model, which maintains perceptual consistency in chroma and lightness during hue shifts. The inner core retains a subtle color shift like the film's version.</p>
-                   
+
                     <h3>Atmosphere and Lighting</h3>
                     <img src="/HUE9000/assets/dramatic-lighting-B5W6FvIW.png" alt="A hand reaching for a toggle switch, with multiple green glowing buttons and a red light in a dimly lit control panel." class="panel-image">
                     <p>High-contrast lighting and shadows guide user focus and reinforce the cinematic mood.  Careful attention was given to the specular highlights on the radial and circular bezels, simulating realistic light reflection as it glides across the curved surface.</p>
                     <p>Instead of a traditional light/dark mode, I simulated increased ambient lightning, and carefully crafted all surfaces to respond accurately to the lighting changes.</p>
-                   
+
                     <h3>Controls</h3>
                     <img src="/HUE9000/assets/backlit-buttons-CG9Qx-5_.png" alt="Close-up of three backlit buttons labeled ENGLISH, DUTCH, and RUSSIAN on a control panel." class="panel-image">
                     <p>The movie features retro-futuristic buttons with backlight translucent surface. I carefully designed the buttons to emulate this aesthetic.</p>
                     <p>Each button includes multiple backlit lights and realistic states: unlit, dimly lit, energized, pressed, and selected. Glow, tint, and lighting effects shift in response to interaction. The lights gently pulse at rest, adding ambient movement. Hover and press states are visually rich but restrained, giving each control a sense of weight and physicality without over-animation.</p>
-                    
+
                     <h3>Layout and Typography</h3>
                     <img src="/HUE9000/assets/minimal-controls-n4YtnfwB.png" alt="Main HUE 9000 interface showing multiple screens, a camera lens, and various controls." class="panel-image">
                     <p>The movie uses abbreviated, all-caps lettering to emphasize function over decoration. I carried that typographic style into the interface, creating visual groupings like HUE ASSN, MOOD, and INTENSITY.</p>
                     <p>Layout, spacing, and border styles are deliberately rigid and minimal. Despite this rigidity, I designed responsive sections with clear constraints to maintain visual balance and geometric layout across different desktop formats.</p>
-                    
+
                     <hr/>
                     <h3>User Experience Details</h3>
                     <ul>

@@ -31,7 +31,7 @@ import { MusicController } from './MusicController.js';
 import disruptionManagerInstance from './DisruptionManager.js';
 import { MobileColorSlider } from "./MobileColorSlider.js";
 import { hapticFeedbackManager } from "./hapticFeedbackManager.js";
-import { ScanOrchestrator } from "./ScanOrchestrator.js";
+import { ScanOrchestrator } from "./scanOrchestrator.js";
 import { EventBinder } from './EventBinder.js';
 import { AudioManager } from './AudioManager.js';
 
